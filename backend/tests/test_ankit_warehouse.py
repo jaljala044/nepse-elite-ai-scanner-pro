@@ -43,7 +43,7 @@ class AnkitWarehouseTests(unittest.TestCase):
                     500.0::DECIMAL(18,4) AS open_price,
                     510.0::DECIMAL(18,4) AS high_price,
                     495.0::DECIMAL(18,4) AS low_price,
-                    505.0::DECIMAL(18,4) AS close_price,
+                    506.0::DECIMAL(18,4) AS close_price,
                     1000::BIGINT AS total_traded_quantity,
                     505000.0::DECIMAL(22,4) AS total_traded_value,
                     500.0::DECIMAL(18,4) AS previous_day_close_price,
@@ -88,7 +88,10 @@ class AnkitWarehouseTests(unittest.TestCase):
             self.assertEqual(result["tables"]["eod_history_ext"]["quality"]["rows"],1)
             self.assertEqual(result["overlap_reconciliation"]["matched_symbol_dates"],1)
             self.assertEqual(result["overlap_reconciliation"]["exact_volume_matches"],1)
-            self.assertEqual(result["overlap_reconciliation"]["exact_close_matches"],1)
+            self.assertEqual(result["overlap_reconciliation"]["exact_close_matches"],0)
+            self.assertEqual(result["overlap_reconciliation"]["close_mismatch_count"],1)
+            self.assertEqual(result["overlap_reconciliation"]["close_mismatch_rows"][0]["symbol"],"NABIL")
+            self.assertEqual(result["overlap_reconciliation"]["close_mismatch_rows"][0]["absolute_difference"],"1.0000")
             con=duckdb.connect(str(db),read_only=True)
             schemas=con.execute(
                 "SELECT table_name FROM information_schema.tables WHERE table_schema='ankit' ORDER BY table_name"

@@ -50,6 +50,16 @@ symbol,date,open,high,low,close,volume
 NABIL,2026-11-20,500,515,495,510,120000
 ```
 
+## Tests
+
+From `backend/`:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions workflow: [backend-tests.yml](.github/workflows/backend-tests.yml).
+
 ## Safety and data integrity
 - Never treat missing or stale prices as live.
 - Every import carries a source label and session date.

@@ -8,7 +8,10 @@ need a provider account, a licence, or an exact endpoint supplied by the provide
 | Source | Data/use | Access status | Collector status |
 |---|---|---|---|
 | OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, symbols | Public JSON archive; unofficial ShareSansar-derived data | Verified JSON snapshot endpoints implemented |
-| SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, sector-index CSVs, company list | Public GitHub Pages API and flat files | JSON endpoints plus latest 10 floorsheets and index CSV collector implemented |
+| Kaggle: qramkrishna/nepal-stock-exchange-data | Historical trade-level floorsheet, per-company CSVs | Public Kaggle dataset; description says data through 2019-10-10 and 218 companies | Identified; manual/Kaggle-authenticated download and schema validation still required |
+| Hugging Face: urekmazino69/Nepse-floorsheet-and-indices | Daily trade-level floorsheet and sector indices | Public dataset; stated coverage 2024-01-02 to 2026-08-26; MIT; not Kaggle | Identified; bulk import adapter not yet implemented |
+| Hugging Face: AnkitSanjyal/nepse-market-data | Long daily OHLCV history plus newer floorsheet and derived data | Stated EOD history 1995-07-20 to present; floorsheet begins 2026-08-19 with a stated gap 2026-08-26 to 2026-11-18 | Identified; separate coverage and schema validation required |
+| SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, sector-index CSVs, company list | Public GitHub Pages API and flat files; current repository snapshot may be behind current session | Collector configured; inspect last available session before relying on it |
 | jaljala044/nepse-history-starter | User-maintained OHLCV imports and source records | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
 | jaljala044/nepse-smc-data | EOD prices, market indices, daily floorsheet, OHLCV charts and scanner packages | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
 | nepsepy / nepse-client / nepse-data-api | Market, prices, floorsheets, indices, history, company data | Unofficial clients/APIs; availability and exact endpoints vary by project | Configurable provider endpoint only; no guessed API paths |
@@ -63,6 +66,42 @@ configuring the endpoint. Never commit API tokens to Git.
 8. Do not use adjusted prices as raw prices. Corporate actions need their own adjustment ledger.
 9. Do not enable automated collection schedules until permissions, rate limits, coverage and
    reconciliation tests are complete.
+
+## Historical coverage finding (2026-11-23)
+
+The Kaggle dataset currently identified is
+[`qramkrishna/nepal-stock-exchange-data`](https://www.kaggle.com/datasets/qramkrishna/nepal-stock-exchange-data).
+Its dataset description states that it contains historical NEPSE floorsheet transactions up to
+2019-10-10, split into one CSV per each of 218 companies. It does **not** establish coverage
+through 2026, and the listing does not establish a reliable 2014 start date. It is a legacy
+historical segment, not a complete continuous 2014–2026 archive.
+
+A newer public non-Kaggle alternative is
+[`urekmazino69/Nepse-floorsheet-and-indices`](https://huggingface.co/datasets/urekmazino69/Nepse-floorsheet-and-indices).
+Its published data card says daily floorsheet and indices cover 2024-01-02 through 2026-08-26.
+The dataset exposes trade-level contract number, date, symbol, buyer/seller broker codes,
+quantity, rate and amount. The publisher notes that corporate actions are not adjusted.
+
+Another public dataset,
+[`AnkitSanjyal/nepse-market-data`](https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data),
+states that extended daily price history begins 1995-07-20, while its trade-level floorsheet
+begins 2026-08-19 and has a stated gap from 2026-08-26 through 2026-11-18. This is useful
+for price history and recent trade-level data, but it does not bridge the full older floorsheet
+history.
+
+Therefore the currently verified public evidence does not support a single continuous
+Kaggle floorsheet archive for 2014–2026. Build the canonical floorsheet database as
+source-specific segments, then explicitly report uncovered dates rather than filling gaps
+with fabricated or interpolated trades.
+
+### Kaggle download note
+
+The Kaggle dataset can be downloaded from its dataset page after accepting any applicable
+Kaggle terms. The Kaggle CLI requires the user's Kaggle authentication configured locally;
+do not upload the Kaggle token into this repository or paste it into chat. After download,
+place the archive in a local staging folder, inspect its CSV schema, record the source version
+and SHA-256, and import it through a dedicated validator. No Kaggle data archive has yet
+been copied into this private repository.
 
 ## Known source caveats
 

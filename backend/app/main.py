@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from .scanner import analyze
 from .scanner_v3 import analyze_v3
 from .duckdb_coverage_v3 import audit_duckdb_ohlcv
+from .coverage_audit import audit_coverage
 from .storage import DATA, IMPORTS, store_rows
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
@@ -112,3 +113,40 @@ def audit_v3_coverage(as_of: date | None = None, target_universe_size: int = 309
         raise HTTPException(409, str(exc)) from exc
     except Exception as exc:
         raise HTTPException(500, f"DuckDB coverage audit failed: {exc}") from exc
+
+
+
+@app.get("/v3/audit/coverage/strict")
+def audit_v3_coverage_strict():
+    """Audit every configured master symbol against a verified session calendar."""
+    database_path = os.getenv("NEPSE_DUCKDB_PATH")
+    master_table = os.getenv("NEPSE_SYMBOL_MASTER_TABLE")
+    calendar_table = os.getenv("NEPSE_SESSION_CALENDAR_TABLE")
+    if not database_path:
+        raise HTTPException(503, "NEPSE_DUCKDB_PATH is not configured")
+    if not master_table or not calendar_table:
+        raise HTTPException(
+            503,
+            "Strict audit requires NEPSE_SYMBOL_MASTER_TABLE and "
+            "NEPSE_SESSION_CALENDAR_TABLE; no reference data will be guessed.",
+        )
+    try:
+        return audit_coverage(
+            database=database_path,
+            ohlcv_table=os.getenv("NEPSE_OHLCV_TABLE", "ankit.eod_price"),
+            symbol_master_table=master_table,
+            calendar_table=calendar_table,
+            symbol_col=os.getenv("NEPSE_OHLCV_SYMBOL_COL", "symbol"),
+            date_col=os.getenv("NEPSE_OHLCV_DATE_COL", "business_date"),
+            open_col=os.getenv("NEPSE_OHLCV_OPEN_COL", "open_price"),
+            high_col=os.getenv("NEPSE_OHLCV_HIGH_COL", "high_price"),
+            low_col=os.getenv("NEPSE_OHLCV_LOW_COL", "low_price"),
+            close_col=os.getenv("NEPSE_OHLCV_CLOSE_COL", "close_price"),
+            volume_col=os.getenv("NEPSE_OHLCV_VOLUME_COL", "total_traded_quantity"),
+            master_symbol_col=os.getenv("NEPSE_MASTER_SYMBOL_COL", "symbol"),
+            calendar_date_col=os.getenv("NEPSE_CALENDAR_DATE_COL", "session_date"),
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(500, f"Strict DuckDB coverage audit failed: {exc}") from exc

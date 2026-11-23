@@ -8,7 +8,7 @@ need a provider account, a licence, or an exact endpoint supplied by the provide
 | Source | Data/use | Access status | Collector status |
 |---|---|---|---|
 | OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, symbols | Public JSON archive; unofficial ShareSansar-derived data | Verified JSON snapshot endpoints implemented |
-| Kaggle: qramkrishna/nepal-stock-exchange-data | Historical trade-level floorsheet, per-company CSVs | Public Kaggle dataset; description says data through 2019-10-10 and 218 companies | Identified; manual/Kaggle-authenticated download and schema validation still required |
+| Kaggle: qramkrishna/nepal-stock-exchange-data | Historical trade-level floorsheet, per-company CSVs | Public Kaggle dataset; description says data through 2019-10-10, 218 companies, noncommercial/educational use | Identified; local Kaggle-authenticated staging helper added; date field/schema validation required |
 | Hugging Face: urekmazino69/Nepse-floorsheet-and-indices | Daily trade-level floorsheet and sector indices | Public dataset; stated coverage 2024-01-02 to 2026-08-26; MIT; 11 published columns | Bounded downloader and CSV-to-silver normalizer implemented |
 | Hugging Face: AnkitSanjyal/nepse-market-data | Long daily OHLCV history plus newer floorsheet and derived data | Public Parquet dataset, 1.14M rows / 29.3 MB at inspection; EOD history stated 1995-07-20 to present; floorsheet from 2026-08-19 with gap 2026-08-26 to 2026-11-18 | Bounded Parquet file inventory/download implemented; per-table schema validation still required |
 | SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, sector-index CSVs, company list | Public GitHub Pages API and flat files; current repository snapshot may be behind current session | Collector configured; inspect last available session before relying on it |
@@ -119,10 +119,13 @@ configuring the endpoint. Never commit API tokens to Git.
 
 The Kaggle dataset currently identified is
 [`qramkrishna/nepal-stock-exchange-data`](https://www.kaggle.com/datasets/qramkrishna/nepal-stock-exchange-data).
-Its dataset description states that it contains historical NEPSE floorsheet transactions up to
-2019-10-10, split into one CSV per each of 218 companies. It does **not** establish coverage
-through 2026, and the listing does not establish a reliable 2014 start date. It is a legacy
-historical segment, not a complete continuous 2014–2026 archive.
+Its dataset description states that it contains historical NEPSE floorsheet transactions
+through 2019-10-10, split into one CSV for each of 218 companies. The published field list
+includes contract number, stock symbol, buyer/seller broker, quantity, rate and amount, but
+does not list a separate trade-date column. It does **not** establish coverage through 2026,
+and the listing does not establish a reliable 2014 start date. It is a legacy historical segment,
+not a complete continuous 2014–2026 archive. The trade date must not be inferred from the
+contract number until its encoding is independently verified against known records.
 
 A newer public non-Kaggle alternative is
 [`urekmazino69/Nepse-floorsheet-and-indices`](https://huggingface.co/datasets/urekmazino69/Nepse-floorsheet-and-indices).

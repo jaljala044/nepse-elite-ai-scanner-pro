@@ -4,7 +4,7 @@ from pathlib import Path
 
 import duckdb
 
-from app.parquet_inspector import inspect_directory, inspect_one
+from app.parquet_inspector import inspect_directory, inspect_one, sql_path
 
 class ParquetInspectorTests(unittest.TestCase):
     def test_inspects_schema_rows_dates_and_nulls(self):
@@ -14,7 +14,7 @@ class ParquetInspectorTests(unittest.TestCase):
             table.mkdir()
             path=table/"sample.parquet"
             con=duckdb.connect()
-            con.execute("""
+            con.execute(f"""
                 COPY (
                     SELECT DATE '2026-11-20' AS business_date,
                            'NABIL'::VARCHAR AS symbol,
@@ -24,8 +24,8 @@ class ParquetInspectorTests(unittest.TestCase):
                            11.0::DOUBLE AS close,
                            100::BIGINT AS volume,
                            NULL::VARCHAR AS note
-                ) TO ? (FORMAT PARQUET)
-            """,[str(path)])
+                ) TO {sql_path(path)} (FORMAT PARQUET)
+            """)
             con.close()
             result=inspect_directory(root)
             self.assertEqual(result["files_inspected"],1)

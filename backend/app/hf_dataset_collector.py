@@ -38,6 +38,30 @@ DATASETS: dict[str, dict[str, Any]] = {
         "extensions": (".parquet", ".csv", ".json"),
         "notes": "Publisher describes long EOD history plus recent floorsheet and derived datasets; floorsheet has a documented 2026-08-26 through 2026-11-18 gap.",
     },
+    "market_data_floorsheet": {
+        "repo": "AnkitSanjyal/nepse-market-data",
+        "folders": ("floorsheet/",),
+        "extensions": (".parquet", ".csv"),
+        "notes": "Trade-level NEPSE floorsheet partitions from 2026-08-19; publisher documents missing sessions from 2026-08-26 through 2026-11-18.",
+    },
+    "market_data_eod": {
+        "repo": "AnkitSanjyal/nepse-market-data",
+        "folders": ("eod_history_ext/", "eod_price/"),
+        "extensions": (".parquet", ".csv"),
+        "notes": "Extended ShareSansar EOD and recent NEPSE EOD tables; separate sources and schema; do not merge without reconciliation.",
+    },
+    "market_data_broker_flow": {
+        "repo": "AnkitSanjyal/nepse-market-data",
+        "folders": ("broker_flow_daily/",),
+        "extensions": (".parquet", ".csv"),
+        "notes": "Derived symbol x broker x day flow, not raw exchange orders or beneficial-owner identity.",
+    },
+    "market_data_indices": {
+        "repo": "AnkitSanjyal/nepse-market-data",
+        "folders": ("index_intraday/",),
+        "extensions": (".parquet", ".csv"),
+        "notes": "Captured intraday index data with limited session coverage.",
+    },
 }
 
 def _safe_repo_dir(repo: str) -> str:

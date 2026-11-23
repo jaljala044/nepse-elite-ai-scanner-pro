@@ -24,12 +24,6 @@ SOURCES: dict[str, list[str]] = {
         "https://omitnomis.github.io/ShareSansarScraper/api/symbols.json",
         "https://omitnomis.github.io/ShareSansarScraper/api/latest.json",
     ],
-    "samirwagle_archive": [
-        "https://samirwagle.github.io/Nepse-All-Scraper/docs/api/status.json",
-        "https://samirwagle.github.io/Nepse-All-Scraper/docs/api/latest.json",
-        "https://samirwagle.github.io/Nepse-All-Scraper/docs/api/companies.json",
-        "https://samirwagle.github.io/Nepse-All-Scraper/docs/api/floorsheet/index.json",
-    ],
 }
 
 GITHUB_REPOS = {

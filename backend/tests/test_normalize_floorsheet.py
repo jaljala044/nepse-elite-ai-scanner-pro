@@ -1,4 +1,5 @@
 import csv
+import gzip
 import tempfile
 import unittest
 from pathlib import Path
@@ -53,6 +54,20 @@ class NormalizeFloorsheetTests(unittest.TestCase):
         self.assertEqual(imported[0]["buyer_broker_code"], "58")
         self.assertEqual(imported[0]["seller_broker_code"], "34")
         self.assertEqual(imported[0]["symbol"], "NABIL")
+
+
+    def test_normalizes_gzip_csv(self):
+        path = self.input_dir / "floorsheet_2024-01-02.csv.gz"
+        with gzip.open(path, "wt", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=[
+                "contract_no", "calculation_date", "time", "stock_symbol",
+                "sector", "buyer", "seller", "quantity", "rate", "amount", "id"
+            ])
+            writer.writeheader()
+            writer.writerow(self.row())
+        result = self.run_import(path)
+        self.assertEqual(result["unique_rows_accepted"], 1)
+        self.assertEqual(result["rows_rejected"], 0)
 
     def test_identical_duplicate_contract_is_idempotently_deduplicated(self):
         path = self.write_csv([self.row(), self.row(id="2")])

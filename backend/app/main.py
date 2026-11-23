@@ -1,8 +1,11 @@
 from datetime import date
+import os
+from pathlib import Path
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 from .scanner import analyze
 from .scanner_v3 import analyze_v3
+from .duckdb_coverage_v3 import audit_duckdb_ohlcv
 from .storage import DATA, IMPORTS, store_rows
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
@@ -84,3 +87,28 @@ def history(symbol: str):
     if rows is None:
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
+
+
+@app.get("/v3/audit/coverage")
+def audit_v3_coverage(as_of: date | None = None, target_universe_size: int = 309):
+    """Audit daily OHLCV coverage directly from the read-only DuckDB warehouse."""
+    if target_universe_size < 1 or target_universe_size > 1000:
+        raise HTTPException(422, "target_universe_size must be between 1 and 1000")
+    configured = os.getenv("NEPSE_DUCKDB_PATH")
+    database_path = (
+        Path(configured).expanduser()
+        if configured
+        else Path(__file__).resolve().parents[2] / "data" / "warehouse" / "nepse-analytics.duckdb"
+    )
+    try:
+        return audit_duckdb_ohlcv(
+            database_path,
+            as_of=as_of,
+            target_universe_size=target_universe_size,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(500, f"DuckDB coverage audit failed: {exc}") from exc

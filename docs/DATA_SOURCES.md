@@ -10,7 +10,7 @@ need a provider account, a licence, or an exact endpoint supplied by the provide
 | OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, symbols | Public JSON archive; unofficial ShareSansar-derived data | Verified JSON snapshot endpoints implemented |
 | Kaggle: qramkrishna/nepal-stock-exchange-data | Historical trade-level floorsheet, per-company CSVs | Public Kaggle dataset; description says data through 2019-10-10, 218 companies, noncommercial/educational use | Identified; local Kaggle-authenticated staging helper added; date field/schema validation required |
 | Hugging Face: urekmazino69/Nepse-floorsheet-and-indices | Daily trade-level floorsheet and sector indices | Public dataset; floorsheets 2024-01-02 to 2026-08-26; index files 1997-07-20 to 2026-08-26; MIT | Inventory measured 7,032 files / 728.024 MiB; gzip download, normalization and sample audit passed |
-| Hugging Face: AnkitSanjyal/nepse-market-data | Long daily OHLCV history plus newer floorsheet and derived data | Public Parquet dataset; 306 files / 29.3 MB at inventory; EOD price path dates 2025-08-19 to 2026-11-20; 7 recent floor/broker-flow partitions | Bounded inventory/download configured; Parquet row/schema validation still required; index_intraday folder currently has no files returned |
+| Hugging Face: AnkitSanjyal/nepse-market-data | Long daily OHLCV history, recent floorsheet, minute bars and derived broker flow | Public Parquet dataset; 306 files / ~29.3 MB; 1,139,853 rows across six tables | All files downloaded and inspected; source-separated DuckDB warehouse built in CI; quality report available; EOD history needs review |
 | SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, sector-index CSVs, company list | Public GitHub Pages API and flat files; current repository snapshot may be behind current session | Collector configured; inspect last available session before relying on it |
 | jaljala044/nepse-history-starter | User-maintained OHLCV imports and source records | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
 | jaljala044/nepse-smc-data | EOD prices, market indices, daily floorsheet, OHLCV charts and scanner packages | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
@@ -49,7 +49,8 @@ python collect_hf_datasets.py --dataset market_data_2026
 
 Downloads are byte-limited and stored under `data/raw/huggingface/`; they are not committed
 to GitHub. Date filtering applies to date-stamped file paths, not rows inside an unpartitioned
-Parquet file. Parquet schema validation is still a separate step.
+Parquet file. Ankit Parquet schemas, row counts, null counts and date ranges have been inspected,
+and the current six-table DuckDB warehouse is source-separated. See the measured QA results below.
 
 ### Normalize downloaded daily floorsheets and indices
 
@@ -179,6 +180,58 @@ in a GitHub Actions smoke run:
 This validates only one session and the parser path. It is not validation of the other 602
 floorsheet files, all 6,429 index files, or full dataset completeness.
 
+
+#### Ankit Parquet inventory and warehouse QA (2026-11-23)
+
+All **306 Parquet files** from `AnkitSanjyal/nepse-market-data` were downloaded to a
+GitHub Actions workspace, read successfully, and loaded into the DuckDB schema `ankit`.
+The workflow produced a DuckDB warehouse and JSON report. The six tables remain separate:
+
+| Table | Rows | Files | Date range |
+|---|---:|---:|---|
+| `eod_history_ext` | 516,620 | 1 | 1995-07-20 to 2026-08-19 |
+| `eod_price` | 93,859 | 277 | 2025-08-19 to 2026-11-20 |
+| `floorsheet` | 330,978 | 7 | 2026-08-19 to 2026-11-20 |
+| `broker_flow_daily` | 81,418 | 7 | 2026-08-19 to 2026-11-20 |
+| `bars_1m` | 114,537 | 7 | 2026-08-19 to 2026-11-20 |
+| `daily_stats` | 2,441 | 7 | 2026-08-19 to 2026-11-20 |
+| **Total** | **1,139,853** | **306** | Mixed by source table |
+
+Data-quality results:
+
+- Floorsheet: 330,978 rows; zero duplicate trade keys; zero invalid trade values;
+  zero quantity × rate mismatches greater than NPR 1; 399 symbols.
+- Broker-flow summary: 81,418 rows; zero duplicate symbol/broker/date keys;
+  every `net_qty` equals `buy_qty - sell_qty`; all net-value arithmetic agrees within NPR 1.
+- One-minute bars: 114,537 rows; zero duplicate bar keys and zero OHLC range violations.
+- Daily statistics: 2,441 rows; zero duplicate symbol/date keys and no negative volume,
+  turnover or trade counts.
+- Recent `eod_price`: 93,859 rows; zero duplicate symbol/date keys; 578 records have a
+  close outside the reported high/low range. All 578 carry the source flag
+  `close_outside_range`; none are unflagged. They are preserved and flagged for review.
+- Extended `eod_history_ext`: 516,620 rows; zero duplicate symbol/date keys; 40,373 rows
+  have OHLC range anomalies. The detailed audit counts 39,380 open-outside-range cases,
+  1,067 close-outside-range cases and 130 nonpositive-price cases (categories may overlap).
+  This source has no corresponding quality-flag field. Do not use its raw OHLC candles for
+  pattern analysis until these historical anomalies and corporate actions are reviewed.
+
+EOD overlap comparison between `eod_history_ext` and `eod_price`:
+
+- 75,671 matched symbol/date records from 2025-08-19 to 2026-08-19.
+- Exact traded-volume match on all 75,671 records.
+- Exact close match on 75,657 records; 14 close mismatches remain.
+- The maximum absolute close difference is NPR 60. These 14 individual records are now
+  included in the generated reconciliation report. Keep the two source tables distinct.
+
+The warehouse loader preserves all source rows, reports EOD OHLC anomalies rather than
+silently adjusting or dropping them, and blocks only duplicate business keys, invalid
+trade values and floorsheet arithmetic failures. Broker codes are still execution-channel
+identifiers, not evidence of beneficial-owner identity or intent.
+
+The full Ankit dataset and generated DuckDB warehouse are available in the conversation's
+downloadable archive. The GitHub Actions copy is temporary (14-day artifact retention);
+it has not been committed to the source repository or deployed to a persistent server.
+
 Another public dataset,
 [`AnkitSanjyal/nepse-market-data`](https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data),
 shows 306 Parquet files totaling 29.3 MB in the repository file inventory (the dataset card
@@ -191,7 +244,7 @@ returned from the declared `index_intraday` folder in this inventory. The recent
 partitions have path dates 2026-08-19, 20, 21, 24, 25 and 2026-11-19, 20. The publisher
 documents the absent 46-session interval 2026-08-26 through 2026-11-18. This is useful for
 recent cross-checking and extended EOD history, but does not bridge the full older floorsheet
-history. These are path inventory counts; Parquet row/schema validation remains outstanding.
+history. These file counts have since been verified against row-level Parquet schemas and actual DuckDB table loads; see the Ankit QA section above.
 
 Therefore the currently verified public evidence does not support a single continuous
 Kaggle floorsheet archive for 2014–2026. Build the canonical floorsheet database as

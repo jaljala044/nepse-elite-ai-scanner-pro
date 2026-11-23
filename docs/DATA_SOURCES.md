@@ -7,15 +7,16 @@ need a provider account, a licence, or an exact endpoint supplied by the provide
 
 | Source | Data/use | Access status | Collector status |
 |---|---|---|---|
-| OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, recap, symbols | Public JSON archive; unofficial ShareSansar-derived data | Public snapshot adapter implemented |
-| SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, price/dividend/right-share archives | Public GitHub Pages API and flat files | Public snapshot adapter implemented |
+| OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, symbols | Public JSON archive; unofficial ShareSansar-derived data | Verified JSON snapshot endpoints implemented |
+| SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, sector-index CSVs, company list | Public GitHub Pages API and flat files | JSON endpoints plus latest 10 floorsheets and index CSV collector implemented |
 | jaljala044/nepse-history-starter | User-maintained OHLCV imports and source records | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
 | jaljala044/nepse-smc-data | EOD prices, market indices, daily floorsheet, OHLCV charts and scanner packages | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
-| nepsepy | NEPSE market, prices, floorsheets, indices, history, company data | Unofficial read-only Python client; no credentials according to its published docs; subject to exchange changes/rate limits | Candidate for a separately tested live adapter; not silently polled by raw collector |
-| Chukul | Broker desk and broker-flow analytics based on floorsheet | Product pages show paid broker tools; no public developer API contract verified | Requires provider-authorized API/export or manual file import |
-| ShareHub | Market, sector indices, historical charts, raw floorsheet and broker analytics | Documented REST API; account, licence, allow-listed server IP and bearer token required | Endpoint/token configuration supported; requires licensed account |
+| nepsepy / nepse-client / nepse-data-api | Market, prices, floorsheets, indices, history, company data | Unofficial clients/APIs; availability and exact endpoints vary by project | Configurable provider endpoint only; no guessed API paths |
+| Chukul | Broker desk and broker-flow analytics based on floorsheet | No public developer API contract verified | Requires provider-authorized API/export or manual file import |
+| ShareHub | Market, sector indices, historical charts, raw floorsheet and broker analytics | User-identified API; endpoint, licensing and auth terms still need provider confirmation | Endpoint/token configuration supported; requires provider-issued docs and authorization |
 | Hamro Share | App advertises prices, floorsheet, charts and broker analysis | No public developer API contract verified | Requires provider-authorized API/export or manual file import |
 | NEPSE Alpha | Public market page displays market/floorsheet information | No stable public developer API contract verified | Manual exports or provider-authorized endpoint only |
+| nepse.link MCP | Pre-computed broker-flow summaries | User-identified MCP service; API schema, lag and coverage not independently verified | Configurable provider endpoint only after validating schema and terms |
 
 ## Run the raw collector
 
@@ -30,6 +31,7 @@ Choose sources:
 ```bash
 python collect_sources.py --source sharesansar_archive --source samirwagle_archive
 python collect_sources.py --source jaljala_history_starter --source jaljala_smc_data
+python collect_sources.py --source samirwagle_archive
 ```
 
 For a provider-authorized endpoint, configure its exact URL and optional bearer token in
@@ -39,6 +41,10 @@ the deployment environment (never commit secrets):
 - `SHAREHUB_DATA_URL`, optional `SHAREHUB_API_TOKEN`
 - `HAMROSHARE_DATA_URL`, optional `HAMROSHARE_API_TOKEN`
 - `NEPSEALPHA_DATA_URL`, optional `NEPSEALPHA_API_TOKEN`
+- `NEPSEPY_DATA_URL`, optional `NEPSEPY_API_TOKEN`
+- `NEPSE_CLIENT_DATA_URL`, optional `NEPSE_CLIENT_API_TOKEN`
+- `NEPSE_DATA_API_DATA_URL`, optional `NEPSE_DATA_API_API_TOKEN`
+- `NEPSE_LINK_DATA_URL`, optional `NEPSE_LINK_API_TOKEN`
 
 The collector deliberately does not guess private app endpoints or bypass authentication.
 ShareHub documents a bearer-token flow and IP allow-list; request a licence and provide

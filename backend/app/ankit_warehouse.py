@@ -274,6 +274,30 @@ def _overlap_reconciliation(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | 
         INNER JOIN {right} p
           ON h.business_date = p.business_date AND h.symbol = p.symbol
     """).fetchone()
+    close_mismatches = con.execute(f"""
+        SELECT
+            h.business_date, h.symbol,
+            h.close_price AS extended_close,
+            p.close_price AS nepse_close,
+            ABS(h.close_price - p.close_price) AS absolute_difference,
+            h.traded_quantity AS extended_volume,
+            p.total_traded_quantity AS nepse_volume
+        FROM {left} h
+        INNER JOIN {right} p
+          ON h.business_date = p.business_date AND h.symbol = p.symbol
+        WHERE h.close_price IS DISTINCT FROM p.close_price
+        ORDER BY ABS(h.close_price - p.close_price) DESC, h.business_date, h.symbol
+    """).fetchall()
+    volume_mismatches = con.execute(f"""
+        SELECT h.business_date, h.symbol, h.traded_quantity,
+               p.total_traded_quantity
+        FROM {left} h
+        INNER JOIN {right} p
+          ON h.business_date = p.business_date AND h.symbol = p.symbol
+        WHERE h.traded_quantity IS DISTINCT FROM p.total_traded_quantity
+        ORDER BY h.business_date, h.symbol
+        LIMIT 100
+    """).fetchall()
     return {
         "matched_symbol_dates": int(row[0]),
         "exact_volume_matches": int(row[1]),
@@ -282,6 +306,28 @@ def _overlap_reconciliation(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | 
         "max_abs_close_difference": str(row[4]) if row[4] is not None else None,
         "overlap_start": row[5].isoformat() if row[5] else None,
         "overlap_end": row[6].isoformat() if row[6] else None,
+        "close_mismatch_rows": [
+            {
+                "business_date": values[0].isoformat(),
+                "symbol": values[1],
+                "extended_close": str(values[2]),
+                "nepse_close": str(values[3]),
+                "absolute_difference": str(values[4]),
+                "extended_volume": int(values[5]) if values[5] is not None else None,
+                "nepse_volume": int(values[6]) if values[6] is not None else None,
+            }
+            for values in close_mismatches[:100]
+        ],
+        "close_mismatch_count": len(close_mismatches),
+        "volume_mismatch_samples": [
+            {
+                "business_date": values[0].isoformat(),
+                "symbol": values[1],
+                "extended_volume": values[2],
+                "nepse_volume": values[3],
+            }
+            for values in volume_mismatches
+        ],
         "note": "This is an independent comparison of two publisher-provided tables; do not collapse the two source tables after comparison.",
     }
 

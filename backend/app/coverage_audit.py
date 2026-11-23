@@ -54,18 +54,18 @@ def audit_coverage(
     calendar_date_col: str = "session_date",
 ) -> dict[str, Any]:
     """Audit every master symbol against the verified session calendar."""
+    # Validate every identifier before opening the database connection.
+    ohlcv = _qualified(ohlcv_table)
+    master = _qualified(symbol_master_table)
+    calendar = _qualified(calendar_table)
+    sc, dc = map(_qualified, (symbol_col, date_col))
+    oc, hc, lc, cc, vc = map(_qualified, (open_col, high_col, low_col, close_col, volume_col))
+    mc, kc = map(_qualified, (master_symbol_col, calendar_date_col))
     con = duckdb.connect(database, read_only=True)
     try:
         for table in (ohlcv_table, symbol_master_table, calendar_table):
             if not _table_exists(con, table):
                 raise ValueError(f"Required warehouse table not found: {table}")
-
-        ohlcv = _qualified(ohlcv_table)
-        master = _qualified(symbol_master_table)
-        calendar = _qualified(calendar_table)
-        sc, dc = map(_qualified, (symbol_col, date_col))
-        oc, hc, lc, cc, vc = map(_qualified, (open_col, high_col, low_col, close_col, volume_col))
-        mc, kc = map(_qualified, (master_symbol_col, calendar_date_col))
 
         symbols = [r[0] for r in con.execute(
             f"SELECT DISTINCT upper(trim(CAST({mc} AS VARCHAR))) FROM {master} "

@@ -61,8 +61,14 @@ class NormalizeFloorsheetTests(unittest.TestCase):
         self.assertEqual(result["rows_rejected"], 0)
 
     def test_bad_amount_is_quarantined(self):
-        path = self.write_csv([self.row(amount="9999")])
+        rows = [
+            self.row(contract_no=f"202401020000{i:02d}", id=str(i))
+            for i in range(1, 10)
+        ]
+        rows.append(self.row(contract_no="20240102000010", amount="9999", id="10"))
+        path = self.write_csv(rows)
         result = self.run_import(path)
+        self.assertEqual(result["rows_seen"], 10)
         self.assertEqual(result["rows_rejected"], 1)
         self.assertIsNotNone(result["quarantine_path"])
 

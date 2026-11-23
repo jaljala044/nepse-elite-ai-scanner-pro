@@ -19,6 +19,7 @@ class HuggingFaceCollectorTests(unittest.TestCase):
         self.assertEqual(_extract_date("floorsheet/2024-01-02.csv"), date(2024, 1, 2))
         self.assertEqual(_extract_date("floorsheet/date=2026-11-20/data.parquet"), date(2026, 11, 20))
         self.assertEqual(_extract_date("prices/2024_01_02.csv"), date(2024, 1, 2))
+        self.assertEqual(_extract_date("indices/1997-07-20.csv.gz"), date(1997, 7, 20))
 
     def test_hub_relative_file_names_are_joined_to_folder(self):
         self.assertEqual(

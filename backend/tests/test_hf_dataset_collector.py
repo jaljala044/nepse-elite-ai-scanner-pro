@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 from app.hf_dataset_collector import (
-    _extract_date, _is_candidate, _matches_date, _safe_relative_path,
+    _extract_date, _is_candidate, _item_path, _matches_date, _safe_relative_path,
 )
 
 class HuggingFaceCollectorTests(unittest.TestCase):
@@ -19,6 +19,20 @@ class HuggingFaceCollectorTests(unittest.TestCase):
         self.assertEqual(_extract_date("floorsheet/2024-01-02.csv"), date(2024, 1, 2))
         self.assertEqual(_extract_date("floorsheet/date=2026-11-20/data.parquet"), date(2026, 11, 20))
         self.assertEqual(_extract_date("prices/2024_01_02.csv"), date(2024, 1, 2))
+
+    def test_hub_relative_file_names_are_joined_to_folder(self):
+        self.assertEqual(
+            _item_path({"path": "2024-01-02.csv"}, "floorsheet/"),
+            "floorsheet/2024-01-02.csv",
+        )
+        self.assertEqual(
+            _item_path({"path": "floorsheet/2024-01-02.csv"}, "floorsheet/"),
+            "floorsheet/2024-01-02.csv",
+        )
+        self.assertEqual(
+            _item_path({"rfilename": "2024-01-02.csv"}, "indices/"),
+            "indices/2024-01-02.csv",
+        )
 
     def test_date_filter(self):
         self.assertTrue(_matches_date("floorsheet/2024-06-01.csv", date(2024, 1, 1), date(2024, 12, 31)))

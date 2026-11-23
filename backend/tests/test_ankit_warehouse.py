@@ -55,12 +55,36 @@ class AnkitWarehouseTests(unittest.TestCase):
                     505.0::DECIMAL(18,4) AS average_traded_price,
                     1000000000.0::DECIMAL(22,4) AS market_capitalization,
                     NULL::VARCHAR AS quality_flags,
+                    CURRENT_TIMESTAMP AS ingested_at
+                UNION ALL
+                SELECT
+                    DATE '2026-08-19' AS business_date,
+                    'TEST'::VARCHAR AS symbol,
+                    2::INTEGER AS security_id,
+                    'Test Debenture'::VARCHAR AS security_name,
+                    500.0::DECIMAL(18,4) AS open_price,
+                    510.0::DECIMAL(18,4) AS high_price,
+                    495.0::DECIMAL(18,4) AS low_price,
+                    520.0::DECIMAL(18,4) AS close_price,
+                    100::BIGINT AS total_traded_quantity,
+                    52000.0::DECIMAL(22,4) AS total_traded_value,
+                    500.0::DECIMAL(18,4) AS previous_day_close_price,
+                    520.0::DECIMAL(18,4) AS fifty_two_week_high,
+                    400.0::DECIMAL(18,4) AS fifty_two_week_low,
+                    CURRENT_TIMESTAMP AS last_updated_time,
+                    520.0::DECIMAL(18,4) AS last_updated_price,
+                    1::BIGINT AS total_trades,
+                    520.0::DECIMAL(18,4) AS average_traded_price,
+                    1000000000.0::DECIMAL(22,4) AS market_capitalization,
+                    'close_outside_range'::VARCHAR AS quality_flags,
                     CURRENT_TIMESTAMP AS ingested_at"""
             )
             db=root/"warehouse"/"nepse.duckdb"
             report=root/"reports"/"report.json"
             result=load_ankit_warehouse(raw,db,report)
-            self.assertEqual(result["tables"]["eod_price"]["quality"]["rows"],1)
+            self.assertEqual(result["tables"]["eod_price"]["quality"]["rows"],2)
+            self.assertEqual(result["tables"]["eod_price"]["quality"]["flagged_close_outside_range_rows"],1)
+            self.assertEqual(result["tables"]["eod_price"]["quality"]["unflagged_ohlc_outlier_rows"],0)
             self.assertEqual(result["tables"]["eod_history_ext"]["quality"]["rows"],1)
             self.assertEqual(result["overlap_reconciliation"]["matched_symbol_dates"],1)
             self.assertEqual(result["overlap_reconciliation"]["exact_volume_matches"],1)

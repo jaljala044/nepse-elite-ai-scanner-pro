@@ -193,6 +193,14 @@ def list_dataset_files(client: httpx.Client, dataset_key: str, revision: str = "
 
     return sorted(collected.values(), key=lambda item: item["path"])
 
+def _hash_path(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _download_one(
     client: httpx.Client, repo: str, revision: str, item: dict[str, Any],
     dataset_key: str, max_file_bytes: int, total_remaining: int,
@@ -201,11 +209,26 @@ def _download_one(
     expected_size = int(item.get("size") or 0)
     if expected_size and expected_size > max_file_bytes:
         return {"path": path, "status": "skipped_file_limit", "expected_size": expected_size}
-    if expected_size and expected_size > total_remaining:
-        return {"path": path, "status": "skipped_total_budget", "expected_size": expected_size}
     relative = _safe_relative_path(path)
     destination = RAW_ROOT / _safe_repo_dir(repo) / revision / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
+
+    # Resume safely only when the Hub supplies both size and a SHA-256 LFS OID.
+    # A matching filename or size alone is not enough to trust an existing file.
+    lfs = item.get("lfs") if isinstance(item.get("lfs"), dict) else {}
+    lfs_oid = str(lfs.get("oid") or "").lower()
+    if destination.is_file() and expected_size and lfs_oid and destination.stat().st_size == expected_size:
+        existing_sha = _hash_path(destination)
+        if existing_sha == lfs_oid:
+            return {
+                "path": path, "status": "already_present", "bytes": expected_size,
+                "sha256": existing_sha, "hub_oid": item.get("oid"),
+                "local_path": str(destination.relative_to(REPO_ROOT)),
+            }
+
+    if expected_size and expected_size > total_remaining:
+        return {"path": path, "status": "skipped_total_budget", "expected_size": expected_size}
+
     temp = destination.with_suffix(destination.suffix + ".part")
     url = f"{HF_RESOLVE}/{quote(repo, safe='/')}/resolve/{quote(revision, safe='')}/{quote(path, safe='/')}?download=true"
     digest = hashlib.sha256()
@@ -220,13 +243,20 @@ def _download_one(
                         raise ValueError("Download exceeded configured byte budget")
                     digest.update(chunk)
                     handle.write(chunk)
+        if expected_size and byte_count != expected_size:
+            raise ValueError(
+                f"Downloaded byte count {byte_count} does not match Hub metadata {expected_size}"
+            )
+        content_sha = digest.hexdigest()
+        if lfs_oid and content_sha != lfs_oid:
+            raise ValueError("Downloaded SHA-256 does not match Hugging Face LFS object ID")
         temp.replace(destination)
     except Exception:
         temp.unlink(missing_ok=True)
         raise
     return {
         "path": path, "status": "downloaded", "bytes": byte_count,
-        "sha256": digest.hexdigest(), "hub_oid": item.get("oid"),
+        "sha256": content_sha, "hub_oid": item.get("oid"),
         "local_path": str(destination.relative_to(REPO_ROOT)),
         "download_url": url,
     }

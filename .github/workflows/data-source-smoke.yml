@@ -10,6 +10,9 @@ on:
       - "backend/normalize_floorsheet_csv.py"
       - "backend/probe_hf_dataset.py"
       - "backend/audit_silver_floorsheet.py"
+      - "backend/app/normalize_indices.py"
+      - "backend/normalize_indices_csv.py"
+      - "backend/audit_silver_indices.py"
       - ".github/workflows/data-source-smoke.yml"
   workflow_dispatch:
 
@@ -51,8 +54,18 @@ jobs:
           --source urekmazino69/Nepse-floorsheet-and-indices
           --max-reject-ratio 0.10
         working-directory: backend
-      - name: Audit normalized sample
+      - name: Normalize sample sector indices
+        run: >
+          python normalize_indices_csv.py
+          ../data/raw/huggingface/urekmazino69__Nepse-floorsheet-and-indices/main/indices
+          --source urekmazino69/Nepse-floorsheet-and-indices
+          --max-reject-ratio 0.10
+        working-directory: backend
+      - name: Audit normalized floorsheet
         run: python audit_silver_floorsheet.py --output ../data/reports/sample-floorsheet-audit.json
+        working-directory: backend
+      - name: Audit normalized sector indices
+        run: python audit_silver_indices.py --output ../data/reports/sample-sector-index-audit.json
         working-directory: backend
       - name: Upload raw sample, normalized rows and audit
         uses: actions/upload-artifact@v4

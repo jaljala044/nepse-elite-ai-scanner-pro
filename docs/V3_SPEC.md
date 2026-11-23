@@ -35,6 +35,14 @@ Rows must represent one symbol and one trading session per date. Duplicate dates
 - No order placement, personalized financial recommendation, guaranteed accuracy, or claim of manipulation/accumulation from OHLCV alone.
 - Broker IDs are execution-channel identifiers, not beneficial-owner identities. Flow claims require separately validated provenance and coverage.
 
+## DuckDB coverage audit integration
+
+- `GET /v3/audit/coverage` reads `ankit.eod_price` directly from the source-separated DuckDB warehouse in read-only mode.
+- Default database path is `<repository-root>/data/warehouse/nepse-analytics.duckdb`; deployments can override it with `NEPSE_DUCKDB_PATH`.
+- The endpoint streams query batches into the existing coverage auditor and supports an optional `as_of` cutoff and target universe count.
+- It does not assume that a target count of 309 identifies the authoritative 309 symbols. Until an authoritative symbol master is supplied, missing-symbol names cannot be enumerated.
+- It does not infer missing sessions without a verified exchange calendar. No data is inserted, updated, repaired, or deleted.
+
 ## Validation plan
 - Unit tests for short history, duplicate dates, malformed OHLCV, flat prices, indicator calculations, and deterministic outputs.
 - Compare features against an independent implementation on fixed fixtures.

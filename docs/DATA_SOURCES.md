@@ -47,8 +47,9 @@ the deployment environment (never commit secrets):
 - `NEPSE_LINK_DATA_URL`, optional `NEPSE_LINK_API_TOKEN`
 
 The collector deliberately does not guess private app endpoints or bypass authentication.
-ShareHub documents a bearer-token flow and IP allow-list; request a licence and provide
-the server IP to the provider before configuring it.
+For any paid or private provider, obtain the current API specification, permission to store
+the returned data, authentication method and rate limits directly from that provider before
+configuring the endpoint. Never commit API tokens to Git.
 
 ## Data integrity rules
 
@@ -67,7 +68,7 @@ the server IP to the provider before configuring it.
 
 - ShareSansarScraper explicitly describes itself as an unofficial archive sourced from ShareSansar.
 - SamirWagle's project says its daily scraper stores flat files and runs after market close.
-- ShareHub's API is a licensed service with rate limits and server-IP allow-listing.
-- nepsepy is an unofficial client; exchange-side changes can break it.
-- Chukul's Broker Desk says it aggregates NEPSE floorsheet activity. A broker represents
-  many clients, so broker-level flow cannot identify the underlying investor.
+- Provider-specific endpoints and permissions for ShareHub, Chukul, Hamro Share, NEPSE Alpha
+  and nepse.link still need direct confirmation before integration.
+- Unofficial clients and scraped archives can break, lag, or change schema without notice.
+- A broker represents many clients, so broker-level flow cannot identify the underlying investor.

@@ -56,11 +56,11 @@ class HuggingFaceResumeTests(unittest.TestCase):
                 # Since the existing file is not trustworthy, a zero byte budget
                 # stops the network transfer after the local-copy check.
                 from app.hf_dataset_collector import _download_one
-                with self.assertRaises(Exception):
-                    _download_one(
-                        NoBudgetClient(),"owner/dataset","main",item,"test",
-                        max_file_bytes=1024,total_remaining=0,
-                    )
+                result=_download_one(
+                    NoBudgetClient(),"owner/dataset","main",item,"test",
+                    max_file_bytes=1024,total_remaining=0,
+                )
+            self.assertEqual(result["status"],"skipped_total_budget")
             self.assertEqual(target.read_bytes(),b"bad")
 
 if __name__=="__main__":

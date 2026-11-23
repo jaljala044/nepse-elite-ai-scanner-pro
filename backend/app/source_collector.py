@@ -177,7 +177,8 @@ def collect_configured_provider(client: httpx.Client, name: str) -> dict[str, An
 
 def collect(sources: list[str] | None = None) -> dict[str, Any]:
     available = set(SOURCES) | set(GITHUB_REPOS) | {
-        "chukul", "sharehub", "hamroshare", "nepsealpha"
+        "chukul", "sharehub", "hamroshare", "nepsealpha",
+        "nepsepy", "nepse_client", "nepse_data_api", "nepse_link"
     }
     selected = set(sources or available)
     unknown = selected - available
@@ -187,7 +188,8 @@ def collect(sources: list[str] | None = None) -> dict[str, Any]:
     with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=True) as client:
         records.extend(collect_public_archives(client, selected))
         records.extend(collect_user_github_repos(client, selected))
-        for name in ("chukul", "sharehub", "hamroshare", "nepsealpha"):
+        for name in ("chukul", "sharehub", "hamroshare", "nepsealpha",
+                     "nepsepy", "nepse_client", "nepse_data_api", "nepse_link"):
             if name in selected:
                 records.append(collect_configured_provider(client, name))
     manifest = {

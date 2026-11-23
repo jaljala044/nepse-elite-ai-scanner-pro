@@ -6,6 +6,9 @@ on:
     paths:
       - "backend/app/parquet_inspector.py"
       - "backend/inspect_parquet_datasets.py"
+      - "backend/app/ankit_warehouse.py"
+      - "backend/load_ankit_warehouse.py"
+      - "backend/tests/test_ankit_warehouse.py"
       - ".github/workflows/ankit-parquet-inspection.yml"
   workflow_dispatch:
 

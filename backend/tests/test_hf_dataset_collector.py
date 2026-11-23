@@ -1,0 +1,33 @@
+import unittest
+from datetime import date
+from app.hf_dataset_collector import (
+    _extract_date, _is_candidate, _matches_date, _safe_relative_path,
+)
+
+class HuggingFaceCollectorTests(unittest.TestCase):
+    def test_urekmazino_floorsheet_and_indices_paths(self):
+        self.assertTrue(_is_candidate("floorsheet_indices_2024", "floorsheet/2024-01-02.csv"))
+        self.assertTrue(_is_candidate("floorsheet_indices_2024", "indices/2024-01-02.csv"))
+        self.assertFalse(_is_candidate("floorsheet_indices_2024", "README.md"))
+
+    def test_ankit_parquet_table_paths(self):
+        self.assertTrue(_is_candidate("market_data_2026", "floorsheet/date=2026-11-20/data.parquet"))
+        self.assertTrue(_is_candidate("market_data_2026", "eod_history_ext/history.parquet"))
+        self.assertFalse(_is_candidate("market_data_2026", "notebooks/analysis.ipynb"))
+
+    def test_extract_date_variants(self):
+        self.assertEqual(_extract_date("floorsheet/2024-01-02.csv"), date(2024, 1, 2))
+        self.assertEqual(_extract_date("floorsheet/date=2026-11-20/data.parquet"), date(2026, 11, 20))
+        self.assertEqual(_extract_date("prices/2024_01_02.csv"), date(2024, 1, 2))
+
+    def test_date_filter(self):
+        self.assertTrue(_matches_date("floorsheet/2024-06-01.csv", date(2024, 1, 1), date(2024, 12, 31)))
+        self.assertFalse(_matches_date("floorsheet/2025-06-01.csv", date(2024, 1, 1), date(2024, 12, 31)))
+        self.assertFalse(_matches_date("tables/no-date.parquet", date(2024, 1, 1), None))
+
+    def test_path_traversal_is_rejected(self):
+        with self.assertRaises(ValueError):
+            _safe_relative_path("../../secrets.txt")
+
+if __name__ == "__main__":
+    unittest.main()

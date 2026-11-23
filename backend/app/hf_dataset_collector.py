@@ -26,7 +26,7 @@ DATASETS: dict[str, dict[str, Any]] = {
     "floorsheet_indices_2024": {
         "repo": "urekmazino69/Nepse-floorsheet-and-indices",
         "folders": ("floorsheet/", "indices/"),
-        "extensions": (".csv",),
+        "extensions": (".csv", ".csv.gz"),
         "notes": "Daily transaction-level floorsheet and sector-index CSV files; publisher states 2024-01-02 through 2026-08-26.",
     },
     "market_data_2026": {

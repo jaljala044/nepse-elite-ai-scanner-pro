@@ -28,7 +28,7 @@ def main():
         q=info.get("quality",{})
         if q.get("duplicate_key_groups",0):
             quality_errors.append(f"{table}: duplicate keys")
-        if q.get("bad_ohlc_rows",0) or q.get("bad_trade_values",0):
+        if q.get("bad_ohlc_rows",0) or q.get("unflagged_ohlc_outlier_rows",0) or q.get("bad_trade_values",0):
             quality_errors.append(f"{table}: invalid OHLC/trade values")
         if q.get("amount_arithmetic_errors_over_npr_1",0):
             quality_errors.append(f"{table}: quantity×rate amount mismatches")

@@ -12,7 +12,9 @@ def main():
     args = parser.parse_args()
 
     path = Path(args.input)
-    candidates = sorted(path.rglob("*.csv")) if path.is_dir() else [path]
+    candidates = sorted(
+        list(path.rglob("*.csv")) + list(path.rglob("*.csv.gz"))
+    ) if path.is_dir() else [path]
     if not candidates:
         parser.error("No CSV files found")
     results = []

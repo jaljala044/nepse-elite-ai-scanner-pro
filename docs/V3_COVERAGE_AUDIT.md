@@ -34,3 +34,18 @@ Replace the three example table names with the actual tables in the warehouse. C
 
 ## Current limitation
 This code is connected to DuckDB at runtime but has not yet been run against the real warehouse: the repository status report does not establish the actual persistent database path, canonical 309-symbol master table, or verified session-calendar table. No real coverage percentage is claimed until those inputs are identified and the command is run.
+
+
+## API option using configured reference tables
+
+The application also exposes `GET /v3/audit/coverage/strict`. Configure the database and the two reference tables in the API environment:
+
+```bash
+NEPSE_DUCKDB_PATH=/absolute/path/nepse-analytics.duckdb
+NEPSE_SYMBOL_MASTER_TABLE=reference.symbol_master
+NEPSE_SESSION_CALENDAR_TABLE=reference.nepse_sessions
+```
+
+The default OHLCV table is `ankit.eod_price`, using `symbol`, `business_date`, `open_price`, `high_price`, `low_price`, `close_price`, and `total_traded_quantity`. Override table and column names with the `NEPSE_OHLCV_*`, `NEPSE_MASTER_SYMBOL_COL`, and `NEPSE_CALENDAR_DATE_COL` environment variables when needed. The example reference table names above are placeholders, not claims that those tables already exist.
+
+If reference-table settings are missing, the endpoint returns HTTP 503. It never falls back to a synthetic 309-symbol list or a calendar inferred from weekdays. Before using results as a completeness claim, verify the master and calendar publishers, their effective dates, provenance, permissions, and content hashes.

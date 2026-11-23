@@ -6,6 +6,7 @@ Raw source files remain untouched; rejected rows are quarantined with reasons.
 from __future__ import annotations
 
 import csv
+import gzip
 import hashlib
 import json
 import re
@@ -154,7 +155,8 @@ def normalize_floorsheet_csv(
     rejected: list[dict[str, Any]] = []
     row_count = 0
 
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+    opener = gzip.open if path.name.lower().endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         if not reader.fieldnames:
             raise ValueError("CSV has no header")

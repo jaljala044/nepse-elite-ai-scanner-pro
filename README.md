@@ -5,7 +5,7 @@ Private, research-oriented NEPSE market analysis platform. This repository start
 ## Status
 - Foundation scaffold: initial implementation
 - Data ingestion: CSV OHLCV with validation and audit metadata
-- Public datasets: Hugging Face inventory/bounded downloader and daily floorsheet CSV normalizer
+- Public datasets: Hugging Face inventory, bounded/resumable downloader, daily floorsheet and sector-index normalizers, and independent audit reports
 - Kaggle: safe local download/staging helper (requires your locally configured Kaggle CLI)
 - Scanner: transparent, rule-based technical feature extraction (not an institutional-flow detector)
 - Live API feeds, paid broker integrations, web UI, Android app, authentication, deployment and scheduled automation: not yet connected or verified
@@ -28,18 +28,30 @@ All commands below run from `backend/` after installing requirements:
 # Inventory public Hugging Face dataset files (no data download)
 python collect_hf_datasets.py
 
-# Download a bounded sample into data/raw/huggingface
+# Download a small test sample into data/raw/huggingface
 python collect_hf_datasets.py --dataset floorsheet_indices_2024 --download --max-total-mb 50
 
-# Normalize downloaded daily floorsheet CSVs into data/silver
+# For a full pull, the measured compressed archive is about 728 MiB.
+# Re-running safely skips already-present files only when the published SHA-256 matches.
+python collect_hf_datasets.py --dataset floorsheet_indices_2024 --download \
+  --max-total-mb 800 --max-file-mb 20 --max-files 10000
+
+# Normalize floorsheet and sector-index CSV.GZ files into separate silver tables
 python normalize_floorsheet_csv.py ../data/raw/huggingface/urekmazino69__Nepse-floorsheet-and-indices/main/floorsheet \
   --source urekmazino69/Nepse-floorsheet-and-indices
+
+python normalize_indices_csv.py ../data/raw/huggingface/urekmazino69__Nepse-floorsheet-and-indices/main/indices \
+  --source urekmazino69/Nepse-floorsheet-and-indices
+
+# Audit each normalized dataset independently
+python audit_silver_floorsheet.py
+python audit_silver_indices.py
 
 # Optional: after setting up Kaggle CLI locally, stage the historic Kaggle archive
 python ingest_kaggle_floorsheet.py --confirm-download
 ```
 
-Large source files are stored locally and are not committed to GitHub. Review [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for dataset coverage, licensing notes, gaps and validation rules.
+The one-session smoke test on 2024-01-02 accepted 85,435 floorsheet rows and 16 index rows with no configured quality-gate failures; this is a parser check, not a full-history validation. Large source files are stored locally, excluded by `.gitignore`, and are not committed to GitHub. Review [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for dataset coverage, licensing notes, gaps and validation rules.
 
 ## CSV format
 Required columns: `symbol,date,open,high,low,close,volume`. Dates should be ISO `YYYY-MM-DD`; prices and volume must be positive (volume may be zero). One file may contain multiple symbols.

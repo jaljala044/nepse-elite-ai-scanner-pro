@@ -8,3 +8,9 @@ __pycache__/
 dist/
 build/
 .DS_Store
+
+# Downloaded market data and derived local outputs (keep out of Git history)
+data/raw/
+data/silver/
+data/quarantine/
+data/reports/

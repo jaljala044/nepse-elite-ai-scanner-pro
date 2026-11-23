@@ -1,0 +1,40 @@
+name: hf-dataset-inventory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/hf_dataset_collector.py"
+      - "backend/inventory_hf_datasets.py"
+      - ".github/workflows/hf-dataset-inventory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory-public-datasets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend requirements
+        run: python -m pip install -r requirements.txt
+        working-directory: backend
+      - name: Inventory public Hugging Face datasets
+        run: python inventory_hf_datasets.py --output ../data/reports/hf-dataset-inventory-summary.json
+        working-directory: backend
+      - name: Upload inventory manifest and summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-hf-data-inventory
+          path: |
+            data/raw/huggingface/manifests/
+            data/reports/hf-dataset-inventory-summary.json
+          if-no-files-found: error
+          retention-days: 14

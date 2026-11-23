@@ -69,8 +69,12 @@ def audit(root: Path) -> dict:
         "date_mismatches": sum(s["date_mismatches"] for s in sessions),
         "arithmetic_errors": arithmetic_errors,
         "top_symbols_by_volume": symbols.most_common(20),
-        "top_buyer_broker_codes_by_amount": buyer_brokers.most_common(20),
-        "top_seller_broker_codes_by_amount": seller_brokers.most_common(20),
+        "top_buyer_broker_codes_by_amount": [
+            [code, str(amount)] for code, amount in buyer_brokers.most_common(20)
+        ],
+        "top_seller_broker_codes_by_amount": [
+            [code, str(amount)] for code, amount in seller_brokers.most_common(20)
+        ],
         "limitations": [
             "Broker codes are execution-channel identifiers, not beneficial-owner identities.",
             "A buy-side or sell-side broker amount is not proof of accumulation or distribution.",

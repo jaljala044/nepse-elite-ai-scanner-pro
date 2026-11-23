@@ -1,26 +1,33 @@
 from datetime import date
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from .scanner import analyze
-from .storage import DATA, IMPORTS, store_rows, snapshot
+from .scanner_v3 import analyze_v3
+from .storage import DATA, IMPORTS, store_rows
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
+
+
 class ScanRequest(BaseModel):
     symbols: list[str] | None = None
     as_of: date | None = None
+
 
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
 
+
 @app.get("/v1/symbols")
 def symbols():
     return {"symbols": sorted(DATA.keys()), "count": len(DATA)}
 
+
 @app.get("/v1/imports")
 def imports():
     return {"imports": IMPORTS[-100:]}
+
 
 @app.post("/v1/ingest/csv")
 async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(default="user_upload")):
@@ -35,6 +42,7 @@ async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(
         raise HTTPException(422, str(exc)) from exc
     return result
 
+
 @app.post("/v1/scan")
 def scan(request: ScanRequest):
     selected = request.symbols or sorted(DATA.keys())
@@ -46,6 +54,29 @@ def scan(request: ScanRequest):
         results.append(analyze(symbol.upper(), rows))
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}
+
+
+@app.post("/v3/scan")
+def scan_v3(request: ScanRequest):
+    """Run the separate V3 descriptive feature engine on ingested daily bars."""
+    selected = request.symbols or sorted(DATA.keys())
+    results = []
+    for symbol in selected:
+        rows = DATA.get(symbol.upper(), [])
+        if request.as_of:
+            rows = [
+                row for row in rows
+                if (row["date"] if isinstance(row["date"], date) else date.fromisoformat(str(row["date"])[:10]))
+                <= request.as_of
+            ]
+        results.append(analyze_v3(symbol.upper(), rows))
+    return {
+        "engine": "v3",
+        "mode": "research_only",
+        "results": results,
+        "disclaimer": "Descriptive research observations only; not a buy/sell recommendation or guaranteed prediction.",
+    }
+
 
 @app.get("/v1/data/{symbol}")
 def history(symbol: str):

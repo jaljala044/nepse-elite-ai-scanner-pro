@@ -89,6 +89,83 @@ def _scalar(con: duckdb.DuckDBPyConnection, sql: str) -> int | float | str | Non
         return value
     return str(value)
 
+def _ohlc_quality(
+    con: duckdb.DuckDBPyConnection, table: str, *,
+    date_col: str, symbol_col: str,
+    open_col: str, high_col: str, low_col: str, close_col: str,
+    flag_col: str | None = None,
+) -> dict[str, Any]:
+    cols = [quote for quote in (date_col, symbol_col, open_col, high_col, low_col, close_col)]
+    date_q, symbol_q, open_q, high_q, low_q, close_q = [f'"{name}"' for name in cols]
+    nonpositive = (
+        f"{open_q} <= 0 OR {high_q} <= 0 OR {low_q} <= 0 OR {close_q} <= 0"
+    )
+    high_below_low = f"{high_q} < {low_q}"
+    open_outside = f"({open_q} < {low_q} OR {open_q} > {high_q})"
+    close_outside = f"({close_q} < {low_q} OR {close_q} > {high_q})"
+    outlier = f"({nonpositive}) OR ({high_below_low}) OR {open_outside} OR {close_outside}"
+
+    result: dict[str, Any] = {
+        "nonpositive_price_rows": int(_scalar(
+            con, f"SELECT COUNT(*) FROM {table} WHERE {nonpositive}"
+        ) or 0),
+        "high_below_low_rows": int(_scalar(
+            con, f"SELECT COUNT(*) FROM {table} WHERE {high_below_low}"
+        ) or 0),
+        "open_outside_range_rows": int(_scalar(
+            con, f"SELECT COUNT(*) FROM {table} WHERE {open_outside}"
+        ) or 0),
+        "close_outside_range_rows": int(_scalar(
+            con, f"SELECT COUNT(*) FROM {table} WHERE {close_outside}"
+        ) or 0),
+        "ohlc_outlier_rows": int(_scalar(
+            con, f"SELECT COUNT(*) FROM {table} WHERE {outlier}"
+        ) or 0),
+        "first_session": _scalar(con, f"SELECT MIN({date_q}) FROM {table}"),
+        "last_session": _scalar(con, f"SELECT MAX({date_q}) FROM {table}"),
+    }
+    if flag_col:
+        flag_q = f'"{flag_col}"'
+        result["flagged_close_outside_range_rows"] = int(_scalar(
+            con,
+            f"""SELECT COUNT(*) FROM {table}
+                WHERE ({outlier}) AND {flag_q} ILIKE '%close_outside_range%'"""
+        ) or 0)
+        result["unflagged_ohlc_outlier_rows"] = int(_scalar(
+            con,
+            f"""SELECT COUNT(*) FROM {table}
+                WHERE ({outlier})
+                  AND ({flag_q} IS NULL OR {flag_q} NOT ILIKE '%close_outside_range%')"""
+        ) or 0)
+    else:
+        result["unflagged_ohlc_outlier_rows"] = result["ohlc_outlier_rows"]
+
+    top = con.execute(
+        f"""SELECT {symbol_q}, COUNT(*) AS n
+            FROM {table} WHERE ({outlier})
+            GROUP BY {symbol_q} ORDER BY n DESC, {symbol_q} LIMIT 20"""
+    ).fetchall()
+    result["top_symbols_with_ohlc_outliers"] = [
+        {"symbol": row[0], "rows": int(row[1])} for row in top
+    ]
+    sample_rows = con.execute(
+        f"""SELECT {date_q}, {symbol_q}, {open_q}, {high_q}, {low_q}, {close_q}
+            {f', "{flag_col}"' if flag_col else ''}
+            FROM {table} WHERE ({outlier})
+            ORDER BY {date_q}, {symbol_q} LIMIT 20"""
+    ).fetchall()
+    sample_columns = ["business_date", "symbol", "open", "high", "low", "close"]
+    if flag_col:
+        sample_columns.append(flag_col)
+    result["sample_ohlc_outliers"] = [
+        {name: (value.isoformat() if hasattr(value, "isoformat") else str(value) if value is not None else None)
+         for name, value in zip(sample_columns, row)}
+        for row in sample_rows
+    ]
+    result["status"] = "review_required" if result["ohlc_outlier_rows"] else "pass"
+    return result
+
+
 def _table_qc(con: duckdb.DuckDBPyConnection, table: str) -> dict[str, Any]:
     schema = _table_schema(con, table)
     columns = {item["name"] for item in schema}
@@ -128,43 +205,24 @@ def _table_qc(con: duckdb.DuckDBPyConnection, table: str) -> dict[str, Any]:
         quality["symbols"] = int(_scalar(con, f"SELECT COUNT(DISTINCT stock_symbol) FROM {table}") or 0)
 
     elif table.endswith(".eod_price"):
-        outlier_condition = """open_price <= 0 OR high_price <= 0 OR low_price <= 0 OR close_price <= 0
-                   OR high_price < GREATEST(open_price, low_price, close_price)
-                   OR low_price > LEAST(open_price, high_price, close_price)"""
-        quality["ohlc_outlier_rows"] = int(_scalar(
-            con, f"SELECT COUNT(*) FROM {table} WHERE {outlier_condition}"
-        ) or 0)
-        if "quality_flags" in columns:
-            quality["flagged_close_outside_range_rows"] = int(_scalar(
-                con,
-                f"""SELECT COUNT(*) FROM {table}
-                    WHERE ({outlier_condition})
-                      AND quality_flags ILIKE '%close_outside_range%'"""
-            ) or 0)
-            quality["unflagged_ohlc_outlier_rows"] = int(_scalar(
-                con,
-                f"""SELECT COUNT(*) FROM {table}
-                    WHERE ({outlier_condition})
-                      AND (quality_flags IS NULL OR quality_flags NOT ILIKE '%close_outside_range%')"""
-            ) or 0)
-        else:
-            quality["unflagged_ohlc_outlier_rows"] = quality["ohlc_outlier_rows"]
-        quality["first_session"] = _scalar(con, f"SELECT MIN(business_date) FROM {table}")
-        quality["last_session"] = _scalar(con, f"SELECT MAX(business_date) FROM {table}")
+        quality.update(_ohlc_quality(
+            con, table,
+            date_col="business_date", symbol_col="symbol",
+            open_col="open_price", high_col="high_price",
+            low_col="low_price", close_col="close_price",
+            flag_col="quality_flags" if "quality_flags" in columns else None,
+        ))
         quality["symbols_per_session_min"] = _scalar(
             con, f"SELECT MIN(n) FROM (SELECT COUNT(DISTINCT symbol) n FROM {table} GROUP BY business_date)"
         )
 
     elif table.endswith(".eod_history_ext"):
-        quality["bad_ohlc_rows"] = int(_scalar(
-            con,
-            f"""SELECT COUNT(*) FROM {table}
-                WHERE open_price <= 0 OR high_price <= 0 OR low_price <= 0 OR close_price <= 0
-                   OR high_price < GREATEST(open_price, low_price, close_price)
-                   OR low_price > LEAST(open_price, high_price, close_price)"""
-        ) or 0)
-        quality["first_session"] = _scalar(con, f"SELECT MIN(business_date) FROM {table}")
-        quality["last_session"] = _scalar(con, f"SELECT MAX(business_date) FROM {table}")
+        quality.update(_ohlc_quality(
+            con, table,
+            date_col="business_date", symbol_col="symbol",
+            open_col="open_price", high_col="high_price",
+            low_col="low_price", close_col="close_price",
+        ))
         quality["symbols"] = int(_scalar(con, f"SELECT COUNT(DISTINCT symbol) FROM {table}") or 0)
 
     elif table.endswith(".broker_flow_daily"):
@@ -178,13 +236,11 @@ def _table_qc(con: duckdb.DuckDBPyConnection, table: str) -> dict[str, Any]:
         quality["last_session"] = _scalar(con, f"SELECT MAX(business_date) FROM {table}")
 
     elif table.endswith(".bars_1m"):
-        quality["bad_ohlc_rows"] = int(_scalar(
-            con,
-            f"""SELECT COUNT(*) FROM {table}
-                WHERE open <= 0 OR high <= 0 OR low <= 0 OR close <= 0
-                   OR high < GREATEST(open, low, close)
-                   OR low > LEAST(open, high, close)"""
-        ) or 0)
+        quality.update(_ohlc_quality(
+            con, table,
+            date_col="business_date", symbol_col="symbol",
+            open_col="open", high_col="high", low_col="low", close_col="close",
+        ))
         quality["first_bar"] = _scalar(con, f"SELECT MIN(bar_ts) FROM {table}")
         quality["last_bar"] = _scalar(con, f"SELECT MAX(bar_ts) FROM {table}")
 

@@ -9,8 +9,8 @@ need a provider account, a licence, or an exact endpoint supplied by the provide
 |---|---|---|---|
 | OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, symbols | Public JSON archive; unofficial ShareSansar-derived data | Verified JSON snapshot endpoints implemented |
 | Kaggle: qramkrishna/nepal-stock-exchange-data | Historical trade-level floorsheet, per-company CSVs | Public Kaggle dataset; description says data through 2019-10-10, 218 companies, noncommercial/educational use | Identified; local Kaggle-authenticated staging helper added; date field/schema validation required |
-| Hugging Face: urekmazino69/Nepse-floorsheet-and-indices | Daily trade-level floorsheet and sector indices | Public dataset; stated coverage 2024-01-02 to 2026-08-26; MIT; 11 published columns | Bounded downloader and CSV-to-silver normalizer implemented |
-| Hugging Face: AnkitSanjyal/nepse-market-data | Long daily OHLCV history plus newer floorsheet and derived data | Public Parquet dataset, 1.14M rows / 29.3 MB at inspection; EOD history stated 1995-07-20 to present; floorsheet from 2026-08-19 with gap 2026-08-26 to 2026-11-18 | Bounded Parquet file inventory/download implemented; per-table schema validation still required |
+| Hugging Face: urekmazino69/Nepse-floorsheet-and-indices | Daily trade-level floorsheet and sector indices | Public dataset; floorsheets 2024-01-02 to 2026-08-26; index files 1997-07-20 to 2026-08-26; MIT | Inventory measured 7,032 files / 728.024 MiB; gzip download, normalization and sample audit passed |
+| Hugging Face: AnkitSanjyal/nepse-market-data | Long daily OHLCV history plus newer floorsheet and derived data | Public Parquet dataset; 306 files / 29.3 MB at inventory; EOD price path dates 2025-08-19 to 2026-11-20; 7 recent floor/broker-flow partitions | Bounded inventory/download configured; Parquet row/schema validation still required; index_intraday folder currently has no files returned |
 | SamirWagle/Nepse-All-Scraper | Daily floorsheet CSV/JSON, sector-index CSVs, company list | Public GitHub Pages API and flat files; current repository snapshot may be behind current session | Collector configured; inspect last available session before relying on it |
 | jaljala044/nepse-history-starter | User-maintained OHLCV imports and source records | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
 | jaljala044/nepse-smc-data | EOD prices, market indices, daily floorsheet, OHLCV charts and scanner packages | Public GitHub repository at inspection time | GitHub raw-file collector implemented |
@@ -31,8 +31,13 @@ Run these commands from `backend/` after `pip install -r requirements.txt`:
 # Inventory both public datasets without downloading data
 python collect_hf_datasets.py
 
-# Download up to 50 MiB of the older daily CSV floorsheet and indices
+# Download a small 50 MiB test sample
 python collect_hf_datasets.py --dataset floorsheet_indices_2024 --download --max-total-mb 50
+
+# Download the full observed Urek archive (inventory size ~728 MiB compressed)
+# Re-running is safe: completed files are skipped only when size + LFS SHA-256 match.
+python collect_hf_datasets.py --dataset floorsheet_indices_2024 --download \
+  --max-total-mb 800 --max-file-mb 20 --max-files 10000
 
 # Download selected daily sessions only (path-based date filter)
 python collect_hf_datasets.py --dataset floorsheet_indices_2024 --download \
@@ -46,16 +51,25 @@ Downloads are byte-limited and stored under `data/raw/huggingface/`; they are no
 to GitHub. Date filtering applies to date-stamped file paths, not rows inside an unpartitioned
 Parquet file. Parquet schema validation is still a separate step.
 
-### Normalize downloaded daily floorsheet CSVs
+### Normalize downloaded daily floorsheets and indices
 
 ```bash
 python normalize_floorsheet_csv.py ../data/raw/huggingface/urekmazino69__Nepse-floorsheet-and-indices/main/floorsheet \
   --source urekmazino69/Nepse-floorsheet-and-indices
+
+python normalize_indices_csv.py ../data/raw/huggingface/urekmazino69__Nepse-floorsheet-and-indices/main/indices \
+  --source urekmazino69/Nepse-floorsheet-and-indices
+
+python audit_silver_floorsheet.py
+python audit_silver_indices.py
 ```
 
-The normalizer writes deduplicated daily CSV partitions under `data/silver/floorsheet/date=YYYY-MM-DD/`.
-Rows with invalid dates, missing trade keys or inconsistent arithmetic are quarantined under
-`data/quarantine/`. A file is rejected if more than 10% of its rows fail validation.
+The normalizers support `.csv` and `.csv.gz`, writing separate deduplicated daily partitions
+under `data/silver/floorsheet/date=YYYY-MM-DD/` and `data/silver/indices/date=YYYY-MM-DD/`.
+Rows with invalid dates, missing trade keys, invalid OHLC values or inconsistent trade arithmetic
+are quarantined under `data/quarantine/`. A source file is rejected if more than 10% of its rows
+fail validation. Already-downloaded files are only treated as complete when both byte size and
+the Hugging Face LFS SHA-256 match; otherwise the collector re-downloads them.
 
 ### Download the identified Kaggle archive
 
@@ -136,14 +150,48 @@ time, stock_symbol, sector, buyer, seller, quantity, rate, amount and id. The pu
 that corporate actions are not adjusted. The repository collector and normalizer support
 this schema while preserving broker codes as execution-channel IDs.
 
+#### Measured repository inventory (2026-11-23)
+
+A GitHub Actions inventory traversed the public dataset tree without bulk-downloading it:
+
+| Folder | Files | Compressed size | Path-date range |
+|---|---:|---:|---|
+| `floorsheet/` | 603 | 723.767 MiB | 2024-01-02 to 2026-08-26 |
+| `indices/` | 6,429 | 4.257 MiB | 1997-07-20 to 2026-08-26 |
+| **Total** | **7,032** | **728.024 MiB** | 1997-07-20 to 2026-08-26 |
+
+These are file-tree counts and dates, not a claim that all dates are valid NEPSE trading
+sessions or that every file is complete. Index path dates extend earlier than the floorsheet
+date range. Large calendar gaps are flagged for a trading-calendar-aware review, not
+automatically classified as missing exchange sessions.
+
+#### One-session end-to-end validation
+
+The project downloaded and normalized the 2024-01-02 floorsheet and sector-index files
+in a GitHub Actions smoke run:
+
+- Floorsheet: 85,435 rows accepted, 0 rejected; 11,185,712 shares; reported turnover
+  NPR 4,044,659,922.73; no duplicate `(trade_date, contract_no)` keys, date mismatches
+  or quantity × price arithmetic errors under the configured NPR 1 tolerance.
+- Sector indices: 16 rows accepted; no duplicate `(index_date, sector)` keys,
+  date mismatches or OHLC range errors.
+
+This validates only one session and the parser path. It is not validation of the other 602
+floorsheet files, all 6,429 index files, or full dataset completeness.
+
 Another public dataset,
 [`AnkitSanjyal/nepse-market-data`](https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data),
-shows 1.14M rows and 29.3 MB across its Parquet tables. Its card states that extended daily
+shows 306 Parquet files totaling 29.3 MB in the repository file inventory (the dataset card
+reports approximately 1.14M rows). Its card states that extended daily
 price history begins 1995-07-20, while its trade-level floorsheet begins 2026-08-19 and has
-a gap from 2026-08-26 through 2026-11-18. The tables include `eod_history_ext`,
-`eod_price`, `floorsheet`, `index_intraday`, `bars_1m`, `broker_flow_daily` and
-`daily_stats`. This is useful for deeper price history and more recent trade-level data,
-but it does not bridge the full older floorsheet history.
+a gap from 2026-08-26 through 2026-11-18. The repository inventory contains 277 `eod_price` daily Parquet files from 2025-08-19
+through 2026-11-20, one `eod_history_ext` Parquet file (10.34 MiB), and 7 recent partitions
+each for `floorsheet`, `broker_flow_daily`, `bars_1m`, and `daily_stats`. No files were
+returned from the declared `index_intraday` folder in this inventory. The recent floorsheet
+partitions have path dates 2026-08-19, 20, 21, 24, 25 and 2026-11-19, 20. The publisher
+documents the absent 46-session interval 2026-08-26 through 2026-11-18. This is useful for
+recent cross-checking and extended EOD history, but does not bridge the full older floorsheet
+history. These are path inventory counts; Parquet row/schema validation remains outstanding.
 
 Therefore the currently verified public evidence does not support a single continuous
 Kaggle floorsheet archive for 2014–2026. Build the canonical floorsheet database as

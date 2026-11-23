@@ -23,7 +23,6 @@ SOURCES: dict[str, list[str]] = {
         "https://omitnomis.github.io/ShareSansarScraper/api/meta.json",
         "https://omitnomis.github.io/ShareSansarScraper/api/symbols.json",
         "https://omitnomis.github.io/ShareSansarScraper/api/latest.json",
-        "https://omitnomis.github.io/ShareSansarScraper/api/recap/latest.json",
     ],
     "samirwagle_archive": [
         "https://samirwagle.github.io/Nepse-All-Scraper/docs/api/status.json",
@@ -36,6 +35,7 @@ SOURCES: dict[str, list[str]] = {
 GITHUB_REPOS = {
     "jaljala_history_starter": "jaljala044/nepse-history-starter",
     "jaljala_smc_data": "jaljala044/nepse-smc-data",
+    "samirwagle_archive": "SamirWagle/Nepse-All-Scraper",
 }
 GITHUB_API = "https://api.github.com"
 
@@ -100,25 +100,37 @@ def collect_user_github_repos(client: httpx.Client, selected: set[str]) -> list[
                 if item.get("type") != "blob":
                     continue
                 lower = path.lower()
-                wanted = (
-                    lower.endswith((".csv", ".json", ".txt", ".xlsx", ".parquet"))
-                    and (
-                        "scanner_inputs/" in lower
-                        or "historical_imports/" in lower
-                        or "03_stock_charts_ohlcv/" in lower
-                        or "02_floorsheet_daily/" in lower
-                        or "01_market_indices/" in lower
-                        or "00_daily_eod_prices/" in lower
-                        or lower in {
-                            "ai_upload_package.txt",
-                            "nepse_final_capital_safe_setups.csv",
-                            "nepse_kheladi_20d_floorsheet_intel.csv",
-                            "intraday_buy_alerts.txt",
-                        }
+                if label == "samirwagle_archive":
+                    wanted = (
+                        lower == "data/company_list.json"
+                        or (lower.startswith("data/indices/") and lower.endswith(".csv"))
+                        or (lower.startswith("data/floorsheet/") and lower.endswith((".csv", ".json")))
                     )
-                )
+                else:
+                    wanted = (
+                        lower.endswith((".csv", ".json", ".txt", ".xlsx", ".parquet"))
+                        and (
+                            "scanner_inputs/" in lower
+                            or "historical_imports/" in lower
+                            or "03_stock_charts_ohlcv/" in lower
+                            or "02_floorsheet_daily/" in lower
+                            or "01_market_indices/" in lower
+                            or "00_daily_eod_prices/" in lower
+                            or lower in {
+                                "ai_upload_package.txt",
+                                "nepse_final_capital_safe_setups.csv",
+                                "nepse_kheladi_20d_floorsheet_intel.csv",
+                                "intraday_buy_alerts.txt",
+                            }
+                        )
+                    )
                 if wanted and int(item.get("size", 0)) <= 30 * 1024 * 1024:
                     candidates.append((path, item.get("size", 0)))
+            if label == "samirwagle_archive":
+                floor_files = sorted((p, s) for p, s in candidates if "data/floorsheet/" in p)
+                keep = {p for p, _ in floor_files[-10:]}
+                candidates = [(p, s) for p, s in candidates
+                              if "data/floorsheet/" not in p or p in keep]
             for path, size in candidates:
                 raw_url = f"https://raw.githubusercontent.com/{repo}/main/{path}"
                 try:

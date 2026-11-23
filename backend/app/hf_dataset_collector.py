@@ -142,6 +142,10 @@ def list_dataset_files(client: httpx.Client, dataset_key: str, revision: str = "
             if pages > 100:
                 raise RuntimeError(f"Dataset tree pagination exceeded 100 pages for {folder}")
             response = client.get(url, params=params)
+            if response.status_code == 404:
+                # A declared table can legitimately have no published files yet
+                # (for example an intraday table before the first captured session).
+                break
             response.raise_for_status()
             payload = response.json()
             if isinstance(payload, list):

@@ -74,9 +74,9 @@ def _safe_relative_path(path: str) -> Path:
     return Path(*pure.parts)
 
 def _extract_date(path: str) -> date | None:
-    candidates = re.findall(r"(?<!\d)(20\d{2}-\d{2}-\d{2})(?!\d)", path)
+    candidates = re.findall(r"(?<!\d)((?:19|20)\d{2}-\d{2}-\d{2})(?!\d)", path)
     if not candidates:
-        candidates = re.findall(r"(?<!\d)(20\d{2}_\d{2}_\d{2})(?!\d)", path)
+        candidates = re.findall(r"(?<!\d)((?:19|20)\d{2}_\d{2}_\d{2})(?!\d)", path)
     for raw in candidates:
         try:
             return date.fromisoformat(raw.replace("_", "-"))

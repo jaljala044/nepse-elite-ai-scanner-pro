@@ -15,7 +15,7 @@
 - [x] Bounded Parquet schema/row inspection for all 306 inventoried files
 - [ ] Download, normalize and audit the complete 603-file floorsheet and 6,429-file index archive
 - [ ] Stage and validate the Kaggle legacy archive using owner-configured credentials
-- [ ] Normalize Parquet EOD/floorsheet/broker-flow tables into canonical silver datasets
+- [ ] Complete real-data QA of the source-separated Parquet DuckDB warehouse; then reconcile with CSV sources before any canonical promotion
 - [ ] Confirm legal/technical access to each NEPSE data source
 - [ ] Reconcile daily OHLCV against an authoritative source
 - [ ] Detect stale, missing and conflicting records using a verified trading calendar

@@ -47,9 +47,22 @@ GitHub Actions downloaded and inspected all 306 files in the bounded public data
 
 Important: the seven floorsheet/broker-flow partitions are not a continuous daily history. The long EOD table has not yet been independently reconciled against an authoritative NEPSE source. The Parquet inspection proves readable schemas and row counts, not semantic correctness or completeness.
 
+### DuckDB warehouse and EOD overlap
+
+A source-separated DuckDB loader has been added for all six Ankit Parquet tables. Its first real-data run loaded all six tables but correctly stopped at the initial OHLC gate. Findings from that run:
+
+- Floorsheet: 330,978 rows, 399 symbols, 0 duplicate keys, 0 invalid trade values, 0 quantity × rate amount mismatches over NPR 1.
+- Broker flow: 81,418 rows, 0 duplicate keys, 0 net-quantity mismatches, 0 net-value mismatches over NPR 1.
+- 1-minute bars: 114,537 rows, 0 duplicate keys, 0 OHLC anomalies.
+- Daily stats: 2,441 rows, 0 duplicate keys, 0 negative volume/turnover rows.
+- EOD overlap: 75,671 matching symbol/date pairs; volume matched exactly in all 75,671; close matched within NPR 0.01 in 75,657; maximum absolute close difference NPR 60.
+- The initial OHLC check flagged 578 rows in `eod_price` and 40,373 in `eod_history_ext`. These source rows were retained; they were not silently deleted or repaired.
+
+The loader was then changed to preserve source OHLC rows and report anomalies as review warnings, with symbol-level examples. The post-change real-data workflow was started on 2026-11-23 and is awaiting its final result. Until that run passes, the DuckDB real-data load is not marked accepted.
+
 ### Automated tests and decimal serialization
 
-- Backend unit tests: 20 passed in GitHub Actions on 2026-11-23.
+- Backend unit tests: 21 passed in GitHub Actions on 2026-11-23, including a test that keeps the two EOD source tables separate and verifies overlap reconciliation.
 - Decimal audit fix: broker turnover values are serialized as decimal strings, preserving precision.
 - Post-fix floorsheet smoke test and audit passed.
 
@@ -58,7 +71,7 @@ Important: the seven floorsheet/broker-flow partitions are not a continuous dail
 1. **Full Urek archive import:** 603 floorsheet and 6,429 index files are inventoried, but the complete archive has not been downloaded, normalized, and audited. The one-session sample must not be represented as full-history validation.
 2. **Kaggle legacy archive:** the staging helper exists, but actual download requires the owner's locally configured Kaggle CLI/account. Dataset metadata describes coverage through 2019-10-10; the date field/schema must be validated before merging.
 3. **Cross-source reconciliation:** overlap checks, trading-calendar-aware missing-session checks, corporate-action handling, symbol master mapping, and conflict resolution remain outstanding.
-4. **Parquet normalization:** the 306-file sample is inspected but has not been converted into canonical silver tables or reconciled with the CSV floorsheet and OHLCV sources.
+4. **Parquet warehouse acceptance:** the source-separated DuckDB loader is implemented and its first real-data run surfaced OHLC anomalies plus 14 close-price differences in the EOD overlap. The revised warning/reporting path is awaiting a successful real-data rerun. No canonical silver merge or CSV-source reconciliation has been approved.
 5. **Broker-flow research:** broker IDs remain execution-channel identifiers, not beneficial-owner identities. Any accumulation/distribution score needs source provenance, aggregation-window validation, and independent backtesting.
 6. **Scanner:** current `backend/app/scanner.py` computes only basic SMA20, 20-session change, and volume-vs-average metrics. It is not the requested 309-stock multi-module SMC/IPDA engine.
 7. **Production product:** database persistence, complete web dashboard, Android app, authentication, deployment, monitoring, authorized live feeds, and scheduled scans are not yet implemented/verified.

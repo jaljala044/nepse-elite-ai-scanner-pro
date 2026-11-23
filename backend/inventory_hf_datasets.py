@@ -48,6 +48,8 @@ def summarize_dataset(key: str, info: dict[str, Any]) -> dict[str, Any]:
 
     largest = sorted(files, key=lambda item: int(item.get("size") or 0), reverse=True)[:10]
     total_bytes = sum(int(item.get("size") or 0) for item in files)
+    present_folders = set(folder_counts)
+    declared_folders = [folder.rstrip("/") for folder in DATASETS.get(key, {}).get("folders", ())]
     return {
         "dataset_key": key,
         "repo": info.get("repo"),
@@ -61,6 +63,7 @@ def summarize_dataset(key: str, info: dict[str, Any]) -> dict[str, Any]:
         "first_path_date": dates[0].isoformat() if dates else None,
         "last_path_date": dates[-1].isoformat() if dates else None,
         "files_per_folder": dict(sorted(folder_counts.items())),
+        "declared_folders_without_files": sorted(set(declared_folders) - present_folders),
         "files_by_extension": dict(sorted(extension_counts.items())),
         "largest_calendar_gaps_over_7_days": gaps[:20],
         "largest_files": [

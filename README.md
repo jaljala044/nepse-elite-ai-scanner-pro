@@ -53,6 +53,24 @@ python ingest_kaggle_floorsheet.py --confirm-download
 
 The one-session smoke test on 2024-01-02 accepted 85,435 floorsheet rows and 16 index rows with no configured quality-gate failures; this is a parser check, not a full-history validation. Large source files are stored locally, excluded by `.gitignore`, and are not committed to GitHub. Review [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for dataset coverage, licensing notes, gaps and validation rules.
 
+### Build the separate Ankit Parquet warehouse
+
+After fetching the Ankit public Parquet files into `data/raw/huggingface/`:
+
+```bash
+python inspect_parquet_datasets.py \
+  --input ../data/raw/huggingface/AnkitSanjyal__nepse-market-data/main
+
+python load_ankit_warehouse.py \
+  --input ../data/raw/huggingface/AnkitSanjyal__nepse-market-data/main \
+  --database ../data/warehouse/nepse-analytics.duckdb \
+  --report ../data/reports/ankit-warehouse-load.json
+```
+
+The loader preserves the six source tables separately in DuckDB and emits row-level QA
+including floorsheet arithmetic, broker-flow reconciliation, OHLC anomalies and EOD
+source-overlap differences. It does not auto-correct prices or generate buy/sell instructions.
+
 ## CSV format
 Required columns: `symbol,date,open,high,low,close,volume`. Dates should be ISO `YYYY-MM-DD`; prices and volume must be positive (volume may be zero). One file may contain multiple symbols.
 

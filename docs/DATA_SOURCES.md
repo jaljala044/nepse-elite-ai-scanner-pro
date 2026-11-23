@@ -130,6 +130,26 @@ configuring the endpoint. Never commit API tokens to Git.
 9. Do not enable automated collection schedules until permissions, rate limits, coverage and
    reconciliation tests are complete.
 
+### Build and query the Ankit DuckDB warehouse
+
+After downloading the Ankit Parquet files with `collect_hf_datasets.py`:
+
+```bash
+python inspect_parquet_datasets.py \
+  --input ../data/raw/huggingface/AnkitSanjyal__nepse-market-data/main \
+  --output ../data/reports/ankit-parquet-inspection.json
+
+python load_ankit_warehouse.py \
+  --input ../data/raw/huggingface/AnkitSanjyal__nepse-market-data/main \
+  --database ../data/warehouse/nepse-analytics.duckdb \
+  --report ../data/reports/ankit-warehouse-load.json
+```
+
+Tables are created in DuckDB under schema `ankit`: `floorsheet`, `eod_price`,
+`eod_history_ext`, `broker_flow_daily`, `bars_1m`, and `daily_stats`.
+The raw files, report and DuckDB are excluded from Git by `.gitignore` and should be
+stored in a private data volume or backed-up object store rather than in source control.
+
 ## Historical coverage finding (2026-11-23)
 
 The Kaggle dataset currently identified is
@@ -219,9 +239,14 @@ EOD overlap comparison between `eod_history_ext` and `eod_price`:
 
 - 75,671 matched symbol/date records from 2025-08-19 to 2026-08-19.
 - Exact traded-volume match on all 75,671 records.
-- Exact close match on 75,657 records; 14 close mismatches remain.
-- The maximum absolute close difference is NPR 60. These 14 individual records are now
-  included in the generated reconciliation report. Keep the two source tables distinct.
+- Exact close match on 75,657 records; 14 close mismatches remain (99.98% of matched
+  records agree exactly, while all 75,671 traded-volume values agree exactly).
+- The maximum absolute close difference is NPR 60. The largest mismatches include
+  ULBSL on 2026-03-01 (3,118 vs 3,178), ICFCD83 on 2026-07-17
+  (1,154 vs 1,211.7), and NCCD86 on 2026-07-07 (1,180 vs 1,144.6).
+  The corresponding traded quantities match exactly in all 14 mismatches. Their cause
+  has not been established; all 14 are listed in the machine-readable report. Keep the
+  two source tables distinct.
 
 The warehouse loader preserves all source rows, reports EOD OHLC anomalies rather than
 silently adjusting or dropping them, and blocks only duplicate business keys, invalid

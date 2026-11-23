@@ -41,6 +41,13 @@ jobs:
           --input ../data/raw/huggingface/AnkitSanjyal__nepse-market-data/main
           --output ../data/reports/ankit-parquet-inspection.json
         working-directory: backend
+      - name: Load source-separated DuckDB warehouse and reconcile EOD overlap
+        run: >
+          python load_ankit_warehouse.py
+          --input ../data/raw/huggingface/AnkitSanjyal__nepse-market-data/main
+          --database ../data/warehouse/nepse-analytics.duckdb
+          --report ../data/reports/ankit-warehouse-load.json
+        working-directory: backend
       - name: Upload raw Parquet sample and inspection report
         uses: actions/upload-artifact@v4
         with:
@@ -48,5 +55,7 @@ jobs:
           path: |
             data/raw/huggingface/
             data/reports/ankit-parquet-inspection.json
+            data/reports/ankit-warehouse-load.json
+            data/warehouse/nepse-analytics.duckdb
           if-no-files-found: error
           retention-days: 14

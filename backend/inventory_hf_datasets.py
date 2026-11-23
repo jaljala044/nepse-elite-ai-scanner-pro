@@ -17,34 +17,56 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def summarize_dataset(key: str, info: dict[str, Any]) -> dict[str, Any]:
     files = info.get("records", [])
-    dates = sorted({day for item in files if (day := _extract_date(str(item.get("path", ""))))})
+    dates = sorted({day for item in files if (day := _extract_date(str(item.get("path", "")))})
     folder_counts: dict[str, int] = {}
     extension_counts: dict[str, int] = {}
-    by_date: dict[str, int] = {}
+    folder_details: dict[str, dict[str, Any]] = {}
     dated_files = 0
     unpartitioned = 0
+
     for item in files:
         path = str(item.get("path", ""))
         folder = path.split("/", 1)[0] if "/" in path else "(root)"
+        size = int(item.get("size") or 0)
         folder_counts[folder] = folder_counts.get(folder, 0) + 1
         lower = path.lower()
         extension = ".csv.gz" if lower.endswith(".csv.gz") else Path(lower).suffix or "(none)"
         extension_counts[extension] = extension_counts.get(extension, 0) + 1
+        detail = folder_details.setdefault(folder, {"files": 0, "bytes": 0, "dates": []})
+        detail["files"] += 1
+        detail["bytes"] += size
         day = _extract_date(path)
         if day:
             dated_files += 1
-            by_date[day.isoformat()] = by_date.get(day.isoformat(), 0) + 1
+            detail["dates"].append(day)
         else:
             unpartitioned += 1
 
-    gaps = []
-    for previous, current in zip(dates, dates[1:]):
-        days = (current - previous).days
-        if days > 7:
-            gaps.append({"from": previous.isoformat(), "to": current.isoformat(),
-                         "calendar_days_apart": days,
-                         "note": "Review only; calendar gaps are not automatically missing trading sessions."})
-    gaps.sort(key=lambda item: item["calendar_days_apart"], reverse=True)
+    def gaps_over_week(values: list) -> list[dict[str, Any]]:
+        gaps = []
+        for previous, current in zip(values, values[1:]):
+            days = (current - previous).days
+            if days > 7:
+                gaps.append({
+                    "from": previous.isoformat(), "to": current.isoformat(),
+                    "calendar_days_apart": days,
+                    "note": "Review only; calendar gaps are not automatically missing trading sessions."
+                })
+        return sorted(gaps, key=lambda item: item["calendar_days_apart"], reverse=True)[:20]
+
+    folder_coverage = {}
+    for folder, detail in sorted(folder_details.items()):
+        folder_dates = sorted(set(detail["dates"]))
+        folder_coverage[folder] = {
+            "files": detail["files"],
+            "estimated_bytes": detail["bytes"],
+            "estimated_mib": round(detail["bytes"] / (1024 * 1024), 3),
+            "dated_files": len(detail["dates"]),
+            "unique_path_dates": len(folder_dates),
+            "first_path_date": folder_dates[0].isoformat() if folder_dates else None,
+            "last_path_date": folder_dates[-1].isoformat() if folder_dates else None,
+            "largest_calendar_gaps_over_7_days": gaps_over_week(folder_dates),
+        }
 
     largest = sorted(files, key=lambda item: int(item.get("size") or 0), reverse=True)[:10]
     total_bytes = sum(int(item.get("size") or 0) for item in files)
@@ -63,9 +85,10 @@ def summarize_dataset(key: str, info: dict[str, Any]) -> dict[str, Any]:
         "first_path_date": dates[0].isoformat() if dates else None,
         "last_path_date": dates[-1].isoformat() if dates else None,
         "files_per_folder": dict(sorted(folder_counts.items())),
+        "folder_coverage": folder_coverage,
         "declared_folders_without_files": sorted(set(declared_folders) - present_folders),
         "files_by_extension": dict(sorted(extension_counts.items())),
-        "largest_calendar_gaps_over_7_days": gaps[:20],
+        "largest_calendar_gaps_over_7_days": gaps_over_week(dates),
         "largest_files": [
             {"path": item.get("path"), "bytes": int(item.get("size") or 0),
              "oid": item.get("oid")}

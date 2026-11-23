@@ -110,52 +110,84 @@ def _next_link(link_header: str | None) -> str | None:
             return match.group(1)
     return None
 
+def _item_path(item: dict[str, Any], folder: str) -> str:
+    raw_path = item.get("path") or item.get("rfilename") or item.get("name") or ""
+    path = str(raw_path).lstrip("/")
+    if path and "/" not in path:
+        path = folder.rstrip("/") + "/" + path
+    return path
+
+
 def list_dataset_files(client: httpx.Client, dataset_key: str, revision: str = "main") -> list[dict[str, Any]]:
     if dataset_key not in DATASETS:
         raise ValueError(f"Unknown dataset key: {dataset_key}")
-    repo = DATASETS[dataset_key]["repo"]
-    url = f"{HF_API}/{quote(repo, safe='/')}/tree/{quote(revision, safe='')}"
-    params: dict[str, Any] | None = {"recursive": "true", "expand": "false", "limit": 1000}
-    collected: list[dict[str, Any]] = []
-    seen_cursors: set[str] = set()
-    pages = 0
-    while url:
-        pages += 1
-        if pages > 100:
-            raise RuntimeError("Dataset tree pagination exceeded 100 pages")
-        response = client.get(url, params=params)
-        response.raise_for_status()
-        payload = response.json()
-        if isinstance(payload, dict):
-            items = payload.get("items", payload.get("files", []))
-            cursor = payload.get("cursor")
-        elif isinstance(payload, list):
-            items, cursor = payload, None
-        else:
-            raise ValueError("Unexpected Hugging Face tree response")
-        for item in items:
-            if item.get("type") not in ("file", "blob"):
-                continue
-            path = str(item.get("path", ""))
-            if not path or not _is_candidate(dataset_key, path):
-                continue
-            collected.append({
-                "path": path,
-                "size": int(item.get("size") or 0),
-                "oid": item.get("oid") or item.get("sha"),
-                "lfs": item.get("lfs"),
-            })
-        nxt = _next_link(response.headers.get("Link"))
-        if nxt:
-            url, params = nxt, None
-        elif cursor and cursor not in seen_cursors:
-            seen_cursors.add(cursor)
-            url, params = f"{HF_API}/{quote(repo, safe='/')}/tree/{quote(revision, safe='')}", {
-                "recursive": "true", "expand": "false", "limit": 1000, "cursor": cursor
-            }
-        else:
-            break
-    return sorted({item["path"]: item for item in collected}.values(), key=lambda x: x["path"])
+    spec = DATASETS[dataset_key]
+    repo = spec["repo"]
+    collected: dict[str, dict[str, Any]] = {}
+
+    # List each declared top-level data folder explicitly. Some Hub tree responses
+    # return only root directory entries when a recursive query is not honored.
+    for folder in spec["folders"]:
+        url = (
+            f"{HF_API}/{quote(repo, safe='/')}/tree/"
+            f"{quote(revision, safe='')}/{quote(folder.rstrip('/'), safe='/')}"
+        )
+        params: dict[str, Any] | None = {
+            "recursive": "true", "expand": "false", "limit": 1000
+        }
+        seen_cursors: set[str] = set()
+        pages = 0
+        while url:
+            pages += 1
+            if pages > 100:
+                raise RuntimeError(f"Dataset tree pagination exceeded 100 pages for {folder}")
+            response = client.get(url, params=params)
+            response.raise_for_status()
+            payload = response.json()
+            if isinstance(payload, list):
+                items, cursor = payload, None
+            elif isinstance(payload, dict):
+                items = payload.get("items", payload.get("files", payload.get("data", [])))
+                cursor = payload.get("cursor")
+            else:
+                raise ValueError("Unexpected Hugging Face tree response")
+            if not isinstance(items, list):
+                raise ValueError("Unexpected Hugging Face tree items payload")
+
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                item_type = str(item.get("type", "")).lower()
+                if item_type in ("directory", "dir", "tree", "folder"):
+                    continue
+                path = _item_path(item, folder)
+                if not path or not _is_candidate(dataset_key, path):
+                    continue
+                # A file-like path with a declared extension is the final filter;
+                # this also tolerates Hub response variants that omit type.
+                size = item.get("size")
+                if size is None and isinstance(item.get("lfs"), dict):
+                    size = item["lfs"].get("size")
+                collected[path] = {
+                    "path": path,
+                    "size": int(size or 0),
+                    "oid": item.get("oid") or item.get("blob_id") or item.get("sha"),
+                    "lfs": item.get("lfs"),
+                }
+
+            next_url = _next_link(response.headers.get("Link"))
+            if next_url:
+                url, params = next_url, None
+            elif cursor and cursor not in seen_cursors:
+                seen_cursors.add(cursor)
+                params = {
+                    "recursive": "true", "expand": "false", "limit": 1000,
+                    "cursor": cursor,
+                }
+            else:
+                break
+
+    return sorted(collected.values(), key=lambda item: item["path"])
 
 def _download_one(
     client: httpx.Client, repo: str, revision: str, item: dict[str, Any],

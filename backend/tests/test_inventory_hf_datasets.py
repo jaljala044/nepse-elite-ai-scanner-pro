@@ -1,5 +1,5 @@
 import unittest
-from app.inventory_hf_datasets import summarize_dataset, summarize_inventory
+from inventory_hf_datasets import summarize_dataset, summarize_inventory
 
 class HuggingFaceInventorySummaryTests(unittest.TestCase):
     def test_summary_counts_dates_and_sizes(self):

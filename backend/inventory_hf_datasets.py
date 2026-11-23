@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def summarize_dataset(key: str, info: dict[str, Any]) -> dict[str, Any]:
     files = info.get("records", [])
-    dates = sorted({day for item in files if (day := _extract_date(str(item.get("path", "")))})
+    dates = sorted({day for item in files if (day := _extract_date(str(item.get("path", "")))) is not None})
     folder_counts: dict[str, int] = {}
     extension_counts: dict[str, int] = {}
     folder_details: dict[str, dict[str, Any]] = {}

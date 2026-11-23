@@ -145,8 +145,8 @@ def analyze_v3(symbol: str, observations: list[dict[str, Any]]) -> dict[str, Any
         return base
 
     base["as_of"] = dates[-1].isoformat()
-    if len(normalized) < 51:
-        base["limitations"].append("At least 51 daily observations are required for the initial SMA50 and 20-session return features.")
+    if len(normalized) < 50:
+        base["limitations"].append("At least 50 daily observations are required for the initial SMA50 and 20-session return features.")
         return base
 
     closes = [row["close"] for row in normalized]

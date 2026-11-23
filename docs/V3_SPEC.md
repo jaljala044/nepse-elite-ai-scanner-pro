@@ -60,3 +60,13 @@ Rows must represent one symbol and one trading session per date. Duplicate dates
 
 ## Delivery gates
 V3 remains development-only until the data coverage audit, independent indicator checks, and out-of-sample validation pass. The first release may report descriptive observations while suppressing any unvalidated composite score.
+
+
+## Strict reference-data coverage endpoint
+
+- `GET /v3/audit/coverage/strict` runs the existing DuckDB audit against a configured symbol master and verified exchange-session calendar.
+- Required environment variables: `NEPSE_DUCKDB_PATH`, `NEPSE_SYMBOL_MASTER_TABLE`, and `NEPSE_SESSION_CALENDAR_TABLE`.
+- Optional table/column overrides: `NEPSE_OHLCV_TABLE`, `NEPSE_OHLCV_SYMBOL_COL`, `NEPSE_OHLCV_DATE_COL`, `NEPSE_OHLCV_OPEN_COL`, `NEPSE_OHLCV_HIGH_COL`, `NEPSE_OHLCV_LOW_COL`, `NEPSE_OHLCV_CLOSE_COL`, `NEPSE_OHLCV_VOLUME_COL`, `NEPSE_MASTER_SYMBOL_COL`, and `NEPSE_CALENDAR_DATE_COL`.
+- Defaults target `ankit.eod_price` with its native column names; reference tables default to `symbol` and `session_date` columns.
+- If the master or calendar configuration is absent, the endpoint returns HTTP 503 rather than substituting a guessed list or calendar. Missing tables or invalid reference inputs are reported as errors.
+- This endpoint does not make reference data authoritative by configuration alone. Record the publisher, retrieval timestamp, source revision, license/permission, and content hash for both reference datasets before treating the audit as a production completeness result.

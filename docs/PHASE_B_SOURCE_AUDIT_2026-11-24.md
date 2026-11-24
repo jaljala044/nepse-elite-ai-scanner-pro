@@ -171,3 +171,39 @@ Inspected `jaljala044/nepse-automation/fetch_floorsheet.py`. It fetches the curr
 - Historical session calendar and carry-forward classification: OPEN.
 - Corporate-action reconciliation: OPEN.
 - No database import/promotion until all relevant gates are green.
+
+
+## Floorsheet source audit — first two overlapping sessions
+
+Inventoried date-stamped floorsheet CSVs in the current default-branch trees:
+- Jaljala SMC archive: 4 daily full floorsheet CSVs (2026-11-19, 2026-11-20, plus 2026-11-23 in the raw archive; the 02_daily folder contains 19/20; one additional daily file is 23).
+- Jaljala History Starter: no standalone dated raw daily CSV; it carries audit/reconciliation metadata and broker summaries.
+- SamirWagle/Nepse-All-Scraper: 179 dated daily CSVs from 2026-02-22 through 2026-11-24.
+- SocrateAI NEPSE Open Data: 658 dated daily CSVs from 2024-01-01 through 2026-11-19; the 2026-11-20 file is absent in the current tree.
+
+Exact row-level arithmetic/contract-ID checks were performed on overlapping daily files:
+
+| Session | Source | Rows / unique contracts | Shares | Exact turnover from quantity × rate |
+|---|---|---:|---:|---:|
+| 2026-11-19 | SocrateAI | 40,837 | 9,437,842 | NPR 3,877,645,728.62 |
+| 2026-11-19 | Samir | 40,818 | 9,435,392 | NPR 3,877,623,296.62 |
+| 2026-11-20 | Jaljala SMC legacy | 39,966 | 10,602,468 | NPR 3,887,563,470.82 |
+| 2026-11-20 | Samir | 39,927 | 10,562,518 | NPR 3,882,749,430.61 |
+| 2026-11-23 | Jaljala SMC | 42,854 | 10,826,913 | NPR 3,827,606,590.77 |
+
+For 2026-11-19, SocrateAI has 19 contracts absent from Samir; Samir has zero contract IDs absent from SocrateAI. Difference: 19 trades, 2,450 shares, NPR 22,432.00. This exactly matches Jaljala's reconciliation metadata, which accepts SocrateAI totals for that session.
+
+For 2026-11-20, Jaljala's T+2 project legacy archive has 39 contracts absent from Samir; Samir has zero contract IDs absent from Jaljala. Difference: 39 trades, 39,950 shares, NPR 4,814,040.21. This also exactly matches Jaljala's reconciliation metadata. The contract-ID set comparison and aggregate differences agree. The Samir snapshot is therefore incomplete for these two sessions relative to the selected reference archive; it must not be silently merged as if complete.
+
+Jaljala's `scanner_inputs/audit/floorsheet_reconciliation.csv` lists 21 sessions as reconciled, covering 2026-07-24 and 2026-10-12 through 2026-11-20. Summed across those 21 rows, it records 1,050,230 trades, 298,820,123 shares and NPR 112,088,905,361.38 turnover. The reconciliation table reports the Samir/Viking comparison missing 616 trades, 430,980 shares and NPR 58,601,974.96 in aggregate. This is valuable provenance evidence, but the reconciliation CSV itself is not a substitute for retaining and re-auditing every raw source file and contract list.
+
+The 2026-11-23 Jaljala audit metadata reports 86 pages, 42,854 contracts, 10,826,913 shares, NPR 3,827,606,590.77 turnover and 360 securities; it also records hashes for each page and a 500-contract independent sample. The same report appears in both Jaljala repositories. This is an internally consistent audit manifest, but it still needs independent contract-level comparison to a second source before it is a fully passed completeness gate.
+
+### Floorsheet gate status
+
+- CSV arithmetic and unique contract IDs: PASS for the five sampled daily files above.
+- Cross-source contract completeness: FAIL for Samir on 2026-11-19 and 2026-11-20 (19 and 39 missing contracts respectively).
+- Multi-source completeness for 2026-11-23: OPEN (only Jaljala file located).
+- Full 658-day SocrateAI archive and 179-day Samir archive: inventory completed; exhaustive row-level comparison not yet performed.
+- Historical time-of-trade: source schemas vary; do not synthesize execution times where missing.
+- Broker codes: retain as execution-channel identifiers only; never infer beneficial owner or intent from code alone.

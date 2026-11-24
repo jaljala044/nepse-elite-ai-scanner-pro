@@ -87,9 +87,14 @@ class NormalizeFloorsheetTests(unittest.TestCase):
         self.assertEqual(imported[0]["amount"], "5005.000")
 
     def test_contract_date_mismatch_is_quarantined(self):
-        path = self.write_csv([self.row(contract_no="20240103000001")])
+        rows = [
+            self.row(contract_no=f"202401020000{i:02d}", id=str(i))
+            for i in range(1, 10)
+        ]
+        rows.append(self.row(contract_no="20240103000010", id="10"))
+        path = self.write_csv(rows)
         result = self.run_import(path)
-        self.assertEqual(result["unique_rows_accepted"], 0)
+        self.assertEqual(result["unique_rows_accepted"], 9)
         self.assertEqual(result["rows_rejected"], 1)
         self.assertIsNotNone(result["quarantine_path"])
 

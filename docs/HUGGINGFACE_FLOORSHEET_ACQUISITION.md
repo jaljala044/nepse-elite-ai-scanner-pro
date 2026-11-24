@@ -344,3 +344,33 @@ The acquisition scripts now resolve local file paths before writing manifests;
 the next workflow run will reproduce the Urek row audit and 70-date comparison
 inside CI. The 120-date calendar remains unverified, and no raw rows are
 promoted to canonical storage by these results.
+
+## CI rerun after acquisition-path correction — 2026-11-24
+
+The path bug in the first Urek bulk audit was corrected by writing absolute
+workflow-local paths into the acquisition manifest. The rerun completed the
+following gates successfully (workflow run **45417634982**, artifact ID
+**14933845390**):
+
+- SocrateAI: **120/120** files acquired, **373,773,838** bytes, zero download
+  errors; **6,407,328** rows audited across 120 dates, zero invalid dates,
+  duplicate contracts, broker-code errors or arithmetic errors.
+- Urekmazino: **70/120** available files acquired, **63,072,255** bytes, zero
+  download errors; **3,862,849** rows audited across 70 dates, zero row
+  validation errors. The other 50 dates are absent from this source snapshot.
+- Cross-source comparison: all **70** overlapping dates matched exactly across
+  **3,862,849** contract numbers and all shared fields. Urek-only contracts: 0;
+  SocrateAI-only contracts: 0; duplicate contracts: 0; shared-field mismatches: 0.
+
+The latest one-day control report marks the floorsheet row gate **PASS**, but
+the combined index-scope gate **REVIEW_REQUIRED_INDEX_SCOPE**. The raw Urek
+index OHLC/control fields are not promoted or corrected. All raw files remain
+in the private GitHub Actions artifact, not committed into the source repository.
+The artifact is temporary workflow storage; long-term canonical storage has not
+yet been configured.
+
+The separate calendar workflow run **45417634307** still exports a 137-row
+candidate register: 116 unverified observed-session candidates, 3 index-row
+anomaly dates, 1 provisional latest date and 17 unverified reported closures.
+Verified calendar rows remain **zero**. Backend CI passed **125 tests** at the
+same revision.

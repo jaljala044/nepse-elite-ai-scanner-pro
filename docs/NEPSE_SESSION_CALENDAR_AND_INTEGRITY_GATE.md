@@ -139,3 +139,48 @@ CI runs the new validator and uploads
 `market-date-crosscheck.json` alongside the OHLCV audit artifacts. A failed
 OHLCV quality gate does not suppress the independent date diagnostic; the
 cross-check runs when the audit report exists.
+
+## First 120-index-date cross-check findings (pinned source snapshot)
+
+An initial automated run against SocrateAI commit
+`cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3` selected 120 dated adjusted-index
+files from **2026-05-18 through 2026-11-24**. The first strict validator accepted
+117 NEPSE index rows and flagged three files for row-level anomalies. The
+anomaly-aware validator now preserves every NEPSE row and distinguishes
+duplicate and OHLC-bound problems rather than discarding them.
+
+The three source anomalies were inspected directly:
+
+- **2026-06-01:** two identical NEPSE_index rows in the same CSV. Preserve both
+  and classify as an exact duplicate; do not silently deduplicate source data.
+- **2026-07-03:** the single NEPSE_index row has high 2673.1493 below open
+  2673.15 by 0.0007. Preserve the exact values and flag the OHLC-bound anomaly;
+  no tolerance-based correction is applied.
+- **2026-07-07:** two differing NEPSE_index rows are present. They disagree in
+  high and volume, among other precision-level fields. Preserve both and classify
+  as a conflicting duplicate; neither is selected as canonical.
+
+Date coverage in the same 120-file window:
+
+- Jaljala stock OHLCV: both repositories have files on **117** dates; one
+  repository only on **2026-07-24**; neither has a file on **2026-11-23** or
+  **2026-11-24**. The archive snapshots audited in this run end at 20 Nov 2026,
+  so the last two dates are source freshness gaps, not evidence of exchange
+  closure.
+- Floorsheet filename manifests: both SocrateAI and SamirWagle have files on
+  **112** dates. SocrateAI alone has files on **8** dates:
+  2026-08-24, 2026-08-26, 2026-10-05, 2026-11-06, 2026-11-13,
+  2026-11-17, 2026-11-18 and 2026-11-23. These are source-coverage differences,
+  not proof that Samir is incomplete or that the SocrateAI files are complete.
+- The manifest-only step did not download or validate any raw floorsheet rows.
+
+The audit still reports 1,331 invalid SMC OHLC rows, 8 cross-source symbol/date
+conflicts, 196,542 repeated-adjacent-date flags, and 25 differing common-path
+Git blob identities. The two repositories' row-level date coverage is useful
+for identifying freshness gaps, but these outstanding exceptions keep the
+canonical OHLCV integrity gate closed.
+
+Artifact containing the initial reports and the two floorsheet manifests:
+GitHub Actions run 45408208927, artifact ID 14926338543. The report is pinned to
+the source commit above; subsequent source changes require a new inventory and
+audit rather than silently reusing this snapshot.

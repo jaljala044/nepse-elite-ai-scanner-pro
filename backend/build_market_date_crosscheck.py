@@ -57,30 +57,50 @@ def validate_index_csv(content: bytes, expected_date: str) -> dict[str, Any]:
     required = {"date", "symbol", "open", "high", "low", "close", "volume"}
     if not required.issubset(set(reader.fieldnames or [])):
         raise ValueError("index_csv_missing_required_columns")
-    rows = []
-    for raw in reader:
-        if str(raw.get("symbol", "")).strip().upper() == "NEPSE_INDEX":
-            rows.append(raw)
-    if len(rows) != 1:
-        raise ValueError(f"expected_exactly_one_NEPSE_index_row_found_{len(rows)}")
-    row = rows[0]
-    if str(row["date"]).strip() != expected_date:
-        raise ValueError("index_row_date_mismatch")
-    values = {key: _num(row[key]) for key in ("open", "high", "low", "close", "volume")}
-    if any(values[k] <= 0 for k in ("open", "high", "low", "close")) or values["volume"] < 0:
-        raise ValueError("index_non_positive_price_or_negative_volume")
-    if values["high"] < max(values["open"], values["low"], values["close"]):
-        raise ValueError("index_high_below_ohlc")
-    if values["low"] > min(values["open"], values["high"], values["close"]):
-        raise ValueError("index_low_above_ohlc")
+    raw_rows = [
+        raw for raw in reader
+        if str(raw.get("symbol", "")).strip().upper() == "NEPSE_INDEX"
+    ]
+    if not raw_rows:
+        raise ValueError("nepse_index_row_missing")
+    parsed_rows = []
+    validation_errors = []
+    for row_number, row in enumerate(raw_rows, 1):
+        if str(row["date"]).strip() != expected_date:
+            validation_errors.append(f"row_{row_number}:index_row_date_mismatch")
+        values = {key: _num(row[key]) for key in ("open", "high", "low", "close", "volume")}
+        if any(values[k] <= 0 for k in ("open", "high", "low", "close")) or values["volume"] < 0:
+            validation_errors.append(f"row_{row_number}:index_non_positive_price_or_negative_volume")
+        if values["high"] < max(values["open"], values["low"], values["close"]):
+            validation_errors.append(f"row_{row_number}:index_high_below_ohlc")
+        if values["low"] > min(values["open"], values["high"], values["close"]):
+            validation_errors.append(f"row_{row_number}:index_low_above_ohlc")
+        parsed_rows.append({key: str(values[key]) for key in values})
+
+    signatures = {tuple(sorted(row.items())) for row in parsed_rows}
+    duplicate_kind = "none"
+    if len(parsed_rows) > 1:
+        duplicate_kind = "exact_duplicate_rows" if len(signatures) == 1 else "conflicting_duplicate_rows"
+        validation_errors.append(duplicate_kind)
+    row_valid = len(parsed_rows) == 1 and not validation_errors
+    if row_valid:
+        status = "valid_single_row"
+    elif duplicate_kind != "none":
+        status = duplicate_kind
+    else:
+        status = "row_validation_error"
+
     return {
         "date": expected_date,
-        "nepse_index_row_valid": True,
-        "nepse_index": {key: str(values[key]) for key in values},
+        "nepse_index_row_valid": row_valid,
+        "index_row_status": status,
+        "nepse_index_row_count": len(parsed_rows),
+        "duplicate_kind": duplicate_kind,
+        "validation_errors": validation_errors,
+        "nepse_index_rows": parsed_rows,
         "file_bytes": len(content),
         "file_sha256": digest,
     }
-
 
 def load_floorsheet_dates(paths: list[str | Path]) -> dict[str, dict[str, int]]:
     result: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -153,7 +173,13 @@ def build_crosscheck(
         fs = dict(floorsheet.get(day, {}))
         rows.append({
             "date": day,
-            "classification": "observed_index_session_candidate" if day in index_rows else "index_file_present_but_row_unverified",
+            "classification": (
+                "observed_index_session_candidate"
+                if day in index_rows and index_rows[day]["nepse_index_row_valid"]
+                else "observed_index_file_with_row_anomaly"
+                if day in index_rows
+                else "index_file_present_but_row_unverified"
+            ),
             "index_row": index_rows.get(day),
             "ohlcv_sources": per_repo,
             "floorsheet_sources_file_count": fs,
@@ -167,8 +193,13 @@ def build_crosscheck(
         "selected_recent_index_file_dates": len(selected_dates),
         "selected_start_date": selected_dates[0] if selected_dates else None,
         "selected_end_date": selected_dates[-1] if selected_dates else None,
-        "valid_index_rows": len(index_rows),
-        "index_download_or_validation_errors": errors,
+        "observed_index_files": len(index_rows),
+        "valid_index_rows": sum(bool(row["nepse_index_row_valid"]) for row in index_rows.values()),
+        "index_row_anomaly_dates": [
+            {"date": day, "status": row["index_row_status"], "errors": row["validation_errors"]}
+            for day, row in sorted(index_rows.items()) if not row["nepse_index_row_valid"]
+        ],
+        "index_download_errors": errors,
         "ohlcv_source_commits": {
             source: result.get("commit_sha") for source, result in audit.get("repositories", {}).items()
         },
@@ -204,10 +235,11 @@ def main() -> None:
         "index_commit_sha": report["index_commit_sha"],
         "selected_dates": report["selected_recent_index_file_dates"],
         "valid_index_rows": report["valid_index_rows"],
-        "index_errors": len(report["index_download_or_validation_errors"]),
+        "index_row_anomalies": len(report["index_row_anomaly_dates"]),
+        "index_download_errors": len(report["index_download_errors"]),
         "date_range": [report["selected_start_date"], report["selected_end_date"]],
     }, indent=2))
-    if report["index_download_or_validation_errors"]:
+    if report["index_download_errors"] or report["index_row_anomaly_dates"]:
         raise SystemExit(2)
 
 

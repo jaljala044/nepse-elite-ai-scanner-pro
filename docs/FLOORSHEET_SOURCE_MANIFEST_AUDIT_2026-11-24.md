@@ -38,7 +38,7 @@ Compared the dated CSV manifests in the two pinned floorsheet subtrees:
 - Dates present only in SamirWagle: **24**
 - Exact Git blob matches on shared dates: **0 of 155**
 - On 11 of the 155 shared dates, Samir's file is more than 10% smaller by byte size than SocrateAI's file.
-- Largest size discrepancy in that direction: 2026-03-10 — SocrateAI 12,074,849 bytes; Samir 1,073,010 bytes (~8.9% of SocrateAI size). 2026-04-09 is also unusually small: 7,665,800? No — the manifest reports SocrateAI 6,363,390 bytes and Samir 766,580 bytes.
+- Largest size discrepancy in that direction: 2026-03-10 — SocrateAI 12,074,849 bytes; Samir 1,073,010 bytes (~8.9% of SocrateAI size). Another unusually small Samir file is 2026-04-09: SocrateAI 6,363,390 bytes; Samir 766,580 bytes.
 
 Interpretation:
 - Different Git blob hashes prove the files are not byte-for-byte identical; they do **not** prove the records differ, because headers, quoting, line endings, ordering, or schema may differ.

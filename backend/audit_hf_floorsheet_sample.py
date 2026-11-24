@@ -328,6 +328,90 @@ def compare_reference_turnover(
     }
 
 
+FLOORSHEET_TO_INDEX_SECTOR = {
+    "Commercial Banks": "Banking SubIndex",
+    "Development Banks": "Development Bank Index",
+    "Finance": "Finance Index",
+    "Hotels And Tourism": "Hotels And Tourism Index",
+    "Hydro Power": "HydroPower Index",
+    "Investment": "Investment Index",
+    "Life Insurance": "Life Insurance",
+    "Manufacturing And Processing": "Manufacturing And Processing",
+    "Microfinance": "Microfinance Index",
+    "Mutual Fund": "Mutual Fund",
+    "Non Life Insurance": "Non Life Insurance",
+    "Others": "Others Index",
+    "Tradings": "Trading Index",
+}
+
+
+def compare_sector_controls(
+    floorsheet_rows: list[dict[str, str]],
+    index_rows: list[dict[str, str]],
+) -> dict[str, Any]:
+    floor_agg: dict[str, dict[str, Any]] = {}
+    for row in floorsheet_rows:
+        sector = (row.get("sector") or "").strip()
+        if not sector:
+            continue
+        entry = floor_agg.setdefault(sector, {"transaction_count": 0, "share_quantity": 0, "turnover_amount": Decimal(0)})
+        entry["transaction_count"] += 1
+        try:
+            entry["share_quantity"] += int(row["quantity"])
+            entry["turnover_amount"] += decimal_value(row["amount"])
+        except (KeyError, ValueError, InvalidOperation):
+            continue
+
+    index_by_sector = {
+        (row.get("sector") or "").strip(): row
+        for row in index_rows
+        if (row.get("sector") or "").strip()
+    }
+    comparisons = []
+    for floor_sector, index_sector in FLOORSHEET_TO_INDEX_SECTOR.items():
+        floor_values = floor_agg.get(floor_sector)
+        index_row = index_by_sector.get(index_sector)
+        if floor_values is None:
+            comparisons.append({"floorsheet_sector": floor_sector, "index_sector": index_sector, "status": "floorsheet_sector_missing"})
+            continue
+        if index_row is None:
+            comparisons.append({"floorsheet_sector": floor_sector, "index_sector": index_sector, "status": "index_sector_missing"})
+            continue
+        fields = {
+            "transaction_count": ("transaction_count", "total_transaction"),
+            "share_quantity": ("share_quantity", "turnover_volume"),
+            "turnover_amount": ("turnover_amount", "turnover_values"),
+        }
+        values = {}
+        exact = True
+        for label, (floor_key, index_key) in fields.items():
+            floor_value = Decimal(str(floor_values[floor_key]))
+            index_value = decimal_value(index_row[index_key])
+            difference = floor_value - index_value
+            values[label] = {
+                "floorsheet_value": str(floor_value),
+                "index_value": str(index_value),
+                "difference": str(difference),
+                "status": "exact_match" if difference == 0 else "different",
+            }
+            exact = exact and difference == 0
+        comparisons.append({
+            "floorsheet_sector": floor_sector,
+            "index_sector": index_sector,
+            "status": "exact_match" if exact else "sector_control_difference",
+            "comparisons": values,
+        })
+    unmapped = sorted(set(floor_agg) - set(FLOORSHEET_TO_INDEX_SECTOR))
+    return {
+        "mapped_sector_count": len(comparisons),
+        "exact_match_sector_count": sum(1 for x in comparisons if x["status"] == "exact_match"),
+        "different_sector_count": sum(1 for x in comparisons if x["status"] == "sector_control_difference"),
+        "unmapped_floorsheet_sectors": unmapped,
+        "sector_comparisons": comparisons,
+        "scope_note": "Sector index totals may cover only eligible index constituents while the floorsheet includes all traded instruments; no scope adjustment is applied.",
+    }
+
+
 def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_date: str, reference_index_path: str | Path | None = None) -> dict[str, Any]:
     floor_rows, floor_fields = read_csv(floorsheet_path)
     missing = FLOORSHEET_REQUIRED - set(floor_fields)
@@ -336,6 +420,7 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
     index_rows, index_fields = read_csv(index_path)
     floor_audit = audit_floorsheet_rows(floor_rows, expected_date)
     controls = compare_index_controls(floor_audit, index_rows, expected_date)
+    sector_controls = compare_sector_controls(floor_rows, index_rows)
     index_ohlc = validate_index_ohlc(controls["index_row"]) if controls.get("index_row") else {"valid": False, "errors": [{"reason": "index_control_row_unavailable"}], "previous_close_diagnostic": None}
     reference_control = None
     reference_file = None
@@ -359,6 +444,7 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
         },
         "floorsheet": floor_audit,
         "index_control_totals": controls,
+        "sector_control_comparison": sector_controls,
         "index_ohlc_validation": index_ohlc,
         "reference_index_file": reference_file,
         "reference_index_corroboration": reference_control,

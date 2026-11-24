@@ -6,6 +6,8 @@ on:
     paths:
       - "backend/audit_ohlcv_archives.py"
       - "backend/tests/test_audit_ohlcv_archives.py"
+      - "backend/crosscheck_ohlcv_socrateai.py"
+      - "backend/tests/test_crosscheck_ohlcv_socrateai.py"
       - ".github/workflows/ohlcv-archive-row-audit.yml"
   workflow_dispatch:
 
@@ -38,11 +40,24 @@ jobs:
             --repo jaljala044/nepse-history-starter \
             --workers 8 \
             --output data/reports/ohlcv-archive-audit.json
+      - name: Cross-check flagged rows against SocrateAI unadjusted EOD
+        if: always()
+        run: |
+          if test -f data/reports/ohlcv-archive-audit.json; then
+            python backend/crosscheck_ohlcv_socrateai.py \\
+              --input data/reports/ohlcv-archive-audit.json \\
+              --output data/reports/ohlcv-socrateai-crosscheck.json
+          else
+            echo "No OHLCV audit report was produced; cannot cross-check."
+            exit 1
+          fi
       - name: Upload OHLCV audit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nepse-ohlcv-row-audit
-          path: data/reports/ohlcv-archive-audit.json
+          path: |
+            data/reports/ohlcv-archive-audit.json
+            data/reports/ohlcv-socrateai-crosscheck.json
           if-no-files-found: warn
           retention-days: 30

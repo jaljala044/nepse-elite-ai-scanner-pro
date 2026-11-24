@@ -170,20 +170,49 @@ def audit_floorsheet_rows(rows: list[dict[str, str]], expected_date: str) -> dic
     }
 
 
-def find_nepse_index_row(rows: list[dict[str, str]]) -> dict[str, str] | None:
+def find_nepse_index_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    matches = []
     for row in rows:
         for key in ("sector", "symbol", "index_name", "index"):
             value = (row.get(key) or "").strip().upper().replace("%20", " ")
             normalized = re.sub(r"[\s_-]+", "", value)
             if normalized in {"NEPSE", "NEPSEINDEX"}:
-                return row
-    return None
+                matches.append(row)
+                break
+    return matches
 
 
-def compare_index_controls(floorsheet: dict[str, Any], index_rows: list[dict[str, str]]) -> dict[str, Any]:
-    index_row = find_nepse_index_row(index_rows)
-    if index_row is None:
+def find_nepse_index_row(rows: list[dict[str, str]]) -> dict[str, str] | None:
+    matches = find_nepse_index_rows(rows)
+    return matches[0] if matches else None
+
+
+def compare_index_controls(
+    floorsheet: dict[str, Any],
+    index_rows: list[dict[str, str]],
+    expected_date: str | None = None,
+) -> dict[str, Any]:
+    matches = find_nepse_index_rows(index_rows)
+    if not matches:
         return {"status": "nepse_index_control_row_missing", "matched": False}
+    if len(matches) != 1:
+        return {
+            "status": "duplicate_nepse_index_control_rows",
+            "matched": False,
+            "nepse_index_row_count": len(matches),
+            "nepse_index_rows": matches,
+        }
+    index_row = matches[0]
+    date_field = next((key for key in ("date", "calculation_date", "trade_date") if index_row.get(key)), None)
+    if expected_date and date_field and index_row[date_field] != expected_date:
+        return {
+            "status": "nepse_index_control_date_mismatch",
+            "matched": False,
+            "index_date": index_row[date_field],
+            "expected_date": expected_date,
+            "index_date_field": date_field,
+            "index_row": index_row,
+        }
     mappings = {
         "turnover_amount": ("total_amount", ("turnover_values", "turnover_value", "turnover")),
         "share_quantity": ("total_quantity", ("turnover_volume", "volume")),
@@ -229,7 +258,7 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
         raise ValueError("floorsheet missing columns: " + ", ".join(sorted(missing)))
     index_rows, index_fields = read_csv(index_path)
     floor_audit = audit_floorsheet_rows(floor_rows, expected_date)
-    controls = compare_index_controls(floor_audit, index_rows)
+    controls = compare_index_controls(floor_audit, index_rows, expected_date)
     return {
         "expected_date": expected_date,
         "floorsheet_file": {

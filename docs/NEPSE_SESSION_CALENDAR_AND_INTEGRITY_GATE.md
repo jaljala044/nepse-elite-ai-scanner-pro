@@ -15,7 +15,7 @@ NEPSE actually closed.
 
 The schedule regimes are candidate hints only:
 - Through 2022-05-05: Sunday–Thursday regular-session candidates; Friday odd-lot excluded; Saturday closed.
-- 2022-05-06 through 2022-06-14: temporary Monday–Friday candidates; Saturday/Sunday closed.
+- 2022-05-15 through 2022-06-14: temporary Monday–Friday candidates; Saturday/Sunday closed.
 - 2022-06-15 through 2022-09-16: temporary Sunday–Friday candidates; Saturday closed.
 - 2022-09-17 through 2026-04-05: Sunday–Thursday candidates; Friday/Saturday excluded.
 - From 2026-04-06: Monday–Friday candidates; Saturday/Sunday excluded.

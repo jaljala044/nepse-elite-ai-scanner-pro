@@ -61,7 +61,7 @@ A sample 2026-11-19 unadjusted stock file contains date, close, open, high, low,
 - 179 dated floorsheet files, 2026-02-22 through 2026-11-24, about 734.7 MB.
 - 365 company-wise `prices.csv` files.
 - Current sample NABIL price file uses `date,open,high,low,ltp,percent_change,qty,turnover`; map `ltp` to a source-specific close candidate only after validation and do not fabricate an adjusted close.
-- Its current floorsheet snapshots are useful for coverage comparison and cross-checking recent sessions, but do not assume every file is complete or source-authoritative.
+- Its current floorsheet snapshots are useful for coverage comparison and cross-checking recent sessions, but do not assume every file is complete or source-authoritative. The README labels the project/data for educational use and describes upstream sources as ShareSansar and Merolagani; no standalone data license file was found in the inspected repository. Keep Samir data as a validation/cross-check source only until the owner and upstream terms clearly permit NEPSE AI's intended storage, processing and deployment use.
 
 ### Hugging Face: Urekmazino69/Nepse-floorsheet-and-indices
 
@@ -84,7 +84,7 @@ Use for cross-checking and derived feature research only after terms review and 
 ### GitHub NEPSE Open Data: `srijankarki07/nepse-data`
 
 - Repository README claims 3,600 sessions from 2011 onward and a daily EOD archive.
-- Crucial: the LICENSE explicitly states that its MIT license covers software only, not the data, which is republished from ShareSansar. Do not copy its data into NEPSE AI or redistribute it based on the code license. Use the repository documentation to understand provenance and compare only if data-use rights are independently obtained.
+- Crucial: the LICENSE explicitly states that its MIT license covers software only, not the data, which is republished from ShareSansar. Do not copy its data into NEPSE AI or redistribute it based on the code license. Use the repository documentation to understand provenance and compare only if data-use rights are independently obtained. The README's claim of 3,626 sessions and latest date 2026-11-23 is a publisher-maintained status record, not permission to copy the archive.
 
 ## Collection priorities
 

@@ -196,3 +196,25 @@ These checks used public daily-price pages and a public floorsheet mirror, not d
 - Evidence URLs: https://sunsecurities.com/company/BGWT/price-history ; https://www.arthakendra.com/stock-market/company/BGWT/price-history ; https://www.financialnotices.com/stock-nepse.php?symbol=BGWT
 
 The external daily-history tables are secondary sources, not the NEPSE transaction ledger. Raw archive values remain immutable; canonical selection must retain source and adjustment-basis provenance. The API record remains quarantined until the dated floorsheet is acquired and its transaction rates are fully reconciled.
+
+
+## User-directed API open-value decision — 2026-11-24
+
+For API on 2026-04-27, the user explicitly directed that the **working open value be marked as 340.0**. Record the resulting working OHLC as **340.0 / 345.0 / 340.0 / 341.0** (O/H/L/C) for downstream review. This makes the candle satisfy the basic OHLC range inequalities, but it is a **user-directed working correction**, not an independently verified exchange correction. Preserve the original SMC raw row unchanged as **339.9 / 345.0 / 340.0 / 341.0** with its source provenance and hash. Keep both values in the audit trail; do not overwrite raw source data. The contract-level floor-sheet mirror previously examined contains two API trades at 331.8, so the day's low and the open still require authoritative transaction-level reconciliation. Until that conflict is resolved, tag the working 340.0 open as provisional and exclude the row from strict verified-canonical OHLCV promotion.
+
+## Partial all-symbol audit progress — batch 3 (files 33–40 of 525)
+
+Eight additional files after BJHL in repository tree order were fetched and scanned for calendar dates 2025-11-24 through 2026-11-23. This remains a calendar-window scan, not verified-session completeness. See the batch table below; sparse instruments and any anomalies require lifecycle/source review. Cumulative progress: 40/525 files (7.6%).
+
+| Symbol file | Total rows | Rows in candidate interval | Invalid OHLC | Latest date |
+|---|---:|---:|---:|---|
+| BNHC_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| BNL_OHLCV.csv | 605 | 173 | 0 | 2026-11-19 |
+| BNT_OHLCV.csv | 909 | 279 | 0 | 2026-11-20 |
+| BOKD86KA_OHLCV.csv | 103 | 23 | 0 | 2026-10-15 |
+| BOKD86_OHLCV.csv | 411 | 82 | 0 | 2026-11-17 |
+| BPCL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| BPW_OHLCV.csv | 3 | 0 | 0 | 2024-03-06 |
+| BUNGAL_OHLCV.csv | 319 | 305 | 0 | 2026-11-20 |
+
+

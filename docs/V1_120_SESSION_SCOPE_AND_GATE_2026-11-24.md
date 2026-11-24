@@ -40,7 +40,7 @@ The following default-branch files were fetched and inspected on 2026-11-24:
 | `jaljala044/nepse-smc-data/03_stock_charts_ohlcv/AHPC_OHLCV.csv` | `8adf41de96954d38e42f6353cb24a105d3e51082` | 2026-11-19 | 3,780 dated rows; sample file's trailing one-year coverage has not yet been audited. |
 | `jaljala044/nepse-history-starter/03_stock_charts_ohlcv/API_OHLCV.csv` | `65ebab9f040ff03d42898ae8d80952683b124ad7` | 2026-11-20 | 935 dated rows; contains repeated weekend/carry-forward dates and is not a valid session calendar. |
 
-These are sample-file findings only, not a full 525-symbol V1 audit. The differing date coverage and end dates demonstrate that neither archive can be treated as a verified, complete session calendar.
+These are sample-file findings only, not a full 525-symbol V1 audit. In the SMC API sample, the 2026-04-27 row is \`2026-04-27,339.9,345.0,340.0,341.0,206969.0\`; it violates \`low <= open\`. The History Starter API file has no row for that date, so it does not independently corroborate or correct it. This single sample anomaly is quarantined pending independent evidence; do not guess which value is wrong. The History Starter sample's 64 weekend dates in the one-year interval are a clear reason not to infer sessions from ticker-file dates. The differing date coverage and end dates demonstrate that neither archive can be treated as a verified, complete session calendar.
 
 The scanner repository's `data/reference/nepse_session_calendar.csv` currently contains only its header:
 
@@ -78,7 +78,7 @@ https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/HISTORIC
 - [x] V1 priority changed from 120 sessions to one year first, six months fallback.
 - [x] 2–3-year expansion deferred to a later version.
 - [x] Identified April 2026 weekday regime change (Sunday–Thursday to Monday–Friday); calendar logic must be date-aware.
-- [x] Confirmed current sample files have inconsistent coverage and the History Starter API file includes weekend/carry-forward rows.
+- [x] Sample-audited one year in two SMC ticker files and one History Starter ticker file: found one invalid API OHLC row (2026-04-27) in SMC, zero in AHPC and zero in History Starter API; History Starter API has 64 Saturday/Sunday dates in the candidate interval.
 - [x] Confirmed scanner session-calendar CSV is empty apart from its header.
 - [ ] Capture and verify the NEPSE primary notice for the April 2026 schedule change.
 - [ ] Populate evidence-backed session calendar for the candidate one-year window.

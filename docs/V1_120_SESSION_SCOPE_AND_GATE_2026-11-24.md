@@ -930,3 +930,12 @@ The README and `audit/source_coverage.json` report 128 benchmark bars and 1,534 
 
 - The Financial Notices UNHPL price-history table explicitly labels columns `Date | Close | Open | High | Low | Volume | Change`. For 2026-04-29 it reports close 475.4, open 487.9, high 487, low 475, volume 46,481. This confirms the archive's same field values and their order; it does not resolve the open-above-high arithmetic violation. Source: https://www.financialnotices.com/stock-nepse.php?symbol=UNHPL
 - The historical-weekend helper fix PR #3 now has two successful GitHub Actions `session-date-tests` runs. It remains draft/open/unmerged: https://github.com/jaljala044/nepse-smc-data/pull/3
+
+
+### Benchmark/sector field completeness
+
+A second pass counted volume/turnover availability:
+- `benchmark_daily.csv`: 138 rows; 33 have zero volume and 10 have blank turnover. Sources are mixed (105 YONEPSE archived index, 23 Nepse Decode closing index, 10 YONEPSE + SocrateAI).
+- `sector_data.csv`: 1,558 rows; 37 have missing volume and 24 have blank turnover. Sources are mixed (1,260 YONEPSE archived index, 274 Nepse Decode closing index, 24 YONEPSE + SocrateAI).
+- These fields must remain null/unknown when not supplied. Do not coerce zero volume to a real zero-trade session or infer turnover.
+- The 2026-11-24 index audit records cross-source opening conflicts for all eight indices with blank opens in the index CSV: NEPSE, Sensitive, Float, Sensitive Float, Commercial Banks, Hotels & Tourism, Hydro Power and Others. Float also has a 0.01 high conflict. Preserve source-specific values until an authoritative resolution is obtained.

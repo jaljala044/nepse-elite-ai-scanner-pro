@@ -595,3 +595,249 @@ Candidate window: 2025-11-24 through 2026-11-23 (calendar dates, not verified ex
 | NMFBS_OHLCV.csv | 935 | 306 | 0 | 2026-11-20 |
 
 Cumulative progress: 320/525 files (61.0%). No new OHLC range violations were detected in files 241–320. The already recorded KDBY, KEF and MERO anomalies remain in the quarantine/investigation list; raw rows remain unchanged.
+
+
+## Partial all-symbol audit — batches 40–66 (files 321–525 of 525)
+
+Candidate window: 2025-11-24 through 2026-11-23 (calendar dates, not verified exchange sessions). Every one of the 525 stock CSV files in the repository's `03_stock_charts_ohlcv/` directory has now been fetched and checked for strict OHLC range relations within that window.
+
+| File | Total | Window | OHLC violations | Latest |
+|---|---:|---:|---:|---|
+| NMIC_OHLCV.csv | 535 | 305 | 0 | 2026-11-20 |
+| NMLBBLP_OHLCV.csv | 11 | 4 | 0 | 2026-11-18 |
+| NMLBBL_OHLCV.csv | 860 | 306 | 0 | 2026-11-20 |
+| NRICP_OHLCV.csv | 7 | 0 | 0 | outside window |
+| NRIC_OHLCV.csv | 1493 | 227 | 0 | 2026-11-20 |
+| NRM_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NRN_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NSIF2_OHLCV.csv | 930 | 303 | 0 | 2026-11-20 |
+| NSY_OHLCV.csv | 192 | 192 | 0 | 2026-11-20 |
+| NTC_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| NUBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| NWCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| NYADI_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| OHL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| OMPL_OHLCV.csv | 509 | 305 | 0 | 2026-11-20 |
+| PBD84_OHLCV.csv | 298 | 72 | 0 | 2026-11-06 |
+| PBD85_OHLCV.csv | 381 | 64 | 0 | 2026-11-17 |
+| PBD88_OHLCV.csv | 736 | 227 | 0 | 2026-11-05 |
+| PBD93_OHLCV.csv | 40 | 40 | 0 | 2026-11-20 |
+| PBLD84_OHLCV.csv | 379 | 82 | 0 | 2026-11-06 |
+| PBLD86_OHLCV.csv | 129 | 19 | 0 | 2026-10-08 |
+| PBLD87_OHLCV.csv | 316 | 88 | 0 | 2026-11-19 |
+| PCBLP_OHLCV.csv | 113 | 26 | 0 | 2026-11-17 |
+| PCBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| PCIL_OHLCV.csv | 170 | 170 | 0 | 2026-11-20 |
+| PFLPO_OHLCV.csv | 1 | 0 | 0 | outside window |
+| PFL_OHLCV.csv | 889 | 259 | 0 | 2026-11-20 |
+| PHCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| PMHPL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| PMLIP_OHLCV.csv | 80 | 17 | 0 | 2026-11-05 |
+| PMLI_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| PPCL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| PPL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| PRIN_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| PROFLP_OHLCV.csv | 45 | 5 | 0 | 2026-10-15 |
+| PROFL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| PRSF_OHLCV.csv | 928 | 305 | 0 | 2026-11-20 |
+| PRVUPO_OHLCV.csv | 98 | 17 | 0 | 2026-10-09 |
+| PRVU_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| PSF_OHLCV.csv | 931 | 305 | 0 | 2026-11-20 |
+| PURE_OHLCV.csv | 485 | 304 | 0 | 2026-11-20 |
+| RADHI_OHLCV.csv | 1972 | 227 | 1 | 2026-11-20 |
+| RAWA_OHLCV.csv | 766 | 226 | 2 | 2026-11-19 |
+| RBBD2088_OHLCV.csv | 300 | 203 | 0 | 2026-11-20 |
+| RBBD83_OHLCV.csv | 292 | 78 | 0 | 2026-11-18 |
+| RBBF40_OHLCV.csv | 249 | 249 | 0 | 2026-11-20 |
+| RBCLPO_OHLCV.csv | 837 | 227 | 0 | 2026-11-18 |
+| RBCL_OHLCV.csv | 931 | 304 | 0 | 2026-11-20 |
+| RFPL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| RHGCL_OHLCV.csv | 957 | 226 | 0 | 2026-11-19 |
+| RHPL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| RIDI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| RLEL_OHLCV.csv | 182 | 182 | 0 | 2026-11-20 |
+| RLFLPO_OHLCV.csv | 8 | 3 | 0 | 2026-04-08 |
+| RLFL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| RMF1_OHLCV.csv | 932 | 306 | 0 | 2026-11-20 |
+| RMF2_OHLCV.csv | 855 | 273 | 0 | 2026-11-19 |
+| RNLI_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| RSDCP_OHLCV.csv | 1 | 1 | 0 | 2026-06-02 |
+| RSDC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| RSML_OHLCV.csv | 222 | 222 | 0 | 2026-11-20 |
+| RSY2_OHLCV.csv | 60 | 60 | 0 | 2026-11-20 |
+| RSY_OHLCV.csv | 453 | 305 | 0 | 2026-11-20 |
+| RURU_OHLCV.csv | 932 | 302 | 0 | 2026-11-20 |
+| SABBL_OHLCV.csv | 221 | 221 | 0 | 2026-11-20 |
+| SABSL_OHLCV.csv | 131 | 0 | 0 | outside window |
+| SADBLP_OHLCV.csv | 41 | 4 | 0 | 2026-07-31 |
+| SADBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SAEF2_OHLCV.csv | 62 | 62 | 0 | 2026-11-20 |
+| SAEF_OHLCV.csv | 293 | 0 | 0 | outside window |
+| SAGAR_OHLCV.csv | 320 | 305 | 0 | 2026-11-20 |
+| SAGF_OHLCV.csv | 912 | 294 | 0 | 2026-11-20 |
+| SAHAS_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SAIL_OHLCV.csv | 306 | 306 | 0 | 2026-11-20 |
+| SALICOPO_OHLCV.csv | 8 | 1 | 0 | 2026-08-27 |
+| SALICO_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SAMAJ_OHLCV.csv | 591 | 0 | 0 | outside window |
+| SAND2085_OHLCV.csv | 249 | 73 | 0 | 2026-10-27 |
+| SANIMA_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SANVI_OHLCV.csv | 432 | 305 | 0 | 2026-11-20 |
+| SAPDBLP_OHLCV.csv | 5 | 0 | 0 | outside window |
+| SAPDBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SAPIL_OHLCV.csv | 57 | 57 | 0 | 2026-11-20 |
+| SARBTM_OHLCV.csv | 920 | 305 | 0 | 2026-11-20 |
+| SBCF_OHLCV.csv | 930 | 301 | 0 | 2026-11-20 |
+| SBD87_OHLCV.csv | 408 | 93 | 0 | 2026-11-20 |
+| SBD89_OHLCV.csv | 127 | 45 | 0 | 2026-10-15 |
+| SBIBD86_OHLCV.csv | 204 | 42 | 0 | 2026-10-08 |
+| SBID2090_OHLCV.csv | 153 | 140 | 0 | 2026-11-19 |
+| SBID83_OHLCV.csv | 531 | 143 | 0 | 2026-11-19 |
+| SBID89_OHLCV.csv | 483 | 118 | 0 | 2026-11-17 |
+| SBI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SBLD2082_OHLCV.csv | 191 | 3 | 0 | 2026-01-06 |
+| SBLD2091_OHLCV.csv | 248 | 192 | 0 | 2026-11-17 |
+| SBLD83_OHLCV.csv | 116 | 18 | 0 | 2026-09-01 |
+| SBLD84_OHLCV.csv | 233 | 54 | 0 | 2026-11-03 |
+| SBLD89_OHLCV.csv | 278 | 81 | 0 | 2026-11-19 |
+| SBLPO_OHLCV.csv | 21 | 5 | 0 | 2026-09-30 |
+| SBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SCBD_OHLCV.csv | 288 | 73 | 0 | 2026-11-19 |
+| SCB_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SDBD87_OHLCV.csv | 436 | 96 | 0 | 2026-11-17 |
+| SDLBSL_OHLCV.csv | 131 | 0 | 0 | outside window |
+| SEF2_OHLCV.csv | 63 | 63 | 0 | 2026-11-20 |
+| SEF_OHLCV.csv | 916 | 300 | 0 | 2026-11-20 |
+| SFCLP_OHLCV.csv | 2 | 2 | 0 | 2026-01-19 |
+| SFCL_OHLCV.csv | 852 | 225 | 0 | 2026-07-09 |
+| SFEF_OHLCV.csv | 917 | 295 | 0 | 2026-11-20 |
+| SFMF_OHLCV.csv | 817 | 238 | 0 | 2026-11-20 |
+| SGHC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SGHL_OHLCV.csv | 87 | 87 | 0 | 2026-11-20 |
+| SGICP_OHLCV.csv | 26 | 2 | 0 | 2026-05-19 |
+| SGIC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SHEL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SHINED_OHLCV.csv | 205 | 192 | 0 | 2026-11-20 |
+| SHINEP_OHLCV.csv | 20 | 6 | 0 | 2026-06-28 |
+| SHINE_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SHIVM_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SHLB_OHLCV.csv | 934 | 304 | 0 | 2026-11-20 |
+| SHL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SHPC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SICLPO_OHLCV.csv | 5 | 0 | 0 | outside window |
+| SICL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SIFCPO_OHLCV.csv | 8 | 1 | 0 | 2026-01-05 |
+| SIFC_OHLCV.csv | 932 | 305 | 0 | 2026-11-20 |
+| SIGS2_OHLCV.csv | 837 | 271 | 0 | 2026-11-20 |
+| SIGS3_OHLCV.csv | 913 | 304 | 0 | 2026-11-20 |
+| SIKLES_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SINDUP_OHLCV.csv | 2 | 1 | 0 | 2026-04-05 |
+| SINDU_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SIPD_OHLCV.csv | 170 | 170 | 0 | 2026-11-20 |
+| SJCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SJLICP_OHLCV.csv | 4 | 1 | 0 | 2026-06-30 |
+| SJLIC_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SKBBLP_OHLCV.csv | 10 | 0 | 0 | outside window |
+| SKBBL_OHLCV.csv | 2927 | 226 | 0 | 2026-11-19 |
+| SKHEL_OHLCV.csv | 181 | 181 | 0 | 2026-11-20 |
+| SKHL_OHLCV.csv | 186 | 186 | 0 | 2026-11-20 |
+| SLBBLP_OHLCV.csv | 16 | 14 | 0 | 2026-08-27 |
+| SLBBL_OHLCV.csv | 935 | 306 | 0 | 2026-11-20 |
+| SLBSL_OHLCV.csv | 860 | 304 | 0 | 2026-11-20 |
+| SLCF_OHLCV.csv | 928 | 304 | 0 | 2026-11-20 |
+| SMATAP_OHLCV.csv | 10 | 1 | 0 | 2026-04-29 |
+| SMATA_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SMBPO_OHLCV.csv | 4 | 1 | 0 | 2026-07-16 |
+| SMB_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SMFBS_OHLCV.csv | 931 | 302 | 0 | 2026-11-20 |
+| SMHL_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| SMH_OHLCV.csv | 932 | 306 | 0 | 2026-11-20 |
+| SMJC_OHLCV.csv | 821 | 226 | 0 | 2026-11-19 |
+| SMPDAP_OHLCV.csv | 6 | 1 | 0 | 2026-09-17 |
+| SMPDA_OHLCV.csv | 769 | 306 | 0 | 2026-11-20 |
+| SNLI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SNMAPO_OHLCV.csv | 13 | 5 | 0 | 2026-04-09 |
+| SNORL_OHLCV.csv | 93 | 93 | 0 | 2026-11-20 |
+| SOHL_OHLCV.csv | 161 | 161 | 0 | 2026-11-20 |
+| SONA_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SOPL_OHLCV.csv | 111 | 111 | 0 | 2026-11-20 |
+| SPC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SPDL_OHLCV.csv | 2153 | 227 | 1 | 2026-11-20 |
+| SPHL_OHLCV.csv | 933 | 303 | 0 | 2026-11-20 |
+| SPILPO_OHLCV.csv | 4 | 0 | 0 | outside window |
+| SPIL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SPL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SRBLD83_OHLCV.csv | 250 | 65 | 0 | 2026-11-05 |
+| SRD80_OHLCV.csv | 12 | 0 | 0 | outside window |
+| SRLIP_OHLCV.csv | 34 | 12 | 0 | 2026-10-29 |
+| SRLI_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SSHL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| STC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| SWASTIK_OHLCV.csv | 314 | 305 | 0 | 2026-11-20 |
+| SWBBLP_OHLCV.csv | 1 | 0 | 0 | outside window |
+| SWBBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| SWMFPO_OHLCV.csv | 50 | 14 | 0 | 2026-10-14 |
+| SWMF_OHLCV.csv | 930 | 303 | 0 | 2026-11-20 |
+| SYPNL_OHLCV.csv | 290 | 290 | 0 | 2026-11-20 |
+| TAMOR_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| TPC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| TPKHL_OHLCV.csv | 97 | 97 | 0 | 2026-11-20 |
+| TRH_OHLCV.csv | 934 | 304 | 0 | 2026-11-20 |
+| TSHL_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| TTL_OHLCV.csv | 436 | 306 | 0 | 2026-11-20 |
+| TVCL_OHLCV.csv | 931 | 304 | 0 | 2026-11-20 |
+| UAILPO_OHLCV.csv | 7 | 1 | 0 | 2026-08-06 |
+| UAIL_OHLCV.csv | 758 | 226 | 2 | 2026-11-19 |
+| UHEWA_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| ULBSL_OHLCV.csv | 932 | 305 | 0 | 2026-11-20 |
+| ULHC_OHLCV.csv | 713 | 227 | 0 | 2026-11-20 |
+| UMHL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| UMRH_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| UNHPL_OHLCV.csv | 1651 | 227 | 1 | 2026-11-20 |
+| UNLBP_OHLCV.csv | 7 | 0 | 0 | outside window |
+| UNLB_OHLCV.csv | 935 | 306 | 0 | 2026-11-20 |
+| UNL_OHLCV.csv | 845 | 259 | 0 | 2026-11-20 |
+| UPCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| UPPER_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| USHEC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| USHL_OHLCV.csv | 930 | 304 | 0 | 2026-11-20 |
+| USLB_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| VLBSPO_OHLCV.csv | 18 | 0 | 0 | outside window |
+| VLBS_OHLCV.csv | 931 | 304 | 0 | 2026-11-20 |
+| VLUCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| WNLBP_OHLCV.csv | 7 | 0 | 0 | outside window |
+| WNLB_OHLCV.csv | 890 | 261 | 0 | 2026-09-03 |
+| YMHL_OHLCV.csv | 97 | 97 | 0 | 2026-11-20 |
+
+Cumulative result: **525/525 files inspected (100%)**. The strict OHLC range scan found **13 invalid rows across 11 symbols** in the candidate date interval. This is not a claim that all remaining rows are verified; the scan is only an arithmetic/range check and file coverage inventory. The interval still lacks an approved official session calendar and independent point-in-time publication provenance.
+
+### Final anomaly register from the one-year candidate window
+
+| Symbol | Date | Archive O/H/L/C | Independent secondary evidence | Current disposition |
+|---|---|---|---|---|
+| API | 2026-04-27 | 339.9/345/340/341 | Financial Notices and Sun Securities repeat 339.9/345/340/341; floorsheet mirror had two 331.8 contracts, timestamps blank | User-directed provisional working open 340.0 only; raw unchanged; unresolved/quarantined |
+| BGWT | 2026-04-29 | 740/731/718/730 (adjusted archive) | Sun Securities, ArthaKendra and Financial Notices report unadjusted 720/731/718/730, volume 1,573 | Adjustment-basis mismatch; raw retained; canonical series must distinguish adjusted/unadjusted |
+| HRL | 2026-04-29 | 685.5/685/676.1/679.2 | Sun Securities reports 679.2/685/676.1/679.2, volume 74,867 | Secondary candidate open differs; raw retained/quarantined pending primary proof |
+| KDBY | 2026-04-29 | 11.54/11.50/11.25/11.38 | ArthaKendra reports 11.25/11.50/11.25/11.38, volume 23,420 | Secondary candidate open differs; raw retained/quarantined |
+| KEF | 2026-04-28 | 10.89/10.80/10.70/10.79 | ArthaKendra repeats the same invalid OHLC and volume 5,400 | Shared-source error possible; unresolved/quarantined |
+| MERO | 2026-04-24 | 731.1/730/720/726 | Sun Securities repeats same values and volume 1,671 | Secondary source corroborates invalid published values, not validity; unresolved/quarantined |
+| RADHI | 2026-04-29 | 780/775/755/764.8 | ArthaKendra reports 775/775/755/764.8, volume 57,510 | Secondary candidate open differs; raw retained/quarantined |
+| RAWA | 2026-04-27 | 648.7/645/625/630 | Sun Securities and ArthaKendra repeat same invalid values and volume 3,747 | Unresolved/quarantined |
+| RAWA | 2026-04-29 | 615/610/587/610 | Sun Securities and ArthaKendra report 610/610/587/610, volume 2,840 | Secondary candidate open differs; raw retained/quarantined |
+| SPDL | 2026-04-28 | 408/406.3/396/399 | Sun Securities reports same values and volume 64,356 | Secondary source corroborates invalid values, not validity; unresolved/quarantined |
+| UAIL | 2026-04-24 | 449.9/449.8/440.5/445.1 | ArthaKendra repeats same values and volume 4,553 | Shared-source error possible; unresolved/quarantined |
+| UAIL | 2026-04-29 | 446/444.9/438/438 | ArthaKendra reports 442.6/444.9/438/438, volume 9,360 | Secondary candidate open differs; raw retained/quarantined |
+| UNHPL | 2026-04-29 | 487.9/487/475/475.4 | Financial Notices shows values 475.4/487.9/487/475 (published ordering appears to place close first) | Reproduces the same values; unresolved/quarantined |
+
+All external price-history pages above are secondary sources, not Chukul or NEPSE Alpha chart screenshots. Chukul Technical Desk remained inaccessible without sign-in and its public fetch returned no readable chart data. NEPSE Alpha chart route exposed login/register, not a historical candle. Therefore none of the rows in this anomaly register is claimed as independently captured from Chukul or NEPSE Alpha. No raw OHLCV file has been modified.
+
+### One-year audit gate status after full file scan
+
+- **File inventory and strict OHLC range scan:** complete for all 525 ticker CSVs in this directory.
+- **OHLC anomaly triage:** 13 candidate rows identified; no silent repairs. External secondary evidence recorded where available.
+- **Coverage and listing lifecycle:** not yet complete. Zero-row-in-window and sparse files require security type, listing/issue dates, suspension/delisting and corporate-event review.
+- **Session completeness:** not verified. Session calendar CSV remains header-only; no date-by-date primary NEPSE session register has been completed.
+- **Point-in-time provenance:** not verified for all rows. Existing archive presence does not establish when each datum became publicly available or when it was retrieved.
+- **Adjustment/corporate-action basis:** not yet normalized for every symbol. Adjusted/unadjusted series must remain separate.
+- **Market index, sector and broker/floorsheet coverage:** separate audits remain pending.
+- **V1 acceptance:** **not passed**. Do not mark one-year data gate complete. Keep six-month fallback as contingency only after the remaining one-year blockers are assessed; do not downgrade scope prematurely.

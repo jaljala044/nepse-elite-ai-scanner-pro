@@ -79,3 +79,28 @@ prove all expected archive files were supplied.
 - Full data-integrity completion additionally requires the raw archives to be staged
   and all rows to be audited. Until those are done, canonical import and predictive
   intelligence remain blocked.
+
+## 2026 calendar evidence review queue
+
+A separate lead register now exists at
+`data/reference/nepse_calendar_evidence_leads_2026.csv`. It records candidate
+closure dates and source quality without promoting any row into the canonical
+session calendar.
+
+The first reviewed leads are:
+
+- **21 Sep 2026:** ShareSansar reports NEPSE suspended trading after a Data Hub
+  outage and resumed on 22 Sep. This is an exceptional exchange suspension, not
+  a routine public holiday.
+- **19–23 Oct 2026:** ShareSansar reports NEPSE closed Monday–Friday for Dashain.
+- **9–12 Nov 2026:** ShareSansar reports NEPSE closed for Tihar, with trading
+  resuming Friday 13 Nov.
+- **16 Nov 2026:** ShareSansar's 13 Nov market report says the exchange would be
+  closed Monday for Chhath and resume Tuesday 17 Nov.
+- **28 Aug and 4 Sep 2026:** the Nepal Rastra Bank 2083 holiday list identifies
+  government holidays, but this alone is not proof of a NEPSE closure.
+
+These are secondary-source leads and/or government holiday candidates. The
+canonical calendar remains empty until dated primary NEPSE notices or equivalent
+exchange records are captured, preserved, hashed and reviewed. Do not mark any
+candidate date verified solely from this lead file.

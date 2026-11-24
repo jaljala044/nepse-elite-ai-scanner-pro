@@ -1028,3 +1028,14 @@ Sparse or lifecycle-sensitive examples include KLBSLP and KLBSL (no candidate-wi
 Other partial-coverage examples include KBLD series, KBLPO, KMCDBP, KSBBLD87, KSBBLP, LBBLD89, LBLD86/88, LSLPO, MBLD series, MBLPO, MFLD85 and MLBLD89/MLBLPO. These require matching against verified trading sessions and instrument status.
 
 Cumulative scan progress: 232/525 files (44.2%). Mechanical validation only; source cross-checks, corporate-action basis, and session completeness remain outstanding.
+
+
+## Continued all-symbol scan — files 233–304 (batches 27–36)
+
+A further 72 SMC stock CSV files were fetched and parsed from main in nine batches of eight; all 72 fetches succeeded. No duplicate dates or additional OHLC range violations were found in this range.
+
+Cumulative documented scan progress: 304/525 files (57.9%). The five provisional OHLC violations remain API (2026-04-27), BGWT (2026-04-29), HRL (2026-04-29), KDBY (2026-04-29) and KEF (2026-04-28). This remains a mechanical screening result, not final cross-source adjudication.
+
+Lifecycle/sparse-data examples in this range include MMFDBP/MMFDB (no candidate-window rows; last 2024-03-12), MPFLPO (no candidate-window rows; last 2025-06-23), NABBCP (no candidate-window rows; last 2024-12-21), NICAD8182/NICAD8283 (no candidate-window rows), NICAD~2085~2F86 (no candidate-window rows), NICGF (no candidate-window rows; last 2025-03-09), NICLPO (one old row), NIFRAP (no candidate-window rows), NILPO (no candidate-window rows), and NLBBL (no candidate-window rows; last 2024-03-12). Instrument lifecycle and security master evidence is required before classification.
+
+Other partial histories include NBLD82/85/87, NCCD86, NIBD series, NIFRAGED, NIFRAUR85/86, NIMBD90 and several preference/structured instruments. Validate their issue dates, listing status, and actual traded sessions separately.

@@ -234,6 +234,8 @@ def audit_repositories(
     duplicate_total = sum(item["duplicate_date_count"] for item in repo_results.values())
     order_total = sum(item["out_of_order_transitions"] for item in repo_results.values())
     error_total = sum(len(item["download_errors"]) for item in repo_results.values())
+    repeated_total = sum(item["repeated_adjacent_calendar_rows"] for item in repo_results.values())
+    conflict_total = len(conflicts)
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "pinned_commit_read_only_row_level_audit",
@@ -247,11 +249,16 @@ def audit_repositories(
             "invalid_rows": invalid_total,
             "duplicate_dates": duplicate_total,
             "out_of_order_transitions": order_total,
+            "repeated_adjacent_calendar_rows": repeated_total,
+            "cross_source_conflicts": conflict_total,
             "download_errors": error_total,
         },
-        "gate": "FAIL" if invalid_total or duplicate_total or order_total or error_total else (
-            "PASS_WITH_CONFLICTS" if conflicts else "PASS"
-        ),
+        # Repeated rows require a verified calendar; conflicts require resolution.
+        # Neither is auto-corrected or allowed through the canonical-data gate.
+        "gate": "FAIL" if (
+            invalid_total or duplicate_total or order_total or repeated_total
+            or conflict_total or error_total
+        ) else "PASS",
         "limitations": [
             "Repeated adjacent calendar rows are review flags, not automatically invalid: an authoritative NEPSE session calendar is required.",
             "This audit validates source CSV structure and OHLCV arithmetic, not exchange completeness or data licensing.",
@@ -286,7 +293,7 @@ def main() -> None:
         "cross_source": report["cross_source"],
         "quality_totals": report["quality_totals"],
     }, indent=2))
-    if report["gate"] == "FAIL":
+    if report["gate"] != "PASS":
         raise SystemExit(2)
 
 

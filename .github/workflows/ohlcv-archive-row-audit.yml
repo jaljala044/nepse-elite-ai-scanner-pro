@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "backend/audit_ohlcv_archives.py"
+      - "backend/app/session_calendar.py"
+      - "backend/tests/test_session_calendar.py"
       - "backend/tests/test_audit_ohlcv_archives.py"
       - "backend/crosscheck_ohlcv_socrateai.py"
       - "backend/tests/test_crosscheck_ohlcv_socrateai.py"

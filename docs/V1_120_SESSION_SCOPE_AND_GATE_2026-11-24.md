@@ -114,3 +114,24 @@ The next eight stock CSVs in repository tree order were fetched and scanned for 
 New quarantine candidate: BGWT on 2026-04-29 has open=740, high=731, low=718, close=730, violating high >= open. Preserve raw record; no automatic correction. BFCPO is sparse (only one candidate-window row), requiring lifecycle/status review before classifying as missing coverage.
 
 Cumulative partial scan: 32/525 files (6.1%). Two invalid OHLC rows have been observed so far: API 2026-04-27 and BGWT 2026-04-29. This is a partial-sample count only, not a one-year archive-wide anomaly count. Continue remaining 493 files; do not promote canonical data.
+
+
+## Chart-based OHLC discrepancy verification protocol (added 2026-11-24)
+
+A numeric OHLC validation failure or a conflict between feeds must trigger a chart-level check before the row is classified as a bad raw-market candle:
+
+1. Open the same symbol and exact date in Chukul's chart.
+2. Record **adjusted** and **unadjusted** OHLC separately; never mix the two series.
+3. Capture the chart/source URL, retrieval timestamp, selected adjustment mode, symbol, date, and displayed OHLC. Save a screenshot or other reproducible evidence when permitted.
+4. If Chukul is unavailable or the discrepancy remains unresolved, inspect the same date on NEPSE Alpha and record its adjustment basis separately.
+5. Compare chart observations with each CSV/API source. Do not silently replace source values. Keep raw source rows immutable and preserve each feed's adjustment basis.
+6. If adjusted and unadjusted values differ, determine which series the archive is intended to represent before validating or promoting it. Corporate actions and adjustment methodology must be accounted for.
+7. If the chart itself displays an arithmetically inconsistent candle, keep it quarantined and seek another independent source; a chart display is evidence, not automatic authority to repair.
+
+### User-reported examples — pending independent evidence capture
+
+- **BGWT, 2026-04-29:** user reports Chukul adjusted chart O/H/L/C = 740/731/718/730 and unadjusted chart = 720/731/718/730. The adjusted values violate high >= open; the unadjusted values pass the OHLC range rule. This suggests an adjustment-basis mismatch may explain the CSV anomaly. Do not call the unadjusted values canonical until chart evidence, archive adjustment basis, and corporate-action context are recorded.
+- **API, 2026-04-27:** reported O/H/L/C = 339.9/345/340/341 remains inconsistent because open < low. The user reports the same values on adjusted and unadjusted charts; this requires a further chart/source check and remains unresolved.
+
+These are user-provided chart observations, not yet independently captured by this audit. The two rows remain excluded from canonical promotion until this protocol is completed. Preserve original source rows unchanged.
+

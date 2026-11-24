@@ -87,6 +87,7 @@ jobs:
           python backend/audit_hf_floorsheet_sample.py \
             --floorsheet "$floor_file" \
             --index "$index_file" \
+            --reference-index data/raw/reference/socrateai-adj-index-2026-08-26.csv \
             --date 2026-08-26 \
             --output data/reports/hf-floorsheet-sample-audit.json
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)

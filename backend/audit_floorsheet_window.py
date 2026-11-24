@@ -163,7 +163,8 @@ def audit_window(
                 summary = audit_socrateai_rows(rows, day)
             daily.append({
                 "date": day,
-                "path": str(path),
+                "path": path.relative_to(repository_root).as_posix(),
+                "local_path": str(path),
                 "repository_path": path.relative_to(repository_root).as_posix(),
                 "size_bytes": path.stat().st_size,
                 "sha256": actual_hash,
@@ -171,7 +172,7 @@ def audit_window(
                 "summary": summary,
             })
         except Exception as exc:
-            file_errors.append({"date": day, "path": str(path), "error": f"{type(exc).__name__}: {exc}"})
+            file_errors.append({"date": day, "path": str(path), "repository_path": (path.relative_to(repository_root).as_posix() if path.is_absolute() and path.is_relative_to(repository_root) else None), "error": f"{type(exc).__name__}: {exc}"})
 
     invalid_days = [row["date"] for row in daily if not row["summary"]["row_validation_pass"]]
     total_rows = sum(row["summary"]["row_count"] for row in daily)

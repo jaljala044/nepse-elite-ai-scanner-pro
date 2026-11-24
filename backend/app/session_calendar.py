@@ -18,7 +18,7 @@ CALENDAR_FIELDS = ("date", "status", "source_id", "evidence_uri", "verified_at_u
 OHLCV_FIELDS = ("symbol", "date", "open", "high", "low", "close", "volume")
 REGIMES = (
     # The 2026 schedule transition is a candidate rule only; dates still need evidence.
-    (date.min, date(2026, 4, 5), {6}, "Sunday-Thursday candidate; Friday/Saturday excluded"),
+    (date.min, date(2026, 4, 5), {4, 5}, "Sunday-Thursday candidate; Friday/Saturday excluded"),
     (date(2026, 4, 6), date.max, {5, 6}, "Monday-Friday candidate; Saturday/Sunday excluded"),
 )
 

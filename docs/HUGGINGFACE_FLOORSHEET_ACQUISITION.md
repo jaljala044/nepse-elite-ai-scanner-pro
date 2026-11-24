@@ -48,3 +48,31 @@ Download mode requires explicit flags, a positive total-byte ceiling, and per-fi
 - Contract numbers must remain strings; the viewer's int64 conversion error is a warning against numeric coercion.
 - Empty/missing execution times remain null and must not be imputed.
 - All rows still require schema, date, duplicate/conflict, quantity/rate/amount, broker-code, contract-ID, and daily control-total audits before canonical ingestion.
+
+## Live manifest-only enumeration — 2026-11-24
+
+A GitHub Actions run successfully enumerated the complete dated floorsheet folder
+without downloading any raw floorsheet rows:
+
+- Workflow run: [hf-dataset-inventory #?](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45405714806)
+- Pinned dataset commit: `11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0`
+- Dated floorsheet files: **603**
+- Unique dates: **603** (no duplicate dated paths in the manifest)
+- Date span: **2024-01-02 through 2026-08-26**
+- Sum of compressed file sizes: **758,924,600 bytes** (about 723.8 MiB)
+- Every one of the 603 entries includes an LFS SHA-256 and Xet hash in Hub metadata.
+- Manifest JSONL SHA-256: `3e14637714c38dbf8c61cecb0b212475634261880229bbf91728116ab86309d9`
+- Manifest file: `urekmazino69_Nepse-floorsheet-and-indices_11ef83a9c3cd.jsonl`
+- GitHub Actions artifact SHA-256: `aa2ef8ce98d9e8e412fe6f78fab63bebfc036cf068c8aeb4d3b7c4380b407b8f`
+
+Annual file counts: 2024 = 226, 2025 = 223, 2026 = 154.
+
+This confirms the repository's file inventory and Hub-provided integrity metadata at
+the pinned revision. **It does not confirm row counts, transaction completeness,
+correctness, or NEPSE session coverage.** No raw floorsheet files were downloaded.
+The two largest calendar gaps in the folder manifest are 2025-09-08 to 2025-09-18
+and 2025-09-28 to 2025-10-07; treat them as reconciliation targets only, not
+automatically as missing trading sessions.
+
+The artifact is retained by GitHub Actions for a limited period; download and
+preserve it in the project's immutable evidence vault before the artifact expires.

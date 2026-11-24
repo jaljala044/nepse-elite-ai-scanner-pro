@@ -10,6 +10,10 @@ on:
       - "backend/acquire_hf_floorsheet_sample.py"
       - "backend/acquire_github_floorsheet_sample.py"
       - "backend/compare_floorsheet_samples.py"
+      - "backend/audit_floorsheet_window.py"
+      - "backend/tests/test_audit_floorsheet_window.py"
+      - "backend/compare_floorsheet_windows.py"
+      - "backend/tests/test_compare_floorsheet_windows.py"
       - "backend/acquire_github_floorsheet_window.py"
       - "backend/acquire_hf_floorsheet_window.py"
       - "backend/tests/test_acquire_hf_floorsheet_window.py"
@@ -153,6 +157,38 @@ jobs:
           --raw-root ../data/raw/huggingface
           --output ../data/reports/urek-floorsheet-window.json
         working-directory: backend
+      - name: Audit all acquired SocrateAI floorsheet rows
+        id: audit_socrateai_window
+        if: always() && steps.acquire_socrateai_window.outcome == 'success'
+        run: |
+          python backend/audit_floorsheet_window.py \
+            --manifest data/reports/socrateai-floorsheet-window.json \
+            --date-list data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv \
+            --source-schema socrateai \
+            --min-files 120 \
+            --output data/reports/socrateai-floorsheet-window-audit.json
+
+      - name: Audit all available Urekmazino floorsheet rows
+        id: audit_urek_window
+        if: always() && steps.acquire_urek_window.outcome == 'success'
+        run: |
+          python backend/audit_floorsheet_window.py \
+            --manifest data/reports/urek-floorsheet-window.json \
+            --date-list data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv \
+            --source-schema urek \
+            --min-files 60 \
+            --allow-missing-dates \
+            --output data/reports/urek-floorsheet-window-audit.json
+
+      - name: Compare all overlapping Urek and SocrateAI transaction rows
+        id: compare_floorsheet_windows
+        if: always() && steps.acquire_socrateai_window.outcome == 'success' && steps.acquire_urek_window.outcome == 'success'
+        run: |
+          python backend/compare_floorsheet_windows.py \
+            --urek-manifest data/reports/urek-floorsheet-window.json \
+            --socrateai-manifest data/reports/socrateai-floorsheet-window.json \
+            --output data/reports/floorsheet-window-cross-source-comparison.json
+
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         if: always()
         run: >-
@@ -198,6 +234,9 @@ jobs:
             data/reports/socrateai-floorsheet-sample.json
             data/reports/socrateai-floorsheet-window.json
             data/reports/urek-floorsheet-window.json
+            data/reports/socrateai-floorsheet-window-audit.json
+            data/reports/urek-floorsheet-window-audit.json
+            data/reports/floorsheet-window-cross-source-comparison.json
             data/reports/floorsheet-cross-source-sample.json
             data/raw/reference/socrateai-adj-index-2026-08-26.csv
             artifacts/source-manifests/

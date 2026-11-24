@@ -106,13 +106,15 @@ def extract_yonepse_rows(
 def compare_rows(
     socrateai_rows: list[dict[str, Any]],
     yonepse_entry: dict[str, Any] | None,
+    socrateai_errors: list[str] | None = None,
 ) -> dict[str, Any]:
     if yonepse_entry is None:
         return {"status": "yonepse_row_missing"}
-    if len(socrateai_rows) != 1:
+    if len(socrateai_rows) != 1 or socrateai_errors:
         return {
             "status": "socrateai_row_anomaly",
             "socrateai_row_count": len(socrateai_rows),
+            "socrateai_validation_errors": list(socrateai_errors or []),
             "socrateai_rows": socrateai_rows,
             "yonepse": yonepse_entry,
         }
@@ -192,7 +194,10 @@ def build_report(
     for day in candidate_dates:
         source_row = source_dates[day].get("index_row") or {}
         socrateai_rows = source_row.get("nepse_index_rows", [])
-        comparison = compare_rows(socrateai_rows, yonepse_rows.get(day))
+        comparison = compare_rows(
+            socrateai_rows, yonepse_rows.get(day),
+            source_row.get("validation_errors", []),
+        )
         results.append({
             "date": day,
             "socrateai_classification": source_dates[day].get("classification"),

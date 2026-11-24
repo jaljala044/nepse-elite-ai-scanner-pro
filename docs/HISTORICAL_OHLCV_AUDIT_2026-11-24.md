@@ -6,9 +6,9 @@
 
 The read-only audit ran against the pinned default-branch commits below and fetched
 all 525 ticker files from each repository. It parsed every row and compared overlapping
-symbol/date observations. The JSON report is retained as GitHub Actions artifact
-`nepse-historical-ohlcv-audit` for workflow run
-[45397680346](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45397680346).
+symbol/date observations. The OHLCV report and SocrateAI cross-check are retained as
+GitHub Actions artifacts for workflow run
+[45397942163](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45397942163).
 
 | Measure | `nepse-smc-data` | `nepse-history-starter` |
 |---|---:|---:|

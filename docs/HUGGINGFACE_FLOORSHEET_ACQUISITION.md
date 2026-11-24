@@ -276,3 +276,37 @@ The correct interpretation is therefore:
 - **Index aggregate and sector controls:** scope/value reconciliation required.
 - **Canonical promotion:** still blocked; this one-day sample does not prove
   completeness across dates or establish point-in-time availability.
+
+## Same-day transaction-level cross-check against SocrateAI
+
+A second raw sample was acquired from the pinned SocrateAI repository commit
+`cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3` for the same date
+**2026-08-26**:
+
+- Path: `floorsheet/floorsheet_2026-08-26.csv`
+- Bytes: **3,588,067**
+- Git blob SHA-1:
+  `86a7819b5f106bea73b1a0741df6295d5bd53920`
+- SHA-256:
+  `d95dca06df551df977a5253d200e70bfdeb958be3e96ec08b021832600af2e21`
+
+Transaction-level comparison against the Urekmazino sample:
+
+- Urekmazino rows: **61,442**; SocrateAI rows: **61,442**
+- Shared contract numbers: **61,442**
+- Urekmazino-only / SocrateAI-only contracts: **0 / 0**
+- Duplicate contract numbers in either source: **0**
+- Differences across shared fields (symbol, buyer, seller, quantity, rate,
+  amount and trade date): **0**
+
+This is an exact match across all shared transaction fields for one day. It
+strongly corroborates the transaction rows, but does not establish independent
+upstream provenance: the two publishers may consume the same upstream source.
+SocrateAI's sample schema has no execution-time, sector or row-ID fields, so
+Urekmazino's `time`, `sector` and `id` columns are not independently checked.
+No rows are merged or promoted. Both raw samples remain separately stored in
+the private workflow artifact for review.
+
+The one-day match does not prove the other 119 candidate dates are complete.
+Bulk acquisition remains gated on rights review, source-scope reconciliation,
+calendar evidence and repeated date-level cross-checks.

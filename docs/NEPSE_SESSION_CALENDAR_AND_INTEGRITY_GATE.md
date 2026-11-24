@@ -288,3 +288,9 @@ coverage and floorsheet manifest coverage for each date. Every row is explicitly
 marked `not_verified_primary_exchange_evidence_missing`; this is a review
 register, not the canonical calendar and not permission to treat all 120 dates
 as verified trading sessions. The CSV is uploaded with the audit artifact.
+
+The first exported candidate register contains 120 dates from 2026-05-18 through
+2026-11-24: 116 observed but unverified candidates, three SocrateAI row-anomaly
+dates, and one YONEPSE provisional latest date. The CSV is in workflow run
+45409684161, artifact ID 14927377869. It records zero verified calendar dates
+because no primary NEPSE date evidence has yet been admitted.

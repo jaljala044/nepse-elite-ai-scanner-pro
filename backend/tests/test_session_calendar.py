@@ -45,7 +45,7 @@ class SessionCalendarTests(unittest.TestCase):
                          "unverified_session_candidate")
 
     def test_weekly_regime_transitions_are_explicit(self):
-        self.assertFalse(schedule_candidate(date(2022, 5, 5))[0])  # Friday odd-lot period
+        self.assertFalse(schedule_candidate(date(2022, 4, 29))[0]) # Friday odd-lot period
         self.assertTrue(schedule_candidate(date(2022, 5, 6))[0])   # Temporary Friday opening
         self.assertTrue(schedule_candidate(date(2022, 6, 15))[0])  # Return to Sunday-Thursday
         self.assertFalse(schedule_candidate(date(2026, 4, 3))[0])   # Friday before 2026 transition

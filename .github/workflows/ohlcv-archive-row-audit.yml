@@ -12,6 +12,7 @@ on:
       - "backend/build_market_date_crosscheck.py"
       - "backend/crosscheck_index_history_yonepse.py"
       - "backend/export_session_candidate_register.py"
+      - "data/reference/nepse_calendar_evidence_leads_2026.csv"
       - "backend/probe_nepse_public_notices.py"
       - "backend/tests/test_probe_nepse_public_notices.py"
       - "backend/tests/test_export_session_candidate_register.py"
@@ -100,7 +101,7 @@ jobs:
             echo "No market-date cross-check report exists; cannot compare YONEPSE mirror."
             exit 1
           fi
-      - name: Export unverified 120-date session candidate register
+      - name: Export 137-weekday session candidate and closure-evidence register
         if: always()
         run: |
           if test -f data/reports/market-date-crosscheck.json && test -f data/reports/yonepse-index-crosscheck.json; then

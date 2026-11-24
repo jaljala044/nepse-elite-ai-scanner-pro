@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import date
+import re
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,25 @@ def extract_sample_metadata(
     folder: str,
     sample_date: str,
 ) -> tuple[list[dict[str, Any]], int]:
-    from acquire_hf_floorsheet_archive import dated_file, field, lfs_sha256
+    def field(value: Any, name: str) -> Any:
+        if isinstance(value, dict):
+            return value.get(name)
+        return getattr(value, name, None)
+
+    def file_date(filename: str) -> str | None:
+        match = re.search(r"(?P<date>\\d{4}-\\d{2}-\\d{2})\\.csv(?:\\.gz)?$", filename.rsplit("/", 1)[-1], re.I)
+        if not match:
+            return None
+        try:
+            datetime.strptime(match.group("date"), "%Y-%m-%d")
+        except ValueError:
+            return None
+        return match.group("date")
+
+    def file_lfs_sha256(value: Any) -> str | None:
+        lfs = field(value, "lfs")
+        digest = field(lfs, "sha256") if lfs is not None else None
+        return str(digest).lower() if digest else None
 
     prefix = folder.strip("/") + "/"
     folder_file_count = 0
@@ -31,7 +50,7 @@ def extract_sample_metadata(
         if not filename or not str(filename).startswith(prefix):
             continue
         folder_file_count += 1
-        if dated_file(str(filename)) != sample_date:
+        if file_date(str(filename)) != sample_date:
             continue
         size = field(sibling, "size")
         if size is None:
@@ -43,7 +62,7 @@ def extract_sample_metadata(
             "date": sample_date,
             "size_bytes": int(size),
             "hub_blob_id": field(sibling, "blob_id"),
-            "lfs_sha256": lfs_sha256(sibling),
+            "lfs_sha256": file_lfs_sha256(sibling),
             "xet_hash": field(sibling, "xet_hash"),
         })
     return selected, folder_file_count

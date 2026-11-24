@@ -387,3 +387,27 @@ Consequences for this audit:
 The acquisition pipeline therefore keeps SamirWagle as a discovery lead only;
 it does not promote these dated filenames into canonical trade dates. Its
 educational-use description also does not establish a separate data-reuse grant.
+
+### Combined 137-weekday evidence register generated
+
+The workflow now merges the 120 index-date candidates with the 17 reported
+weekday closure leads into a single review register:
+`data/reports/nepse-session-candidates.csv`.
+
+Pinned output from workflow run **45411800853** contains **137 dates**:
+- 116 observed-session candidates with a structurally valid SocrateAI index row
+  and a non-provisional YONEPSE comparison;
+- 3 observed dates with unresolved SocrateAI row anomalies;
+- 1 latest provisional date (2026-11-24);
+- 17 reported closure candidates, all still explicitly unverified.
+
+The register has separate fields for closure-event descriptions, source IDs,
+evidence levels and evidence URLs. A closure lead that overlaps an observed
+index row is classified as a conflict rather than silently accepted. Every row
+continues to say
+`not_verified_primary_exchange_evidence_missing`; **verified calendar rows = 0**.
+
+The evidence lead file now contains NEPSE-specific secondary reports for Janai
+Purnima (2026-08-28) and Krishna Janmashtami (2026-09-04), in addition to the
+government holiday list. This improves corroboration but does not replace the
+original NEPSE notices.

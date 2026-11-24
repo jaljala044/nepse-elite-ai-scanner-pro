@@ -14,13 +14,13 @@ hash in the evidence archive; do not cite a general public-holiday list as proof
 NEPSE actually closed.
 
 The schedule regimes are candidate hints only:
-- Through 2022-05-05: Sunday–Thursday regular-session candidates; Friday odd-lot excluded; Saturday closed.
+- Through 2022-05-14: Sunday–Thursday regular-session candidates; Friday odd-lot excluded; Saturday closed.
 - 2022-05-15 through 2022-06-14: temporary Monday–Friday candidates; Saturday/Sunday closed.
 - 2022-06-15 through 2022-09-16: temporary Sunday–Friday candidates; Saturday closed.
 - 2022-09-17 through 2026-04-05: Sunday–Thursday candidates; Friday/Saturday excluded.
 - From 2026-04-06: Monday–Friday candidates; Saturday/Sunday excluded.
 
-The 2022 transitions are reported by [Nepal News, 29 April 2022](https://english.nepalnews.com/s/business/nepse-to-open-on-friday/),
+The 2022 transition from Sunday–Thursday to Monday–Friday was announced for the two-day weekend beginning 15 May; the next schedule change restored Sunday–Friday trading from 15 June. This makes 14 May the end of the first regime, not 5 May. Sources: [Nepal News, 29 April 2022](https://english.nepalnews.com/s/business/nepse-to-open-on-friday/), [Khabarhub, 13 June 2022](https://english.khabarhub.com/2022/13/257305/),
 [The Himalayan Times, 13 June 2022](https://thehimalayantimes.com/business/nepse-to-operate-six-days-a-week-effective-june-15),
 [ShareSansar, 16 June 2022](https://www.sharesansar.com/newsdetail/from-ashad-shares-will-be-traded-six-days-a-week-sunday-friday-2022-06-16),
 and [ShareSansar, 4 September 2022](https://www.sharesansar.com/newsdetail/nepse-decides-to-close-trading-on-fridays-from-ashoj-2022-09-04).

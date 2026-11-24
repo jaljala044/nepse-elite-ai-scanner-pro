@@ -239,3 +239,40 @@ and the index OHLC row is invalid. `canonical_promotion_allowed=false`.
 Workflow run 45412604263, artifact 14930540759, contains the two hash-verified
 raw sample files and the complete audit report. It is a diagnostic artifact,
 not a canonical-data import.
+
+### Scope diagnosis from sector-level controls
+
+A sector-by-sector comparison shows why the aggregate totals must not be treated
+as a simple completeness check:
+
+- Exact row/quantity/turnover matches: Development Banks, Hotels and Tourism,
+  Hydro Power, Manufacturing and Processing, Microfinance, Others, and Trading.
+- Sector differences: Commercial Banks (+82 floorsheet rows), Finance (+1),
+  Investment (+162), Life Insurance (+3), Non-Life Insurance (+30), and Mutual
+  Fund (-42).
+- The floorsheet contains **59 Non-Convertible Debenture** rows for which the
+  index file has no corresponding sector row.
+- The Urek index file's sector rows sum to **61,147** transactions, including
+  **407** Mutual Fund transactions. Removing the Mutual Fund sector gives
+  exactly **60,740**, the NEPSE Index aggregate transaction count. The same
+  relationship holds for turnover and share volume: the aggregate NEPSE Index
+  row excludes the Mutual Fund sector.
+
+This demonstrates that the NEPSE Index aggregate is not a directly comparable
+control total for every instrument in the raw floorsheet. After excluding the
+365 Mutual Fund and 59 debenture rows in the floorsheet, a further 278
+transactions remain across five sector differences. The exact eligible-
+instrument/constituent scope for those differences is still unresolved. Do not
+label them missing or extra transactions without a verified scope mapping.
+
+The open-field anomaly remains independent: the Urek index sample stores
+`open=2594.27`, which equals the prior close derived from
+`close - absolute_change`; the same-day market report and YONEPSE mirror report
+an actual open near **2591.32**. Preserve the raw Urek value and flag the field
+mapping problem; never overwrite it with the third-party value.
+
+The correct interpretation is therefore:
+- **Floorsheet row checks:** pass for this one sample date.
+- **Index aggregate and sector controls:** scope/value reconciliation required.
+- **Canonical promotion:** still blocked; this one-day sample does not prove
+  completeness across dates or establish point-in-time availability.

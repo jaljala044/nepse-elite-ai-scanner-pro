@@ -94,3 +94,23 @@ On 2026-11-24, the first 24 of the 525 SMC stock CSV files in tree order were fe
 - Latest dates in the inspected files range from 2026-09-28/2026-10-06/2026-10-15/2026-11-04 to 2026-11-20; the API and AHPC files end 2026-11-19. This supports a coverage-variance investigation, not a single global cutoff yet.
 
 The audit must continue through all remaining 501 files, then reconcile the dates against the verified session calendar and security master. No canonical promotion is authorized from this partial batch.
+
+
+## Partial all-symbol audit progress — batch 2 (files 25–32 of 525)
+
+The next eight stock CSVs in repository tree order were fetched and scanned for calendar dates 2025-11-24 through 2026-11-23. All eight fetches succeeded. This remains a calendar-window scan, not a verified-session completeness audit.
+
+| Symbol file | Total rows | Rows in candidate interval | Invalid OHLC | Latest date |
+|---|---:|---:|---:|---|
+| BFCPO | 19 | 1 | 0 | 2026-05-19 |
+| BFC | 936 | 306 | 0 | 2026-11-20 |
+| BGWT | 700 | 226 | 1 | 2026-11-19 |
+| BHCL | 402 | 306 | 0 | 2026-11-20 |
+| BHDC | 935 | 305 | 0 | 2026-11-20 |
+| BHL | 936 | 306 | 0 | 2026-11-20 |
+| BHPL | 936 | 306 | 0 | 2026-11-20 |
+| BJHL | 189 | 189 | 0 | 2026-11-20 |
+
+New quarantine candidate: BGWT on 2026-04-29 has open=740, high=731, low=718, close=730, violating high >= open. Preserve raw record; no automatic correction. BFCPO is sparse (only one candidate-window row), requiring lifecycle/status review before classifying as missing coverage.
+
+Cumulative partial scan: 32/525 files (6.1%). Two invalid OHLC rows have been observed so far: API 2026-04-27 and BGWT 2026-04-29. This is a partial-sample count only, not a one-year archive-wide anomaly count. Continue remaining 493 files; do not promote canonical data.

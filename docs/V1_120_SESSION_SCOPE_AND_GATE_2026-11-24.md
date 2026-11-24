@@ -997,3 +997,18 @@ On 2026-11-24, the next 16 SMC stock CSVs (tree positions 49–64) were fetched 
 No OHLC range violations or duplicate dates were found in this batch. Sparse/lifecycle-sensitive cases include CMF1 (no candidate-window rows; last date 2025-03-01), CORBLP (two rows only), CYCLP (12 rows, latest 2026-04-09), CIZBD86 (51 rows) and CMF2 (latest 2026-07-02). These require security-master and listing/trading-status evidence, not automatic missing-data labels.
 
 Cumulative documented scan progress: 64/525 files (12.2%). Across batches 1–4, two OHLC violations are documented so far (API 2026-04-27; BGWT 2026-04-29). This is not a complete archive-wide count. Raw rows remain unchanged and canonical promotion remains blocked.
+
+
+## Continued all-symbol scan — files 65–160 (batches 5–16)
+
+A further 96 SMC stock CSV files were fetched from main and parsed in twelve batches of eight. All 96 fetches succeeded. No duplicate dates were detected in these batches. One additional OHLC range violation was found:
+
+- HRL, 2026-04-29: open 685.50, high 685.00, low 676.10, close 679.20 (high below open). Quarantine; do not auto-correct.
+
+The other 95 files in this range had no OHLC range violations under the implemented basic candle-range checks. This is a mechanical row check, not source-to-source reconciliation or adjustment-basis validation.
+
+Sparse/possibly lifecycle-sensitive examples in this range include GMFILP (one row, latest 2025-05-21), GRDBLP (two rows), GUFLPO (three candidate-window rows), HBLPO (13), ICFCPO (zero candidate-window rows), IGIPO (one), JALPA (zero; latest 2024-07-10), JBBLPO (14), JFLPO (zero; latest 2024-09-10), and JSLBBP (zero; latest 2025-11-09). These must be resolved against a security master and listing/merger/delisting/trading-status records before being labelled missing.
+
+Other examples with partial year coverage or earlier latest dates include HBLD83, HBLD86, HBLPO, GWFD83, HRL and JBLBP. Absence of a candle on a date is not itself proof of a data defect: securities can be suspended or untraded. The session-level reconciliation is still pending.
+
+Cumulative scan progress: 160/525 files (30.5%). Across the inspected 160 files, three OHLC range violations are currently documented: API 2026-04-27, BGWT 2026-04-29 and HRL 2026-04-29. This count is provisional until all files and both archive sources are checked.

@@ -14,13 +14,17 @@ hash in the evidence archive; do not cite a general public-holiday list as proof
 NEPSE actually closed.
 
 The schedule regimes are candidate hints only:
-- Through 2026-04-05: Sunday–Thursday candidate weekdays (Friday/Saturday excluded).
-- From 2026-04-06: Monday–Friday candidate weekdays (Saturday/Sunday excluded).
+- Through 2022-05-05: Sunday–Thursday regular-session candidates; Friday odd-lot excluded; Saturday closed.
+- 2022-05-06 through 2022-06-14: temporary Sunday–Friday candidates; Saturday closed.
+- 2022-06-15 through 2026-04-05: Sunday–Thursday candidates; Friday/Saturday excluded.
+- From 2026-04-06: Monday–Friday candidates; Saturday/Sunday excluded.
 
-The 2026 transition is supported by contemporary reporting of NEPSE's board decision
-and notice; see [The Himalayan Times, 8 April 2026](https://thehimalayantimes.com/business/nepse-shifts-to-mondayfriday-trading-week)
+The 2022 temporary change and subsequent six-day schedule are described by
+[Nepal News, 29 April 2022](https://english.nepalnews.com/s/business/nepse-to-open-on-friday/)
+and [Khabarhub, 13 June 2022](https://english.khabarhub.com/2022/13/257305/).
+The 2026 transition is reported by [The Himalayan Times, 8 April 2026](https://thehimalayantimes.com/business/nepse-shifts-to-mondayfriday-trading-week)
 and [ShareSansar, 8 April 2026](https://www.sharesansar.com/newsdetail/nepal-stock-exchange-opens-monday-to-friday-under-new-government-timings-2026-04-08).
-These sources establish a schedule-regime change, not the actual open/closed status
+These sources establish schedule-regime changes, not the actual open/closed status
 of every historical date. Daily closures and exceptional sessions still need dated
 NEPSE evidence or independently verified exchange trading records.
 

@@ -46,8 +46,13 @@ class SessionCalendarTests(unittest.TestCase):
 
     def test_weekly_regime_transitions_are_explicit(self):
         self.assertFalse(schedule_candidate(date(2022, 4, 29))[0]) # Friday odd-lot period
-        self.assertTrue(schedule_candidate(date(2022, 5, 6))[0])   # Temporary Friday opening
-        self.assertTrue(schedule_candidate(date(2022, 6, 15))[0])  # Return to Sunday-Thursday
+        self.assertTrue(schedule_candidate(date(2022, 5, 6))[0])   # Temporary Monday-Friday period
+        self.assertFalse(schedule_candidate(date(2022, 5, 8))[0])  # Sunday closed in May-June
+        self.assertTrue(schedule_candidate(date(2022, 6, 15))[0])  # Sunday-Friday period starts
+        self.assertTrue(schedule_candidate(date(2022, 6, 17))[0])  # Friday open in six-day period
+        self.assertTrue(schedule_candidate(date(2022, 9, 16))[0])  # Last Friday before closure
+        self.assertTrue(schedule_candidate(date(2022, 9, 18))[0])  # Sunday-Thursday regime
+        self.assertFalse(schedule_candidate(date(2022, 9, 23))[0]) # Friday closed from Ashoj
         self.assertFalse(schedule_candidate(date(2026, 4, 3))[0])   # Friday before 2026 transition
         self.assertTrue(schedule_candidate(date(2026, 4, 5))[0])    # Last Sunday-Thursday regime session candidate
         self.assertTrue(schedule_candidate(date(2026, 4, 6))[0])    # Monday under new regime

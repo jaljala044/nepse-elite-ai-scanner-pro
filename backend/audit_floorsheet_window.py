@@ -110,20 +110,32 @@ def audit_window(
     allow_missing_dates: bool,
 ) -> dict[str, Any]:
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
-    expected_dates = []
+    date_values = []
     with Path(date_list_path).open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         if "date" not in (reader.fieldnames or []):
             raise ValueError("date list must contain date column")
-        expected_dates = sorted({str(row["date"]).strip() for row in reader})
-    if not expected_dates:
+        for line, row in enumerate(reader, 2):
+            day = str(row.get("date") or "").strip()
+            try:
+                date.fromisoformat(day)
+            except ValueError as exc:
+                raise ValueError(f"{date_list_path}:{line}: invalid date {day!r}") from exc
+            date_values.append(day)
+    if not date_values:
         raise ValueError("date list is empty")
+    if len(date_values) != len(set(date_values)):
+        raise ValueError("date list contains duplicate dates")
+    expected_dates = sorted(date_values)
     files = manifest.get("files", [])
     if manifest.get("download_error_count", 0):
         raise ValueError("acquisition manifest contains download errors")
     files_by_date = {str(row["date"]): row for row in files}
     if len(files_by_date) != len(files):
         raise ValueError("acquisition manifest contains duplicate dates")
+    unexpected_dates = sorted(set(files_by_date) - set(expected_dates))
+    if unexpected_dates:
+        raise ValueError("acquisition manifest contains unexpected dates: " + ", ".join(unexpected_dates))
     missing_dates = sorted(set(expected_dates) - set(files_by_date))
     if missing_dates and not allow_missing_dates:
         raise ValueError("missing acquired files: " + ", ".join(missing_dates))

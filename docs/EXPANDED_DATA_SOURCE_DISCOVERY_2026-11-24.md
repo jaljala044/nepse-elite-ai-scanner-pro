@@ -160,3 +160,38 @@ No new bulk raw dataset has yet been ingested in this pass. We have verified two
 - The public dataset page currently displays license metadata `other`, one visible `train` split with 1.14M rows, 658 symbol classes, and timestamp coverage from 2026-08-19 10:46 to 2026-11-20 14:59. The surfaced schema is `business_date, symbol, bar_ts, open, high, low, close, volume, turnover, trades, vwap`; sample rows are intraday timestamped aggregates. This viewer result must not be mistaken for the full advertised 1995 EOD history or raw contract-level floorsheet.
 - Direct Hugging Face API/parquet manifest URLs were not accessible through the current browser retrieval route. Dataset card and viewer are readable, but this pass has not acquired any Parquet bytes or verified the other tables/partitions. Continue via the dataset's Files view, dataset-server endpoints, and permitted download mechanisms; preserve table-level distinction and license metadata.
 - NepseSignal page inspection confirms its own claim of 2018-start floorsheet history and explains its reported exclusions/late additions, but the page currently renders an empty floorsheet table. Treat the coverage claim as unverified until an authorized historical query/export returns dated records and terms are reviewed.
+## Deeper source inspection — 2026-11-24
+
+### Urekmazino Hugging Face: concrete floorsheet archive
+
+- Dataset card declares MIT, daily per-session CSVs under `floorsheet/` and `indices/`, with trade-level columns including contract number, trade date, execution time, symbol, sector, buyer/seller broker IDs, quantity, rate and amount. It declares coverage 2024-01-02 through 2026-08-26 and a total repository size of 763 MB. The declared source is NEPSE public floorsheet/index data. The card says records may not include late corrections and that OHLC/index values are not corporate-action adjusted.
+- Important ingestion defect observed in the Hugging Face dataset viewer: full viewer generation fails because a contract number value resembling `'2025112601010000` cannot be cast to int64. The preview also shows the `time` column as null. Preserve contract numbers as strings (including leading zeros/formatting), inspect raw CSVs to establish whether execution times are truly missing or lost during viewer schema inference, and never fabricate a time. This dataset is a high-value broker-flow source but is not yet ingested or quality-approved.
+- Coverage conflict to investigate: the dataset card's stated end date is 2026-08-26, while Ankit's separately declared authoritative floorsheet series starts 2026-08-19 and has a large gap through 2026-11-18. These are different providers and potentially different date sets; compare file manifests before assuming the gap is filled.
+
+### SamirWagle/Nepse-All-Scraper: current status and scraper limitations
+
+- Direct read of `docs/api/status.json` blob `55b72e45a3af8811864f0b771a3523e5b1a95021` reports scrape date 2026-11-24, 365 symbols, 365 with prices, 219 with dividend data, 104 with right-share data, 179 floorsheet days, latest floorsheet date 2026-11-24, and a 100% symbol-coverage metric. The 100% figure applies to its configured symbol list, not historical completeness.
+- Direct inspection of `scraper/core/floorsheet.py` reveals the recorded date field is set using `date.today()` for each scraped record, and the scraper targets the current Merolagani floorsheet page without an explicit historical date argument in the inspected function. Therefore its daily scraper output cannot be assumed to be a date-addressable historical backfill; the reported 179 floorsheet days need file-manifest verification. Attempted to fetch `data/floorsheet_2026-11-24.csv` and `.json` from the repository, but both paths returned NOT_FOUND. Do not ingest its stated 179-day archive count as verified coverage.
+- The repo's workflow runs on weekdays, but weekday scheduling alone cannot establish NEPSE session coverage or holiday handling. The README calls its license “Educational”; no root LICENSE file was found in the inspected path.
+
+### vuwon/NEPSEAPI: historical Merolagani scraper code inspected
+
+- Directly inspected `merolagani/scraper.py`. It supports a date-filter POST, reads total pages/expected record counts, iterates all pages with delay/retries, stores transaction number, trade date, symbol and broker counterparties, and supports resumable date ranges. It defaults to TLS verification enabled. This is a credible code path to test for historical floorsheet acquisition from 2016 onward, but the README labels the repository educational/testing-only and data source is Merolagani, not exchange-origin NEPSE. Treat as a code lead; inspect upstream terms and run only a small authorized test before any bulk pull.
+- Its documented database uses `INSERT OR REPLACE` keyed by transaction number. Our production ingestion must not silently overwrite source rows: preserve raw source snapshots, detect duplicate/conflicting transaction IDs, and write changes to an immutable correction/revision ledger.
+
+### SocrateAI repository structure
+
+- GitHub repository navigation confirms top-level `floorsheet/`, `meta/`, `ohlc_adjusted_stock/`, `ohlc_index/`, and `ohlc_unadjusted_stock/` directories. The README additionally documents symbol/sector metadata and adjusted/unadjusted stock and index series. Individual guessed metadata CSV paths were not found at the expected root; inspect the actual tree paths rather than assume directory contents.
+- A third-party GitHub archive index reports 28,583 hourly files accounted and two absent upstream over a period ending 2026-11-17. This is secondary repository activity metadata, not proof of daily floorsheet completeness; inspect SocrateAI's own manifests and file dates before relying on it.
+
+### Additional export lead: NEPSE.io
+
+- A public NEPSE.io historical data export page advertises CSV/Excel bulk export by date range and symbol, but the rendered page currently lists zero records and does not expose export availability in the accessible page text. It is an additional lead only. Review its terms and verify what source data and date coverage it actually offers before use.
+
+### Concrete next acquisition tests
+
+1. Inspect Urek's Xet file manifest and download a small dated floorsheet CSV (e.g. 2024-01-02) and a later file; record exact file hashes, rows, schema, time null rate, contract-number format, duplicate IDs and total amount reconciliation. Then enumerate all dates.
+2. Inspect the full SocrateAI tree for dated floorsheet/index files and derive actual date coverage from filenames, then fetch a few files for schema and content validation.
+3. Run the vuwon/Merolagani date-filter flow for one historical date only if upstream access terms allow it; compare row count and sample contracts with Urek/SocrateAI for the same date. Do not bulk scrape until this test and rights review pass.
+4. Audit Samir's actual repository tree and status generation logic to explain its 179-day count; do not rely on that metric as proof of available archived daily files.
+5. For all sources, retain original contract numbers as strings and maintain execution-time nulls as nulls.

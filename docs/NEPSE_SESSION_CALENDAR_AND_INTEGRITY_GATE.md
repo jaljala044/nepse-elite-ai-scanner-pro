@@ -184,3 +184,23 @@ Artifact containing the initial reports and the two floorsheet manifests:
 GitHub Actions run 45408208927, artifact ID 14926338543. The report is pinned to
 the source commit above; subsequent source changes require a new inventory and
 audit rather than silently reusing this snapshot.
+
+### Anomaly-aware rerun
+
+The validator was updated to retain duplicate NEPSE_index rows and distinguish
+exact duplicates, conflicting duplicates, and OHLC-bound errors. Its rerun
+against the same pinned index commit produced:
+
+- 120 index files observed; 117 single-row clean NEPSE index records.
+- Three row-anomaly dates: 2026-06-01 (exact duplicate), 2026-07-03 (high below
+  open by 0.0007), and 2026-07-07 (conflicting duplicate).
+- Zero index-file download errors.
+- The two floorsheet manifests were successfully regenerated in manifest-only
+  mode and joined to the date matrix.
+
+The backend test workflow passed **70 tests** at commit
+`4ac2cdd92d6fbce99f0a3100407c723e30586697`. The full archive-audit workflow
+remains failed by design while the underlying OHLCV gate and the three index-row
+anomalies remain unresolved; its report artifact was still uploaded. Latest
+anomaly-aware run: 45408479059, artifact ID 14925853863. This is a diagnostic
+pass, not a calendar-integrity pass.

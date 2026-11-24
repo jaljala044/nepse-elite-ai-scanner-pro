@@ -135,3 +135,46 @@ A numeric OHLC validation failure or a conflict between feeds must trigger a cha
 
 These are user-provided chart observations, not yet independently captured by this audit. The two rows remain excluded from canonical promotion until this protocol is completed. Preserve original source rows unchanged.
 
+
+
+## Same-pass source verification results — API and BGWT (2026-11-24)
+
+### API — 2026-04-27
+
+Independent daily OHLC pages from Sun Securities and Financial Notices both report:
+- Open 339.9
+- High 345
+- Low 340
+- Close 341
+- Volume 206,969
+
+References:
+- https://sunsecurities.com/company/API/price-history
+- https://www.financialnotices.com/stock-nepse.php?symbol=API
+
+The archived floorsheet mirror at https://github.com/Shubhamnpk/yonepse/blob/main/data/floor_sheet/daily/2026-04-27.json was also filtered using its security master (API security ID 697). It contains 543 API-tagged contracts and total quantity 206,969, matching the daily OHLC page's volume. However, the transaction prices span **331.8 to 345**, not 340 to 345. Two contracts (quantities 6 and 2) are priced at 331.8. The lowest contract-number transaction is 345 and the highest contract-number transaction is 341; the file has no execution-time values in these rows, so contract-number order alone is not accepted as definitive open/close proof.
+
+Therefore:
+- High 345 and close 341 are consistent with the daily OHLC references and the observed floor data's max/last-contract price.
+- The floorsheet mirror introduces an unresolved low-price conflict at 331.8. It does **not** independently confirm low=340.
+- The daily OHLC record 339.9/345/340/341 is corroborated by two independent published daily-price pages, with matching total volume, but remains quarantined from canonical promotion until the two 331.8 floor records are reconciled against an exchange-origin floorsheet or another reliable contract-level source.
+- Do not silently delete or alter the two floor contracts. Preserve them and flag the source mirror for investigation.
+
+### BGWT — 2026-04-29
+
+Two independent daily-price sources report the unadjusted candle:
+- Open 720
+- High 731
+- Low 718
+- Close 730
+- Volume 1,573
+
+References:
+- https://sunsecurities.com/company/BGWT/price-history
+- https://arthakendra.com/stock-market/company/BGWT/price-history
+
+These agree with the user's Chukul unadjusted-chart observation and resolve the apparent OHLC violation as an adjustment-basis mismatch: the archive's 740 open is not the unadjusted traded open for this date. Retain the original adjusted/source record as received, but do not use it as a raw unadjusted OHLC candle. The unadjusted reference candle is 720/731/718/730. Preserve adjustment-basis metadata and corporate-action context when importing it.
+
+### Evidence standard
+
+These checks used public daily-price pages and a public floorsheet mirror, not direct logged-in Chukul chart captures or an exchange-signed floorsheet export. Record source identity and limitations. For future anomalies, check Chukul adjusted and unadjusted immediately, then cross-check at least one independent price-history source; use contract-level floorsheet evidence when available and reconcile any trade-price exceptions before release.

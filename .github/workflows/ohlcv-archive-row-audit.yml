@@ -55,11 +55,13 @@ jobs:
             exit 1
           fi
       - name: Enumerate current SocrateAI floorsheet dates (manifest only)
+        if: always()
         run: |
           python backend/acquire_floorsheet_archive.py \
             --owner socrateai-official --repo nepse-open-data --ref main \
             --prefix floorsheet --output artifacts/source-manifests
       - name: Enumerate current SamirWagle floorsheet dates (manifest only)
+        if: always()
         run: |
           python backend/acquire_floorsheet_archive.py \
             --owner SamirWagle --repo Nepse-All-Scraper --ref main \

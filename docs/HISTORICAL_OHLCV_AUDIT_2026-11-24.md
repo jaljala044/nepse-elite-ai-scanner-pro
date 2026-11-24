@@ -104,3 +104,33 @@ or quarantined. Never delete them merely because the values repeat.
    canonical ingestion.
 
 Predictive intelligence and scanner promotion remain blocked until these gates pass.
+
+
+## Follow-up triage — 2026-11-24
+
+The retained workflow artifact `nepse-ohlcv-row-audit` (run 45397942163; SHA-256 ZIP digest recorded by GitHub as `e1e5e8ac84e1d2ad273b605725c69614693a831117f96a6b8d7f5af2b4c81cb8`) was downloaded and the 1,331 invalid Jaljala rows were joined to the SocrateAI cross-check by exact symbol/date.
+
+| Cross-check result for the 1,331 invalid rows | Count | Disposition |
+|---|---:|---|
+| Partial/conflicting values | 1,320 | Quarantine; no automatic field substitution |
+| Exact match to SocrateAI despite invalid OHLC | 5 | Quarantine; independent agreement does not make invalid OHLC arithmetically valid |
+| No source matches external | 2 | Quarantine; source adjudication required |
+| External daily file not published | 1 | Quarantine; evidence unavailable |
+| Symbol absent from external daily file | 3 | Quarantine; evidence unavailable |
+| **Total** | **1,331** | **Zero rows approved for automatic repair** |
+
+The five exact matches are especially important: SocrateAI reproduces the same invalid values, so it is corroboration of the recorded values, not evidence that the OHLC candle is valid. For the 1,320 partial/conflicting rows, a field-level match is not sufficient authority to replace the entire source row. The two no-match rows and four rows without an independently usable external symbol/date observation cannot be resolved from this cross-check.
+
+### Quarantine policy
+
+- Keep the original Jaljala CSV bytes unchanged.
+- Exclude all 1,331 rows from canonical OHLCV, feature generation, memory construction, backtests and signals until adjudicated.
+- Preserve the original row, repository path, line number, source commit, source file hash, exact validation reason, external comparison status and external file hash.
+- A correction requires an independently authorized source record for the same symbol/date and an append-only correction record linking old and replacement values. Never edit the raw source in place.
+- The 196,542 repeated adjacent-calendar-row flags remain a separate calendar-classification queue; they are not included in the 1,331 invalid-row quarantine.
+
+### Data rights and limits
+
+The SocrateAI archive is declared MIT-licensed by its publisher, but it is not exchange-origin truth. The cross-check is limited to the 994 downloaded daily files; one requested date was not published. This triage does not establish completeness of the market archive, the session calendar, corporate-action adjustments or historical point-in-time availability.
+
+**Decision: integrity gate remains FAIL.** No invalid row was silently repaired or promoted.

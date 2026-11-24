@@ -28,7 +28,7 @@ def extract_sample_metadata(
         return getattr(value, name, None)
 
     def file_date(filename: str) -> str | None:
-        match = re.search(r"(?P<date>\\d{4}-\\d{2}-\\d{2})\\.csv(?:\\.gz)?$", filename.rsplit("/", 1)[-1], re.I)
+        match = re.search(r"(?P<date>\d{4}-\d{2}-\d{2})\.csv(?:\.gz)?$", filename.rsplit("/", 1)[-1], re.I)
         if not match:
             return None
         try:

@@ -74,6 +74,24 @@ class NormalizeFloorsheetTests(unittest.TestCase):
         result = self.run_import(path)
         self.assertEqual(result["unique_rows_accepted"], 1)
         self.assertEqual(result["rows_rejected"], 0)
+        self.assertEqual(result["duplicate_rows_detected"], 1)
+        self.assertEqual(result["duplicate_audit"][0]["classification"], "exact_duplicate_deduplicated")
+
+    def test_compact_turnover_amount_is_parsed(self):
+        path = self.write_csv([self.row(amount="5.005 K")])
+        result = self.run_import(path)
+        self.assertEqual(result["unique_rows_accepted"], 1)
+        output = self.silver / "date=2024-01-02" / "floorsheet.csv"
+        with output.open(encoding="utf-8") as f:
+            imported = list(csv.DictReader(f))
+        self.assertEqual(imported[0]["amount"], "5005.000")
+
+    def test_contract_date_mismatch_is_quarantined(self):
+        path = self.write_csv([self.row(contract_no="20240103000001")])
+        result = self.run_import(path)
+        self.assertEqual(result["unique_rows_accepted"], 0)
+        self.assertEqual(result["rows_rejected"], 1)
+        self.assertIsNotNone(result["quarantine_path"])
 
     def test_bad_amount_is_quarantined(self):
         rows = [

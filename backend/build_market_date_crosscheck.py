@@ -27,6 +27,16 @@ RAW = "https://raw.githubusercontent.com"
 INDEX_REPO = "socrateai-official/nepse-open-data"
 INDEX_RE = re.compile(r"^ohlc_index/adj_(\d{4}-\d{2}-\d{2})\.csv$")
 
+def index_path_date(path: str) -> str | None:
+    match = INDEX_RE.fullmatch(path)
+    if not match:
+        return None
+    try:
+        return date.fromisoformat(match.group(1)).isoformat()
+    except ValueError:
+        return None
+
+
 
 def _get(client: httpx.Client, url: str) -> httpx.Response:
     response = client.get(url)
@@ -109,9 +119,10 @@ def build_crosscheck(
             raise RuntimeError("index repository tree is truncated; refusing incomplete inventory")
         index_paths = {}
         for item in tree.get("tree", []):
-            match = INDEX_RE.fullmatch(str(item.get("path", "")))
-            if item.get("type") == "blob" and match:
-                index_paths[match.group(1)] = item["path"]
+            path = str(item.get("path", ""))
+            day = index_path_date(path)
+            if item.get("type") == "blob" and day:
+                index_paths[day] = path
         selected_dates = sorted(index_paths)[-recent_index_dates:]
         index_rows: dict[str, dict[str, Any]] = {}
         errors = []

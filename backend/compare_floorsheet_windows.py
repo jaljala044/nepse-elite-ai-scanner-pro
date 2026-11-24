@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from compare_floorsheet_samples import compare_samples, read_rows
+from compare_floorsheet_samples import compare_samples, read_rows, sha256_file
 
 
 def compare_windows(urek_manifest_path: str | Path, socrateai_manifest_path: str | Path) -> dict[str, Any]:
@@ -30,6 +30,13 @@ def compare_windows(urek_manifest_path: str | Path, socrateai_manifest_path: str
             soc_path = Path(soc_entry["local_path"])
             if not urek_path.is_file() or not soc_path.is_file():
                 raise FileNotFoundError("one or both raw files are missing")
+            for source_name, source_path, entry in (
+                ("urek", urek_path, urek_entry),
+                ("socrateai", soc_path, soc_entry),
+            ):
+                expected_hash = entry.get("local_sha256")
+                if expected_hash and sha256_file(source_path) != expected_hash:
+                    raise ValueError(f"{source_name} local SHA-256 differs from acquisition manifest")
             result = compare_samples(read_rows(urek_path), read_rows(soc_path), day)
             contract = result["contract_number_comparison"]
             results.append({

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Acquire exactly one pinned, hash-verifiable public HF floorsheet sample.
+"""Acquire exactly one pinned, hash-verifiable public HF date-file sample.
 
 The command requires an explicit rights-review acknowledgement and a strict
 byte ceiling. It never downloads an entire dataset implicitly.
@@ -77,7 +77,7 @@ def select_sample(rows: list[dict[str, Any]], sample_date: str, max_total_bytes:
         raise ValueError("max_total_bytes must be positive")
     selected = [row for row in rows if row.get("date") == sample_date]
     if len(selected) != 1:
-        raise ValueError(f"expected exactly one dated floorsheet file for {sample_date}; found {len(selected)}")
+        raise ValueError(f"expected exactly one dated file for {sample_date}; found {len(selected)}")
     total = sum(int(row["size_bytes"]) for row in selected)
     if total > max_total_bytes:
         raise ValueError(f"sample size {total} exceeds max_total_bytes {max_total_bytes}")

@@ -924,3 +924,9 @@ The README and `audit/source_coverage.json` report 128 benchmark bars and 1,534 
 - The 2026-11-24 audit JSON reports 105 pages and 52,387 contracts, plus 500 independent Merolagani contract checks and per-security reconciliation across 350 securities. This is the recorded audit result, not a re-run from the large raw CSV in this pass.
 - The two files in `02_floorsheet_daily/` (November 19 and 20) each contain exactly 500 rows. Treat them as limited 500-row extracts, not full-session floorsheets.
 - Raw page JSONs whose hashes are listed in the audit JSON are not present as separate tracked files in the current repository tree. Retain the page snapshots or immutable external archive if future reviewers must reproduce the 105-page count independently.
+
+
+### Final source-label clarification and CI result
+
+- The Financial Notices UNHPL price-history table explicitly labels columns `Date | Close | Open | High | Low | Volume | Change`. For 2026-04-29 it reports close 475.4, open 487.9, high 487, low 475, volume 46,481. This confirms the archive's same field values and their order; it does not resolve the open-above-high arithmetic violation. Source: https://www.financialnotices.com/stock-nepse.php?symbol=UNHPL
+- The historical-weekend helper fix PR #3 now has two successful GitHub Actions `session-date-tests` runs. It remains draft/open/unmerged: https://github.com/jaljala044/nepse-smc-data/pull/3

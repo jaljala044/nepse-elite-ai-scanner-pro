@@ -271,3 +271,10 @@ their own update timestamps, and its scraper's TLS-verification setting weakens
 the source chain. The high close agreement is useful corroboration, but the
 turnover/high/low differences remain unresolved. Latest report artifact:
 run 45409066255, artifact ID 14927261450.
+
+The YONEPSE mirror's monthly-shard timestamps also differ: May–August 2026
+shards report `updatedAt=2026-10-11T00:45:08+05:45`, September reports
+`2026-11-13T12:02:46+05:45`, and October/November report
+`2026-11-24T12:04:02+05:45`. The comparison report now records each shard's
+update timestamp, date count, date span and SHA-256. A shard's update timestamp
+is publisher metadata, not proof of the original exchange publication time.

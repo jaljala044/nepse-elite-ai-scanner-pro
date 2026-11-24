@@ -902,3 +902,25 @@ The earlier apparent metadata conflict can now be explained:
 - The 41 partitions cover 2026-07-24 through 2026-11-20 with many gaps; this remains far short of a 90–120-session or one-year broker-flow history.
 
 Do not use the 2026-09-16 partition as a verified broker-flow day until its published transaction-count discrepancy is resolved.
+
+
+### Recomputed market/sector/index input counts
+
+I re-read the current CSVs and counted unique keys (entity + date). No duplicate entity-date keys or malformed ISO dates were found in these five files.
+
+| Dataset | Current rows | Unique dates | Entity count | Date range |
+|---|---:|---:|---:|---|
+| market_summary_daily.csv | 195 | 195 | 1 | 2026-01-01 to 2026-11-20 |
+| benchmark_daily.csv | 138 | 138 | 1 | 2026-01-06 to 2026-11-20 |
+| sector_data.csv | 1,558 | 145 | 12 | 2026-01-01 to 2026-11-20 |
+| index_history/ohlc.csv | 105 | 82 | 4 | 2026-01-01 to 2026-11-18 |
+| index_history/closes_only.csv | 1,390 | 197 | 16 | 2026-01-01 to 2026-11-20 |
+
+The README and `audit/source_coverage.json` report 128 benchmark bars and 1,534 sector bars, while the current CSVs contain 138 and 1,558 respectively. These are metadata/documentation counts that are stale by +10 benchmark bars and +24 sector bars. The current files have unique keys, so these are not duplicate rows. Update the source manifests after checking source commits and exact provenance for the added bars.
+
+### Raw floorsheet artifact access and limits
+
+- Git tree confirms raw CSV artifacts exist under `floorsheet/` for 2026-11-20, 2026-11-23 and 2026-11-24, with sizes 1.87 MB, 1.99 MB and 2.43 MB respectively. The GitHub content connector returned no text for these large files, so this pass did not independently parse those three CSVs.
+- The 2026-11-24 audit JSON reports 105 pages and 52,387 contracts, plus 500 independent Merolagani contract checks and per-security reconciliation across 350 securities. This is the recorded audit result, not a re-run from the large raw CSV in this pass.
+- The two files in `02_floorsheet_daily/` (November 19 and 20) each contain exactly 500 rows. Treat them as limited 500-row extracts, not full-session floorsheets.
+- Raw page JSONs whose hashes are listed in the audit JSON are not present as separate tracked files in the current repository tree. Retain the page snapshots or immutable external archive if future reviewers must reproduce the 105-page count independently.

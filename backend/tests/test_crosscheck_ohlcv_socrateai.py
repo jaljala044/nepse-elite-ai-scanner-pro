@@ -1,9 +1,14 @@
 import unittest
 
-from crosscheck_ohlcv_socrateai import compare_ohlcv, load_candidates
+from crosscheck_ohlcv_socrateai import compare_ohlcv, load_candidates, unmatched_classification
 
 
 class SocrateAiCrosscheckTests(unittest.TestCase):
+    def test_unmatched_external_outcomes_always_have_classification(self):
+        self.assertEqual(unmatched_classification("not_published"), "external_file_not_published")
+        self.assertEqual(unmatched_classification("symbol_not_in_external_file"), "symbol_not_in_external_file")
+        self.assertEqual(unmatched_classification("download_error"), "external_download_error")
+
     def test_numeric_formatting_does_not_create_false_difference(self):
         result = compare_ohlcv(
             {"open": "179.70", "high": "193.8", "low": "179.70", "close": "193.80", "volume": "14812.0"},

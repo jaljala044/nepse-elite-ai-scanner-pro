@@ -51,11 +51,13 @@ def enumerate_files(repo_id: str, path: str, revision: str) -> tuple[str, list[d
     api = HfApi(token=False)
     info = api.dataset_info(repo_id, revision=revision, files_metadata=True, token=False)
     commit_sha = info.sha
+    # Expanded entries expose per-file metadata (including LFS/Xet details) needed
+    # for trustworthy size and content-hash manifests. Keep the resolved SHA pinned.
     entries = api.list_repo_tree(
         repo_id,
         path_in_repo=path.strip("/"),
         recursive=True,
-        expand=False,
+        expand=True,
         revision=commit_sha,
         repo_type="dataset",
         token=False,
@@ -67,14 +69,15 @@ def enumerate_files(repo_id: str, path: str, revision: str) -> tuple[str, list[d
         if not filename or date is None:
             continue
         size = field(entry, "size")
-        blob_id = field(entry, "blob_id")
+        if size is None:
+            raise ValueError(f"Hub did not provide expanded file size for {filename}")
         rows.append({
             "repo_id": repo_id,
             "revision": commit_sha,
             "path": filename,
             "date": date,
             "size_bytes": int(size),
-            "hub_blob_id": blob_id,
+            "hub_blob_id": field(entry, "blob_id"),
             "lfs_sha256": lfs_sha256(entry),
             "xet_hash": field(entry, "xet_hash"),
         })

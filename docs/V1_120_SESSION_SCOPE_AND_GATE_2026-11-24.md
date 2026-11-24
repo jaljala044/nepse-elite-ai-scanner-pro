@@ -1072,3 +1072,24 @@ Sparse/lifecycle examples in this last range include SAMAJ (no candidate-window 
 **Mechanical file inventory status: 525/525 SMC ticker CSVs inspected (100%).** This completes only the first-pass per-file calendar-window parse, row count, basic OHLC-range check and duplicate-date check. It does not pass the V1 data acceptance gate. Outstanding work includes: (1) authoritative NEPSE session calendar and closure verification; (2) per-symbol expected-session coverage using security lifecycle and traded/not-traded evidence; (3) cross-source comparison against History Starter and external chart/floorsheet evidence for every anomaly and coverage gap; (4) source-level raw-file hashes and retrieval/availability timestamps in a reproducible audit artifact; (5) corporate-action/adjustment-basis validation; (6) market and sector index coverage; (7) broker/floorsheet coverage and provenance; and (8) point-in-time availability checks.
 
 Do not claim one-year coverage passed. If the one-year gate fails after these checks, calculate the exact six-month fallback coverage and report which instruments and datasets qualify. Release remains **BLOCKED**.
+
+
+## Calendar-aware second pass — all 525 files inspected
+
+A second pass was performed over all 525 SMC ticker files for the same candidate interval, classifying dates by weekday and by the NEPSE weekly-schedule regime. The regime is supported by contemporaneous reporting of NEPSE's decision effective 2026-04-06 and the exchange's 2026-04-08 notice: before the change, regular equity trading was Sunday–Thursday; after the change, it is Monday–Friday, with Saturday and Sunday closed. This must be represented as a dated calendar rule, not a single weekday filter.
+
+The second pass confirms that a substantial set of ticker files contains Saturday and post-2026-04-05 Sunday rows. Many are exact repeats of the immediately preceding row's OHLCV values. Examples:
+
+- ACLBSL: 32 Saturday rows (31 identical to previous row) and 12 post-change Sunday rows (all 12 identical to previous row) in the candidate interval.
+- AHL: 32 Saturday rows (31 identical), 12 post-change Sunday rows (all identical).
+- BNT: 27 Saturday rows (26 identical), eight post-change Sunday rows (all identical); the candidate window has 279 rows total, including 226 Mon–Fri rows and 18 pre-change Sunday rows.
+- BNHC: 32 Saturday rows (31 identical), 12 post-change Sunday rows (all identical).
+- API: 226 rows total; 210 Mon–Fri rows and 16 pre-change Sundays, with no Saturday or post-change Sunday rows.
+
+These records cannot be accepted as trading sessions merely because they have non-zero volume. Weekend records are classified as **off-session-date anomalies / carry-forward candidates** until matched to authoritative exchange daily records and timestamps. Do not silently delete them: preserve raw rows, attach a validation status, and exclude from trading-session calculations unless independently verified. Some Saturday rows are not exact repeats, so the entire group cannot be assumed to be simple carry-forwards; date-shift, source timestamp, and provenance checks are required.
+
+Cross-source spot-check of all eight anomaly symbols (API, BGWT, HRL, KDBY, KEF, RADHI, RAWA, SPDL, UAIL, UNHPL; ten symbols) against History Starter shows that the second archive often lacks the exact anomalous date, while adjacent dates generally match values. Therefore History Starter does not independently corroborate the quarantined row values. The two archives are not fully independent evidence; identical Git blobs were previously found for most symbols. No anomalous row is repaired from this cross-check.
+
+For API 2026-04-27, the user previously directed that open be marked as 340.00. Record this as a user-directed candidate override (original raw open 339.90 retained); it is not an exchange-verified correction and must not overwrite the raw source. Reconcile against NEPSE's official daily OHLC record before promotion.
+
+**Calendar gate remains FAIL / incomplete.** The 2026-04-06 regime boundary is supported by current secondary reporting, but a full official NEPSE holiday/session register and row-level session evidence are still required. This pass did not yet compute an authoritative expected-session denominator or classify every per-symbol missing weekday as no-trade versus missing feed. The calendar-window row counts previously reported must not be interpreted as session coverage.

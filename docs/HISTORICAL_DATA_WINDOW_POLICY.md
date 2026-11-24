@@ -4,7 +4,9 @@
 
 ## Decision
 
-Six to nine months is a useful *recent-regime* window, but it is not sufficient as the platform's only historical memory or as the sole basis for claiming that a stock, broker, or market pattern is recurring.
+**First operational milestone: 90–120 verified NEPSE trading sessions.** This is the minimum viable recent-history target for bringing up the first data and descriptive-analysis layer. Aim for 120; 90 is the minimum acceptable launch window. Count actual exchange sessions, not calendar days. A window that contains 90–120 dated files is not automatically 90–120 verified sessions.
+
+Six to nine months remains a useful *recent-regime* window, but it is not sufficient as the platform's only historical memory or as the sole basis for claiming that a stock, broker, or market pattern is recurring.
 
 The platform must preserve and use a layered history. It must not discard older valid observations merely because the operational recent window is shorter.
 
@@ -12,7 +14,8 @@ The platform must preserve and use a layered history. It must not discard older 
 
 | Layer | Target window | Intended use | Guardrail |
 |---|---:|---|---|
-| Recent | Latest 6–9 months | Current regime, short-horizon behaviour, recent broker participation and scanner context | High recency weight; not enough alone to establish recurrence |
+| MVP recent | Latest 90–120 verified trading sessions | First operational data layer, recent market/stock description and initial broker-flow research | 120 preferred; 90 minimum; all dates must reconcile to the verified session calendar |
+| Recent | Latest 6–9 months | Broader current-regime context and short-horizon behaviour | High recency weight; not enough alone to establish recurrence |
 | Intermediate | At least 2–3 years where validated data exists | Repeated stock patterns, broker/stock relationships, multiple market conditions | Compare across regimes; do not assume all dates are sessions |
 | Long-cycle | 5–10+ years where validated data exists | Long-cycle context, structural changes, rare events and regime comparison | Source quality and corporate-action history may limit usable features |
 | Full archive | Every legally usable, provenance-preserved record | Research, future reprocessing and historical memory | Immutable raw layer; quarantine uncertain records rather than deleting them |
@@ -66,9 +69,10 @@ The project has multi-year OHLCV candidate archives and several floorsheet sourc
 
 ## Next implementation order
 
-1. Establish a verified date-by-date NEPSE session calendar and a coverage matrix by source/data type.
-2. Reconcile and quarantine known OHLCV invalid rows and cross-source conflicts without modifying raw snapshots.
-3. Run public, unauthenticated Hugging Face manifest-only enumeration against the pinned dataset revision; verify the Hub metadata fields before any download.
+1. Assemble a verified recent window of 90–120 actual NEPSE sessions, starting with OHLCV, index and floorsheet sources; 120 is preferred.
+2. Establish the date-by-date session calendar and source coverage matrix needed to prove that window's continuity.
+3. Reconcile and quarantine known OHLCV invalid rows and cross-source conflicts without modifying raw snapshots.
 4. Acquire only rights-cleared floorsheet files under explicit byte ceilings and verify each file against publisher-provided content hashes.
 5. Validate daily floorsheet rows and control totals before canonical ingestion.
-6. Build recent/intermediate/long-history feature views only from gate-passed records.
+6. Extend backward whenever older valid history is available; retain it in separate intermediate/long-history layers.
+7. Build recent/intermediate/long-history feature views only from gate-passed records.

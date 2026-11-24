@@ -33,7 +33,7 @@ SOC_ROW = {
 
 class FloorsheetWindowComparisonTests(unittest.TestCase):
     def _write_csv(self, path, headers, row):
-        path.write_text(",".join(headers) + "\\n" + ",".join(row[h] for h in headers) + "\\n", encoding="utf-8")
+        path.write_text(chr(10).join([",".join(headers), ",".join(row[h] for h in headers)]) + chr(10), encoding="utf-8")
 
     def test_compares_all_shared_dates(self):
         with tempfile.TemporaryDirectory() as temp:

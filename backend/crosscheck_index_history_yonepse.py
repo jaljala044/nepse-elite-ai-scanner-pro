@@ -161,10 +161,7 @@ def build_report(
     *,
     repo: str = YONEPSE_REPO,
     commit_sha: str | None = None,
-    workers: int = 6,
 ) -> dict[str, Any]:
-    if workers < 1 or workers > 12:
-        raise ValueError("workers must be between 1 and 12")
     with httpx.Client(timeout=httpx.Timeout(45, connect=15), follow_redirects=True) as client:
         metadata = json.loads(_get(client, f"{API}/repos/{repo}"))
         if commit_sha is None:
@@ -264,13 +261,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("data/reports/yonepse-index-crosscheck.json"))
     parser.add_argument("--repo", default=YONEPSE_REPO)
     parser.add_argument("--commit-sha")
-    parser.add_argument("--workers", type=int, default=6)
     args = parser.parse_args()
     report = build_report(
         json.loads(args.input.read_text(encoding="utf-8")),
         repo=args.repo,
         commit_sha=args.commit_sha,
-        workers=args.workers,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

@@ -108,6 +108,7 @@ jobs:
             python backend/export_session_candidate_register.py \
               --market-report data/reports/market-date-crosscheck.json \
               --yonepse-report data/reports/yonepse-index-crosscheck.json \
+              --closure-leads data/reference/nepse_calendar_evidence_leads_2026.csv \
               --output data/reports/nepse-session-candidates.csv
           else
             echo "Required cross-check reports are missing; cannot export candidate register."

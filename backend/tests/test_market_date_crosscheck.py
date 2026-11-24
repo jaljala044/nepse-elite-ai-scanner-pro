@@ -20,7 +20,7 @@ class MarketDateCrosscheckTests(unittest.TestCase):
         ).encode()
         result = validate_index_csv(raw, "2026-11-24")
         self.assertTrue(result["nepse_index_row_valid"])
-        self.assertEqual(result["nepse_index"]["close"], "105")
+        self.assertEqual(result["nepse_index_rows"][0]["close"], "105")
 
     def test_rejects_wrong_date(self):
         raw = b"date,symbol,open,high,low,close,volume\n2026-11-23,NEPSE_index,100,110,95,105,1\n"
@@ -31,6 +31,36 @@ class MarketDateCrosscheckTests(unittest.TestCase):
         raw = b"date,symbol,open,high,low,close,volume\n2026-11-24,NEPSE_index,100,99,95,105,1\n"
         with self.assertRaisesRegex(ValueError, "high_below_ohlc"):
             validate_index_csv(raw, "2026-11-24")
+
+    def test_exact_duplicate_nepse_rows_are_preserved_and_flagged(self):
+        raw = (
+            "date,symbol,open,high,low,close,volume\\n"
+            "2026-11-24,NEPSE_index,100,110,95,105,1\\n"
+            "2026-11-24,NEPSE_index,100,110,95,105,1\\n"
+        ).encode()
+        result = validate_index_csv(raw, "2026-11-24")
+        self.assertFalse(result["nepse_index_row_valid"])
+        self.assertEqual(result["duplicate_kind"], "exact_duplicate_rows")
+        self.assertEqual(result["nepse_index_row_count"], 2)
+        self.assertEqual(len(result["nepse_index_rows"]), 2)
+
+    def test_conflicting_nepse_rows_are_preserved_and_flagged(self):
+        raw = (
+            "date,symbol,open,high,low,close,volume\\n"
+            "2026-11-24,NEPSE_index,100,110,95,105,1\\n"
+            "2026-11-24,NEPSE_index,100,111,95,105,2\\n"
+        ).encode()
+        result = validate_index_csv(raw, "2026-11-24")
+        self.assertFalse(result["nepse_index_row_valid"])
+        self.assertEqual(result["duplicate_kind"], "conflicting_duplicate_rows")
+        self.assertEqual(result["nepse_index_row_count"], 2)
+
+    def test_ohlc_bound_anomaly_is_retained_not_silently_corrected(self):
+        raw = b"date,symbol,open,high,low,close,volume\\n2026-11-24,NEPSE_index,100,99.9993,95,98,1\\n"
+        result = validate_index_csv(raw, "2026-11-24")
+        self.assertFalse(result["nepse_index_row_valid"])
+        self.assertIn("row_1:index_high_below_ohlc", result["validation_errors"])
+        self.assertEqual(result["nepse_index_rows"][0]["high"], "99.9993")
 
     def test_requires_exactly_one_nepse_index_row(self):
         raw = b"date,symbol,open,high,low,close,volume\n2026-11-24,Banking_index,100,110,95,105,1\n"

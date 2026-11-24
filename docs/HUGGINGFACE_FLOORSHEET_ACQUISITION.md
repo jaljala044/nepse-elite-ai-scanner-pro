@@ -232,9 +232,9 @@ Cross-source evidence is conflicting:
 These sources do not yet resolve whether the index control row is stale/partial,
 whether the floor file contains records outside the index control definition, or
 which secondary report is authoritative. Preserve both datasets and every
-difference. The floorsheet's row-level validation passes, but the combined
-sample gate remains **FAIL** because the same-dataset index controls conflict
-and the index OHLC row is invalid. `canonical_promotion_allowed=false`.
+difference. The floorsheet row-level validation passes. The combined sample gate is now
+`REVIEW_REQUIRED_INDEX_SCOPE` because the same-dataset index controls and index
+OHLC row still need scope/field reconciliation. `canonical_promotion_allowed=false`.
 
 Workflow run 45412604263, artifact 14930540759, contains the two hash-verified
 raw sample files and the complete audit report. It is a diagnostic artifact,

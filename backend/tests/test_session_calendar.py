@@ -44,10 +44,13 @@ class SessionCalendarTests(unittest.TestCase):
         self.assertEqual(classify_date(date(2026, 11, 23), {})["classification"],
                          "unverified_session_candidate")
 
-    def test_weekly_regime_transition_is_explicit(self):
-        self.assertFalse(schedule_candidate(date(2026, 4, 3))[0])  # Friday before transition
-        self.assertFalse(schedule_candidate(date(2026, 4, 5))[0])  # Sunday after transition
-        self.assertTrue(schedule_candidate(date(2026, 4, 6))[0])   # Monday after transition
+    def test_weekly_regime_transitions_are_explicit(self):
+        self.assertFalse(schedule_candidate(date(2022, 5, 5))[0])  # Friday odd-lot period
+        self.assertTrue(schedule_candidate(date(2022, 5, 6))[0])   # Temporary Friday opening
+        self.assertFalse(schedule_candidate(date(2022, 6, 15))[0]) # Return to Sunday-Thursday
+        self.assertFalse(schedule_candidate(date(2026, 4, 3))[0])  # Friday before 2026 transition
+        self.assertFalse(schedule_candidate(date(2026, 4, 5))[0])  # Sunday under new regime
+        self.assertTrue(schedule_candidate(date(2026, 4, 6))[0])   # Monday under new regime
 
     def test_calendar_requires_evidence_fields(self):
         self.write_calendar([{"date": "2026-11-23", "status": "verified_open", "source_id": "", "evidence_uri": "", "verified_at_utc": "", "notes": ""}])

@@ -54,16 +54,16 @@ Download mode requires explicit flags, a positive total-byte ceiling, and per-fi
 A GitHub Actions run successfully enumerated the complete dated floorsheet folder
 without downloading any raw floorsheet rows:
 
-- Workflow run: [hf-dataset-inventory #?](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45405942918)
+- Workflow run: [hf-dataset-inventory #?](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45406145702)
 - Pinned dataset commit: `11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0`
 - Dated floorsheet files: **603**
 - Unique dates: **603** (no duplicate dated paths in the manifest)
 - Date span: **2024-01-02 through 2026-08-26**
 - Sum of compressed file sizes: **758,924,600 bytes** (about 723.8 MiB)
 - Every one of the 603 entries includes an LFS SHA-256 and Xet hash in Hub metadata.
-- Manifest JSONL SHA-256: `222f548490d3967d47c983bc628114a6fedcd00c9192c3fc1eabc8b9a8e9eaeb`
+- Manifest JSONL SHA-256: `a6975a14059aaf63b66435589ea5ce81558986f015b9d93a02ebdea13e2565fb`
 - Manifest file: `urekmazino69_Nepse-floorsheet-and-indices_11ef83a9c3cd.jsonl`
-- GitHub Actions artifact SHA-256: `52f6fb44ef6df0d238454809b9b3dfed17e1e6551ccb19c00794c86f342684fa`
+- GitHub Actions artifact SHA-256: `2643bca1f5511f2d584c62628e7c7d50c421f2460e8e903a73a695b986c9ce69`
 
 Annual file counts: 2024 = 226, 2025 = 223, 2026 = 154.
 
@@ -99,3 +99,24 @@ The initial evidence-backed calendar file is now present at
 `data/reference/nepse_session_calendar.csv` with its required header and **no
 verified date rows yet**. It is intentionally empty: do not mistake a blank
 template for a completed calendar or a passing integrity gate.
+
+### Date-level matrix result — 2026-11-24
+
+The same successful workflow generated
+`artifacts/source-manifests/nepse-calendar-coverage-matrix.json` over the full
+manifest span:
+
+- Matrix SHA-256: `f6013381d5e6293375f63609bf5de16c5f726752f0bc28bfa63f76c9f80fe21f`
+- Calendar days represented: **968**
+- Dated source files observed: **603**
+- Dates with explicit verified NEPSE calendar evidence: **0**
+- Unverified regular-session weekday candidates: **692**
+- Unverified non-session weekday candidates: **276**
+- Candidate dates with no floorsheet file: **89**
+- Files on schedule non-session candidates: **0**
+
+The 89 candidate dates without a file are **not confirmed missing trading days**;
+many may be public holidays, exceptional closures, or publisher gaps. The matrix
+deliberately leaves all 968 dates unverified because the calendar template has no
+evidence rows yet. This is the correct fail-closed outcome, not a successful
+calendar gate.

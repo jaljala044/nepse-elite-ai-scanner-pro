@@ -92,6 +92,15 @@ def build_target(
         })
     all_observed_dates = sorted(source_dates)
     available_sources = sorted({source for by_source in source_dates.values() for source in by_source})
+    recent_source_dates = []
+    for day in all_observed_dates[-target_sessions:]:
+        evidence = calendar.get(day)
+        recent_source_dates.append({
+            "date": day.isoformat(),
+            "calendar_status": evidence["status"] if evidence else "unverified",
+            "sources_present": sorted(source_dates[day]),
+            "source_file_count": sum(len(paths) for paths in source_dates[day].values()),
+        })
     return {
         "minimum_sessions": minimum_sessions,
         "target_sessions": target_sessions,
@@ -105,6 +114,7 @@ def build_target(
         "source_manifest_start_date": all_observed_dates[0].isoformat() if all_observed_dates else None,
         "source_manifest_end_date": all_observed_dates[-1].isoformat() if all_observed_dates else None,
         "sources": available_sources,
+        "latest_source_dates_preview": recent_source_dates,
         "selected_sessions": rows,
         "interpretation": (
             "Only explicit verified_open calendar rows count. Source files on other dates "

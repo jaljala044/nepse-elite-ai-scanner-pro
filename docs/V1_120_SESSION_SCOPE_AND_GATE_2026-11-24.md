@@ -1012,3 +1012,19 @@ Sparse/possibly lifecycle-sensitive examples in this range include GMFILP (one r
 Other examples with partial year coverage or earlier latest dates include HBLD83, HBLD86, HBLPO, GWFD83, HRL and JBLBP. Absence of a candle on a date is not itself proof of a data defect: securities can be suspended or untraded. The session-level reconciliation is still pending.
 
 Cumulative scan progress: 160/525 files (30.5%). Across the inspected 160 files, three OHLC range violations are currently documented: API 2026-04-27, BGWT 2026-04-29 and HRL 2026-04-29. This count is provisional until all files and both archive sources are checked.
+
+
+## Continued all-symbol scan — files 161–232 (batches 17–26)
+
+A further 72 SMC stock CSV files were fetched from main in nine batches of eight; all 72 fetches succeeded. No duplicate dates were detected. Two further OHLC range violations were identified:
+
+- KDBY, 2026-04-29: open 11.54, high 11.50, low 11.25, close 11.38 (high below open).
+- KEF, 2026-04-28: open 10.89, high 10.80, low 10.70, close 10.79 (high below open).
+
+Both are quarantined, with no automatic correction. The previously documented three violations remain; cumulative provisional count is now five (API, BGWT, HRL, KDBY, KEF).
+
+Sparse or lifecycle-sensitive examples include KLBSLP and KLBSL (no candidate-window rows; latest 2024), KRBL (no candidate-window rows; latest 2024-12-25), LEMF (no candidate-window rows; latest 2024-06-09), MKLB (no candidate-window rows; latest 2024-07-07), MLBBLP (one old row), LBBLPO (two candidate-window rows), and multiple preference/right/structured instruments with thin coverage. These require security-master lifecycle validation; do not equate no data with a feed failure.
+
+Other partial-coverage examples include KBLD series, KBLPO, KMCDBP, KSBBLD87, KSBBLP, LBBLD89, LBLD86/88, LSLPO, MBLD series, MBLPO, MFLD85 and MLBLD89/MLBLPO. These require matching against verified trading sessions and instrument status.
+
+Cumulative scan progress: 232/525 files (44.2%). Mechanical validation only; source cross-checks, corporate-action basis, and session completeness remain outstanding.

@@ -46,6 +46,16 @@ Interpretation:
 - The 24 Samir-only dates may reflect publisher coverage, file-date differences, or a source gap in SocrateAI. Do not classify them as verified exchange sessions from filenames alone.
 - Neither source is promoted to canonical floorsheet storage by this manifest comparison.
 
+
+## Hugging Face candidate — \`urekmazino69/Nepse-floorsheet-and-indices\`
+
+- The public dataset card declares MIT and coverage from 2024-01-02 through 2026-08-26. Its floorsheet folder page reports **759 MB** and uses gzip-compressed daily files named \`YYYY-MM-DD.csv.gz\`. This is a separate source lead; it is not yet included in the 658/179 GitHub comparison. \`<Cite ref="turn171901view0" />\` \`<Cite ref="turn576482view0" />\`
+- The dataset viewer currently fails to generate a complete table because a contract number such as \`'2025112601010000\` cannot be cast to \`int64\`. The visible schema preview also renders the \`time\` column as null. Preserve contract numbers as strings and treat time as genuinely missing until raw-file inspection proves otherwise. \`<Cite ref="turn576482view0" />\`
+- One individual file page exposes a pointer SHA-256 and exact compressed size: \`floorsheet/2024-03-18.csv.gz\`, 800,385 bytes, SHA-256 \`e70e43ccda03c834929a82860380215ea1a3326dcee5893069bd64d7081d8fc7\`. This verifies metadata for one stored object, not the data rows or entire archive. \`<Cite ref="turn173578view0" />\` \`<Cite ref="turn299231view0" />\`
+- The current GitHub acquisition utility does not enumerate Hugging Face Xet/LFS objects or \`.csv.gz\` paths. A dedicated Hugging Face manifest/downloader is required; do not force these files through the GitHub utility.
+- MIT is the dataset card's declared license, but source lineage and upstream rights still need review. The dataset card says NEPSE public data; that statement is publisher provenance, not an independent exchange attestation.
+
+
 ## Coverage interpretation
 
 - Date spans and file counts are filename-manifest evidence, not verified session counts.

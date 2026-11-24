@@ -236,3 +236,10 @@ numeric comparison for the provisional latest date, and records exact or
 differing OHLC/turnover fields against the SocrateAI rows. It never chooses a
 canonical source or corrects a value. CI runs this comparison and uploads
 `yonepse-index-crosscheck.json` alongside the other audit reports.
+
+YONEPSE's README advertises an MIT repository license, but its sources page
+states that the underlying market data remains the property of the respective
+owners. The code license is therefore not treated as a data-reuse or
+redistribution grant. This project currently uses the mirror only as a
+provenance-tracked private comparison source; no YONEPSE raw dataset is
+repackaged or redistributed.

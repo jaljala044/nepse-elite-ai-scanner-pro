@@ -46,8 +46,10 @@ class SessionCalendarTests(unittest.TestCase):
 
     def test_weekly_regime_transitions_are_explicit(self):
         self.assertFalse(schedule_candidate(date(2022, 4, 29))[0]) # Friday odd-lot period
-        self.assertTrue(schedule_candidate(date(2022, 5, 6))[0])   # Temporary Monday-Friday period
-        self.assertFalse(schedule_candidate(date(2022, 5, 8))[0])  # Sunday closed in May-June
+        self.assertFalse(schedule_candidate(date(2022, 5, 6))[0]) # Before two-day weekend starts
+        self.assertTrue(schedule_candidate(date(2022, 5, 8))[0])  # Sunday still open before May 15
+        self.assertFalse(schedule_candidate(date(2022, 5, 15))[0]) # Sunday closed after weekend starts
+        self.assertTrue(schedule_candidate(date(2022, 5, 16))[0])  # Monday-Friday period
         self.assertTrue(schedule_candidate(date(2022, 6, 15))[0])  # Sunday-Friday period starts
         self.assertTrue(schedule_candidate(date(2022, 6, 17))[0])  # Friday open in six-day period
         self.assertTrue(schedule_candidate(date(2022, 9, 16))[0])  # Last Friday before closure

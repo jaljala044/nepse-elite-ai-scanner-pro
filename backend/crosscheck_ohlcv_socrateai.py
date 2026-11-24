@@ -59,6 +59,14 @@ def compare_ohlcv(source_row: dict[str, Any], external_row: dict[str, Any]) -> d
     return {"status": status, "matched_fields": matches, "differences": differences}
 
 
+def unmatched_classification(status: str) -> str:
+    return {
+        "download_error": "external_download_error",
+        "not_published": "external_file_not_published",
+        "symbol_not_in_external_file": "symbol_not_in_external_file",
+    }.get(status, "unclassified_external_status")
+
+
 def _source_row(raw: dict[str, Any]) -> dict[str, Any]:
     lower = {str(key).strip().lower(): value for key, value in raw.items()}
     return {field: lower.get(field) for field in FIELDS}
@@ -170,13 +178,16 @@ def crosscheck(
         if external_day is None:
             record = {
                 **item, "external_status": "download_error",
+                "classification": unmatched_classification("download_error"),
                 "error": next((e["error"] for e in errors if e["date"] == day), "unknown error"),
                 "source_comparisons": {},
             }
         elif external_day["status"] == "not_published":
-            record = {**item, "external_status": "not_published", "source_comparisons": {}}
+            record = {**item, "external_status": "not_published",
+                      "classification": unmatched_classification("not_published"), "source_comparisons": {}}
         elif symbol not in external_day["rows"]:
-            record = {**item, "external_status": "symbol_not_in_external_file", "source_comparisons": {}}
+            record = {**item, "external_status": "symbol_not_in_external_file",
+                      "classification": unmatched_classification("symbol_not_in_external_file"), "source_comparisons": {}}
         else:
             ext_row = external_day["rows"][symbol]
             comparisons = {
@@ -196,7 +207,7 @@ def crosscheck(
                     else "no_source_matches_external"
                 ),
             }
-        status_counts[record.get("classification", record["external_status"])] += 1
+        status_counts[record["classification"]] += 1
         records.append(record)
 
     return {

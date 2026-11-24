@@ -8,6 +8,8 @@ on:
       - "backend/inventory_hf_datasets.py"
       - "backend/acquire_floorsheet_archive.py"
       - "backend/acquire_hf_floorsheet_sample.py"
+      - "backend/audit_hf_floorsheet_sample.py"
+      - "backend/tests/test_audit_hf_floorsheet_sample.py"
       - "backend/tests/test_acquire_hf_floorsheet_sample.py"
       - "backend/build_calendar_coverage_matrix.py"
       - "backend/build_recent_history_target.py"
@@ -69,6 +71,18 @@ jobs:
           --raw-root ../data/raw/huggingface
           --output ../data/reports/hf-index-sample.json
         working-directory: backend
+      - name: Audit raw floorsheet sample against same-day index controls
+        run: |
+          commit=11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0
+          floor_file=$(find data/raw/huggingface/urekmazino69/Nepse-floorsheet-and-indices/$commit/floorsheet -maxdepth 1 -type f -name '2026-08-26.csv*' -print -quit)
+          index_file=$(find data/raw/huggingface/urekmazino69/Nepse-floorsheet-and-indices/$commit/indices -maxdepth 1 -type f -name '2026-08-26.csv*' -print -quit)
+          test -n "$floor_file"
+          test -n "$index_file"
+          python backend/audit_hf_floorsheet_sample.py \
+            --floorsheet "$floor_file" \
+            --index "$index_file" \
+            --date 2026-08-26 \
+            --output data/reports/hf-floorsheet-sample-audit.json
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         run: >-
           python acquire_floorsheet_archive.py
@@ -96,6 +110,7 @@ jobs:
           python build_recent_history_target.py "${args[@]}" --calendar ../data/reference/nepse_session_calendar.csv --minimum-sessions 90 --target-sessions 120 --output ../artifacts/source-manifests/recent-90-120-session-target.json
         working-directory: backend
       - name: Upload inventory manifest and summary
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nepse-hf-data-inventory
@@ -104,6 +119,7 @@ jobs:
             data/reports/hf-dataset-inventory-summary.json
             data/reports/hf-floorsheet-sample.json
             data/reports/hf-index-sample.json
+            data/reports/hf-floorsheet-sample-audit.json
             data/raw/huggingface/
             artifacts/source-manifests/
           if-no-files-found: error

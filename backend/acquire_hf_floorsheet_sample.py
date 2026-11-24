@@ -12,7 +12,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from acquire_hf_floorsheet_archive import download_one, enumerate_files
 
 
 def select_sample(rows: list[dict[str, Any]], sample_date: str, max_total_bytes: int) -> list[dict[str, Any]]:
@@ -46,6 +45,8 @@ def acquire_sample(
 ) -> dict[str, Any]:
     if not confirm_data_rights:
         raise ValueError("explicit rights-review confirmation is required")
+    # Lazy import keeps manifest selection/tests independent of optional Hub deps.
+    from acquire_hf_floorsheet_archive import download_one, enumerate_files
     commit_sha, rows = enumerate_files(repo_id, path, revision)
     if revision not in {"main", "master"} and commit_sha != revision:
         raise ValueError(f"Hub resolved revision {revision} to unexpected commit {commit_sha}")

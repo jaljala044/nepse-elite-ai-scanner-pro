@@ -144,6 +144,7 @@ def audit_window(
 
     daily = []
     file_errors = []
+    repository_root = Path.cwd().resolve()
     for day, entry in sorted(files_by_date.items()):
         path = Path(entry["local_path"])
         try:
@@ -163,6 +164,7 @@ def audit_window(
             daily.append({
                 "date": day,
                 "path": str(path),
+                "repository_path": path.relative_to(repository_root).as_posix(),
                 "size_bytes": path.stat().st_size,
                 "sha256": actual_hash,
                 "columns": fields,

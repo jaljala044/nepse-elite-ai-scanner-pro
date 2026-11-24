@@ -218,3 +218,23 @@ Eight additional files after BJHL in repository tree order were fetched and scan
 | BUNGAL_OHLCV.csv | 319 | 305 | 0 | 2026-11-20 |
 
 
+
+
+## Partial all-symbol audit progress — batch 4 (files 41–48 of 525)
+
+Eight additional files after BUNGAL in repository tree order were fetched and scanned for calendar dates 2025-11-24 through 2026-11-23. This is still a calendar-window scan, not verified-session completeness.
+
+| Symbol file | Total rows | Rows in candidate interval | Invalid OHLC | Latest date |
+|---|---:|---:|---:|---|
+| C30MF_OHLCV.csv | 887 | 285 | 0 | 2026-11-20 |
+| CBBLPO_OHLCV.csv | 9 | 5 | 0 | 2026-09-03 |
+| CBBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| CBLD88_OHLCV.csv | 555 | 139 | 0 | 2026-11-20 |
+| CCBD88_OHLCV.csv | 484 | 121 | 0 | 2026-11-19 |
+| CFCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| CGH_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| CHCL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+
+
+
+Cumulative partial scan: 48/525 files (9.1%). This is not a full-universe quality pass; security lifecycle and verified session-calendar checks remain outstanding.

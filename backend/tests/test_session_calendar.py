@@ -94,6 +94,13 @@ class SessionCalendarTests(unittest.TestCase):
         self.assertEqual(report["rows_accepted"], 0)
         self.assertIn("invalid_ohlc_bounds", report["quarantine"][0]["reason"])
 
+    def test_non_finite_numeric_values_are_rejected(self):
+        self.write_calendar([self.evidence()])
+        self.write_prices([self.row(close="NaN")])
+        report = audit_ohlcv([self.data], self.calendar)
+        self.assertEqual(report["rows_accepted"], 0)
+        self.assertIn("non_finite_numeric_value", report["quarantine"][0]["reason"])
+
 
 if __name__ == "__main__":
     unittest.main()

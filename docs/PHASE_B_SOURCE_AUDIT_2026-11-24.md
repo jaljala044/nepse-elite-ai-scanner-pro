@@ -207,3 +207,21 @@ The 2026-11-23 Jaljala audit metadata reports 86 pages, 42,854 contracts, 10,826
 - Full 658-day SocrateAI archive and 179-day Samir archive: inventory completed; exhaustive row-level comparison not yet performed.
 - Historical time-of-trade: source schemas vary; do not synthesize execution times where missing.
 - Broker codes: retain as execution-channel identifiers only; never infer beneficial owner or intent from code alone.
+
+
+## Reusable floorsheet reconciliation implementation
+
+Added `backend/audit_floorsheet_sources.py`, a read-only CSV auditor supporting Jaljala, SocrateAI and Samir column aliases, compact/display-formatted amounts, contract-date checks, duplicate contract detection, quantity × rate arithmetic, source hashes, contract-set reconciliation and field-level comparison. It deliberately does not select a canonical source or import data. Added unit tests in `backend/tests/test_audit_floorsheet_sources.py` covering compact amounts, comma-formatted amounts, missing contracts, duplicate IDs and invalid amounts.
+
+The backend test workflow for the newest test commit is running: [run 45368297976](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45368297976). A preceding run after the implementation commit (before the final test-file commit) passed. The newest run's final result must be checked before marking this code gate passed.
+
+Example use after downloading the raw files to the project's archive staging area:
+
+```bash
+python backend/audit_floorsheet_sources.py \
+  --source socrateai=data/free_history/socrateai/floorsheet_2026-11-19.csv \
+  --source samir=data/free_history/samir/floorsheet_2026-11-19.csv \
+  --output data/reports/floorsheet-source-reconciliation.json
+```
+
+The report will deliberately FAIL when the sources differ, preserving the exact missing contracts and field differences for review.

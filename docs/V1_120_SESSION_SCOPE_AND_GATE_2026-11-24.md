@@ -841,3 +841,49 @@ All external price-history pages above are secondary sources, not Chukul or NEPS
 - **Adjustment/corporate-action basis:** not yet normalized for every symbol. Adjusted/unadjusted series must remain separate.
 - **Market index, sector and broker/floorsheet coverage:** separate audits remain pending.
 - **V1 acceptance:** **not passed**. Do not mark one-year data gate complete. Keep six-month fallback as contingency only after the remaining one-year blockers are assessed; do not downgrade scope prematurely.
+
+
+## Supplemental repository audit — market, broker, floorsheet and calendar inputs
+
+After the 525/525 stock-file scan, the remaining SMC repository paths were inventoried (628 tracked blobs total; 525 are the stock-chart CSVs).
+
+### Session calendar defect found and isolated
+
+The main-branch `nepse_session_date.py` currently assumes Saturday/Sunday are non-trading days for every date. That is historically wrong for this V1 window: NEPSE traded Sunday–Thursday until the schedule change effective 2026-04-06, then moved to Monday–Friday. This can misassign a fallback date for a historical scrape and can also distort any weekend-only inferred session calendar.
+
+A separate draft fix PR was opened:
+- https://github.com/jaljala044/nepse-smc-data/pull/3
+- Branch: `fix/historical-nepse-weekend-regime`
+- Changes: date-aware weekend regime, unit tests at the 2026-04-06 boundary, focused GitHub Actions test workflow.
+- The helper explicitly does not claim to know public holidays, exceptional closures or special sessions. A date-specific official NEPSE calendar is still required.
+- PR is open/draft and has not been merged.
+
+Schedule evidence: The Himalayan Times reported the change as effective April 6, 2026; ShareSansar reported NEPSE's public notice on April 8. Sources: https://thehimalayantimes.com/business/nepse-shifts-to-mondayfriday-trading-week and https://www.sharesansar.com/newsdetail/nepal-stock-exchange-opens-monday-to-friday-under-new-government-timings-2026-04-08
+
+### Floorsheet collection and broker-flow coverage
+
+- Repository currently contains 41 `scanner_inputs/broker_summary/YYYY-MM-DD.csv` partitions, dated 2026-07-24 through 2026-11-20. This is not 41 consecutive sessions and does not provide a full year of broker history.
+- Coverage metadata is inconsistent and needs reconciliation before use as a certified count: `scanner_inputs/audit/source_coverage.json` describes 20 complete sessions from 2026-10-12 to 2026-11-20 and 980,072 trade rows; `audit/backfill_manifest_2026-11-22.json` says 20 sessions were added with 1,062,269 reconciled trades and 40 total repo sessions after update; README says the broker folder now has 41 reconciled sessions and describes 1,062,269 trades for the added set. The current directory has 41 dated partitions. Do not merge these counts into one claim until each partition's source and totals are re-reconciled.
+- `floorsheet/` currently contains raw daily CSVs for November 20, 23 and 24 only; `02_floorsheet_daily/` contains November 19 and 20. This is useful recent evidence but not a one-year raw tape.
+- The November 24 audit records 105 Chukul pages, 52,387 contracts, 14,670,177 shares, NPR 5,553,019,249.46 turnover and 350 securities, with all 350 per-security totals checked and a 500-contract Merolagani sample. This is one-session coverage, not historical coverage.
+- Main-branch `github_floorsheet_pull.py` still saves collected rows after a pagination timeout or stalled page; it can publish an incomplete partial file. Draft PR #2 adds fail-closed pagination, retries, duplicate/schema checks, atomic CSV write and manifest, with tests passing, but no live Chukul pagination test. https://github.com/jaljala044/nepse-smc-data/pull/2
+- Keep PR #2 open until live pagination and independent contract-count reconciliation are demonstrated.
+
+### Daily market, index, sector and corporate-action coverage
+
+- `00_daily_eod_prices/` has only three dated daily snapshots (2026-11-18, 2026-11-23 and 2026-11-24) plus static price/dividend/right-share exports. The 525 stock-chart files provide the historical bars; these three snapshots are not a substitute for historical daily EOD provenance.
+- `market_summary_daily.csv` is documented as 195 sessions in 2026, but transaction counts appear only on tape-reconciled dates and breadth is populated only for November 20. Reconcile its session list against the official date calendar before using it as a complete daily market series.
+- `benchmark_daily.csv` has 128 bars. Sector classification has 281 symbols; sector history has 1,534 bars across 12 sectors. README explicitly says historical sector memberships before November 20 remain unverified.
+- `corporate_actions.csv` has only three documented events (LBBL bonus, DORDI rights, BNHC rights). The sample is incomplete and does not justify globally adjusted history. NLIC proposed split remains unverified; no split factor was imported.
+- The November 24 index audit leaves multiple index opens unresolved/conflicting across ShareSansar and ShareHub; the daily index CSV has blank opens for NEPSE, Sensitive, Float, Sensitive Float, Banking, Hotels & Tourism, Hydro Power and Others. Index values must not be treated as full OHLC where opens are absent.
+- The November 24 turnover differs by NPR 0.01 between the market/EOD reconciliation and the ShareHub live display. Preserve exact source-specific amounts and record the one-paisa discrepancy rather than forcing equality.
+
+### Additional source quality exclusions already recorded in the repository
+
+- Viking source: all 20 examined floorsheets had fewer trades than published session totals; none was accepted as fully reconciled.
+- Pinned Aabishkar2 archive: 124 company files, 233,328 rows, 29,090 OHLCV/turnover check failures, 686 duplicate symbol-date rows, 104 out-of-sequence dates; latest date 2024-11-26. None of those raw files entered the scanner inputs.
+- SocrateAI adjusted history: sampled rows do not establish a consistent adjustment methodology or event timing; do not mix adjusted and unadjusted prices.
+
+### Updated gate interpretation
+
+The stock-file arithmetic scan is complete (525/525), but one-year V1 data acceptance is still blocked by: official date-level session calendar; historical point-in-time publication/ingestion provenance; unresolved 13 OHLC anomaly rows; incomplete security lifecycle and corporate-action coverage; inconsistent broker coverage metadata; only partial historical raw floorsheet coverage; unresolved index OHLC opens; and incomplete historical sector membership. No release gate is passed by file-count completion alone.

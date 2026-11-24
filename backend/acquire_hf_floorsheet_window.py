@@ -107,7 +107,7 @@ def acquire_window(
 
     acquired = []
     errors = []
-    root = Path(raw_root)
+    root = Path(raw_root).resolve()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = {pool.submit(_download, row, root, 3): row for row in selected}
         for future in as_completed(futures):

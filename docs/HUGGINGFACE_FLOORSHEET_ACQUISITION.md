@@ -76,3 +76,21 @@ automatically as missing trading sessions.
 
 The artifact is retained by GitHub Actions for a limited period; download and
 preserve it in the project's immutable evidence vault before the artifact expires.
+
+### Calendar reconciliation leads
+
+NEPSE exposes a public [Holiday Listing](https://www.nepalstock.com/holiday-listing)
+page. Its current web-rendered response exposed the column headings but no readable
+dated rows to this audit, so no closure dates were imported from it.
+
+The two largest floorsheet file gaps need careful interpretation:
+- 2025-09-08 to 2025-09-18 overlaps the reported NEPSE suspension through
+  2025-09-18 following the September protests. This is a strong closure lead, but
+  the primary dated NEPSE notice still needs to be captured and hashed.
+- 2025-09-28 to 2025-10-07 overlaps the Dashain period and the reported NEPSE
+  decision to keep trading closed on 2025-10-06, resuming on 2025-10-07. The
+  primary exchange notices and exact daily closure interval still need archiving.
+
+These reports explain why the gaps may be legitimate closures; they do not turn the
+dates into verified calendar rows. Keep them as review leads until the original
+NEPSE notices or independently verified exchange records are archived.

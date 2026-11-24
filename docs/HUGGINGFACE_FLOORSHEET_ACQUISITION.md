@@ -310,3 +310,37 @@ the private workflow artifact for review.
 The one-day match does not prove the other 119 candidate dates are complete.
 Bulk acquisition remains gated on rights review, source-scope reconciliation,
 calendar evidence and repeated date-level cross-checks.
+
+## 120-date bulk acquisition and 70-date cross-source result
+
+Workflow run **45416905641** acquired the complete pinned SocrateAI candidate
+window and the available Urekmazino overlap. The artifact contains the raw files,
+acquisition manifests and audit reports.
+
+SocrateAI window:
+- **120/120** candidate-date files acquired and hash-verified.
+- **6,407,328** transaction rows audited.
+- **0** invalid dates, contract-date-prefix errors, duplicate contracts,
+  invalid broker identifiers or quantity × rate / amount arithmetic errors.
+- The window audit status was `complete_row_validated_window`.
+- This is row-level validation of the published files, not proof that each file
+  contains every exchange transaction or that all dates are verified sessions.
+
+Urekmazino overlap:
+- **70/120** candidate dates exist in the pinned dataset; the remaining 50 are
+  explicitly recorded as absent from that source snapshot.
+- The first CI audit/compare attempt used relative paths from the acquisition
+  working directory and therefore reported 70 file-access errors. This was a
+  workflow path bug, not a finding that the raw rows failed validation.
+- I independently compared the actual files inside the private workflow
+  artifact: **3,862,849** transactions across all 70 shared dates; all contract
+  numbers were shared, with **0** Urek-only contracts, **0** SocrateAI-only
+  contracts, **0** duplicate contracts and **0** differences across symbol,
+  buyer, seller, quantity, rate, amount and trade date.
+- Urek's extra `time`, `sector` and `id` fields are not present in the
+  SocrateAI schema and therefore remain Urek-only evidence.
+
+The acquisition scripts now resolve local file paths before writing manifests;
+the next workflow run will reproduce the Urek row audit and 70-date comparison
+inside CI. The 120-date calendar remains unverified, and no raw rows are
+promoted to canonical storage by these results.

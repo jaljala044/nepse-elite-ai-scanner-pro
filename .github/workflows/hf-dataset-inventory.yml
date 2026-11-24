@@ -71,6 +71,12 @@ jobs:
           --raw-root ../data/raw/huggingface
           --output ../data/reports/hf-index-sample.json
         working-directory: backend
+      - name: Fetch pinned SocrateAI index row for independent turnover corroboration
+        run: |
+          mkdir -p data/raw/reference
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/ohlc_index/adj_2026-08-26.csv \
+            -o data/raw/reference/socrateai-adj-index-2026-08-26.csv
       - name: Audit raw floorsheet sample against same-day index controls
         run: |
           commit=11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0
@@ -121,6 +127,7 @@ jobs:
             data/reports/hf-index-sample.json
             data/reports/hf-floorsheet-sample-audit.json
             data/raw/huggingface/
+            data/raw/reference/socrateai-adj-index-2026-08-26.csv
             artifacts/source-manifests/
           if-no-files-found: error
           retention-days: 90

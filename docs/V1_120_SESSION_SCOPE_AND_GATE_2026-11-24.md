@@ -178,3 +178,21 @@ These agree with the user's Chukul unadjusted-chart observation and resolve the 
 ### Evidence standard
 
 These checks used public daily-price pages and a public floorsheet mirror, not direct logged-in Chukul chart captures or an exchange-signed floorsheet export. Record source identity and limitations. For future anomalies, check Chukul adjusted and unadjusted immediately, then cross-check at least one independent price-history source; use contract-level floorsheet evidence when available and reconcile any trade-price exceptions before release.
+
+
+## Immediate external verification — API and BGWT (2026-11-24)
+
+### API — 2026-04-27
+- SMC source row: O/H/L/C/V = 339.9/345.0/340.0/341.0/206,969.
+- Independent Financial Notices API history table reports the same O/H/L/C and volume for 2026-04-27.
+- This reproduces the source values but does **not** resolve the arithmetic inconsistency (open 339.9 < low 340.0).
+- The accessible project floorsheet archive currently contains only daily files for 2026-11-19, 2026-11-20, 2026-11-23 and 2026-11-24; it does not contain 2026-04-27. A separate public floorsheet dataset advertises daily files from 2024 onward, but its web viewer is failing schema conversion and the exact 2026-04-27 API contracts have not yet been retrieved. Therefore transaction-level open/close/high/low reconstruction is **pending**, not verified.
+- Evidence URLs: https://www.financialnotices.com/stock-nepse.php?symbol=API ; https://huggingface.co/datasets/urekmazino69/Nepse-floorsheet-and-indices
+
+### BGWT — 2026-04-29
+- User-reported Chukul adjusted chart: O/H/L/C = 740/731/718/730; unadjusted chart: 720/731/718/730.
+- Independent daily-history tables at Sun Securities and ArthaKendra both report 720/731/718/730, volume 1,573. Financial Notices reports the same values.
+- This independently supports the **unadjusted** candle and indicates the earlier 740 open is an adjusted-series/chart value that must not be mixed with raw OHLC. Do not use the adjusted 740 open in the raw-market candle.
+- Evidence URLs: https://sunsecurities.com/company/BGWT/price-history ; https://www.arthakendra.com/stock-market/company/BGWT/price-history ; https://www.financialnotices.com/stock-nepse.php?symbol=BGWT
+
+The external daily-history tables are secondary sources, not the NEPSE transaction ledger. Raw archive values remain immutable; canonical selection must retain source and adjustment-basis provenance. The API record remains quarantined until the dated floorsheet is acquired and its transaction rates are fully reconciled.

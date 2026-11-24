@@ -287,3 +287,19 @@ Opened and inspected the public Chukul Technical Desk page, ShareHub Nepal home,
 - NEPSE Alpha chart page is reachable and exposes daily/hourly/weekly/monthly chart modes and indicator/scanner controls. Public extraction did not expose a selected-symbol OHLC candle or historical date query, so no specific chart candle has been verified. Source: https://nepsealpha.com/trading/chart
 
 Conclusion: provider pages are now located and reachable, but a reproducible same-symbol/same-date adjusted/unadjusted candle capture is still unavailable from these public page extractions. Do not claim the API 2026-04-27 or BGWT 2026-04-29 chart discrepancy has been independently checked by these providers. For ShareHub API access, obtain an appropriately licensed account/token and server IP allow-list from the provider; do not place credentials in repository files or chat.
+
+
+## Partial all-symbol audit — batch 7 (files 65–72 of 525)
+
+| File | Total rows | Candidate-window rows | OHLC violations | Latest date |
+|---|---:|---:|---:|---|
+| CZBILP_OHLCV.csv | 36 | 13 | 0 | 2026-08-25 |
+| CZBIL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| DDBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| DHEL_OHLCV.csv | 324 | 306 | 0 | 2026-11-20 |
+| DHPL_OHLCV.csv | 933 | 303 | 0 | 2026-11-20 |
+| DLBS_OHLCV.csv | 929 | 302 | 0 | 2026-11-20 |
+| DOLTI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| DORDI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+
+Cumulative progress: 72/525 files (13.7%). No new OHLC range violations in this batch. Candidate window 2025-11-24 through 2026-11-23 is still calendar-based; official session completeness and listing lifecycle are separate checks.

@@ -459,7 +459,7 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
             "Contract numbers and IDs remain strings.",
             "Session calendar and upstream data rights gates remain separate from row validation.",
         ],
-        "sample_gate": "PASS" if floor_audit["row_validation_pass"] and controls["matched"] and index_ohlc["valid"] and (reference_control is None or reference_control["matched"]) else "FAIL",
+        "sample_gate": ("FAIL_ROW_VALIDATION" if not floor_audit["row_validation_pass"] else "PASS" if controls["matched"] and index_ohlc["valid"] and (reference_control is None or reference_control["matched"]) else "REVIEW_REQUIRED_INDEX_SCOPE"),
     }
 
 

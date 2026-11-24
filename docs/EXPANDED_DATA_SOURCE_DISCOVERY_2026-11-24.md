@@ -131,3 +131,27 @@ calendar without audit trail.
 - GitHub shawinCreates/Nepse-Market-Data README, inspected 2026-11-24.
 - NEPSE public floorsheet page, inspected 2026-11-24.
 - SEBON quarterly securities-market indicators report, inspected 2026-11-24.
+
+## Acquisition verification update — 2026-11-24 (direct repository inspection)
+
+The following are direct GitHub file reads, not only search snippets:
+
+- ShareSansarScraper `docs/api/meta.json` at blob `f3e3931f7c9024d57ffe98e4f3fef67af47510ca` reports `firstDate=2024-03-04`, `lastUpdated=2026-11-23`, `tradingDays=938`, `symbols=525`, `symbolsLatest=360`, `generatedAt=2026-11-23T22:43:20Z`. This supersedes the older 927-session figure previously found in search indexing. The live GitHub Pages endpoint was not readable through the current browser fetch, but the source repository copy of the JSON manifest and metadata was readable. Actual data files remain to be enumerated and downloaded; no claim of ingestion is made.
+- ShareSansarScraper `docs/api/index.json` at blob `77a5275002668382157b7400e63a9fb29ea187ee` confirms per-symbol columnar histories with date, OHLC, LTP, VWAP, volume, turnover and percentage change. Its repository LICENSE is MIT for software; the data is described as ShareSansar-sourced and unofficial, with no separate data license grant stated in the inspected manifest. Treat data reuse rights as unconfirmed pending upstream terms/permission.
+- srijankarki07/nepse-data `data/latest.json` at blob `5ef32bef26cf14518e6d08c6a1dc80f794cc53c7` reports latest session `2026-11-24`, previous `2026-11-23`, and 3,627 sessions, with per-year counts from 2011 onward. This is an actual current manifest, materially newer than the README's approximate 3,600 count. Its LICENSE explicitly excludes price data from the MIT software license; do not ingest its data without separate permission. Use its session manifest only as a rights-restricted comparison lead unless rights are clarified.
+- shawinCreates/Nepse-Market-Data README describes ShareSansar as its EOD source and documents `Data/csv/closed_days.csv` as closed-day evidence. Its calendar helper says Saturday is the only hardcoded weekly closure and other closures are learned from ShareSansar returning “No Record Found”. The repository LICENSE path was not found. This is a useful implementation and candidate-coverage lead, not an independent source of market prices.
+- SamirWagle/Nepse-All-Scraper README documents OHLCV history, dividends, rights issues and daily floorsheet CSV/JSON, with floorsheets sourced from Merolagani.com. It labels its license “Educational”; a root LICENSE file was not found. Data rights and actual date coverage need inspection before ingest.
+- SocrateAI repository LICENSE inspected at blob `71968390637c7ea3f70c77e936efd6d6d50ab85f` states MIT for the dataset. Upstream lineage and completeness still need source-level validation; a repository license does not by itself prove upstream rights for every record.
+
+### New high-value floorsheet lead
+
+- NepseSignal public floorsheet page: https://nepsesignal.com/nepse/floorsheet/
+- The page claims indexed historical floorsheets back to 2018 and search by business date, symbol and broker, with pagination. It also explains that some totals can differ from NEPSE headline turnover because of segment exclusions and late settlement additions. These are publisher claims; current live page returned no floorsheet rows during inspection, so historic coverage, export/API access, row counts, and terms remain unverified. Investigate documented network endpoints and legal export options; do not scrape around authentication or technical access controls.
+
+### Additional alternative source
+
+- vuwon/NEPSEAPI GitHub search result points to a `merolagani` package that advertises a resumable historical floorsheet scraper from 2016 onward, with SQLite storage and CSV export. This is a code/source lead, not proof that all dates remain accessible or that the upstream site permits bulk extraction. Inspect repository source, terms, pagination behavior and test fixtures before use.
+
+### Status after this pass
+
+No new bulk raw dataset has yet been ingested in this pass. We have verified two additional live manifests and clarified data-rights boundaries for several candidate sources. Next acquisition work should prioritize the Ankit Hugging Face Parquet manifest (potentially the broadest EOD + recent floorsheet bundle), Urek's date/file manifest, and authorized floorsheet access through SocrateAI/Samir/Merolagani/NepseSignal. Do not count a lead as acquired data.

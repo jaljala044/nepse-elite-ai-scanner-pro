@@ -1,0 +1,40 @@
+name: historical-archive-audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/audit_ohlcv_archives.py"
+      - "backend/app/session_calendar.py"
+      - ".github/workflows/historical-archive-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit-jaljala-archives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out application code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements.txt
+        working-directory: backend
+      - name: Audit pinned Jaljala OHLCV archives
+        run: |
+          python audit_ohlcv_archives.py --workers 8 --output data/reports/ohlcv-archive-audit.json
+        working-directory: backend
+      - name: Upload immutable audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-historical-ohlcv-audit
+          path: backend/data/reports/ohlcv-archive-audit.json
+          if-no-files-found: warn
+          retention-days: 90

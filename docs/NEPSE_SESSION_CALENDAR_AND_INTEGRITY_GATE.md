@@ -318,3 +318,44 @@ A second report of the 2026-09-21 suspension was found at Khabarhub. It explicit
 attributes the suspension to a NEPSE notice and identifies Rule 21(1), supporting
 the event lead but not replacing the missing original notice PDF:
 https://english.khabarhub.com/2026/21/568606/
+
+## Full weekday-gap reconciliation for the 120-index-date window
+
+The pinned SocrateAI index inventory spans **2026-05-18 to 2026-11-24**.
+There are 137 Monday–Friday dates in this interval. Exactly 120 dates have a
+dated index file; the other **17 weekday dates** are:
+
+- **2026-05-28 and 2026-05-29:** Bakar Eid and Republic Day; ShareSansar
+  reported both NEPSE closures.
+- **2026-08-28:** Janai Purnima; ShareSansar reported NEPSE closure.
+- **2026-09-04:** Krishna Janmashtami; ShareSansar reported NEPSE closure.
+- **2026-09-08:** Gen Z Sahid Diwas; ShareSansar reported NEPSE closure.
+- **2026-09-21:** Data Hub outage; Khabarhub reported NEPSE's suspension under
+  Rule 21(1), and NEPSE resumption on 22 September was separately reported.
+- **2026-09-25:** Indra Jatra; ShareSansar reported NEPSE closure.
+- **2026-10-19 through 2026-10-23:** Dashain closure; ShareSansar reported
+  NEPSE closed for the Monday–Friday block.
+- **2026-11-09 through 2026-11-12:** Tihar closure; ShareSansar reported NEPSE
+  closed and resumption on Friday 13 November.
+- **2026-11-16:** Chhath-related closure; ShareSansar reported market closure
+  and resumption on 17 November.
+
+This is a strong coverage-consistency check: every missing weekday in the
+candidate window now has a specific NEPSE-closure report, and the index archive
+contains a dated file for every other weekday. It is **not yet a primary-source
+calendar pass**: these are secondary reports of NEPSE announcements, and the
+original exchange notices have not yet been archived. All 17 dates remain in
+the evidence-lead register as unverified; none is written to the canonical
+calendar. Relevant reports include:
+https://www.sharesansar.com/newsdetail/nepse-to-remain-closed-for-two-days-as-government-declares-public-holiday-for-bakar-eid-and-republic-day-2026-05-28
+https://www.sharesansar.com/newsdetail/nepse-to-remain-closed-today-govt-declares-public-holiday-on-the-occasion-of-gen-z-sahid-diwas-2026-09-08
+https://www.sharesansar.com/newsdetail/nepse-to-remain-closed-today-govt-declares-public-holiday-on-the-occasion-of-indra-jatra-2026-09-25
+https://www.sharesansar.com/newsdetail/nepse-to-remain-closed-today-for-janai-purnima-holiday-2026-08-28
+https://www.sharesansar.com/index.php/newsdetail/nepse-to-remain-closed-on-friday-govt-declares-public-holiday-on-the-occasion-of-krishna-janmashtami-2026-09-04
+
+The YONEPSE monthly-shard metadata also shows that the May–August shards
+were last updated on **2026-10-11**, the September shard on **2026-11-13**, and
+the October/November shards on **2026-11-24**. These are archive update
+timestamps, not original exchange publication timestamps. They reinforce the
+rule that this mirror is corroboration only and cannot establish point-in-time
+availability of historical data.

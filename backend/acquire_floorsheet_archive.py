@@ -12,10 +12,7 @@ import hashlib
 import json
 import os
 import re
-import sys
 import tempfile
-import time
-import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,20 +34,25 @@ def dated_csv(path: str) -> str | None:
 
 
 def git_blob_sha1(data: bytes) -> str:
-    header = f"blob {len(data)}\\0".encode("ascii")
+    header = f"blob {len(data)}\0".encode("ascii")
     return hashlib.sha1(header + data).hexdigest()
 
 
 def request_json(url: str) -> dict[str, Any]:
     req = urllib.request.Request(
-        url, headers={"Accept": "application/vnd.github+json",
-                      "User-Agent": "nepse-archive-auditor/1.0"}
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "nepse-archive-auditor/1.0",
+        },
     )
     with urllib.request.urlopen(req, timeout=60) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
-def enumerate_files(owner: str, repo: str, ref: str, prefix: str) -> tuple[str, list[dict[str, Any]]]:
+def enumerate_files(
+    owner: str, repo: str, ref: str, prefix: str
+) -> tuple[str, list[dict[str, Any]]]:
     repo_info = request_json(f"{GITHUB_API}/repos/{owner}/{repo}")
     branch = ref or repo_info["default_branch"]
     ref_info = request_json(f"{GITHUB_API}/repos/{owner}/{repo}/commits/{branch}")
@@ -60,6 +62,7 @@ def enumerate_files(owner: str, repo: str, ref: str, prefix: str) -> tuple[str, 
     )
     if tree.get("truncated"):
         raise RuntimeError("Git tree response is truncated; refusing an incomplete manifest")
+
     prefix = prefix.strip("/")
     rows = []
     for item in tree.get("tree", []):
@@ -76,7 +79,9 @@ def enumerate_files(owner: str, repo: str, ref: str, prefix: str) -> tuple[str, 
             "date": date,
             "git_blob_sha1": item["sha"],
             "size_bytes": int(item["size"]),
-            "download_url": f"https://raw.githubusercontent.com/{owner}/{repo}/{commit_sha}/{path}",
+            "download_url": (
+                f"https://raw.githubusercontent.com/{owner}/{repo}/{commit_sha}/{path}"
+            ),
         })
     rows.sort(key=lambda row: (row["date"], row["path"]))
     return commit_sha, rows
@@ -88,13 +93,14 @@ def download_one(row: dict[str, Any], root: Path) -> dict[str, Any]:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         raise FileExistsError(f"Refusing to overwrite immutable raw file: {destination}")
-    sha1 = hashlib.sha1()
+
     sha256 = hashlib.sha256()
     count = 0
     fd, temp_name = tempfile.mkstemp(prefix=".partial-", dir=str(destination.parent))
     try:
         req = urllib.request.Request(
-            row["download_url"], headers={"User-Agent": "nepse-archive-auditor/1.0"}
+            row["download_url"],
+            headers={"User-Agent": "nepse-archive-auditor/1.0"},
         )
         with os.fdopen(fd, "wb") as output, urllib.request.urlopen(req, timeout=120) as response:
             while True:
@@ -103,28 +109,27 @@ def download_one(row: dict[str, Any], root: Path) -> dict[str, Any]:
                     break
                 count += len(chunk)
                 output.write(chunk)
-                sha1.update(chunk)
                 sha256.update(chunk)
             output.flush()
             os.fsync(output.fileno())
-        git_sha = hashlib.sha1(f"blob {count}\\0".encode("ascii") + b"").hexdigest()
-        # Git's blob digest must hash the complete byte stream, including its header.
-        # Recompute without loading the full file into memory.
+
         blob_hash = hashlib.sha1()
-        blob_hash.update(f"blob {count}\\0".encode("ascii"))
+        blob_hash.update(f"blob {count}\0".encode("ascii"))
         with open(temp_name, "rb") as source:
             while True:
                 chunk = source.read(1024 * 1024)
                 if not chunk:
                     break
                 blob_hash.update(chunk)
+
         if count != row["size_bytes"]:
             raise ValueError(f"Size mismatch: expected {row['size_bytes']}, got {count}")
         if blob_hash.hexdigest() != row["git_blob_sha1"]:
-            raise ValueError("Git blob SHA-1 mismatch; raw file quarantined as failed download")
-        if destination.exists():
-            raise FileExistsError(f"Destination appeared during download: {destination}")
-        os.replace(temp_name, destination)
+            raise ValueError("Git blob SHA-1 mismatch; refusing to promote downloaded bytes")
+
+        # Hard-link creation is atomic and fails rather than replacing an existing file.
+        os.link(temp_name, destination)
+        os.unlink(temp_name)
         row.update({
             "local_path": str(destination),
             "downloaded_bytes": count,
@@ -169,12 +174,15 @@ def main() -> int:
     args.output.mkdir(parents=True, exist_ok=True)
     stem = f"{args.owner}_{args.repo}_{commit_sha[:12]}".replace("/", "_")
     manifest_path = args.output / f"{stem}.jsonl"
+    if manifest_path.exists():
+        parser.error(f"Manifest already exists; refusing to overwrite: {manifest_path}")
+
     with manifest_path.open("x", encoding="utf-8") as manifest:
         for row in rows:
             row["manifest_observed_at"] = datetime.now(timezone.utc).isoformat()
             if args.download:
                 row = download_one(row, args.raw_root)
-            manifest.write(json.dumps(row, sort_keys=True) + "\\n")
+            manifest.write(json.dumps(row, sort_keys=True) + "\n")
             manifest.flush()
             os.fsync(manifest.fileno())
 

@@ -261,3 +261,17 @@ Calendar work therefore advances from “schedule regime unknown” to “weekda
 - CLI_OHLCV.csv: 932 total rows; 306 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
 
 Cumulative: 56/525 files (10.7%). Scan interval 2025-11-24 through 2026-11-23 is calendar-date scoped, not yet validated against the official session calendar. 
+
+
+## Partial all-symbol audit — batch 6 (files 57–64 of 525)
+
+- CMF1_OHLCV.csv: 357 total; 0 interval; 0 invalid; latest 2025-03-01
+- CMF2_OHLCV.csv: 800 total; 193 interval; 0 invalid; latest 2026-07-02
+- CORBLP_OHLCV.csv: 2 total; 2 interval; 0 invalid; latest 2026-08-12
+- CORBL_OHLCV.csv: 936 total; 306 interval; 0 invalid; latest 2026-11-20
+- CREST_OHLCV.csv: 534 total; 306 interval; 0 invalid; latest 2026-11-20
+- CSY_OHLCV.csv: 220 total; 220 interval; 0 invalid; latest 2026-11-20
+- CYCLP_OHLCV.csv: 15 total; 12 interval; 0 invalid; latest 2026-04-09
+- CYCL_OHLCV.csv: 935 total; 305 interval; 0 invalid; latest 2026-11-20
+
+Cumulative progress: 64/525 files (12.2%). Candidate date window 2025-11-24 through 2026-11-23 remains calendar-based pending verified session calendar. No new OHLC range violations in this batch.

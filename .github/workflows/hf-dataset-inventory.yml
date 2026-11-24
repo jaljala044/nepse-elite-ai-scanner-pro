@@ -11,6 +11,7 @@ on:
       - "backend/build_recent_history_target.py"
       - "backend/tests/test_recent_history_target.py"
       - "data/reference/nepse_session_calendar.csv"
+      - "data/reference/nepse_calendar_evidence_leads_2026.csv"
       - ".github/workflows/hf-dataset-inventory.yml"
   workflow_dispatch:
 

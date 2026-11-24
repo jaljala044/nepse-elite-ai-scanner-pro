@@ -46,4 +46,4 @@ jobs:
             data/reports/hf-dataset-inventory-summary.json
             artifacts/source-manifests/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90

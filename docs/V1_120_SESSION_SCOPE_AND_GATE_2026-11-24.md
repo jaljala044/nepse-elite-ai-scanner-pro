@@ -238,3 +238,12 @@ Eight additional files after BUNGAL in repository tree order were fetched and sc
 
 
 Cumulative partial scan: 48/525 files (9.1%). This is not a full-universe quality pass; security lifecycle and verified session-calendar checks remain outstanding.
+
+
+## Session-calendar evidence update — 2026-11-24
+
+A further contemporaneous report from ShareSansar (2026-04-08) explicitly states that NEPSE issued a public notice and that its Board decision of 22 Chaitra 2082 moved regular securities trading to Monday–Friday, including Friday, with Saturday and Sunday closed. This independently corroborates the schedule-regime change already identified. The report does not expose the underlying NEPSE notice PDF/image or its notice identifier in the inspected page, so the primary exchange artifact is still not captured. Do not mark individual dates as verified trading sessions from weekday rules alone; public holidays, special closures, and special sessions still require date-specific evidence.
+
+Evidence: https://www.sharesansar.com/newsdetail/nepal-stock-exchange-opens-monday-to-friday-under-new-government-timings-2026-04-08
+
+Calendar work therefore advances from “schedule regime unknown” to “weekday regime independently corroborated; primary notice and date-level holiday/session register still pending.”

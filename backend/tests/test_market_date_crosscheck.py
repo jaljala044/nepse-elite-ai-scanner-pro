@@ -3,10 +3,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from build_market_date_crosscheck import load_floorsheet_dates, validate_index_csv
+from build_market_date_crosscheck import INDEX_RE, load_floorsheet_dates, validate_index_csv
 
 
 class MarketDateCrosscheckTests(unittest.TestCase):
+    def test_index_archive_filename_pattern(self):
+        self.assertEqual(INDEX_RE.fullmatch("ohlc_index/adj_2026-11-24.csv").group(1), "2026-11-24")
+        self.assertIsNone(INDEX_RE.fullmatch("ohlc_index/unadj_2026-11-24.csv"))
+        self.assertIsNone(INDEX_RE.fullmatch("ohlc_index/adj_2026-13-40.csv"))
     def test_valid_nepse_index_row(self):
         raw = (
             "date,symbol,open,high,low,close,volume\n"

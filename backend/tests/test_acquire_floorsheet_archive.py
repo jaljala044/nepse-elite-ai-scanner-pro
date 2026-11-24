@@ -19,7 +19,7 @@ class FloorsheetArchiveAcquisitionTests(unittest.TestCase):
 
     def test_git_blob_sha_uses_git_object_header(self):
         payload = b"abc"
-        expected = hashlib.sha1(b"blob 3\\0abc").hexdigest()
+        expected = hashlib.sha1(b"blob 3\0abc").hexdigest()
         self.assertEqual(git_blob_sha1(payload), expected)
 
 

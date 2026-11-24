@@ -1,7 +1,13 @@
 import hashlib
+import tempfile
 import unittest
+from pathlib import Path
 
-from acquire_floorsheet_archive import dated_csv, git_blob_sha1
+from acquire_floorsheet_archive import (
+    dated_csv,
+    git_blob_sha1,
+    verify_local_file,
+)
 
 
 class FloorsheetArchiveAcquisitionTests(unittest.TestCase):
@@ -21,6 +27,29 @@ class FloorsheetArchiveAcquisitionTests(unittest.TestCase):
         payload = b"abc"
         expected = hashlib.sha1(b"blob 3\0abc").hexdigest()
         self.assertEqual(git_blob_sha1(payload), expected)
+
+    def test_existing_file_verifies_against_size_and_git_blob(self):
+        payload = b"contract_no,quantity\n1,100\n"
+        row = {
+            "size_bytes": len(payload),
+            "git_blob_sha1": git_blob_sha1(payload),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sample.csv"
+            path.write_bytes(payload)
+            result = verify_local_file(path, row)
+        self.assertEqual(result["downloaded_bytes"], len(payload))
+        self.assertEqual(result["verification"], "size_and_git_blob_sha1_pass")
+        self.assertEqual(result["local_sha256"], hashlib.sha256(payload).hexdigest())
+
+    def test_existing_file_rejects_git_blob_mismatch(self):
+        payload = b"wrong bytes"
+        row = {"size_bytes": len(payload), "git_blob_sha1": "0" * 40}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sample.csv"
+            path.write_bytes(payload)
+            with self.assertRaises(ValueError):
+                verify_local_file(path, row)
 
 
 if __name__ == "__main__":

@@ -1054,3 +1054,21 @@ These three rows are quarantined. Cumulative provisional mechanical OHLC violati
 Lifecycle/sparse examples include PFLPO (one old row), PROFLP (five candidate-window rows), RLFLPO (three), RSDCP (one), SABSL (no candidate-window rows; last 2024-07-13), SAEF (no candidate-window rows; last 2024-12-22), and various bond/preference instruments with partial data. Treat as lifecycle review cases, not automatically failed common-stock histories.
 
 Cumulative scan progress: 392/525 files (74.7%). All counts are for calendar-window records; verified-session reconciliation and source comparison remain outstanding.
+
+
+## Final mechanical pass — files 393–525 (batches 49–65)
+
+The remaining 133 SMC stock CSVs were fetched from main in batches (17 batches: sixteen batches of eight and a final batch of five). All 133 fetches succeeded. No duplicate dates were detected. Four additional OHLC range violations were identified:
+
+- SPDL, 2026-04-28: open 408.00, high 406.30, low 396.00, close 399.00 (high below open).
+- UAIL, 2026-04-24: open 449.90, high 449.80, low 440.50, close 445.10 (high below open).
+- UAIL, 2026-04-29: open 446.00, high 444.90, low 438.00, close 438.00 (high below open).
+- UNHPL, 2026-04-29: open 487.90, high 487.00, low 475.00, close 475.40 (high below open).
+
+All four rows are quarantined. The full 525-file SMC stock CSV mechanical pass therefore found twelve OHLC range violations across eight symbols: API (2026-04-27), BGWT (2026-04-29), HRL (2026-04-29), KDBY (2026-04-29), KEF (2026-04-28), RADHI (2026-04-29), RAWA (2026-04-27 and 2026-04-29), SPDL (2026-04-28), UAIL (2026-04-24 and 2026-04-29), and UNHPL (2026-04-29). This count is the result of the current simple parser/check on the candidate calendar interval, not a final adjudicated data-quality count. All raw source files remain unchanged.
+
+Sparse/lifecycle examples in this last range include SAMAJ (no candidate-window rows; latest 2025-10-18), SAPDBLP (none; latest 2025-07-28), SICLPO (none; latest 2025-02-08), SKBBLP (none; latest 2025-04-07), UNLBP (none; latest 2025-04-01), VLBSPO (none; latest 2025-07-13), WNLBP (none; latest 2025-10-13), and UAILPO (one row). WNLB common shares end 2026-09-03, requiring coverage explanation. These are not automatically missing data; verify security type, issue/listing lifecycle and suspension/trading status.
+
+**Mechanical file inventory status: 525/525 SMC ticker CSVs inspected (100%).** This completes only the first-pass per-file calendar-window parse, row count, basic OHLC-range check and duplicate-date check. It does not pass the V1 data acceptance gate. Outstanding work includes: (1) authoritative NEPSE session calendar and closure verification; (2) per-symbol expected-session coverage using security lifecycle and traded/not-traded evidence; (3) cross-source comparison against History Starter and external chart/floorsheet evidence for every anomaly and coverage gap; (4) source-level raw-file hashes and retrieval/availability timestamps in a reproducible audit artifact; (5) corporate-action/adjustment-basis validation; (6) market and sector index coverage; (7) broker/floorsheet coverage and provenance; and (8) point-in-time availability checks.
+
+Do not claim one-year coverage passed. If the one-year gate fails after these checks, calculate the exact six-month fallback coverage and report which instruments and datasets qualify. Release remains **BLOCKED**.

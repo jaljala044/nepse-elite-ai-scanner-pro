@@ -11,6 +11,8 @@ on:
       - "backend/acquire_github_floorsheet_sample.py"
       - "backend/compare_floorsheet_samples.py"
       - "backend/acquire_github_floorsheet_window.py"
+      - "backend/acquire_hf_floorsheet_window.py"
+      - "backend/tests/test_acquire_hf_floorsheet_window.py"
       - "backend/tests/test_acquire_github_floorsheet_window.py"
       - "data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv"
       - "backend/tests/test_compare_floorsheet_samples.py"
@@ -134,6 +136,23 @@ jobs:
             --workers 4 \
             --raw-root data/raw/floorsheet \
             --output data/reports/socrateai-floorsheet-window.json
+      - name: Acquire available Urekmazino floorsheets across the same 120-date window
+        id: acquire_urek_window
+        if: always() && steps.acquire_socrateai_window.outcome == 'success'
+        run: >-
+          python acquire_hf_floorsheet_window.py
+          --repo-id urekmazino69/Nepse-floorsheet-and-indices
+          --folder floorsheet
+          --revision 11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0
+          --date-list ../data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv
+          --allow-missing-dates
+          --min-available-dates 60
+          --confirm-data-rights
+          --max-total-bytes 100000000
+          --workers 4
+          --raw-root ../data/raw/huggingface
+          --output ../data/reports/urek-floorsheet-window.json
+        working-directory: backend
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         if: always()
         run: >-
@@ -178,6 +197,7 @@ jobs:
             data/raw/floorsheet/
             data/reports/socrateai-floorsheet-sample.json
             data/reports/socrateai-floorsheet-window.json
+            data/reports/urek-floorsheet-window.json
             data/reports/floorsheet-cross-source-sample.json
             data/raw/reference/socrateai-adj-index-2026-08-26.csv
             artifacts/source-manifests/

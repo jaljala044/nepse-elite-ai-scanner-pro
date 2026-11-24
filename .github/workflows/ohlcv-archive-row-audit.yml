@@ -10,6 +10,7 @@ on:
       - "backend/tests/test_audit_ohlcv_archives.py"
       - "backend/crosscheck_ohlcv_socrateai.py"
       - "backend/build_market_date_crosscheck.py"
+      - "backend/acquire_floorsheet_archive.py"
       - "backend/tests/test_market_date_crosscheck.py"
       - "backend/tests/test_crosscheck_ohlcv_socrateai.py"
       - ".github/workflows/ohlcv-archive-row-audit.yml"
@@ -53,14 +54,28 @@ jobs:
             echo "No OHLCV audit report was produced; cannot cross-check."
             exit 1
           fi
+      - name: Enumerate current SocrateAI floorsheet dates (manifest only)
+        run: |
+          python backend/acquire_floorsheet_archive.py \
+            --owner socrateai-official --repo nepse-open-data --ref main \
+            --prefix floorsheet --output artifacts/source-manifests
+      - name: Enumerate current SamirWagle floorsheet dates (manifest only)
+        run: |
+          python backend/acquire_floorsheet_archive.py \
+            --owner SamirWagle --repo Nepse-All-Scraper --ref main \
+            --prefix data/floorsheet --output artifacts/source-manifests
       - name: Cross-check latest 120 index dates against audited OHLCV coverage
         if: always()
         run: |
           if test -f data/reports/ohlcv-archive-audit.json; then
+            mapfile -t fs_manifests < <(find artifacts/source-manifests -maxdepth 1 -type f -name '*.jsonl' | sort)
+            args=()
+            for manifest in "${fs_manifests[@]}"; do args+=(--floorsheet-manifest "$manifest"); done
             python backend/build_market_date_crosscheck.py \
               --audit-report data/reports/ohlcv-archive-audit.json \
               --recent-index-dates 120 \
               --workers 8 \
+              "${args[@]}" \
               --output data/reports/market-date-crosscheck.json
           else
             echo "No OHLCV audit report was produced; cannot build date cross-check."
@@ -75,5 +90,6 @@ jobs:
             data/reports/ohlcv-archive-audit.json
             data/reports/ohlcv-socrateai-crosscheck.json
             data/reports/market-date-crosscheck.json
+            artifacts/source-manifests/*.jsonl
           if-no-files-found: warn
           retention-days: 30

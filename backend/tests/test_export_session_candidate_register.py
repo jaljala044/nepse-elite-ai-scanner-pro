@@ -63,12 +63,12 @@ class SessionCandidateRegisterTests(unittest.TestCase):
     def test_loads_multiple_evidence_rows_for_same_date(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "leads.csv"
-            path.write_text(
-                "date,event,lead_status,evidence_level,source_id,evidence_uri,notes\\n"
-                "2026-11-16,Chhath,unverified_closure_candidate,secondary,a,https://example.test/a,one\\n"
-                "2026-11-16,Chhath,unverified_closure_candidate,secondary,b,https://example.test/b,two\\n",
-                encoding="utf-8",
-            )
+            lines = [
+                "date,event,lead_status,evidence_level,source_id,evidence_uri,notes",
+                "2026-11-16,Chhath,unverified_closure_candidate,secondary,a,https://example.test/a,one",
+                "2026-11-16,Chhath,unverified_closure_candidate,secondary,b,https://example.test/b,two",
+            ]
+            path.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
             leads = load_closure_leads(path)
             self.assertEqual(len(leads), 2)
             self.assertEqual({x["source_id"] for x in leads}, {"a", "b"})
@@ -85,8 +85,8 @@ class SessionCandidateRegisterTests(unittest.TestCase):
             self.assertEqual(len(rows), 4)
             self.assertEqual(len(exported), 4)
             row = next(x for x in exported if x["date"] == "2026-11-20")
-            self.assertEqual(row["ohlcv_source_count"], 2)
-            self.assertEqual(row["floorsheet_source_count"], 2)
+            self.assertEqual(row["ohlcv_source_count"], "2")
+            self.assertEqual(row["floorsheet_source_count"], "2")
             self.assertEqual(row["calendar_verified_status"], "not_verified_primary_exchange_evidence_missing")
             closure = next(x for x in exported if x["date"] == "2026-11-16")
             self.assertEqual(closure["candidate_classification"], "reported_closure_candidate_unverified")

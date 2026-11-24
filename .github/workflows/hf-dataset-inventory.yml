@@ -37,6 +37,15 @@ jobs:
           --revision main
           --output ../artifacts/source-manifests
         working-directory: backend
+      - name: Build date-level NEPSE calendar and source coverage matrix
+        run: >-
+          python build_calendar_coverage_matrix.py
+          --manifest ../artifacts/source-manifests/urekmazino69_Nepse-floorsheet-and-indices_11ef83a9c3cd.jsonl
+          --calendar ../data/reference/nepse_session_calendar.csv
+          --start-date 2024-01-02
+          --end-date 2026-08-26
+          --output ../artifacts/source-manifests/nepse-calendar-coverage-matrix.json
+        working-directory: backend
       - name: Upload inventory manifest and summary
         uses: actions/upload-artifact@v4
         with:

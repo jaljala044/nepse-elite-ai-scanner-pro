@@ -77,7 +77,7 @@ The automation repository contains no historical archive in its current tree. It
 | G0 Repository access and immutable tree snapshots | PASS | Six complete Git trees; tree SHAs recorded above |
 | G1 Jaljala ticker-file overlap | PASS | 525/525 ticker paths overlap; 500 identical blobs; 25 differing blobs |
 | G2 Targeted numeric row reconciliation | PASS WITH EXCEPTIONS | 14,856 shared dates; 8 numeric disagreements identified and listed |
-| G3 Full OHLCV validation across all 525 tickers | BLOCKED | Not yet run against the full local archive; path metadata is not a row-level audit |
+| G3 Full OHLCV validation across all 525 tickers | IN PROGRESS | Pinned-commit row-level audit workflow 45363122305 is running; parser tests passed; report pending |
 | G4 Exchange-session calendar validation | BLOCKED | Need a verified historical NEPSE session/holiday calendar; weekday heuristic alone is insufficient |
 | G5 Floorsheet schema, completeness and cross-source reconciliation | BLOCKED | Full bulk files not downloaded and audited; execution times may be absent |
 | G6 Broker summary provenance and aggregation audit | BLOCKED | 41 daily summaries identified; raw source rows and calculation formulas need full verification |
@@ -105,3 +105,12 @@ The automation repository contains no historical archive in its current tree. It
 ## Non-actions
 
 No bulk archive was downloaded in this phase. No database writes, source overwrites, adjusted-price transformations or scanner signal generation were performed.
+
+
+## Phase B implementation added after initial report
+
+- `backend/audit_ohlcv_archives.py`: pinned-commit, read-only OHLCV downloader/auditor for both Jaljala OHLCV archives. Records source commit/tree IDs, file SHA-256, row counts, date ranges, invalid OHLC, non-integer/negative volume, duplicate dates, ordering, repeated adjacent calendar rows and cross-source row conflicts. It never writes to the source repositories or database.
+- `backend/tests/test_audit_ohlcv_archives.py`: parser tests for numeric formatting normalization, duplicate dates, ordering, OHLC constraints and volume validation.
+- `.github/workflows/ohlcv-archive-row-audit.yml`: runs the pinned archive audit and uploads the JSON report as a workflow artifact.
+- Backend test run `45363122243` completed successfully.
+- OHLCV audit run `45363122305` is currently in progress. Its parser-test step completed successfully; the full repository download/audit step has not yet reported a result.

@@ -1,6 +1,7 @@
 import unittest
+from types import SimpleNamespace
 
-from acquire_hf_floorsheet_sample import select_sample
+from acquire_hf_floorsheet_sample import extract_sample_metadata, select_sample
 
 
 class HuggingFaceFloorsheetSampleTests(unittest.TestCase):
@@ -9,6 +10,30 @@ class HuggingFaceFloorsheetSampleTests(unittest.TestCase):
             {"date": "2026-08-26", "path": "floorsheet/2026-08-26.csv", "size_bytes": 1024, "lfs_sha256": "a" * 64},
             {"date": "2026-08-25", "path": "floorsheet/2026-08-25.csv", "size_bytes": 2048, "lfs_sha256": "b" * 64},
         ]
+
+    def test_extracts_only_the_requested_file_from_pinned_hub_siblings(self):
+        siblings = [
+            SimpleNamespace(
+                rfilename="floorsheet/2026-08-26.csv.gz", size=1024, blob_id="blob-a",
+                lfs=SimpleNamespace(sha256="a" * 64), xet_hash="xet-a",
+            ),
+            SimpleNamespace(
+                rfilename="floorsheet/2026-08-25.csv.gz", size=2048, blob_id="blob-b",
+                lfs=SimpleNamespace(sha256="b" * 64), xet_hash="xet-b",
+            ),
+            SimpleNamespace(
+                rfilename="indices/2026-08-26.csv.gz", size=10, blob_id="blob-c",
+                lfs=SimpleNamespace(sha256="c" * 64), xet_hash="xet-c",
+            ),
+        ]
+        rows, folder_count = extract_sample_metadata(
+            siblings, "owner/data", "pinned-sha", "floorsheet", "2026-08-26"
+        )
+        self.assertEqual(folder_count, 2)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["path"], "floorsheet/2026-08-26.csv.gz")
+        self.assertEqual(rows[0]["revision"], "pinned-sha")
+        self.assertEqual(rows[0]["lfs_sha256"], "a" * 64)
 
     def test_selects_exactly_one_date(self):
         selected = select_sample(self.rows, "2026-08-26", 2048)

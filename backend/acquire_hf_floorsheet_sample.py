@@ -14,6 +14,41 @@ from typing import Any
 
 
 
+def extract_sample_metadata(
+    siblings: list[Any],
+    repo_id: str,
+    commit_sha: str,
+    folder: str,
+    sample_date: str,
+) -> tuple[list[dict[str, Any]], int]:
+    from acquire_hf_floorsheet_archive import dated_file, field, lfs_sha256
+
+    prefix = folder.strip("/") + "/"
+    folder_file_count = 0
+    selected = []
+    for sibling in siblings:
+        filename = field(sibling, "rfilename") or field(sibling, "path")
+        if not filename or not str(filename).startswith(prefix):
+            continue
+        folder_file_count += 1
+        if dated_file(str(filename)) != sample_date:
+            continue
+        size = field(sibling, "size")
+        if size is None:
+            raise ValueError(f"Hub did not provide expanded file size for {filename}")
+        selected.append({
+            "repo_id": repo_id,
+            "revision": commit_sha,
+            "path": str(filename),
+            "date": sample_date,
+            "size_bytes": int(size),
+            "hub_blob_id": field(sibling, "blob_id"),
+            "lfs_sha256": lfs_sha256(sibling),
+            "xet_hash": field(sibling, "xet_hash"),
+        })
+    return selected, folder_file_count
+
+
 def select_sample(rows: list[dict[str, Any]], sample_date: str, max_total_bytes: int) -> list[dict[str, Any]]:
     try:
         date.fromisoformat(sample_date)
@@ -46,10 +81,14 @@ def acquire_sample(
     if not confirm_data_rights:
         raise ValueError("explicit rights-review confirmation is required")
     # Lazy import keeps manifest selection/tests independent of optional Hub deps.
-    from acquire_hf_floorsheet_archive import download_one, enumerate_files
-    commit_sha, rows = enumerate_files(repo_id, path, revision)
+    from huggingface_hub import HfApi
+    from acquire_hf_floorsheet_archive import download_one
+    api = HfApi(token=False)
+    info = api.dataset_info(repo_id, revision=revision, files_metadata=True, token=False)
+    commit_sha = info.sha
     if revision not in {"main", "master"} and commit_sha != revision:
         raise ValueError(f"Hub resolved revision {revision} to unexpected commit {commit_sha}")
+    rows, archive_file_count = extract_sample_metadata(list(info.siblings or []), repo_id, commit_sha, path, sample_date)
     selected = select_sample(rows, sample_date, max_total_bytes)
     acquired = [download_one(dict(row), Path(raw_root)) for row in selected]
     report = {
@@ -57,7 +96,7 @@ def acquire_sample(
         "resolved_commit_sha": commit_sha,
         "dataset_path": path,
         "sample_date": sample_date,
-        "enumerated_archive_files": len(rows),
+        "enumerated_archive_files": archive_file_count,
         "selected_file_count": len(acquired),
         "max_total_bytes": max_total_bytes,
         "acquired_files": acquired,

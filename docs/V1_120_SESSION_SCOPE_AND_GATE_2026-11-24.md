@@ -303,3 +303,99 @@ Conclusion: provider pages are now located and reachable, but a reproducible sam
 | DORDI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
 
 Cumulative progress: 72/525 files (13.7%). No new OHLC range violations in this batch. Candidate window 2025-11-24 through 2026-11-23 is still calendar-based; official session completeness and listing lifecycle are separate checks.
+
+
+## Partial all-symbol audit — batches 8–17 (files 73–152 of 525)
+
+Candidate window for all counts below: 2025-11-24 through 2026-11-23 (calendar dates, not verified exchange sessions). “Invalid” means the strict OHLC range relation failed; it does not by itself prove which source field is wrong.
+
+| File | Total rows | Candidate-window rows | OHLC violations | Latest date |
+|---|---:|---:|---:|---|
+| EBLD85_OHLCV.csv | 558 | 175 | 0 | 2026-11-18 |
+| EBLD86_OHLCV.csv | 566 | 144 | 0 | 2026-11-17 |
+| EBLD91_OHLCV.csv | 422 | 259 | 0 | 2026-11-20 |
+| EBLEB89_OHLCV.csv | 206 | 93 | 0 | 2026-11-03 |
+| EBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| ECL_OHLCV.csv | 76 | 76 | 0 | 2026-11-20 |
+| EDBLPO_OHLCV.csv | 2 | 1 | 0 | 2026-08-06 |
+| EDBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| EHPL_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| ENL_OHLCV.csv | 932 | 305 | 0 | 2026-11-20 |
+| FMDBLP_OHLCV.csv | 6 | 1 | 0 | 2026-10-12 |
+| FMDBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| FOWADP_OHLCV.csv | 10 | 5 | 0 | 2026-07-17 |
+| FOWAD_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GBBD85_OHLCV.csv | 751 | 236 | 0 | 2026-11-19 |
+| GBBLPO_OHLCV.csv | 60 | 13 | 0 | 2026-09-29 |
+| GBBL_OHLCV.csv | 931 | 301 | 0 | 2026-11-20 |
+| GBD80~2F81_OHLCV.csv | 13 | 0 | 0 | outside candidate window |
+| GBILD84~2F85_OHLCV.csv | 418 | 149 | 0 | 2026-11-18 |
+| GBILD86~2F87_OHLCV.csv | 431 | 101 | 0 | 2026-11-19 |
+| GBIMEP_OHLCV.csv | 119 | 40 | 0 | 2026-09-18 |
+| GBIMESY2_OHLCV.csv | 388 | 303 | 0 | 2026-11-20 |
+| GBIME_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GBLBS_OHLCV.csv | 871 | 277 | 0 | 2026-11-20 |
+| GCIL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GFCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| GHL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GIBF1_OHLCV.csv | 931 | 302 | 0 | 2026-11-20 |
+| GILBPO_OHLCV.csv | 3 | 0 | 0 | outside candidate window |
+| GILB_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GLBSL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GLH_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GMFBS_OHLCV.csv | 932 | 304 | 0 | 2026-11-20 |
+| GMFILP_OHLCV.csv | 1 | 0 | 0 | outside candidate window |
+| GMFIL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GMLI_OHLCV.csv | 589 | 304 | 0 | 2026-11-20 |
+| GRDBLP_OHLCV.csv | 2 | 1 | 0 | 2026-07-25 |
+| GRDBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GSY_OHLCV.csv | 581 | 304 | 0 | 2026-11-20 |
+| GUFLPO_OHLCV.csv | 12 | 3 | 0 | 2026-08-26 |
+| GUFL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GVL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| GWFD83_OHLCV.csv | 344 | 70 | 0 | 2026-11-19 |
+| H8020_OHLCV.csv | 930 | 305 | 0 | 2026-11-20 |
+| HATHY_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| HBLD83_OHLCV.csv | 157 | 40 | 0 | 2026-08-04 |
+| HBLD86_OHLCV.csv | 284 | 92 | 0 | 2026-11-19 |
+| HBLPO_OHLCV.csv | 41 | 13 | 0 | 2026-09-01 |
+| HBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| HDHPC_OHLCV.csv | 1173 | 226 | 0 | 2026-11-19 |
+| HDL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| HEIP_OHLCV.csv | 875 | 272 | 0 | 2026-11-20 |
+| HEI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| HFIN_OHLCV.csv | 199 | 199 | 0 | 2026-11-20 |
+| HHL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| HIDCLP_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| HIDCL_OHLCV.csv | 2371 | 226 | 0 | 2026-11-19 |
+| HIMSTAR_OHLCV.csv | 390 | 306 | 0 | 2026-11-20 |
+| HLBSL_OHLCV.csv | 932 | 302 | 0 | 2026-11-20 |
+| HLICF_OHLCV.csv | 323 | 304 | 0 | 2026-11-20 |
+| HLIPO_OHLCV.csv | 17 | 0 | 0 | outside candidate window |
+| HLI_OHLCV.csv | 774 | 226 | 0 | 2026-11-19 |
+| HPPL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| HRL_OHLCV.csv | 653 | 226 | 1 | 2026-11-19 |
+| HURJA_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| ICFCD83_OHLCV.csv | 343 | 66 | 0 | 2026-11-18 |
+| ICFCD88_OHLCV.csv | 463 | 235 | 0 | 2026-11-20 |
+| ICFCD89_OHLCV.csv | 154 | 154 | 0 | 2026-11-20 |
+| ICFCPO_OHLCV.csv | 4 | 0 | 0 | outside candidate window |
+| ICFC_OHLCV.csv | 933 | 303 | 0 | 2026-11-20 |
+| IGIPO_OHLCV.csv | 7 | 1 | 0 | 2026-09-18 |
+| IGI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| IHL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| ILBSP_OHLCV.csv | 49 | 16 | 0 | 2026-11-20 |
+| ILBS_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| ILI_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| JALPA_OHLCV.csv | 129 | 0 | 0 | outside candidate window |
+| JBBD87_OHLCV.csv | 405 | 86 | 0 | 2026-11-04 |
+| JBBLPO_OHLCV.csv | 43 | 14 | 0 | 2026-10-01 |
+| JBBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+
+Cumulative progress: 152/525 files (29.0%). One new candidate OHLC violation was detected in HRL on 2026-04-29, in addition to previously recorded API and BGWT cases. No raw file was changed.
+
+### HRL 2026-04-29 discrepancy — external corroboration
+
+The archive row is O/H/L/C = 685.5/685.0/676.1/679.2, which violates high >= open. Sun Securities' independently published HRL daily history reports 679.2/685.0/676.1/679.2 with volume 74,867 for 2026-04-29, which is internally valid and differs only in open. This is an externally corroborated candidate value, not an authorized rewrite of the archive. Preserve raw 685.5 and quarantine the source row pending primary NEPSE/floorsheet confirmation. Source: https://sunsecurities.com/company/HRL/price-history
+
+Chart-provider check was attempted again for this discrepancy: Chukul Technical Desk URL is reachable but exposes no readable public chart data; NEPSE Alpha's chart route currently exposes a login/register form, not a candle. Therefore neither provider yielded a directly observed HRL 2026-04-29 chart candle in this run. Do not label the discrepancy as Chukul/NEPSE Alpha chart-verified. Public secondary OHLC confirmation is Sun Securities only at this stage.

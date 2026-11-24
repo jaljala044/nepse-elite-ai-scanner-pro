@@ -62,6 +62,16 @@ class YonepseIndexCrosscheckTests(unittest.TestCase):
         self.assertEqual(result["differences"]["high"]["absolute_difference"], "1")
         self.assertEqual(result["differences"]["turnover_vs_socrateai_volume"]["absolute_difference"], "1")
 
+    def test_socrateai_ohlc_anomaly_blocks_numeric_comparison(self):
+        socrateai = [{"close": "100", "open": "100", "high": "99.9", "low": "95", "volume": "1000"}]
+        yonepse = {
+            "row": {"close": 100, "open": 100, "high": 101, "low": 95, "turnover": 1000},
+            "finality_status": "unmarked",
+        }
+        result = compare_rows(socrateai, yonepse, ["row_1:index_high_below_ohlc"])
+        self.assertEqual(result["status"], "socrateai_row_anomaly")
+        self.assertIn("row_1:index_high_below_ohlc", result["socrateai_validation_errors"])
+
     def test_provisional_latest_row_is_not_compared(self):
         socrateai = [{"close": "100", "open": "99", "high": "110", "low": "95", "volume": "1000"}]
         yonepse = {

@@ -29,6 +29,14 @@ jobs:
       - name: Inventory public Hugging Face datasets
         run: python inventory_hf_datasets.py --output ../data/reports/hf-dataset-inventory-summary.json
         working-directory: backend
+      - name: Enumerate Urekmazino floorsheet archive (manifest only)
+        run: >-
+          python acquire_hf_floorsheet_archive.py
+          --repo-id urekmazino69/Nepse-floorsheet-and-indices
+          --path floorsheet
+          --revision main
+          --output ../artifacts/source-manifests
+        working-directory: backend
       - name: Upload inventory manifest and summary
         uses: actions/upload-artifact@v4
         with:
@@ -36,5 +44,6 @@ jobs:
           path: |
             data/raw/huggingface/manifests/
             data/reports/hf-dataset-inventory-summary.json
+            artifacts/source-manifests/
           if-no-files-found: error
           retention-days: 14

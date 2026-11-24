@@ -87,12 +87,47 @@ def enumerate_files(
     return commit_sha, rows
 
 
+def verify_local_file(path: Path, row: dict[str, Any]) -> dict[str, Any]:
+    sha256 = hashlib.sha256()
+    blob_hash = hashlib.sha1()
+    count = 0
+    with path.open("rb") as source:
+        while True:
+            chunk = source.read(1024 * 1024)
+            if not chunk:
+                break
+            count += len(chunk)
+            sha256.update(chunk)
+    blob_hash.update(f"blob {count}\0".encode("ascii"))
+    with path.open("rb") as source:
+        while True:
+            chunk = source.read(1024 * 1024)
+            if not chunk:
+                break
+            blob_hash.update(chunk)
+    if count != row["size_bytes"]:
+        raise ValueError(f"Existing file size mismatch at {path}")
+    if blob_hash.hexdigest() != row["git_blob_sha1"]:
+        raise ValueError(f"Existing file Git blob mismatch at {path}")
+    row.update({
+        "local_path": str(path),
+        "downloaded_bytes": count,
+        "local_sha256": sha256.hexdigest(),
+        "verification": "size_and_git_blob_sha1_pass",
+    })
+    return row
+
+
 def download_one(row: dict[str, Any], root: Path) -> dict[str, Any]:
     relative = Path(row["repository"]) / row["commit_sha"] / row["path"]
     destination = root / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
-        raise FileExistsError(f"Refusing to overwrite immutable raw file: {destination}")
+        # A previous run may have completed the atomic file promotion but stopped
+        # before writing its manifest line. Verify it rather than overwrite it.
+        row = verify_local_file(destination, row)
+        row["recovered_existing_file"] = True
+        return row
 
     sha256 = hashlib.sha256()
     count = 0
@@ -145,7 +180,6 @@ def download_one(row: dict[str, Any], root: Path) -> dict[str, Any]:
             pass
         raise
 
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--owner", required=True)
@@ -174,14 +208,35 @@ def main() -> int:
     args.output.mkdir(parents=True, exist_ok=True)
     stem = f"{args.owner}_{args.repo}_{commit_sha[:12]}".replace("/", "_")
     manifest_path = args.output / f"{stem}.jsonl"
+    prior: dict[str, dict[str, Any]] = {}
     if manifest_path.exists():
-        parser.error(f"Manifest already exists; refusing to overwrite: {manifest_path}")
+        with manifest_path.open("r", encoding="utf-8") as previous:
+            for line_number, line in enumerate(previous, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                    prior[record["path"]] = record
+                except (json.JSONDecodeError, KeyError) as exc:
+                    parser.error(
+                        f"Existing manifest is malformed at line {line_number}: {exc}"
+                    )
 
-    with manifest_path.open("x", encoding="utf-8") as manifest:
+    with manifest_path.open("a", encoding="utf-8") as manifest:
         for row in rows:
+            old = prior.get(row["path"])
+            if old and not args.download:
+                continue
+            if old and args.download and old.get("local_path"):
+                existing_path = Path(old["local_path"])
+                if existing_path.exists():
+                    verify_local_file(existing_path, row)
+                    continue
+
             row["manifest_observed_at"] = datetime.now(timezone.utc).isoformat()
             if args.download:
                 row = download_one(row, args.raw_root)
+                row.setdefault("downloaded_at", datetime.now(timezone.utc).isoformat())
             manifest.write(json.dumps(row, sort_keys=True) + "\n")
             manifest.flush()
             os.fsync(manifest.fileno())

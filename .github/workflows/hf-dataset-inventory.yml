@@ -6,6 +6,11 @@ on:
     paths:
       - "backend/app/hf_dataset_collector.py"
       - "backend/inventory_hf_datasets.py"
+      - "backend/acquire_floorsheet_archive.py"
+      - "backend/build_calendar_coverage_matrix.py"
+      - "backend/build_recent_history_target.py"
+      - "backend/tests/test_recent_history_target.py"
+      - "data/reference/nepse_session_calendar.csv"
       - ".github/workflows/hf-dataset-inventory.yml"
   workflow_dispatch:
 
@@ -37,14 +42,31 @@ jobs:
           --revision main
           --output ../artifacts/source-manifests
         working-directory: backend
-      - name: Build date-level NEPSE calendar and source coverage matrix
+      - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         run: >-
-          python build_calendar_coverage_matrix.py
-          --manifest ../artifacts/source-manifests/urekmazino69_Nepse-floorsheet-and-indices_11ef83a9c3cd.jsonl
-          --calendar ../data/reference/nepse_session_calendar.csv
-          --start-date 2024-01-02
-          --end-date 2026-08-26
-          --output ../artifacts/source-manifests/nepse-calendar-coverage-matrix.json
+          python acquire_floorsheet_archive.py
+          --owner socrateai-official
+          --repo nepse-open-data
+          --ref main
+          --prefix floorsheet
+          --output ../artifacts/source-manifests
+        working-directory: backend
+      - name: Enumerate SamirWagle GitHub floorsheet archive (manifest only)
+        run: >-
+          python acquire_floorsheet_archive.py
+          --owner SamirWagle
+          --repo Nepse-All-Scraper
+          --ref main
+          --prefix data/floorsheet
+          --output ../artifacts/source-manifests
+        working-directory: backend
+      - name: Build date-level NEPSE calendar and source coverage matrix
+        run: |
+          mapfile -t manifests < <(find ../artifacts/source-manifests -maxdepth 1 -type f -name '*.jsonl' | sort)
+          args=()
+          for manifest in "${manifests[@]}"; do args+=(--manifest "$manifest"); done
+          python build_calendar_coverage_matrix.py "${args[@]}" --calendar ../data/reference/nepse_session_calendar.csv --start-date 2024-01-02 --end-date 2026-11-24 --output ../artifacts/source-manifests/nepse-calendar-coverage-matrix.json
+          python build_recent_history_target.py "${args[@]}" --calendar ../data/reference/nepse_session_calendar.csv --minimum-sessions 90 --target-sessions 120 --output ../artifacts/source-manifests/recent-90-120-session-target.json
         working-directory: backend
       - name: Upload inventory manifest and summary
         uses: actions/upload-artifact@v4

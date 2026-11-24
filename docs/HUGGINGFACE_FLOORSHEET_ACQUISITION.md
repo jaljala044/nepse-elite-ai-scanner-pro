@@ -168,3 +168,74 @@ GitHub Actions artifact
 [`nepse-hf-data-inventory`](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45406656390),
 SHA-256 `cec24ff2f94dafacb40ccf59204bf886b0af82b7c5c2e1e1ff7a715d2bf5d0be`,
 retained through **2027-02-22**.
+
+## One-date raw sample acquisition and row audit — 2026-11-24
+
+A single file was acquired from the pinned MIT-declared dataset commit
+`11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0` for **2026-08-26**:
+
+- Path: `floorsheet/2026-08-26.csv.gz`
+- Compressed bytes: **1,046,475**
+- Hub LFS SHA-256 and local SHA-256 both:
+  `2d199262617e5e7bf385c486104228eb6ff8dff7284cf8b32562490dad3da89e`
+- Rows: **61,442**
+- Unique contract numbers: **61,442**; duplicate contracts: **0**
+- Unique row IDs: **61,442**; duplicate IDs: **0**
+- Date mismatches / contract-date-prefix mismatches: **0**
+- Quantity × rate versus amount arithmetic errors: **0**
+- Invalid buyer/seller broker identifiers: **0**
+- Missing execution times: **0**; observed time range: **10:46:00–14:59:59**
+- Unique symbols: **348**; unique broker codes across buyer/seller: **91**
+- Total share quantity: **13,582,320**
+- Sum of transaction amounts: **NPR 4,773,857,657.46**
+
+The raw file's time field is populated even though the Hugging Face viewer preview
+rendered it as null. The raw CSV, not the preview, is the inspected evidence.
+Contract numbers and IDs remain strings. No row was deduplicated or corrected.
+
+### Same-day index-control conflict — do not promote this date yet
+
+The matching Urekmazino `indices/2026-08-26.csv.gz` file was also acquired and
+hash-verified. Its NEPSE Index row reports turnover **NPR 4,693,373,201.62**,
+share volume **11,568,032**, and **60,740** transactions. Compared with the
+floorsheet sample, the differences are:
+
+- Turnover: **NPR 80,484,455.84**
+- Share quantity: **2,014,288**
+- Transaction count: **702**
+
+Its OHLC row also has `open=2594.27` and `high=2592.12`, so high is below open.
+The open equals the prior close implied by close minus absolute change. This is
+an index-row anomaly, not something to correct automatically.
+
+Cross-source evidence is conflicting:
+
+- The pinned SocrateAI adjusted-index CSV reports turnover `4,773,850,987`,
+  only **NPR 6,670.46** below the floorsheet amount sum. Its OHLC values differ
+  slightly from the Urek index row.
+- The YONEPSE mirror and Urek index row agree on **60,740** trades and
+  **NPR 4.693 billion**, but YONEPSE is a third-party mirror whose publisher
+  disabled TLS verification in its scraper.
+- Hamroshare's 26-August market-wrap page reports **60,740** trades and
+  **NPR 4.69 billion**, agreeing with the Urek/YONEPSE index controls:
+  https://hamroshare.com.np/news/market-wrap/2026-08-26
+- Hamroshare's historical-market table reports **61,442** transactions,
+  **1.36 crore** shares and **NPR 4.77 billion** for the same date:
+  https://hamroshare.com.np/nepse/historic-market
+- OnlineKhabar and Nepal News report turnover of about **NPR 4.77 billion**;
+  Nepal Life Capital's published turnover chart shows
+  **NPR 4,773,857,657.45**:
+  https://english.onlinekhabar.com/nepse-fall-rasuwa-flood-hydropower.html
+  https://english.nepalnews.com/s/business/nepal-news-evening-economic-brief-august-26-2026/
+  https://nepallifecapital.com.np/uploads/newsletter/01M1DMR5S56C3SHT7HR1PJ1YF9.pdf
+
+These sources do not yet resolve whether the index control row is stale/partial,
+whether the floor file contains records outside the index control definition, or
+which secondary report is authoritative. Preserve both datasets and every
+difference. The floorsheet's row-level validation passes, but the combined
+sample gate remains **FAIL** because the same-dataset index controls conflict
+and the index OHLC row is invalid. `canonical_promotion_allowed=false`.
+
+Workflow run 45412604263, artifact 14930540759, contains the two hash-verified
+raw sample files and the complete audit report. It is a diagnostic artifact,
+not a canonical-data import.

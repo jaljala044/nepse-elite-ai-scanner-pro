@@ -42,21 +42,22 @@ class CalendarCoverageMatrixTests(unittest.TestCase):
     def test_matrix_distinguishes_calendar_evidence_and_file_presence(self):
         report = build_matrix(
             [self.manifest], self.calendar,
-            date(2026, 11, 23), date(2026, 11, 25)
+            date(2026, 11, 23), date(2026, 11, 28)
         )
-        self.assertEqual(report["days_in_matrix"], 3)
+        self.assertEqual(report["days_in_matrix"], 6)
         self.assertEqual(report["manifest_files_observed"], 3)
         self.assertEqual(report["days_with_source_files"], 2)
         self.assertEqual(report["days_with_explicit_calendar_evidence"], 2)
         self.assertEqual(report["rows"][0]["calendar_classification"], "verified_open")
         self.assertEqual(report["rows"][0]["source_count"], 2)
         self.assertIn("source_file_on_verified_closed_date", report["rows"][1]["flags"])
-        self.assertEqual(report["rows"][2]["calendar_classification"], "unverified_non_session_candidate")
-        self.assertIn("calendar_evidence_missing", report["rows"][2]["flags"])
+        self.assertEqual(report["rows"][5]["date"], "2026-11-28")
+        self.assertEqual(report["rows"][5]["calendar_classification"], "unverified_non_session_candidate")
+        self.assertIn("calendar_evidence_missing", report["rows"][5]["flags"])
 
     def test_reversed_date_range_rejected(self):
         with self.assertRaises(ValueError):
-            build_matrix([self.manifest], self.calendar, date(2026, 11, 25), date(2026, 11, 23))
+            build_matrix([self.manifest], self.calendar, date(2026, 11, 28), date(2026, 11, 23))
 
 
 if __name__ == "__main__":

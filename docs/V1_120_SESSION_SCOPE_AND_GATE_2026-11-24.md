@@ -939,3 +939,33 @@ A second pass counted volume/turnover availability:
 - `sector_data.csv`: 1,558 rows; 37 have missing volume and 24 have blank turnover. Sources are mixed (1,260 YONEPSE archived index, 274 Nepse Decode closing index, 24 YONEPSE + SocrateAI).
 - These fields must remain null/unknown when not supplied. Do not coerce zero volume to a real zero-trade session or infer turnover.
 - The 2026-11-24 index audit records cross-source opening conflicts for all eight indices with blank opens in the index CSV: NEPSE, Sensitive, Float, Sensitive Float, Commercial Banks, Hotels & Tourism, Hydro Power and Others. Float also has a 0.01 high conflict. Preserve source-specific values until an authoritative resolution is obtained.
+
+
+## Partial all-symbol audit progress — batch 3 (files 33–48 of 525)
+
+On 2026-11-24, the next 16 SMC stock CSVs (repository tree positions 33–48) were fetched from the main branch and parsed for the calendar interval 2025-11-24 through 2026-11-23. All 16 fetches succeeded. This is still a calendar-window scan, not a verified-session completeness audit.
+
+| Symbol | Total rows | Candidate-window rows | Invalid OHLC | Latest date |
+|---|---:|---:|---:|---|
+| BNHC | 935 | 305 | 0 | 2026-11-20 |
+| BNL | 605 | 173 | 0 | 2026-11-19 |
+| BNT | 909 | 279 | 0 | 2026-11-20 |
+| BOKD86KA | 103 | 23 | 0 | 2026-10-15 |
+| BOKD86 | 411 | 82 | 0 | 2026-11-17 |
+| BPCL | 936 | 306 | 0 | 2026-11-20 |
+| BPW | 3 | 0 | 0 | 2024-03-06 |
+| BUNGAL | 319 | 305 | 0 | 2026-11-20 |
+| C30MF | 887 | 285 | 0 | 2026-11-20 |
+| CBBLPO | 9 | 5 | 0 | 2026-09-03 |
+| CBBL | 935 | 305 | 0 | 2026-11-20 |
+| CBLD88 | 555 | 139 | 0 | 2026-11-20 |
+| CCBD88 | 484 | 121 | 0 | 2026-11-19 |
+| CFCL | 935 | 305 | 0 | 2026-11-20 |
+| CGH | 935 | 305 | 0 | 2026-11-20 |
+| CHCL | 936 | 306 | 0 | 2026-11-20 |
+
+No OHLC range violations or duplicate dates were observed in this batch. BPW has no candidate-window data (only three total rows, latest 2024-03-06); CBBLPO is very sparse (five candidate-window rows); BOKD86KA and BOKD86 have materially lower counts than the most complete files. These require security-master/listing lifecycle and trading-status checks before any missing-data classification.
+
+Cumulative documented scan progress is 48/525 files (9.1%). Across the first three batches, two OHLC violations have been observed (API 2026-04-27 and BGWT 2026-04-29). This remains a partial-sample count only. Preserve raw rows and do not promote canonical data until the full universe, session calendar, corporate actions and provenance gates pass.
+
+SHA-256 Git blob identifiers for this batch are available in the Git tree/file history; the scan used main-branch source files. A later reproducibility artifact should capture the exact source commit, file path, blob SHA, retrieval timestamp and parser version for every file.

@@ -66,6 +66,7 @@ def audit_source(name: str, path: Path) -> dict[str, Any]:
     raw = path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
     records: dict[str, dict[str, Any]] = {}
+    seen_contracts: set[str] = set()
     duplicates: list[str] = []
     invalid: list[dict[str, Any]] = []
     date_mismatches: list[dict[str, str]] = []
@@ -87,6 +88,10 @@ def audit_source(name: str, path: Path) -> dict[str, Any]:
                 rate = _decimal(row[mapping["rate"]])
                 if not contract or not symbol or not buyer or not seller:
                     raise ValueError("missing contract, symbol or broker code")
+                if contract in seen_contracts:
+                    duplicates.append(contract)
+                    continue
+                seen_contracts.add(contract)
                 if quantity <= 0 or quantity != quantity.to_integral_value():
                     raise ValueError("quantity must be a positive integer")
                 if rate <= 0:
@@ -100,9 +105,6 @@ def audit_source(name: str, path: Path) -> dict[str, Any]:
                     trade_date = f"{contract_date[:4]}-{contract_date[4:6]}-{contract_date[6:8]}"
                 if trade_date and contract_date and trade_date.replace("-", "")[:8] != contract_date:
                     date_mismatches.append({"line": line, "contract": contract, "date": trade_date})
-                if contract in records:
-                    duplicates.append(contract)
-                    continue
                 records[contract] = {
                     "contract": contract, "date": trade_date, "symbol": symbol,
                     "buyer": buyer, "seller": seller,

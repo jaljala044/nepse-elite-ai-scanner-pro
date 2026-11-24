@@ -25,7 +25,7 @@ import httpx
 API = "https://api.github.com"
 RAW = "https://raw.githubusercontent.com"
 INDEX_REPO = "socrateai-official/nepse-open-data"
-INDEX_PATH = re.compile(r"^ohlc_index/adj_(\d{4}-\d{2}-\d{2})\.csv$")
+INDEX_RE = re.compile(r"^ohlc_index/adj_(\d{4}-\d{2}-\d{2})\.csv$")
 
 
 def _get(client: httpx.Client, url: str) -> httpx.Response:

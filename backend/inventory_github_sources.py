@@ -62,18 +62,23 @@ def path_date(path: str) -> str | None:
 
 def inventory_repo(client: httpx.Client, repo: str) -> dict[str, Any]:
     headers = {"Accept": "application/vnd.github+json"}
-    branch_resp = client.get(f"{API}/repos/{repo}/branches", headers=headers, params={"per_page": 100})
-    branch_resp.raise_for_status()
-    branch_data = branch_resp.json()
     default_resp = client.get(f"{API}/repos/{repo}", headers=headers)
     default_resp.raise_for_status()
     default_branch = default_resp.json()["default_branch"]
-    branch = next((b for b in branch_data if b["name"] == default_branch), None)
-    if branch is None:
-        raise RuntimeError(f"Default branch {default_branch!r} not present in branch listing")
-    commit_sha = branch["commit"]["sha"]
+    ref_resp = client.get(
+        f"{API}/repos/{repo}/git/ref/heads/{default_branch}",
+        headers=headers,
+    )
+    ref_resp.raise_for_status()
+    commit_sha = ref_resp.json()["object"]["sha"]
+    commit_resp = client.get(
+        f"{API}/repos/{repo}/git/commits/{commit_sha}",
+        headers=headers,
+    )
+    commit_resp.raise_for_status()
+    tree_sha = commit_resp.json()["tree"]["sha"]
     tree_resp = client.get(
-        f"{API}/repos/{repo}/git/trees/{commit_sha}",
+        f"{API}/repos/{repo}/git/trees/{tree_sha}",
         headers=headers,
         params={"recursive": "1"},
     )

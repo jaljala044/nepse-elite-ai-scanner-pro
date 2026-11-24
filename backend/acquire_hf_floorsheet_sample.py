@@ -109,7 +109,7 @@ def acquire_sample(
         raise ValueError(f"Hub resolved revision {revision} to unexpected commit {commit_sha}")
     rows, archive_file_count = extract_sample_metadata(list(info.siblings or []), repo_id, commit_sha, path, sample_date)
     selected = select_sample(rows, sample_date, max_total_bytes)
-    acquired = [download_one(dict(row), Path(raw_root)) for row in selected]
+    acquired = [download_one(dict(row), Path(raw_root).resolve()) for row in selected]
     report = {
         "repo_id": repo_id,
         "resolved_commit_sha": commit_sha,

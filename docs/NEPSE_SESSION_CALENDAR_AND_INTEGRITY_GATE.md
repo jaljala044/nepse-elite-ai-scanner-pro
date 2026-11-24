@@ -278,3 +278,13 @@ shards report `updatedAt=2026-10-11T00:45:08+05:45`, September reports
 `2026-11-24T12:04:02+05:45`. The comparison report now records each shard's
 update timestamp, date count, date span and SHA-256. A shard's update timestamp
 is publisher metadata, not proof of the original exchange publication time.
+
+## Session-candidate register export
+
+The audit workflow now exports
+`data/reports/nepse-session-candidates.csv` from the two cross-check reports.
+It joins SocrateAI index-row status, YONEPSE comparison/finality, OHLCV symbol
+coverage and floorsheet manifest coverage for each date. Every row is explicitly
+marked `not_verified_primary_exchange_evidence_missing`; this is a review
+register, not the canonical calendar and not permission to treat all 120 dates
+as verified trading sessions. The CSV is uploaded with the audit artifact.

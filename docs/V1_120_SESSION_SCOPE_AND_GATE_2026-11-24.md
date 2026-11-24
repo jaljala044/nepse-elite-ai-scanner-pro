@@ -399,3 +399,109 @@ Cumulative progress: 152/525 files (29.0%). One new candidate OHLC violation was
 The archive row is O/H/L/C = 685.5/685.0/676.1/679.2, which violates high >= open. Sun Securities' independently published HRL daily history reports 679.2/685.0/676.1/679.2 with volume 74,867 for 2026-04-29, which is internally valid and differs only in open. This is an externally corroborated candidate value, not an authorized rewrite of the archive. Preserve raw 685.5 and quarantine the source row pending primary NEPSE/floorsheet confirmation. Source: https://sunsecurities.com/company/HRL/price-history
 
 Chart-provider check was attempted again for this discrepancy: Chukul Technical Desk URL is reachable but exposes no readable public chart data; NEPSE Alpha's chart route currently exposes a login/register form, not a candle. Therefore neither provider yielded a directly observed HRL 2026-04-29 chart candle in this run. Do not label the discrepancy as Chukul/NEPSE Alpha chart-verified. Public secondary OHLC confirmation is Sun Securities only at this stage.
+
+
+## Partial all-symbol audit — batches 18–29 (files 153–240 of 525)
+
+Candidate window: 2025-11-24 through 2026-11-23 (calendar dates, not verified exchange sessions). Counts are CSV rows, not exchange-session counts.
+
+| File | Total | Window | OHLC violations | Latest |
+|---|---:|---:|---:|---|
+| JBLBP_OHLCV.csv | 45 | 20 | 0 | 2026-05-26 |
+| JBLB_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| JFLPO_OHLCV.csv | 10 | 0 | 0 | outside window |
+| JFL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| JHAPA_OHLCV.csv | 313 | 305 | 0 | 2026-11-20 |
+| JOSHI_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| JSLBBP_OHLCV.csv | 5 | 0 | 0 | outside window |
+| JSLBB_OHLCV.csv | 929 | 299 | 0 | 2026-11-20 |
+| KAHL_OHLCV.csv | 87 | 87 | 0 | 2026-11-20 |
+| KBLD86_OHLCV.csv | 211 | 40 | 0 | 2026-11-05 |
+| KBLD89_OHLCV.csv | 283 | 82 | 0 | 2026-10-27 |
+| KBLD90_OHLCV.csv | 153 | 40 | 0 | 2026-09-29 |
+| KBLPO_OHLCV.csv | 97 | 25 | 0 | 2026-10-02 |
+| KBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| KBSH_OHLCV.csv | 934 | 304 | 0 | 2026-11-20 |
+| KDBY_OHLCV.csv | 980 | 224 | 1 | 2026-11-18 |
+| KDL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| KEF_OHLCV.csv | 1286 | 223 | 1 | 2026-11-18 |
+| KHPL_OHLCV.csv | 124 | 124 | 0 | 2026-11-20 |
+| KKHC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| KLBSLP_OHLCV.csv | 5 | 0 | 0 | outside window |
+| KLBSL_OHLCV.csv | 128 | 0 | 0 | outside window |
+| KMCDBP_OHLCV.csv | 10 | 7 | 0 | 2026-06-09 |
+| KMCDB_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| KPCL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| KRBL_OHLCV.csv | 296 | 0 | 0 | outside window |
+| KSBBLD87_OHLCV.csv | 407 | 70 | 0 | 2026-10-29 |
+| KSBBLP_OHLCV.csv | 28 | 4 | 0 | 2026-10-07 |
+| KSBBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| KSY_OHLCV.csv | 850 | 294 | 0 | 2026-11-20 |
+| LBBLD89_OHLCV.csv | 347 | 87 | 0 | 2026-11-18 |
+| LBBLPO_OHLCV.csv | 6 | 2 | 0 | 2026-11-17 |
+| LBBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| LBLD86_OHLCV.csv | 99 | 23 | 0 | 2026-11-04 |
+| LBLD88_OHLCV.csv | 197 | 52 | 0 | 2026-09-30 |
+| LEC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| LEMF_OHLCV.csv | 90 | 0 | 0 | outside window |
+| LICN_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| LLBS_OHLCV.csv | 931 | 302 | 0 | 2026-11-20 |
+| LSD92_OHLCV.csv | 29 | 29 | 0 | 2026-11-20 |
+| LSH12_OHLCV.csv | 62 | 62 | 0 | 2026-11-20 |
+| LSLPO_OHLCV.csv | 57 | 2 | 0 | 2026-10-29 |
+| LSL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| LUK_OHLCV.csv | 910 | 292 | 0 | 2026-11-20 |
+| LVF2_OHLCV.csv | 919 | 295 | 0 | 2026-11-20 |
+| MABEL_OHLCV.csv | 326 | 306 | 0 | 2026-11-20 |
+| MAKAR_OHLCV.csv | 934 | 304 | 0 | 2026-11-20 |
+| MANDU_OHLCV.csv | 933 | 303 | 0 | 2026-11-20 |
+| MATRIP_OHLCV.csv | 34 | 20 | 0 | 2026-11-20 |
+| MATRI_OHLCV.csv | 773 | 305 | 0 | 2026-11-20 |
+| MBJC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MBLD2085_OHLCV.csv | 122 | 67 | 0 | 2026-08-06 |
+| MBLD87_OHLCV.csv | 308 | 67 | 0 | 2026-11-04 |
+| MBLEF_OHLCV.csv | 487 | 301 | 0 | 2026-11-20 |
+| MBLPO_OHLCV.csv | 20 | 1 | 0 | 2026-07-02 |
+| MBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| MCHL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| MDBPO_OHLCV.csv | 11 | 3 | 0 | 2026-11-20 |
+| MDB_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MEHL_OHLCV.csv | 712 | 226 | 0 | 2026-11-19 |
+| MEL_OHLCV.csv | 766 | 227 | 0 | 2026-11-20 |
+| MEN_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MEPDL_OHLCV.csv | 58 | 58 | 0 | 2026-11-20 |
+| MERO_OHLCV.csv | 2211 | 227 | 1 | 2026-11-20 |
+| MFILPO_OHLCV.csv | 6 | 3 | 0 | 2026-10-05 |
+| MFIL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MFLD85_OHLCV.csv | 350 | 88 | 0 | 2026-11-03 |
+| MHCL_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| MHL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| MHNL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| MKCL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| MKHC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MKHL_OHLCV.csv | 933 | 306 | 0 | 2026-11-20 |
+| MKJC_OHLCV.csv | 928 | 303 | 0 | 2026-11-20 |
+| MKLB_OHLCV.csv | 126 | 0 | 0 | outside window |
+| MLBBLP_OHLCV.csv | 1 | 0 | 0 | outside window |
+| MLBBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MLBLD89_OHLCV.csv | 224 | 67 | 0 | 2026-11-20 |
+| MLBLPO_OHLCV.csv | 28 | 16 | 0 | 2026-09-28 |
+| MLBL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| MLBSLP_OHLCV.csv | 2 | 1 | 0 | 2026-01-20 |
+| MLBSL_OHLCV.csv | 932 | 306 | 0 | 2026-11-20 |
+| MLBSP_OHLCV.csv | 1 | 1 | 0 | 2026-05-18 |
+| MLBS_OHLCV.csv | 931 | 301 | 0 | 2026-11-20 |
+| MMF1_OHLCV.csv | 934 | 305 | 0 | 2026-11-20 |
+| MMFDBP_OHLCV.csv | 1 | 0 | 0 | outside window |
+| MMFDB_OHLCV.csv | 9 | 0 | 0 | outside window |
+| MMKJL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+
+Cumulative progress: 240/525 files (45.7%). Newly detected OHLC range violations in this segment: KDBY (2026-04-29), KEF (2026-04-28), MERO (2026-04-24). No source rows were changed.
+
+### Additional anomaly investigation — secondary price-history sources
+
+- KDBY 2026-04-29 archive O/H/L/C = 11.54/11.50/11.25/11.38, volume 23,420. ArthaKendra's page explicitly labels its columns Open/High/Low/Close and reports 11.25/11.50/11.25/11.38, same volume. This corroborates a candidate open of 11.25 from a secondary source, but raw archive remains unchanged and the row remains quarantined pending primary NEPSE/floorsheet evidence. Source: https://www.arthakendra.com/stock-market/company/KDBY/price-history
+- KEF 2026-04-28 archive O/H/L/C = 10.89/10.80/10.70/10.79, volume 5,400. ArthaKendra reports the same values and volume, including the same invalid high-below-open relation. This is not independent validation of the candle; it may be a shared-source error. Keep unresolved and quarantined. Source: https://www.arthakendra.com/stock-market/company/KEF/price-history
+- MERO 2026-04-24 archive O/H/L/C = 731.1/730/720/726, volume 1,671. Sun Securities reports the same O/H/L/C and volume for that date, so the secondary source corroborates the published values but not arithmetic validity. Keep raw row unchanged and quarantined; investigate the original NEPSE/floorsheet record. Source: https://sunsecurities.com/company/MERO/price-history
+
+These secondary sources are not Chukul or NEPSE Alpha chart captures. The Chukul/NEPSE Alpha access limitation recorded above still applies; no claim of direct chart verification is made.

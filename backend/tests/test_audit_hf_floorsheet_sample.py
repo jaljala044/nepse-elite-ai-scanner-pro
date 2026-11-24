@@ -79,6 +79,21 @@ class HFFloorsheetSampleAuditTests(unittest.TestCase):
         rows = [{"sector": "Banking"}, {"sector": "NEPSE_index", "turnover_values": "9206.00"}]
         self.assertEqual(find_nepse_index_row(rows)["turnover_values"], "9206.00")
 
+    def test_rejects_duplicate_nepse_index_control_rows(self):
+        floor = {"total_amount": "9206.00", "total_quantity": 30, "row_count": 2}
+        row = {"sector": "NEPSE_index", "turnover_values": "9206.00", "turnover_volume": "30", "total_transaction": "2"}
+        result = compare_index_controls(floor, [row, dict(row)], "2026-08-26")
+        self.assertFalse(result["matched"])
+        self.assertEqual(result["status"], "duplicate_nepse_index_control_rows")
+        self.assertEqual(result["nepse_index_row_count"], 2)
+
+    def test_rejects_index_control_date_mismatch(self):
+        floor = {"total_amount": "9206.00", "total_quantity": 30, "row_count": 2}
+        row = {"date": "2026-08-25", "sector": "NEPSE_index", "turnover_values": "9206.00", "turnover_volume": "30", "total_transaction": "2"}
+        result = compare_index_controls(floor, [row], "2026-08-26")
+        self.assertFalse(result["matched"])
+        self.assertEqual(result["status"], "nepse_index_control_date_mismatch")
+
     def test_compares_daily_control_totals_exactly(self):
         floor = {"total_amount": "9206.00", "total_quantity": 30, "row_count": 2}
         index_rows = [{

@@ -243,3 +243,31 @@ owners. The code license is therefore not treated as a data-reuse or
 redistribution grant. This project currently uses the mirror only as a
 provenance-tracked private comparison source; no YONEPSE raw dataset is
 repackaged or redistributed.
+
+### YONEPSE mirror comparison results — 120-date window
+
+The first automated comparison against the pinned YONEPSE mirror commit
+`1bfa798e84c7170f826e473e7e1ec3957c81966c` completed for all 120 selected
+dates, with no monthly-shard download errors:
+
+- **116** dates were numerically compared.
+- **3** SocrateAI dates were withheld from numeric comparison because their
+  source rows were anomalous: 2026-06-01, 2026-07-03 and 2026-07-07.
+- **1** latest date (2026-11-24) was marked provisional by YONEPSE and excluded
+  from final-value comparison.
+- Among the 116 comparable dates, close matched exactly on **111** dates and
+  differed on 5. Open matched exactly on 57, high on 10, and low on 7.
+- The mapped turnover comparison had **zero exact matches**. Its median absolute
+  difference was about NPR 89.3 million and maximum about NPR 4.86 billion.
+  This is a material unresolved source/schema discrepancy; no turnover value is
+  selected as canonical.
+- High and low often differ by small precision amounts, but some differences
+  are larger (maximum high difference 1.63 index points; maximum low difference
+  0.97). Exact source values remain preserved.
+
+This comparison does **not** establish that YONEPSE is correct or SocrateAI is
+wrong. The YONEPSE publisher mirror is third-party, older monthly shards show
+their own update timestamps, and its scraper's TLS-verification setting weakens
+the source chain. The high close agreement is useful corroboration, but the
+turnover/high/low differences remain unresolved. Latest report artifact:
+run 45409066255, artifact ID 14927261450.

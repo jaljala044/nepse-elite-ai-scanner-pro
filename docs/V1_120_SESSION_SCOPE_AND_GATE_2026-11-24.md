@@ -1039,3 +1039,18 @@ Cumulative documented scan progress: 304/525 files (57.9%). The five provisional
 Lifecycle/sparse-data examples in this range include MMFDBP/MMFDB (no candidate-window rows; last 2024-03-12), MPFLPO (no candidate-window rows; last 2025-06-23), NABBCP (no candidate-window rows; last 2024-12-21), NICAD8182/NICAD8283 (no candidate-window rows), NICAD~2085~2F86 (no candidate-window rows), NICGF (no candidate-window rows; last 2025-03-09), NICLPO (one old row), NIFRAP (no candidate-window rows), NILPO (no candidate-window rows), and NLBBL (no candidate-window rows; last 2024-03-12). Instrument lifecycle and security master evidence is required before classification.
 
 Other partial histories include NBLD82/85/87, NCCD86, NIBD series, NIFRAGED, NIFRAUR85/86, NIMBD90 and several preference/structured instruments. Validate their issue dates, listing status, and actual traded sessions separately.
+
+
+## Continued all-symbol scan — files 305–392 (batches 37–48)
+
+A further 88 SMC stock CSV files were fetched and parsed in eleven batches of eight; all 88 fetches succeeded. No duplicate dates were detected. Three additional OHLC range violations were found:
+
+- RADHI, 2026-04-29: open 780.00, high 775.00, low 755.00, close 764.80 (high below open).
+- RAWA, 2026-04-27: open 648.70, high 645.00, low 625.00, close 630.00 (high below open).
+- RAWA, 2026-04-29: open 615.00, high 610.00, low 587.00, close 610.00 (high below open).
+
+These three rows are quarantined. Cumulative provisional mechanical OHLC violation count is eight: API, BGWT, HRL, KDBY, KEF, RADHI and two RAWA rows. No auto-correction is authorized.
+
+Lifecycle/sparse examples include PFLPO (one old row), PROFLP (five candidate-window rows), RLFLPO (three), RSDCP (one), SABSL (no candidate-window rows; last 2024-07-13), SAEF (no candidate-window rows; last 2024-12-22), and various bond/preference instruments with partial data. Treat as lifecycle review cases, not automatically failed common-stock histories.
+
+Cumulative scan progress: 392/525 files (74.7%). All counts are for calendar-window records; verified-session reconciliation and source comparison remain outstanding.

@@ -10,7 +10,8 @@ import csv
 import hashlib
 import json
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -90,8 +91,13 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
                     symbol = row["symbol"].upper()
                     if not symbol:
                         raise ValueError("missing_symbol")
-                    nums = {k: float(row[k].replace(",", "")) for k in ("open", "high", "low", "close", "volume")}
-                    if any(v < 0 for v in nums.values()) or any(nums[k] <= 0 for k in ("open", "high", "low", "close")):
+                    try:
+                        nums = {k: Decimal(row[k].replace(",", "")) for k in ("open", "high", "low", "close", "volume")}
+                    except InvalidOperation as exc:
+                        raise ValueError("invalid_numeric_value") from exc
+                    if any(not v.is_finite() for v in nums.values()):
+                        raise ValueError("non_finite_numeric_value")
+                    if nums["volume"] < 0 or any(nums[k] <= 0 for k in ("open", "high", "low", "close")):
                         raise ValueError("non_positive_price_or_negative_volume")
                     if nums["high"] < max(nums["open"], nums["close"], nums["low"]) or nums["low"] > min(nums["open"], nums["close"], nums["high"]):
                         raise ValueError("invalid_ohlc_bounds")

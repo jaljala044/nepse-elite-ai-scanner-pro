@@ -38,9 +38,14 @@ have differing OHLCV values:
 | ULHC | 2025-07-28 |
 
 The full source values for each conflict are retained in the JSON artifact. No
-automatic winner is selected. The earlier inventory's 25 differing file blobs are
-not the same metric as row-level conflicting keys: this run identifies eight
-overlapping symbol/date records with different normalized values.
+automatic winner is selected. The 25 blob-level differences were rechecked from the exact pinned commits. All
+525 relative ticker paths exist in both repositories; 500 file blobs are identical
+and 25 have different blob SHAs. Those 25 files are:
+`API, ULHC, RAWA, AHPC, KEF, MERO, SPDL, SMJC, HLI, CHL, HDHPC, HIDCL, UNHPL,
+RADHI, UAIL, MEHL, HRL, BGWT, SOHL, KDBY, SKBBL, NRIC, NIFRA, RHGCL, MEL`.
+Blob inequality is not automatically a row-level market-data conflict: this audit
+finds eight overlapping symbol/date records with different normalized values.
+Both kinds of discrepancy are retained for reconciliation.
 
 ## Invalid OHLC rows
 

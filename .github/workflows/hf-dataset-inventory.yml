@@ -90,6 +90,7 @@ jobs:
             --date 2026-08-26 \
             --output data/reports/hf-floorsheet-sample-audit.json
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
+        if: always()
         run: >-
           python acquire_floorsheet_archive.py
           --owner socrateai-official
@@ -99,6 +100,7 @@ jobs:
           --output ../artifacts/source-manifests
         working-directory: backend
       - name: Enumerate SamirWagle GitHub floorsheet archive (manifest only)
+        if: always()
         run: >-
           python acquire_floorsheet_archive.py
           --owner SamirWagle
@@ -108,6 +110,7 @@ jobs:
           --output ../artifacts/source-manifests
         working-directory: backend
       - name: Build date-level NEPSE calendar and source coverage matrix
+        if: always()
         run: |
           mapfile -t manifests < <(find ../artifacts/source-manifests -maxdepth 1 -type f -name '*.jsonl' | sort)
           args=()

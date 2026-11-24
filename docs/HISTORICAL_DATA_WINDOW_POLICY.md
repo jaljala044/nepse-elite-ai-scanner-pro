@@ -76,3 +76,24 @@ The project has multi-year OHLCV candidate archives and several floorsheet sourc
 5. Validate daily floorsheet rows and control totals before canonical ingestion.
 6. Extend backward whenever older valid history is available; retain it in separate intermediate/long-history layers.
 7. Build recent/intermediate/long-history feature views only from gate-passed records.
+
+## Pinned 120-date acquisition window
+
+The initial candidate date list is now pinned at
+`data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv`.
+It contains 120 dates with observed SocrateAI index files from
+2026-05-18 through 2026-11-24: 116 structurally valid/non-provisional rows,
+three row-anomaly dates, and one latest provisional date. The 17 missing
+weekdays in this span have separate closure evidence leads, but those leads are
+not primary-exchange verified; therefore the list remains a candidate acquisition
+window, not a canonical 120-session calendar.
+
+The pinned SocrateAI floorsheet archive has a dated file for all 120 candidates
+(373,773,838 bytes in the manifest inventory). The pinned Urekmazino archive
+has files for 70 of those 120 candidates (63,072,255 bytes); the other 50 dates
+are absent from that dataset snapshot and are reported as source-coverage gaps,
+not exchange closures.
+
+Bulk acquisition is hash-gated and date-list driven. Each raw file remains under
+its repository/commit/path namespace. No missing date is synthesized, and no
+raw row is merged, deduplicated, corrected or promoted by acquisition alone.

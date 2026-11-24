@@ -34,12 +34,13 @@ class GitHubFloorsheetWindowTests(unittest.TestCase):
     def test_loads_and_validates_date_list(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "dates.csv"
-            path.write_text(
-                "date,index_status\\n2026-08-25,valid\\n2026-08-26,valid\\n",
-                encoding="utf-8",
-            )
+            path.write_text(chr(10).join([
+                "date,index_status",
+                "2026-08-25,valid",
+                "2026-08-26,valid",
+            ]) + chr(10), encoding="utf-8")
             self.assertEqual(load_dates(path), self.dates)
-            path.write_text("date\\n2026-08-25\\n2026-08-25\\n", encoding="utf-8")
+            path.write_text(chr(10).join(["date", "2026-08-25", "2026-08-25"]) + chr(10), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "duplicate dates"):
                 load_dates(path)
 

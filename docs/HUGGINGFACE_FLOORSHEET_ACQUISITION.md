@@ -120,3 +120,51 @@ many may be public holidays, exceptional closures, or publisher gaps. The matrix
 deliberately leaves all 968 dates unverified because the calendar template has no
 evidence rows yet. This is the correct fail-closed outcome, not a successful
 calendar gate.
+
+## 90–120 recent-date acquisition target — live source inventory, 2026-11-24
+
+The project now uses **90 verified NEPSE sessions as the minimum viable target and
+120 as the preferred initial target**. The target is measured in exchange sessions,
+not calendar days. A dated archive file is only a candidate observation until its
+date is reconciled to the evidence-backed session calendar.
+
+A live manifest-only run inventoried three public floorsheet archives:
+
+| Source | Pinned revision | Dated files | First date | Latest date |
+|---|---|---:|---|---|
+| SocrateAI | `cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3` | 661 | 2024-01-01 | 2026-11-24 |
+| SamirWagle | `144cecb36f110bedb741f5d147c7857cdb24c958` | 179 | 2026-02-22 | 2026-11-24 |
+| Urekmazino HF | `11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0` | 603 | 2024-01-02 | 2026-08-26 |
+
+The latest **120 distinct dates with at least one source file** span
+**2026-06-03 through 2026-11-24**. Within those 120 candidate dates:
+
+- SamirWagle has files on 112 dates.
+- SocrateAI has files on 110 dates.
+- Urekmazino has files on 60 dates (its archive ends 2026-08-26).
+- 58 dates have all three sources; 46 dates have two sources; 16 dates have one source.
+
+This is promising evidence that a recent 90–120-date working set can be assembled.
+It is **not yet a verified 120-session dataset**. The calendar file currently has
+zero evidence-backed open-session rows, so the strict target builder correctly
+reports 0 verified sessions selected and both target gates false. The 120-date
+preview is retained separately so it can guide calendar reconciliation without
+being mislabelled as confirmed trading sessions.
+
+The workflow used manifest-only enumeration; **no raw floorsheet transaction rows
+were downloaded**. The two GitHub projects have different stated reuse conditions
+and upstream data-lineage questions, so a raw download must wait for rights review.
+For now, the next work is to reconcile the 120 candidate dates to dated NEPSE
+session/closure evidence, then select the latest 90–120 confirmed sessions and
+acquire only rights-cleared files for row-level validation.
+
+Manifest SHA-256 values:
+- SocrateAI: `63b663e7b2a40d335d46020831c4649c4036fbe3b7c283c33864ef59dd0fdc9b`
+- SamirWagle: `400472ba1ca8de623e9425bf788258cc2df10b30c5a2839f0d73c90865b19420`
+- Urekmazino: `b29318fa6bf4a4b5ab024b0bb7ad5c076699550c7e3109e4ac51c85d7fda3f74`
+
+The full manifests, date-level matrix and recent-target report are preserved in
+GitHub Actions artifact
+[`nepse-hf-data-inventory`](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45406656390),
+SHA-256 `cec24ff2f94dafacb40ccf59204bf886b0af82b7c5c2e1e1ff7a715d2bf5d0be`,
+retained through **2027-02-22**.

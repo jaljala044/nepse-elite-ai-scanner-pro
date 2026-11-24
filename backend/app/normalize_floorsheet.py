@@ -56,7 +56,7 @@ def _parse_date(value: str) -> date:
 
 def _decimal(value: str, field: str) -> Decimal:
     raw = value.strip().replace(",", "")
-    match = re.fullmatch(r"([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))\\s*(K|LAC\\.?|LAKH|CR)?", raw, re.I)
+    match = re.fullmatch(r"([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(K|LAC\.?|LAKH|CR)?", raw, re.I)
     try:
         if match:
             number = Decimal(match.group(1))
@@ -103,7 +103,7 @@ def _canonical_row(
     symbol = _get(raw, columns, "symbol").upper()
     if not contract:
         raise ValueError("missing contract number")
-    if re.fullmatch(r"\\d{8}\\d+", contract):
+    if re.fullmatch(r"\d{8}\d+", contract):
         contract_date = date(int(contract[:4]), int(contract[4:6]), int(contract[6:8]))
         if contract_date != trade_date:
             raise ValueError(

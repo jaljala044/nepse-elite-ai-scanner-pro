@@ -204,3 +204,35 @@ remains failed by design while the underlying OHLCV gate and the three index-row
 anomalies remain unresolved; its report artifact was still uploaded. Latest
 anomaly-aware run: 45408479059, artifact ID 14925853863. This is a diagnostic
 pass, not a calendar-integrity pass.
+
+## Third-source index history: YONEPSE official-API mirror
+
+A further independent archive was identified and pinned for cross-checking:
+`Shubhamnpk/yonepse`, commit
+`1bfa798e84c7170f826e473e7e1ec3957c81966c`. Its source code documents recent
+index history as fetched from NEPSE's
+`/api/nots/index/history/{id}` endpoint, with index ID **58** for NEPSE. Its
+monthly shards contain NEPSE plus 16 sub-index series.
+
+Important provenance limitations:
+
+- This is a third-party mirror, not a signed NEPSE publication.
+- Its builder notes that the upstream endpoint ignores the requested date range
+  and returns roughly the trailing year; it filters the returned rows locally.
+- The mirror's scraper constructs its NEPSE client with TLS certificate
+  verification disabled. This weakens the chain of custody; use as corroboration,
+  not as the sole canonical source.
+- The mirror manifest currently marks 2026-11-24 as `provisional`; its NEPSE
+  close value is zero in that day's shard. The latest row must not be treated as
+  a final daily close.
+- In the source schemas, YONEPSE maps upstream `turnoverValue` to its
+  `turnover` field, while SocrateAI's index CSV labels the corresponding
+  monetary total as `volume`. The comparison script records this mapping
+  explicitly and does not compare it to YONEPSE share volume.
+
+New script: `backend/crosscheck_index_history_yonepse.py`. It pins the mirror
+commit, validates the monthly date-index envelope, preserves all values, skips
+numeric comparison for the provisional latest date, and records exact or
+differing OHLC/turnover fields against the SocrateAI rows. It never chooses a
+canonical source or corrects a value. CI runs this comparison and uploads
+`yonepse-index-crosscheck.json` alongside the other audit reports.

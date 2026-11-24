@@ -211,6 +211,20 @@ def audit_repositories(
                 ],
             }
 
+    # Compare pinned repository blob identities separately from normalized row values.
+    repo_file_maps = {
+        repo: {item["path"]: item.get("repository_blob_sha") for item in result["files"]}
+        for repo, result in repo_results.items()
+    }
+    repo_names = list(repo_file_maps)
+    file_blob_differences = []
+    file_path_sets = {repo: set(files) for repo, files in repo_file_maps.items()}
+    common_paths = set.intersection(*(file_path_sets[r] for r in repo_names)) if repo_names else set()
+    for path in sorted(common_paths):
+        shas = {repo: repo_file_maps[repo][path] for repo in repo_names}
+        if len(set(shas.values())) > 1:
+            file_blob_differences.append({"path": path, "blob_shas": shas})
+
     conflicts = []
     overlap_dates = 0
     for symbol, dates in sorted(cross_source.items()):
@@ -236,10 +250,16 @@ def audit_repositories(
     error_total = sum(len(item["download_errors"]) for item in repo_results.values())
     repeated_total = sum(item["repeated_adjacent_calendar_rows"] for item in repo_results.values())
     conflict_total = len(conflicts)
+    file_difference_total = len(file_blob_differences)
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "pinned_commit_read_only_row_level_audit",
         "repositories": repo_results,
+        "file_level_comparison": {
+            "common_paths": len(common_paths),
+            "blob_difference_count": file_difference_total,
+            "blob_differences": file_blob_differences,
+        },
         "cross_source": {
             "shared_symbol_dates": overlap_dates,
             "conflict_count": len(conflicts),
@@ -251,13 +271,14 @@ def audit_repositories(
             "out_of_order_transitions": order_total,
             "repeated_adjacent_calendar_rows": repeated_total,
             "cross_source_conflicts": conflict_total,
+            "file_blob_differences": file_difference_total,
             "download_errors": error_total,
         },
         # Repeated rows require a verified calendar; conflicts require resolution.
         # Neither is auto-corrected or allowed through the canonical-data gate.
         "gate": "FAIL" if (
             invalid_total or duplicate_total or order_total or repeated_total
-            or conflict_total or error_total
+            or conflict_total or file_difference_total or error_total
         ) else "PASS",
         "limitations": [
             "Repeated adjacent calendar rows are review flags, not automatically invalid: an authoritative NEPSE session calendar is required.",

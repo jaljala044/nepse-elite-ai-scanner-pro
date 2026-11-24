@@ -11,6 +11,7 @@ class MarketDateCrosscheckTests(unittest.TestCase):
         self.assertEqual(INDEX_RE.fullmatch("ohlc_index/adj_2026-11-24.csv").group(1), "2026-11-24")
         self.assertIsNone(INDEX_RE.fullmatch("ohlc_index/unadj_2026-11-24.csv"))
         self.assertIsNone(index_path_date("ohlc_index/adj_2026-13-40.csv"))
+
     def test_valid_nepse_index_row(self):
         raw = (
             "date,symbol,open,high,low,close,volume\n"

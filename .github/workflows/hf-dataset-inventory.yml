@@ -10,6 +10,9 @@ on:
       - "backend/acquire_hf_floorsheet_sample.py"
       - "backend/acquire_github_floorsheet_sample.py"
       - "backend/compare_floorsheet_samples.py"
+      - "backend/acquire_github_floorsheet_window.py"
+      - "backend/tests/test_acquire_github_floorsheet_window.py"
+      - "data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv"
       - "backend/tests/test_compare_floorsheet_samples.py"
       - "backend/tests/test_acquire_github_floorsheet_sample.py"
       - "backend/audit_hf_floorsheet_sample.py"
@@ -108,6 +111,7 @@ jobs:
             --date 2026-08-26 \
             --output data/reports/hf-floorsheet-sample-audit.json
       - name: Compare same-day Urek and SocrateAI floorsheet transactions
+        id: compare_samples
         if: always()
         run: |
           python backend/compare_floorsheet_samples.py \
@@ -115,6 +119,21 @@ jobs:
             --socrateai data/raw/floorsheet/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-08-26.csv \
             --date 2026-08-26 \
             --output data/reports/floorsheet-cross-source-sample.json
+      - name: Acquire 120 observed-date SocrateAI floorsheets (pinned, MIT data license, hash-verified)
+        id: acquire_socrateai_window
+        if: always() && steps.compare_samples.outcome == 'success'
+        run: |
+          python backend/acquire_github_floorsheet_window.py \
+            --owner socrateai-official \
+            --repo nepse-open-data \
+            --revision cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3 \
+            --prefix floorsheet \
+            --date-list data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv \
+            --confirm-data-rights \
+            --max-total-bytes 400000000 \
+            --workers 4 \
+            --raw-root data/raw/floorsheet \
+            --output data/reports/socrateai-floorsheet-window.json
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         if: always()
         run: >-
@@ -158,6 +177,7 @@ jobs:
             data/raw/huggingface/
             data/raw/floorsheet/
             data/reports/socrateai-floorsheet-sample.json
+            data/reports/socrateai-floorsheet-window.json
             data/reports/floorsheet-cross-source-sample.json
             data/raw/reference/socrateai-adj-index-2026-08-26.csv
             artifacts/source-manifests/

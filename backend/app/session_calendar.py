@@ -17,8 +17,10 @@ from typing import Any
 CALENDAR_FIELDS = ("date", "status", "source_id", "evidence_uri", "verified_at_utc", "notes")
 OHLCV_FIELDS = ("symbol", "date", "open", "high", "low", "close", "volume")
 REGIMES = (
-    # The 2026 schedule transition is a candidate rule only; dates still need evidence.
-    (date.min, date(2026, 4, 5), {4, 5}, "Sunday-Thursday candidate; Friday/Saturday excluded"),
+    # Schedule history is a candidate hint only; each actual date still needs evidence.
+    (date.min, date(2022, 5, 5), {4, 5}, "Sunday-Thursday regular-session candidate; Friday odd-lot excluded; Saturday closed"),
+    (date(2022, 5, 6), date(2022, 6, 14), {5}, "Temporary Sunday-Friday candidate; Saturday closed"),
+    (date(2022, 6, 15), date(2026, 4, 5), {4, 5}, "Sunday-Thursday candidate; Friday/Saturday excluded"),
     (date(2026, 4, 6), date.max, {5, 6}, "Monday-Friday candidate; Saturday/Sunday excluded"),
 )
 

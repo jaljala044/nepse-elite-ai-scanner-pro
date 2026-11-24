@@ -275,3 +275,15 @@ Cumulative: 56/525 files (10.7%). Scan interval 2025-11-24 through 2026-11-23 is
 - CYCL_OHLCV.csv: 935 total; 305 interval; 0 invalid; latest 2026-11-20
 
 Cumulative progress: 64/525 files (12.2%). Candidate date window 2025-11-24 through 2026-11-23 remains calendar-based pending verified session calendar. No new OHLC range violations in this batch.
+
+
+## External chart and data-provider access check — 2026-11-24
+
+Opened and inspected the public Chukul Technical Desk page, ShareHub Nepal home, ShareHub Price History and Floorsheet pages, and NEPSE Alpha chart page.
+
+- Chukul Technical Desk page describes stock coverage using adjusted prices and says sign-in is required for access. The public page fetch returned no readable chart rows; no authenticated chart session was available in this audit. Therefore this is a provider capability/access check, not a captured API or BGWT chart observation. Source: https://chukul.com/technical-desk/details
+- ShareHub public Price History page exposes symbol/date/high/low/open/close/volume/transactions columns, but the public extraction returned a blank dynamic table. ShareHub's documented data API includes per-symbol daily OHLCV price-history endpoints and floor-sheet services, but requires a provider-issued Bearer token, an allow-listed server IP and an enabled licence. No token or licence was supplied, so no private API call was attempted. Sources: https://sharehubnepal.com/nepse/stock-price-history ; https://sharehubnepal.com/data/nepse-data-documentation/
+- ShareHub public Floorsheet page exposes date, symbol, buyer/seller broker, quantity, price, amount, trade time and contract ID filters, but the public page extraction returned no transaction rows. Source: https://sharehubnepal.com/nepse/floorsheet
+- NEPSE Alpha chart page is reachable and exposes daily/hourly/weekly/monthly chart modes and indicator/scanner controls. Public extraction did not expose a selected-symbol OHLC candle or historical date query, so no specific chart candle has been verified. Source: https://nepsealpha.com/trading/chart
+
+Conclusion: provider pages are now located and reachable, but a reproducible same-symbol/same-date adjusted/unadjusted candle capture is still unavailable from these public page extractions. Do not claim the API 2026-04-27 or BGWT 2026-04-29 chart discrepancy has been independently checked by these providers. For ShareHub API access, obtain an appropriately licensed account/token and server IP allow-list from the provider; do not place credentials in repository files or chat.

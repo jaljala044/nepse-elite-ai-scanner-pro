@@ -26,8 +26,17 @@ def compare_windows(urek_manifest_path: str | Path, socrateai_manifest_path: str
         urek_entry = urek_files[day]
         soc_entry = soc_files[day]
         try:
-            urek_path = Path(urek_entry["local_path"])
-            soc_path = Path(soc_entry["local_path"])
+            repository_root = Path.cwd().resolve()
+            urek_path = Path(urek_entry.get("local_path") or urek_entry.get("repository_path") or "")
+            soc_path = Path(soc_entry.get("local_path") or soc_entry.get("repository_path") or "")
+            if not urek_path.is_absolute():
+                urek_path = (repository_root / urek_path).resolve()
+            if not soc_path.is_absolute():
+                soc_path = (repository_root / soc_path).resolve()
+            if not urek_path.is_file() and urek_entry.get("repository_path"):
+                urek_path = (repository_root / urek_entry["repository_path"]).resolve()
+            if not soc_path.is_file() and soc_entry.get("repository_path"):
+                soc_path = (repository_root / soc_entry["repository_path"]).resolve()
             if not urek_path.is_file() or not soc_path.is_file():
                 raise FileNotFoundError("one or both raw files are missing")
             for source_name, source_path, entry in (

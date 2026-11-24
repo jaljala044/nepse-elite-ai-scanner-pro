@@ -1093,3 +1093,18 @@ Cross-source spot-check of all ten anomaly symbols (API, BGWT, HRL, KDBY, KEF, R
 For API 2026-04-27, the user previously directed that open be marked as 340.00. Record this as a user-directed candidate override (original raw open 339.90 retained); it is not an exchange-verified correction and must not overwrite the raw source. Reconcile against NEPSE's official daily OHLC record before promotion.
 
 **Calendar gate remains FAIL / incomplete.** The 2026-04-06 regime boundary is supported by current secondary reporting, but a full official NEPSE holiday/session register and row-level session evidence are still required. This pass did not yet compute an authoritative expected-session denominator or classify every per-symbol missing weekday as no-trade versus missing feed. The calendar-window row counts previously reported must not be interpreted as session coverage.
+
+
+## Full comparison of the 25 non-identical ticker files
+
+Git-tree comparison confirmed that both repositories contain the same 525 ticker filenames. Exactly 500 corresponding CSVs have identical Git blob SHA values; 25 have different blobs. All 25 differing files were fetched from both repositories and compared row-by-row over 2025-11-24 through 2026-11-23 using numeric OHLCV normalization.
+
+Results:
+- 22/25 files have identical OHLCV values on every date shared by both archives.
+- 3/25 have value disagreements, all on 2026-11-19:
+  - API: SMC close 333.00 / volume 26,717; History Starter close 331.80 / volume 105,340 (open/high/low match).
+  - HRL: SMC close 486.00 / volume 18,817; History Starter close 483.90 / volume 49,184 (open/high/low match).
+  - RHGCL: SMC close 256.00 / volume 4,216; History Starter close 258.00 / volume 9,054 (open/high/low match).
+- Across these 25 files, History Starter has 1,993 date rows not present in SMC in the candidate interval; these comprise 841 Monday–Friday dates, 782 Saturdays, 72 Sundays before the 2026-04-06 schedule change, and 298 Sundays on/after the change. SMC has 62 dates not present in History Starter. These are date-presence counts, not yet validated session counts: holidays, non-trading securities, and off-session artifacts still require authoritative reconciliation.
+
+The 500 identical files are byte-identical Git blobs and therefore are not independent corroboration. The 25 changed files show that the two archives have different date coverage and three end-of-window value conflicts. Preserve both source versions and do not select one by row count. The three 2026-11-19 disagreements require official NEPSE EOD/floor/chart verification; none is automatically resolved.

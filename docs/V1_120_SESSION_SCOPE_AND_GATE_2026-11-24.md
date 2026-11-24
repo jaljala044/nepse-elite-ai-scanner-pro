@@ -887,3 +887,18 @@ Schedule evidence: The Himalayan Times reported the change as effective April 6,
 ### Updated gate interpretation
 
 The stock-file arithmetic scan is complete (525/525), but one-year V1 data acceptance is still blocked by: official date-level session calendar; historical point-in-time publication/ingestion provenance; unresolved 13 OHLC anomaly rows; incomplete security lifecycle and corporate-action coverage; inconsistent broker coverage metadata; only partial historical raw floorsheet coverage; unresolved index OHLC opens; and incomplete historical sector membership. No release gate is passed by file-count completion alone.
+
+
+### Broker partition count reconciliation — refined finding
+
+The 41 broker-summary CSVs were individually aggregated by both sides. All 41 balance internally: total buy quantity equals sell quantity, and total buy value equals sell value. Internal balance is necessary but does not prove external source reconciliation.
+
+The earlier apparent metadata conflict can now be explained:
+- `backfill_broker_reconciliation_2026-11-22.csv` contains 21 dated rows, not 20.
+- 20 rows have status `reconciled`; their unique-contract total is exactly 1,062,269.
+- The 21st row, 2026-09-16, is explicitly marked `published transaction count differs`: source 55,831 contracts vs published 55,830, with 12 shares and NPR 4,584 difference in aggregate totals. The partition file exists and balances buy/sell internally, but must not be counted as externally reconciled.
+- The other 20 complete sessions in `source_coverage.json` are 2026-10-12 through 2026-11-20, with 980,072 raw trade rows.
+- Therefore the directory contains 41 dated partitions, but the documented accepted set is 40 externally reconciled sessions plus one unresolved/discrepant 2026-09-16 partition. README's wording “41 reconciled sessions” overstates accepted coverage by one; `backfill_manifest`'s 40 total repo sessions aligns with the accepted/reconciled count, not the raw file count.
+- The 41 partitions cover 2026-07-24 through 2026-11-20 with many gaps; this remains far short of a 90–120-session or one-year broker-flow history.
+
+Do not use the 2026-09-16 partition as a verified broker-flow day until its published transaction-count discrepancy is resolved.

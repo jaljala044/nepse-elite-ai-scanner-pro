@@ -505,3 +505,93 @@ Cumulative progress: 240/525 files (45.7%). Newly detected OHLC range violations
 - MERO 2026-04-24 archive O/H/L/C = 731.1/730/720/726, volume 1,671. Sun Securities reports the same O/H/L/C and volume for that date, so the secondary source corroborates the published values but not arithmetic validity. Keep raw row unchanged and quarantined; investigate the original NEPSE/floorsheet record. Source: https://sunsecurities.com/company/MERO/price-history
 
 These secondary sources are not Chukul or NEPSE Alpha chart captures. The Chukul/NEPSE Alpha access limitation recorded above still applies; no claim of direct chart verification is made.
+
+
+## Partial all-symbol audit — batches 30–39 (files 241–320 of 525)
+
+Candidate window: 2025-11-24 through 2026-11-23 (calendar dates, not verified exchange sessions).
+
+| File | Total | Window | OHLC violations | Latest |
+|---|---:|---:|---:|---|
+| MNBBLP_OHLCV.csv | 44 | 14 | 0 | 2026-10-27 |
+| MNBBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MND84~2F85_OHLCV.csv | 283 | 55 | 0 | 2026-10-14 |
+| MNMF1_OHLCV.csv | 617 | 305 | 0 | 2026-11-20 |
+| MNMF2_OHLCV.csv | 1 | 1 | 0 | 2026-11-20 |
+| MPFLPO_OHLCV.csv | 4 | 0 | 0 | outside window |
+| MPFL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MSHL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| MSLBP_OHLCV.csv | 30 | 10 | 0 | 2026-07-23 |
+| MSLB_OHLCV.csv | 935 | 306 | 0 | 2026-11-20 |
+| NABBCP_OHLCV.csv | 13 | 0 | 0 | outside window |
+| NABBC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NABILD2089_OHLCV.csv | 203 | 195 | 0 | 2026-11-20 |
+| NABILD87_OHLCV.csv | 318 | 73 | 0 | 2026-11-20 |
+| NABILP_OHLCV.csv | 3 | 2 | 0 | 2026-09-24 |
+| NABIL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NADEP_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NBBD2085_OHLCV.csv | 165 | 63 | 0 | 2026-11-18 |
+| NBF2_OHLCV.csv | 921 | 295 | 0 | 2026-11-20 |
+| NBF3_OHLCV.csv | 931 | 305 | 0 | 2026-11-20 |
+| NBLD82_OHLCV.csv | 227 | 58 | 0 | 2026-10-27 |
+| NBLD85_OHLCV.csv | 475 | 83 | 0 | 2026-11-20 |
+| NBLD87_OHLCV.csv | 559 | 141 | 0 | 2026-11-20 |
+| NBL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NCCD86_OHLCV.csv | 324 | 83 | 0 | 2026-11-04 |
+| NESDO_OHLCV.csv | 934 | 304 | 0 | 2026-11-20 |
+| NFSPO_OHLCV.csv | 2 | 0 | 0 | outside window |
+| NFS_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| NGPL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NHDL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NHPC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NIBD2082_OHLCV.csv | 246 | 53 | 0 | 2026-06-16 |
+| NIBD84_OHLCV.csv | 461 | 111 | 0 | 2026-11-04 |
+| NIBLGF_OHLCV.csv | 916 | 299 | 0 | 2026-11-20 |
+| NIBLSTF_OHLCV.csv | 840 | 304 | 0 | 2026-11-20 |
+| NIBSF2_OHLCV.csv | 928 | 301 | 0 | 2026-11-20 |
+| NICAD2091_OHLCV.csv | 264 | 217 | 0 | 2026-11-19 |
+| NICAD8182_OHLCV.csv | 83 | 0 | 0 | outside window |
+| NICAD8283_OHLCV.csv | 343 | 0 | 0 | outside window |
+| NICAD85~2F86_OHLCV.csv | 312 | 83 | 0 | 2026-10-15 |
+| NICAD~2085~2F86_OHLCV.csv | 2 | 0 | 0 | outside window |
+| NICAP_OHLCV.csv | 8 | 4 | 0 | 2026-09-30 |
+| NICA_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NICBF_OHLCV.csv | 832 | 253 | 0 | 2026-11-20 |
+| NICD83~2F84_OHLCV.csv | 155 | 30 | 0 | 2026-08-24 |
+| NICD88_OHLCV.csv | 354 | 82 | 0 | 2026-11-05 |
+| NICFC_OHLCV.csv | 920 | 303 | 0 | 2026-11-20 |
+| NICGF2_OHLCV.csv | 926 | 301 | 0 | 2026-11-20 |
+| NICGF_OHLCV.csv | 351 | 0 | 0 | outside window |
+| NICLBSL_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NICLPO_OHLCV.csv | 1 | 0 | 0 | outside window |
+| NICL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| NICSF_OHLCV.csv | 930 | 304 | 0 | 2026-11-20 |
+| NIFRAGED_OHLCV.csv | 303 | 185 | 0 | 2026-11-20 |
+| NIFRAP_OHLCV.csv | 8 | 0 | 0 | outside window |
+| NIFRAUR85~2F86_OHLCV.csv | 232 | 45 | 0 | 2026-11-18 |
+| NIFRA_OHLCV.csv | 1338 | 227 | 0 | 2026-11-20 |
+| NILPO_OHLCV.csv | 2 | 0 | 0 | outside window |
+| NIL_OHLCV.csv | 935 | 306 | 0 | 2026-11-20 |
+| NIMBD90_OHLCV.csv | 420 | 110 | 0 | 2026-11-20 |
+| NIMBPO_OHLCV.csv | 898 | 290 | 0 | 2026-11-20 |
+| NIMB_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NLBBL_OHLCV.csv | 9 | 0 | 0 | outside window |
+| NLG_OHLCV.csv | 933 | 303 | 0 | 2026-11-20 |
+| NLICLP_OHLCV.csv | 9 | 3 | 0 | 2026-02-16 |
+| NLICL_OHLCV.csv | 935 | 305 | 0 | 2026-11-20 |
+| NLICP_OHLCV.csv | 12 | 1 | 0 | 2026-02-11 |
+| NLIC_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NLO_OHLCV.csv | 43 | 10 | 0 | 2026-09-30 |
+| NMB50_OHLCV.csv | 829 | 224 | 0 | 2026-08-26 |
+| NMBD2085_OHLCV.csv | 119 | 36 | 0 | 2026-11-04 |
+| NMBD87~2F88_OHLCV.csv | 338 | 66 | 0 | 2026-11-20 |
+| NMBD89~2F90_OHLCV.csv | 167 | 54 | 0 | 2026-10-12 |
+| NMBHF2_OHLCV.csv | 518 | 304 | 0 | 2026-11-20 |
+| NMBMF_OHLCV.csv | 933 | 304 | 0 | 2026-11-20 |
+| NMBPO_OHLCV.csv | 39 | 1 | 0 | 2026-08-26 |
+| NMBUR93~2F94_OHLCV.csv | 33 | 33 | 0 | 2026-11-17 |
+| NMB_OHLCV.csv | 936 | 306 | 0 | 2026-11-20 |
+| NMFBSP_OHLCV.csv | 45 | 14 | 0 | 2026-10-09 |
+| NMFBS_OHLCV.csv | 935 | 306 | 0 | 2026-11-20 |
+
+Cumulative progress: 320/525 files (61.0%). No new OHLC range violations were detected in files 241–320. The already recorded KDBY, KEF and MERO anomalies remain in the quarantine/investigation list; raw rows remain unchanged.

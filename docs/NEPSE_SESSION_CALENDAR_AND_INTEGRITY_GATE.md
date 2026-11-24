@@ -30,6 +30,28 @@ These sources establish schedule-regime changes, not the actual open/closed stat
 of every historical date. Daily closures and exceptional sessions still need dated
 NEPSE evidence or independently verified exchange trading records.
 
+
+## Source coverage matrix (inventory metadata only)
+
+Build a date-by-date matrix from one or more JSONL manifests. Run from `backend/`:
+
+```bash
+python build_calendar_coverage_matrix.py \
+  --manifest ../artifacts/source-manifests/urekmazino69_Nepse-floorsheet-and-indices_<revision>.jsonl \
+  --calendar ../data/reference/nepse_session_calendar.csv \
+  --start-date 2024-01-02 \
+  --end-date 2026-08-26 \
+  --output ../data/reports/nepse-calendar-coverage-matrix.json
+```
+
+Repeat `--manifest` for each independent source. The matrix records source file
+counts and bytes by date, explicit calendar evidence, schedule-candidate notes,
+and files found on dates explicitly marked closed. It rejects duplicate
+source/path manifest entries and malformed dates. It does not treat file presence
+as proof of a session, nor a weekday candidate without a file as proof of a missing
+session. Review all closure conflicts and unverified candidate dates against dated
+NEPSE notices or verified exchange records.
+
 ## OHLCV gate
 
 Run from `backend/`:

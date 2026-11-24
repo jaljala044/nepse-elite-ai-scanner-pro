@@ -193,9 +193,18 @@ def audit_repositories(
                         errors.append({"path": item["path"], "error": f"{type(exc).__name__}: {exc}"})
 
             audited.sort(key=lambda item: item["symbol"])
+            date_coverage: dict[str, set[str]] = defaultdict(set)
+            for item in audited:
+                for day, rows in item.get("observations", {}).items():
+                    if rows:
+                        date_coverage[day].add(item["symbol"])
             repo_results[repo] = {
                 "commit_sha": commit_sha,
                 "tree_sha": tree_sha,
+                "date_coverage": [
+                    {"date": day, "unique_symbols": len(symbols), "symbols": sorted(symbols)}
+                    for day, symbols in sorted(date_coverage.items())
+                ],
                 "file_count": len(files),
                 "files_audited": len(audited),
                 "download_errors": errors,

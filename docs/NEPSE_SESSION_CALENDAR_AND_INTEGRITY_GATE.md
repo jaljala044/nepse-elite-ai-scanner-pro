@@ -359,3 +359,31 @@ the October/November shards on **2026-11-24**. These are archive update
 timestamps, not original exchange publication timestamps. They reinforce the
 rule that this mirror is corroboration only and cannot establish point-in-time
 availability of historical data.
+
+## SamirWagle floorsheet date-provenance finding
+
+The pinned SamirWagle scraper source
+(`SamirWagle/Nepse-All-Scraper`, commit
+`144cecb36f110bedb741f5d147c7857cdb24c958`,
+`scraper/core/floorsheet.py`) assigns
+`dt_date.today()` to every scraped floorsheet row and names the output file
+`floorsheet_<today>.csv`. It scrapes the current Merolagani floorsheet page;
+it does not accept a historical trade date for that retrieval.
+
+Consequences for this audit:
+
+- Its dated file manifest is a **capture-date inventory**, not reliable proof
+  that a transaction occurred on the filename date.
+- The pinned manifest contains files on **12 of the 17 weekday closure dates**
+  identified above (May 28–29, Aug 28, Sep 4, Sep 8, Sep 21, Sep 25, and
+  Oct 19–23). This is consistent with capture-date relabeling and makes these
+  filenames unsafe as session evidence.
+- The raw files have not been downloaded or row-validated; their contents are
+  not assumed to be stale, duplicated, or complete without inspection.
+- Exclude SamirWagle filename dates from calendar proof and from point-in-time
+  broker-flow history until actual contract dates are independently verified
+  from the transaction records and source semantics.
+
+The acquisition pipeline therefore keeps SamirWagle as a discovery lead only;
+it does not promote these dated filenames into canonical trade dates. Its
+educational-use description also does not establish a separate data-reuse grant.

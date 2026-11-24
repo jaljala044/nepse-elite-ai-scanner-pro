@@ -969,3 +969,31 @@ No OHLC range violations or duplicate dates were observed in this batch. BPW has
 Cumulative documented scan progress is 48/525 files (9.1%). Across the first three batches, two OHLC violations have been observed (API 2026-04-27 and BGWT 2026-04-29). This remains a partial-sample count only. Preserve raw rows and do not promote canonical data until the full universe, session calendar, corporate actions and provenance gates pass.
 
 SHA-256 Git blob identifiers for this batch are available in the Git tree/file history; the scan used main-branch source files. A later reproducibility artifact should capture the exact source commit, file path, blob SHA, retrieval timestamp and parser version for every file.
+
+
+## Partial all-symbol audit progress — batch 4 (files 49–64 of 525)
+
+On 2026-11-24, the next 16 SMC stock CSVs (tree positions 49–64) were fetched from main and parsed for 2025-11-24 through 2026-11-23. All 16 fetches succeeded. This remains a calendar-window scan only.
+
+| Symbol | Total rows | Candidate-window rows | Invalid OHLC | Latest date |
+|---|---:|---:|---:|---|
+| CHDC | 936 | 306 | 0 | 2026-11-20 |
+| CHL | 2,069 | 227 | 0 | 2026-11-20 |
+| CITY | 935 | 305 | 0 | 2026-11-20 |
+| CIT | 936 | 306 | 0 | 2026-11-20 |
+| CIZBD86 | 147 | 51 | 0 | 2026-10-26 |
+| CIZBD90 | 394 | 118 | 0 | 2026-11-20 |
+| CKHL | 936 | 306 | 0 | 2026-11-20 |
+| CLI | 932 | 306 | 0 | 2026-11-20 |
+| CMF1 | 357 | 0 | 0 | 2025-03-01 |
+| CMF2 | 800 | 193 | 0 | 2026-07-02 |
+| CORBLP | 2 | 2 | 0 | 2026-08-12 |
+| CORBL | 936 | 306 | 0 | 2026-11-20 |
+| CREST | 534 | 306 | 0 | 2026-11-20 |
+| CSY | 220 | 220 | 0 | 2026-11-20 |
+| CYCLP | 15 | 12 | 0 | 2026-04-09 |
+| CYCL | 935 | 305 | 0 | 2026-11-20 |
+
+No OHLC range violations or duplicate dates were found in this batch. Sparse/lifecycle-sensitive cases include CMF1 (no candidate-window rows; last date 2025-03-01), CORBLP (two rows only), CYCLP (12 rows, latest 2026-04-09), CIZBD86 (51 rows) and CMF2 (latest 2026-07-02). These require security-master and listing/trading-status evidence, not automatic missing-data labels.
+
+Cumulative documented scan progress: 64/525 files (12.2%). Across batches 1–4, two OHLC violations are documented so far (API 2026-04-27; BGWT 2026-04-29). This is not a complete archive-wide count. Raw rows remain unchanged and canonical promotion remains blocked.

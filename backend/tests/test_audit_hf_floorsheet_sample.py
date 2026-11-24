@@ -3,7 +3,8 @@ import unittest
 from pathlib import Path
 
 from audit_hf_floorsheet_sample import (
-    audit_floorsheet_rows, compare_index_controls, find_nepse_index_row,
+    audit_floorsheet_rows, compare_index_controls, compare_reference_turnover,
+    find_nepse_index_row, validate_index_ohlc,
 )
 
 
@@ -93,6 +94,35 @@ class HFFloorsheetSampleAuditTests(unittest.TestCase):
         result = compare_index_controls(floor, [row], "2026-08-26")
         self.assertFalse(result["matched"])
         self.assertEqual(result["status"], "nepse_index_control_date_mismatch")
+
+    def test_flags_index_high_below_open_and_open_equal_to_previous_close(self):
+        row = {
+            "open": "2594.27", "high": "2592.12", "low": "2546.94",
+            "close": "2558.35", "absolute_change": "-35.92",
+        }
+        result = validate_index_ohlc(row)
+        self.assertFalse(result["valid"])
+        self.assertIn("index_high_below_open", {x["reason"] for x in result["errors"]})
+        self.assertTrue(result["previous_close_diagnostic"]["open_equals_derived_previous_close"])
+        self.assertEqual(result["previous_close_diagnostic"]["derived_previous_close"], "2594.27")
+
+    def test_compares_reference_turnover_without_assuming_exact_equality(self):
+        floor = {"total_amount": "4773857657.46"}
+        reference = [{
+            "date": "2026-08-26",
+            "symbol": "NEPSE_index",
+            "volume": "4773850987.0",
+        }]
+        result = compare_reference_turnover(floor, reference, "2026-08-26")
+        self.assertEqual(result["status"], "different")
+        self.assertEqual(result["difference_floorsheet_minus_reference"], "6670.46")
+        self.assertIn("not share volume", result["mapping"])
+
+    def test_rejects_reference_index_date_mismatch(self):
+        floor = {"total_amount": "100"}
+        reference = [{"date": "2026-08-25", "symbol": "NEPSE_index", "volume": "100"}]
+        result = compare_reference_turnover(floor, reference, "2026-08-26")
+        self.assertEqual(result["status"], "reference_index_date_mismatch")
 
     def test_compares_daily_control_totals_exactly(self):
         floor = {"total_amount": "9206.00", "total_quantity": 30, "row_count": 2}

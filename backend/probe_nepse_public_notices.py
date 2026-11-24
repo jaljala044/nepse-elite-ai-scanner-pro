@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -40,7 +41,7 @@ def summarize_notice_payload(payload: Any) -> dict[str, Any]:
         if not isinstance(record, dict):
             continue
         text = json.dumps(record, ensure_ascii=False, sort_keys=True)
-        if any(word in text.lower() for word in KEYWORDS):
+        if any(re.search(r"(?<![a-z])" + re.escape(word) + r"(?![a-z])", text.lower()) for word in KEYWORDS):
             candidates.append({"record_index": index, "record": record})
     return {
         "top_level_type": type(payload).__name__,

@@ -26,7 +26,7 @@ These reports are secondary evidence of the change, not a substitute for retaini
 
 ## Snapshot date and current-session handling
 
-The NEPSE website showed the market open on 2026-11-24 at 1:23 PM when checked. That is an in-progress session, not a completed EOD bar. V1's historical daily OHLCV cutoff must therefore be the latest fully closed session for which end-of-day data has been published and independently checked. Do not mix an intraday snapshot into a completed daily candle.
+The earlier 2026-11-24 intraday snapshot showed the market open at 1:23 PM; that snapshot is not a completed EOD bar. A later check of the official NEPSE home page displayed market-summary data through 2026-11-23 at 15:33. However, the inspected SMC stock CSV samples end at 2026-11-19. This creates a four-session-date coverage gap to investigate (20–23 November) before fixing the V1 cutoff. The one-year window must be anchored to the latest fully closed session for which the required data families are actually published and independently checked; do not mix an intraday snapshot into a completed daily candle.
 
 Official live page: https://nepalstock.com.np/
 

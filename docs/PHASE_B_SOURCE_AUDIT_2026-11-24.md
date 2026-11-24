@@ -139,3 +139,35 @@ The 94,421 and 102,121 repeated-adjacent counts are not automatically invalid. A
 Added `backend/crosscheck_ohlcv_socrateai.py` and tests. The updated workflow `ohlcv-archive-row-audit` now fetches only SocrateAI unadjusted EOD daily files for dates implicated by OHLCV validation failures and cross-source conflicts. It compares source fields but never auto-selects a value. The updated run is `45363518640`; its result is pending at the time of this report update.
 
 The first full audit artifact is available from run `45363122305` (artifact `nepse-ohlcv-row-audit`, SHA-256 `e76d32769e7347130a54e5b94473c9809ad9af8ac1799d98a66fea171bf2df4f`). The audit failed its quality gate by design and uploaded its report successfully.
+
+
+## Independent SocrateAI cross-check results (workflow 45363518640)
+
+The cross-check step completed successfully and its JSON was included in artifact `nepse-ohlcv-row-audit` (artifact SHA-256 `672da5e86811b0cb016d53eabf2bc9499a5e293bee70662943c8e4e36effdfeb`). It used pinned SocrateAI commit and fetched 994 daily files for 1,339 candidate symbol/date records; one daily file was not published, three candidate symbols were absent from their daily file, and there were zero download errors.
+
+| Classification | Records |
+|---|---:|
+| All Jaljala candidate source rows match SocrateAI | 5 |
+| One Jaljala source matches SocrateAI | 3 |
+| Partial field agreement / disagreement remains | 1,325 |
+| No Jaljala source matches SocrateAI | 2 |
+| SocrateAI daily file not published | 1 |
+| Symbol absent from published daily file | 3 |
+
+The dominant discrepancy is the Open field (1,298 candidate comparisons). Other differing fields: Volume 27, Low 26, High 24, Close 17. Most candidates are historical: 2013–2017 contributes a large share. This is not sufficient to declare SocrateAI canonical; it is a second independently published dataset and must be reconciled with exchange-origin evidence, corporate actions, and source methodology. All conflicting observations remain quarantined. No data has been promoted or overwritten.
+
+The first full audit remains a deliberate FAIL because 1,331 OHLCV invariant violations were detected. The cross-check substep succeeded, but it does not override the failed quality gate.
+
+## NEPSE automation collector security review
+
+Inspected `jaljala044/nepse-automation/fetch_floorsheet.py`. It fetches the current full floorsheet through `AsyncNepse` and exports it to a date-named Google Sheets tab. It has no historical backfill mechanism, source completeness manifest, contract-level reconciliation, or provenance ledger. It calls `setTLSVerification(False)`, disabling certificate validation. This is rejected for production ingestion. The production collector must retain TLS verification, pin/record provider and package versions, verify session date from exchange evidence (not local machine date), capture response metadata, detect pagination/record caps, hash raw payloads, and write immutable raw snapshots before parsing. Its Google Sheets output is an export destination, not proof of source authenticity or completeness.
+
+## Current gate decision
+
+- Jaljala archive row audit: FAIL (1,331 invalid OHLCV rows).
+- SocrateAI cross-check process: PASS (download and compare completed); evidence reconciliation remains OPEN.
+- Cross-source OHLCV conflicts: OPEN; never auto-resolve by majority vote.
+- Floorsheet archive completeness and contract reconciliation: OPEN.
+- Historical session calendar and carry-forward classification: OPEN.
+- Corporate-action reconciliation: OPEN.
+- No database import/promotion until all relevant gates are green.

@@ -54,16 +54,16 @@ Download mode requires explicit flags, a positive total-byte ceiling, and per-fi
 A GitHub Actions run successfully enumerated the complete dated floorsheet folder
 without downloading any raw floorsheet rows:
 
-- Workflow run: [hf-dataset-inventory #?](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45405714806)
+- Workflow run: [hf-dataset-inventory #?](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45405942918)
 - Pinned dataset commit: `11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0`
 - Dated floorsheet files: **603**
 - Unique dates: **603** (no duplicate dated paths in the manifest)
 - Date span: **2024-01-02 through 2026-08-26**
 - Sum of compressed file sizes: **758,924,600 bytes** (about 723.8 MiB)
 - Every one of the 603 entries includes an LFS SHA-256 and Xet hash in Hub metadata.
-- Manifest JSONL SHA-256: `3e14637714c38dbf8c61cecb0b212475634261880229bbf91728116ab86309d9`
+- Manifest JSONL SHA-256: `222f548490d3967d47c983bc628114a6fedcd00c9192c3fc1eabc8b9a8e9eaeb`
 - Manifest file: `urekmazino69_Nepse-floorsheet-and-indices_11ef83a9c3cd.jsonl`
-- GitHub Actions artifact SHA-256: `aa2ef8ce98d9e8e412fe6f78fab63bebfc036cf068c8aeb4d3b7c4380b407b8f`
+- GitHub Actions artifact SHA-256: `52f6fb44ef6df0d238454809b9b3dfed17e1e6551ccb19c00794c86f342684fa`
 
 Annual file counts: 2024 = 226, 2025 = 223, 2026 = 154.
 
@@ -74,8 +74,8 @@ The two largest calendar gaps in the folder manifest are 2025-09-08 to 2025-09-1
 and 2025-09-28 to 2025-10-07; treat them as reconciliation targets only, not
 automatically as missing trading sessions.
 
-The artifact is retained by GitHub Actions for a limited period; download and
-preserve it in the project's immutable evidence vault before the artifact expires.
+The artifact is retained by GitHub Actions for **90 days** (through 2027-02-22).
+Download and preserve it in the project's immutable evidence vault before expiry.
 
 ### Calendar reconciliation leads
 
@@ -94,3 +94,8 @@ The two largest floorsheet file gaps need careful interpretation:
 These reports explain why the gaps may be legitimate closures; they do not turn the
 dates into verified calendar rows. Keep them as review leads until the original
 NEPSE notices or independently verified exchange records are archived.
+
+The initial evidence-backed calendar file is now present at
+`data/reference/nepse_session_calendar.csv` with its required header and **no
+verified date rows yet**. It is intentionally empty: do not mistake a blank
+template for a completed calendar or a passing integrity gate.

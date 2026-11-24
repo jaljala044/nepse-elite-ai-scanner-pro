@@ -294,3 +294,27 @@ The first exported candidate register contains 120 dates from 2026-05-18 through
 dates, and one YONEPSE provisional latest date. The CSV is in workflow run
 45409684161, artifact ID 14927377869. It records zero verified calendar dates
 because no primary NEPSE date evidence has yet been admitted.
+
+## Public NEPSE notice endpoint access test
+
+The NEPSE client source identifies the general-notice endpoint as
+`GET https://www.nepalstock.com/api/web/notice/`. We tested exactly one
+unauthenticated HTTPS GET with certificate verification enabled and no redirects,
+cookies, token generation, or alternate identity. On 2026-11-24 the endpoint
+returned **HTTP 401**, content type `text/html;charset=UTF-8`, 87 response bytes,
+SHA-256
+`ee73a9a8cdc37c9dc5df7798e6ee814f7a2270a90c723dd64dd379790fd1c298`.
+The raw response and probe report are preserved in GitHub Actions run
+45410873060, artifact 14928081364.
+
+The endpoint is therefore not publicly readable without authentication from this
+runner. We will **not** reverse engineer its token generation, bypass the access
+control, or reuse the YONEPSE mirror's TLS-verification-disabled approach to
+claim primary provenance. Continue with openly accessible exchange publications,
+search-indexed notice copies, and independently corroborated trading records.
+The calendar remains unverified until evidence is archived and reviewed.
+
+A second report of the 2026-09-21 suspension was found at Khabarhub. It explicitly
+attributes the suspension to a NEPSE notice and identifies Rule 21(1), supporting
+the event lead but not replacing the missing original notice PDF:
+https://english.khabarhub.com/2026/21/568606/

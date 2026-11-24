@@ -81,3 +81,16 @@ https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/HISTORIC
 
 **Release status: BLOCKED.** This is a scope and evidence document, not a completed dataset or full-universe audit.
 
+
+
+## Partial all-symbol audit progress (not a completion claim)
+
+On 2026-11-24, the first 24 of the 525 SMC stock CSV files in tree order were fetched and parsed for the candidate calendar interval 2025-11-24 through 2026-11-23. This is a **calendar-window file-row scan**, not a verified-session completeness audit, because the exchange session register is still empty.
+
+- 24/525 files inspected (4.6%); no fetch failures in this batch.
+- One OHLC range violation was observed: API on 2026-04-27 (open 339.9 below low 340.0). No other OHLC range violation was observed in this first batch.
+- Several files are clearly sparse or lifecycle-sensitive: examples include ADBLB86 (3 rows in the entire file), ADBLB87 (3), ADBLB (1), ACLBSLP (3), ALBSLP (12 total but no row in the candidate interval), and BENH (17 candidate-window rows). These must not be labelled data loss without checking listing/security lifecycle and whether the instrument is active.
+- More established files in this batch commonly contain 305–306 candidate-window rows, but that row count is not a session count and does not establish full-session coverage.
+- Latest dates in the inspected files range from 2026-09-28/2026-10-06/2026-10-15/2026-11-04 to 2026-11-20; the API and AHPC files end 2026-11-19. This supports a coverage-variance investigation, not a single global cutoff yet.
+
+The audit must continue through all remaining 501 files, then reconcile the dates against the verified session calendar and security master. No canonical promotion is authorized from this partial batch.

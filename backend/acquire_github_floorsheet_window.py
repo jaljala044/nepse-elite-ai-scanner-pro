@@ -93,7 +93,7 @@ def acquire_window(
 
     acquired = []
     errors = []
-    root = Path(raw_root)
+    root = Path(raw_root).resolve()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = {pool.submit(_download_with_retries, row, root, 3): row for row in selected}
         for future in as_completed(futures):
@@ -107,6 +107,11 @@ def acquire_window(
                     "error": f"{type(exc).__name__}: {exc}",
                 })
     acquired.sort(key=lambda item: item["date"])
+    repository_root = Path.cwd().resolve()
+    for item in acquired:
+        local_path = Path(item["local_path"]).resolve()
+        item["local_path"] = str(local_path)
+        item["repository_path"] = local_path.relative_to(repository_root).as_posix()
     report = {
         "repository": f"{owner}/{repo}",
         "resolved_commit_sha": commit_sha,

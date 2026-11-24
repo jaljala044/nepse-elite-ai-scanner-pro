@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from backend.acquire_floorsheet_archive import dated_csv, git_blob_sha1
+from acquire_floorsheet_archive import dated_csv, git_blob_sha1
 
 
 class FloorsheetArchiveAcquisitionTests(unittest.TestCase):

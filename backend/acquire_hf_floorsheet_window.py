@@ -117,6 +117,11 @@ def acquire_window(
             except Exception as exc:
                 errors.append({"date": row.get("date"), "path": row.get("path"), "error": f"{type(exc).__name__}: {exc}"})
     acquired.sort(key=lambda item: item["date"])
+    repository_root = Path.cwd().resolve()
+    for item in acquired:
+        local_path = Path(item["local_path"]).resolve()
+        item["local_path"] = str(local_path)
+        item["repository_path"] = local_path.relative_to(repository_root).as_posix()
     report = {
         "repo_id": repo_id,
         "resolved_commit_sha": commit_sha,

@@ -1,0 +1,48 @@
+name: ohlcv-archive-row-audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/audit_ohlcv_archives.py"
+      - "backend/tests/test_audit_ohlcv_archives.py"
+      - ".github/workflows/ohlcv-archive-row-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install audit dependency
+        run: python -m pip install "httpx>=0.27,<1"
+        working-directory: backend
+      - name: Run parser tests
+        run: python -m unittest tests.test_audit_ohlcv_archives -v
+        working-directory: backend
+      - name: Audit pinned Jaljala OHLCV archives
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python backend/audit_ohlcv_archives.py \
+            --repo jaljala044/nepse-smc-data \
+            --repo jaljala044/nepse-history-starter \
+            --workers 8 \
+            --output data/reports/ohlcv-archive-audit.json
+      - name: Upload OHLCV audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-ohlcv-row-audit
+          path: data/reports/ohlcv-archive-audit.json
+          if-no-files-found: warn
+          retention-days: 30

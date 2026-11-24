@@ -77,7 +77,7 @@ The automation repository contains no historical archive in its current tree. It
 | G0 Repository access and immutable tree snapshots | PASS | Six complete Git trees; tree SHAs recorded above |
 | G1 Jaljala ticker-file overlap | PASS | 525/525 ticker paths overlap; 500 identical blobs; 25 differing blobs |
 | G2 Targeted numeric row reconciliation | PASS WITH EXCEPTIONS | 14,856 shared dates; 8 numeric disagreements identified and listed |
-| G3 Full OHLCV validation across all 525 tickers | IN PROGRESS | Pinned-commit row-level audit workflow 45363122305 is running; parser tests passed; report pending |
+| G3 Full OHLCV validation across all 525 tickers | FAIL / REVIEW REQUIRED | Run 45363122305 completed; 1,331 OHLCV invariant failures in SMC archive, zero in History Starter; no duplicates or out-of-order rows; see findings below |
 | G4 Exchange-session calendar validation | BLOCKED | Need a verified historical NEPSE session/holiday calendar; weekday heuristic alone is insufficient |
 | G5 Floorsheet schema, completeness and cross-source reconciliation | BLOCKED | Full bulk files not downloaded and audited; execution times may be absent |
 | G6 Broker summary provenance and aggregation audit | BLOCKED | 41 daily summaries identified; raw source rows and calculation formulas need full verification |
@@ -114,3 +114,28 @@ No bulk archive was downloaded in this phase. No database writes, source overwri
 - `.github/workflows/ohlcv-archive-row-audit.yml`: runs the pinned archive audit and uploads the JSON report as a workflow artifact.
 - Backend test run `45363122243` completed successfully.
 - OHLCV audit run `45363122305` is currently in progress. Its parser-test step completed successfully; the full repository download/audit step has not yet reported a result.
+
+
+## Full OHLCV audit findings (run 45363122305)
+
+The pinned audit downloaded and parsed all 525 ticker CSVs from each Jaljala repository with zero download errors.
+
+| Repository | Files audited | Rows | Invalid OHLCV rows | Duplicate dates | Out-of-order transitions | Repeated adjacent calendar bars |
+|---|---:|---:|---:|---:|---:|---:|
+| jaljala044/nepse-smc-data | 525 | 314,712 | 1,331 | 0 | 0 | 94,421 |
+| jaljala044/nepse-history-starter | 525 | 301,632 | 0 | 0 | 0 | 102,121 |
+
+The 1,331 invalid rows are all in the SMC archive: 796 rows where High is below Open/Low/Close and 535 rows where Low is above Open/High/Close. They affect 15 symbols and 993 distinct dates, concentrated in older history (2009–2020) with 13 rows in 2026. The largest counts are AHPC (588), SKBBL (379), API (122), MERO (102), SPDL (53), CHL (45), and HIDCL (30). These records must remain quarantined pending independent evidence.
+
+A spot-check against SocrateAI's MIT-licensed unadjusted EOD archive confirms that some Jaljala invalid fields are incorrect:
+- AHPC, 2009-11-25: Jaljala SMC Open=408 while High/Low/Close=790; SocrateAI reports Open/High/Low/Close=790.
+- API, 2015-11-18: Jaljala SMC Open=0 while the other fields indicate 301–307; SocrateAI reports Open=301, High=307, Low=301, Close=307.
+- BGWT, 2026-04-29: Jaljala SMC Open=740 exceeds High=731; SocrateAI reports Open=720, High=731, Low=718, Close=730, but volume differs (1,549 vs 1,573).
+
+The 94,421 and 102,121 repeated-adjacent counts are not automatically invalid. A KBSH sample shows identical full OHLCV rows carried from 2024-03-07 to 2024-03-08 and 2024-03-09; Friday/Saturday are non-session days in the then-current NEPSE week. Other repeated rows may represent holidays, no-trade sessions, or stale carry-forward records. They require the verified historical session calendar and should be tagged/quarantined, never counted as fresh trading observations without evidence.
+
+## Targeted independent EOD cross-check
+
+Added `backend/crosscheck_ohlcv_socrateai.py` and tests. The updated workflow `ohlcv-archive-row-audit` now fetches only SocrateAI unadjusted EOD daily files for dates implicated by OHLCV validation failures and cross-source conflicts. It compares source fields but never auto-selects a value. The updated run is `45363518640`; its result is pending at the time of this report update.
+
+The first full audit artifact is available from run `45363122305` (artifact `nepse-ohlcv-row-audit`, SHA-256 `e76d32769e7347130a54e5b94473c9809ad9af8ac1799d98a66fea171bf2df4f`). The audit failed its quality gate by design and uploaded its report successfully.

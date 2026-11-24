@@ -9,6 +9,8 @@ on:
       - "backend/acquire_floorsheet_archive.py"
       - "backend/acquire_hf_floorsheet_sample.py"
       - "backend/acquire_github_floorsheet_sample.py"
+      - "backend/compare_floorsheet_samples.py"
+      - "backend/tests/test_compare_floorsheet_samples.py"
       - "backend/tests/test_acquire_github_floorsheet_sample.py"
       - "backend/audit_hf_floorsheet_sample.py"
       - "backend/tests/test_audit_hf_floorsheet_sample.py"
@@ -105,6 +107,14 @@ jobs:
             --reference-index data/raw/reference/socrateai-adj-index-2026-08-26.csv \
             --date 2026-08-26 \
             --output data/reports/hf-floorsheet-sample-audit.json
+      - name: Compare same-day Urek and SocrateAI floorsheet transactions
+        if: always()
+        run: |
+          python backend/compare_floorsheet_samples.py \
+            --urek data/raw/huggingface/urekmazino69/Nepse-floorsheet-and-indices/11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0/floorsheet/2026-08-26.csv.gz \
+            --socrateai data/raw/floorsheet/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-08-26.csv \
+            --date 2026-08-26 \
+            --output data/reports/floorsheet-cross-source-sample.json
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         if: always()
         run: >-
@@ -148,6 +158,7 @@ jobs:
             data/raw/huggingface/
             data/raw/floorsheet/
             data/reports/socrateai-floorsheet-sample.json
+            data/reports/floorsheet-cross-source-sample.json
             data/raw/reference/socrateai-adj-index-2026-08-26.csv
             artifacts/source-manifests/
           if-no-files-found: error

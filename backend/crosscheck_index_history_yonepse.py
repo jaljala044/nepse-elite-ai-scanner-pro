@@ -152,6 +152,7 @@ def compare_rows(
         "compared_fields": compared,
         "differences": differences,
         "yonepse_finality": yonepse_entry.get("finality_status", "unmarked"),
+        "yonepse_updated_at": yonepse_entry.get("updated_at"),
     }
 
 
@@ -178,6 +179,7 @@ def build_report(
         months = sorted({day[:7] for day in candidate_dates})
         month_payloads = {}
         month_hashes = {}
+        month_metadata = {}
         errors = []
         for month in months:
             url = f"{RAW}/{repo}/{commit_sha}/data/indices/monthly/{month}.json"
@@ -185,6 +187,13 @@ def build_report(
                 raw = _get(client, url)
                 month_payloads[month] = json.loads(raw)
                 month_hashes[month] = hashlib.sha256(raw).hexdigest()
+                dates = month_payloads[month].get("dates") or []
+                month_metadata[month] = {
+                    "updated_at": month_payloads[month].get("updatedAt"),
+                    "date_count": len(dates),
+                    "first_date": dates[0] if dates else None,
+                    "last_date": dates[-1] if dates else None,
+                }
             except Exception as exc:
                 errors.append({"month": month, "error": f"{type(exc).__name__}: {exc}"})
 
@@ -230,6 +239,7 @@ def build_report(
                 "month": month,
                 "url": f"{RAW}/{repo}/{commit_sha}/data/indices/monthly/{month}.json",
                 "sha256": digest,
+                **month_metadata.get(month, {}),
             }
             for month, digest in sorted(month_hashes.items())
         ],

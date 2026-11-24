@@ -7,6 +7,8 @@ on:
       - "backend/app/hf_dataset_collector.py"
       - "backend/inventory_hf_datasets.py"
       - "backend/acquire_floorsheet_archive.py"
+      - "backend/acquire_hf_floorsheet_sample.py"
+      - "backend/tests/test_acquire_hf_floorsheet_sample.py"
       - "backend/build_calendar_coverage_matrix.py"
       - "backend/build_recent_history_target.py"
       - "backend/tests/test_recent_history_target.py"
@@ -43,6 +45,18 @@ jobs:
           --revision main
           --output ../artifacts/source-manifests
         working-directory: backend
+      - name: Acquire one MIT-declared Urekmazino floorsheet sample (pinned, hash-verified)
+        run: >-
+          python acquire_hf_floorsheet_sample.py
+          --repo-id urekmazino69/Nepse-floorsheet-and-indices
+          --path floorsheet
+          --revision 11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0
+          --date 2026-08-26
+          --confirm-data-rights
+          --max-total-bytes 50000000
+          --raw-root ../data/raw/huggingface
+          --output ../data/reports/hf-floorsheet-sample.json
+        working-directory: backend
       - name: Enumerate SocrateAI GitHub floorsheet archive (manifest only)
         run: >-
           python acquire_floorsheet_archive.py
@@ -76,6 +90,8 @@ jobs:
           path: |
             data/raw/huggingface/manifests/
             data/reports/hf-dataset-inventory-summary.json
+            data/reports/hf-floorsheet-sample.json
+            data/raw/huggingface/
             artifacts/source-manifests/
           if-no-files-found: error
           retention-days: 90

@@ -38,7 +38,17 @@ have differing OHLCV values:
 | ULHC | 2025-07-28 |
 
 The full source values for each conflict are retained in the JSON artifact. No
-automatic winner is selected. The 25 blob-level differences were rechecked from the exact pinned commits. All
+automatic winner is selected. A targeted SocrateAI unadjusted-EOD cross-check then
+reviewed 1,339 candidates (the 1,331 invalid rows plus eight Jaljala source conflicts)
+across 995 dates. It downloaded 994 daily files; one date was not published and
+there were no download errors. Classifications were: 1,325 partial/conflicting,
+five all-source matches, three one-source matches, two no-source matches, three
+symbols absent from the external daily file, and one external daily file not published.
+These are corroboration outcomes only: SocrateAI is a separate publisher, not an
+exchange-origin truth source. The five matches do not repair invalid OHLC bounds.
+The cross-check report retains source comparisons and external file hashes.
+
+The 25 blob-level differences were rechecked from the exact pinned commits. All
 525 relative ticker paths exist in both repositories; 500 file blobs are identical
 and 25 have different blob SHAs. Those 25 files are:
 `API, ULHC, RAWA, AHPC, KEF, MERO, SPDL, SMJC, HLI, CHL, HDHPC, HIDCL, UNHPL,

@@ -251,7 +251,84 @@ def compare_index_controls(
     }
 
 
-def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_date: str) -> dict[str, Any]:
+def validate_index_ohlc(index_row: dict[str, str]) -> dict[str, Any]:
+    errors = []
+    values = {}
+    for field in ("open", "high", "low", "close"):
+        try:
+            values[field] = decimal_value(index_row[field])
+        except (KeyError, InvalidOperation, ValueError) as exc:
+            errors.append({"reason": "missing_or_invalid_index_ohlc", "field": field, "detail": str(exc)})
+    if len(values) == 4:
+        if values["high"] < values["open"]:
+            errors.append({"reason": "index_high_below_open", "high": str(values["high"]), "open": str(values["open"])})
+        if values["high"] < values["close"]:
+            errors.append({"reason": "index_high_below_close", "high": str(values["high"]), "close": str(values["close"])})
+        if values["high"] < values["low"]:
+            errors.append({"reason": "index_high_below_low", "high": str(values["high"]), "low": str(values["low"])})
+        if values["low"] > values["open"]:
+            errors.append({"reason": "index_low_above_open", "low": str(values["low"]), "open": str(values["open"])})
+        if values["low"] > values["close"]:
+            errors.append({"reason": "index_low_above_close", "low": str(values["low"]), "close": str(values["close"])})
+    previous_close_diagnostic = None
+    try:
+        previous_close = decimal_value(index_row["close"]) - decimal_value(index_row["absolute_change"])
+        previous_close_diagnostic = {
+            "derived_previous_close": str(previous_close),
+            "open_equals_derived_previous_close": decimal_value(index_row["open"]) == previous_close,
+        }
+    except (KeyError, InvalidOperation, ValueError):
+        pass
+    return {
+        "valid": not errors,
+        "errors": errors,
+        "previous_close_diagnostic": previous_close_diagnostic,
+    }
+
+
+def compare_reference_turnover(
+    floorsheet: dict[str, Any],
+    reference_rows: list[dict[str, str]],
+    expected_date: str,
+) -> dict[str, Any]:
+    matches = find_nepse_index_rows(reference_rows)
+    if not matches:
+        return {"status": "reference_nepse_index_row_missing", "matched": False}
+    if len(matches) != 1:
+        return {
+            "status": "duplicate_reference_nepse_index_rows",
+            "matched": False,
+            "row_count": len(matches),
+        }
+    row = matches[0]
+    date_field = next((key for key in ("date", "calculation_date", "trade_date") if row.get(key)), None)
+    if date_field and row[date_field] != expected_date:
+        return {
+            "status": "reference_index_date_mismatch",
+            "matched": False,
+            "expected_date": expected_date,
+            "actual_date": row[date_field],
+        }
+    if row.get("volume") in (None, ""):
+        return {"status": "reference_turnover_field_missing", "matched": False, "reference_row": row}
+    floor_value = Decimal(str(floorsheet["total_amount"]))
+    reference_value = decimal_value(row["volume"])
+    difference = floor_value - reference_value
+    relative_percent = (abs(difference) / reference_value * Decimal(100)) if reference_value else None
+    return {
+        "status": "exact_match" if difference == 0 else "different",
+        "matched": difference == 0,
+        "mapping": "SocrateAI index CSV volume field is treated as turnoverValue, not share volume",
+        "floorsheet_amount": str(floor_value),
+        "reference_turnover": str(reference_value),
+        "difference_floorsheet_minus_reference": str(difference),
+        "absolute_difference": str(abs(difference)),
+        "relative_difference_percent": str(relative_percent) if relative_percent is not None else None,
+        "reference_row": row,
+    }
+
+
+def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_date: str, reference_index_path: str | Path | None = None) -> dict[str, Any]:
     floor_rows, floor_fields = read_csv(floorsheet_path)
     missing = FLOORSHEET_REQUIRED - set(floor_fields)
     if missing:
@@ -259,6 +336,13 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
     index_rows, index_fields = read_csv(index_path)
     floor_audit = audit_floorsheet_rows(floor_rows, expected_date)
     controls = compare_index_controls(floor_audit, index_rows, expected_date)
+    index_ohlc = validate_index_ohlc(controls["index_row"]) if controls.get("index_row") else {"valid": False, "errors": [{"reason": "index_control_row_unavailable"}], "previous_close_diagnostic": None}
+    reference_control = None
+    reference_file = None
+    if reference_index_path is not None:
+        reference_rows, reference_fields = read_csv(reference_index_path)
+        reference_control = compare_reference_turnover(floor_audit, reference_rows, expected_date)
+        reference_file = {"path": str(reference_index_path), "size_bytes": Path(reference_index_path).stat().st_size, "sha256": sha256_file(reference_index_path), "columns": reference_fields}
     return {
         "expected_date": expected_date,
         "floorsheet_file": {
@@ -275,6 +359,11 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
         },
         "floorsheet": floor_audit,
         "index_control_totals": controls,
+        "index_ohlc_validation": index_ohlc,
+        "reference_index_file": reference_file,
+        "reference_index_corroboration": reference_control,
+        "floorsheet_row_gate": "PASS" if floor_audit["row_validation_pass"] else "FAIL",
+        "same_dataset_index_gate": "PASS" if controls["matched"] and index_ohlc["valid"] else "FAIL",
         "canonical_promotion_allowed": False,
         "limitations": [
             "This is a one-date sample validation, not proof of archive completeness.",
@@ -284,7 +373,7 @@ def audit_sample(floorsheet_path: str | Path, index_path: str | Path, expected_d
             "Contract numbers and IDs remain strings.",
             "Session calendar and upstream data rights gates remain separate from row validation.",
         ],
-        "sample_gate": "PASS" if floor_audit["row_validation_pass"] and controls["matched"] else "FAIL",
+        "sample_gate": "PASS" if floor_audit["row_validation_pass"] and controls["matched"] and index_ohlc["valid"] and (reference_control is None or reference_control["matched"]) else "FAIL",
     }
 
 
@@ -293,9 +382,10 @@ def main() -> None:
     parser.add_argument("--floorsheet", type=Path, required=True)
     parser.add_argument("--index", type=Path, required=True)
     parser.add_argument("--date", required=True)
+    parser.add_argument("--reference-index", type=Path)
     parser.add_argument("--output", type=Path, default=Path("data/reports/hf-floorsheet-sample-audit.json"))
     args = parser.parse_args()
-    report = audit_sample(args.floorsheet, args.index, args.date)
+    report = audit_sample(args.floorsheet, args.index, args.date, args.reference_index)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({
@@ -303,6 +393,8 @@ def main() -> None:
         "rows": report["floorsheet"]["row_count"],
         "row_validation_pass": report["floorsheet"]["row_validation_pass"],
         "control_total_status": report["index_control_totals"]["status"],
+        "index_ohlc_errors": len(report["index_ohlc_validation"]["errors"]),
+        "reference_turnover_status": (report.get("reference_index_corroboration") or {}).get("status"),
         "sample_gate": report["sample_gate"],
         "canonical_promotion_allowed": False,
     }, indent=2))

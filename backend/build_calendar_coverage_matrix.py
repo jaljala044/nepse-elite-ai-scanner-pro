@@ -31,7 +31,7 @@ def load_manifests(paths: list[str | Path]) -> dict[date, dict[str, Any]]:
                     row = json.loads(line)
                     day = date.fromisoformat(str(row["date"]))
                     path = str(row["path"])
-                    source = str(row.get("repo_id") or row.get("source_id") or row.get("source") or "").strip()
+                    source = str(row.get("repo_id") or row.get("repository") or row.get("source_id") or row.get("source") or "").strip()
                     if not source or not path:
                         raise ValueError("missing source identifier or path")
                     size = int(row.get("size_bytes") or 0)

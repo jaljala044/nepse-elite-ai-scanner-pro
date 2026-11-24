@@ -85,10 +85,10 @@ dated rows to this audit, so no closure dates were imported from it.
 
 The two largest floorsheet file gaps need careful interpretation:
 - 2025-09-08 to 2025-09-18 overlaps the reported NEPSE suspension through
-  2025-09-18 following the September protests. This is a strong closure lead, but
+  2025-09-18 following the September protests ([B360, 12 September 2025](https://www.b360nepal.com/detail/26407/capital-market-to-remain-closed-till-sep-18); [ShareSansar, 12 September 2025](https://www.sharesansar.com/index.php/newsdetail/nepse-announces-temporary-closure-of-secondary-market-trading-2025-09-12)). This is a strong closure lead, but
   the primary dated NEPSE notice still needs to be captured and hashed.
 - 2025-09-28 to 2025-10-07 overlaps the Dashain period and the reported NEPSE
-  decision to keep trading closed on 2025-10-06, resuming on 2025-10-07. The
+  decision to keep trading closed on 2025-10-06, resuming on 2025-10-07 ([Taksar, 6 October 2025](https://en.taksarnews.com/2025/10/3948/)). The
   primary exchange notices and exact daily closure interval still need archiving.
 
 These reports explain why the gaps may be legitimate closures; they do not turn the

@@ -120,7 +120,7 @@ def main() -> int:
     args = parser.parse_args()
     report = build_matrix(args.manifest, args.calendar, args.start_date, args.end_date)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in (
         "days_in_matrix", "manifest_files_observed", "days_with_source_files",
         "days_with_explicit_calendar_evidence", "days_missing_calendar_evidence"

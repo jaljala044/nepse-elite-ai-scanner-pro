@@ -247,3 +247,17 @@ A further contemporaneous report from ShareSansar (2026-04-08) explicitly states
 Evidence: https://www.sharesansar.com/newsdetail/nepal-stock-exchange-opens-monday-to-friday-under-new-government-timings-2026-04-08
 
 Calendar work therefore advances from “schedule regime unknown” to “weekday regime independently corroborated; primary notice and date-level holiday/session register still pending.”
+
+
+## Partial all-symbol audit — batch 5 (files 49–56 of 525)
+
+- CHDC_OHLCV.csv: 936 total rows; 306 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+- CHL_OHLCV.csv: 2069 total rows; 227 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+- CITY_OHLCV.csv: 935 total rows; 305 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+- CIT_OHLCV.csv: 936 total rows; 306 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+- CIZBD86_OHLCV.csv: 147 total rows; 51 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-10-26.
+- CIZBD90_OHLCV.csv: 394 total rows; 118 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+- CKHL_OHLCV.csv: 936 total rows; 306 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+- CLI_OHLCV.csv: 932 total rows; 306 rows in candidate calendar interval; 0 OHLC range violations; latest 2026-11-20.
+
+Cumulative: 56/525 files (10.7%). Scan interval 2025-11-24 through 2026-11-23 is calendar-date scoped, not yet validated against the official session calendar. 

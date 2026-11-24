@@ -56,9 +56,16 @@ def _parse_date(value: str) -> date:
 
 def _decimal(value: str, field: str) -> Decimal:
     raw = value.strip().replace(",", "")
+    match = re.fullmatch(r"([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))\\s*(K|LAC\\.?|LAKH|CR)?", raw, re.I)
     try:
-        result = Decimal(raw)
-    except (InvalidOperation, AttributeError) as exc:
+        if match:
+            number = Decimal(match.group(1))
+            suffix = (match.group(2) or "").upper().rstrip(".")
+            factor = {"": 1, "K": 1000, "LAC": 100000, "LAKH": 100000, "CR": 10000000}[suffix]
+            result = number * factor
+        else:
+            result = Decimal(raw)
+    except (InvalidOperation, AttributeError, KeyError) as exc:
         raise ValueError(f"invalid {field}: {value!r}") from exc
     if not result.is_finite():
         raise ValueError(f"non-finite {field}: {value!r}")
@@ -96,6 +103,12 @@ def _canonical_row(
     symbol = _get(raw, columns, "symbol").upper()
     if not contract:
         raise ValueError("missing contract number")
+    if re.fullmatch(r"\\d{8}\\d+", contract):
+        contract_date = date(int(contract[:4]), int(contract[4:6]), int(contract[6:8]))
+        if contract_date != trade_date:
+            raise ValueError(
+                f"contract date {contract_date.isoformat()} does not match row date {trade_date.isoformat()}"
+            )
     if not symbol or len(symbol) > 20:
         raise ValueError("invalid or missing stock symbol")
 
@@ -153,6 +166,7 @@ def normalize_floorsheet_csv(
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     accepted: dict[tuple[str, str], dict[str, str]] = {}
     rejected: list[dict[str, Any]] = []
+    duplicate_rows: list[dict[str, Any]] = []
     row_count = 0
 
     opener = gzip.open if path.name.lower().endswith(".gz") else open
@@ -172,6 +186,11 @@ def normalize_floorsheet_csv(
                     comparable_now = {k: v for k, v in record.items() if k not in ("source_file", "source_line")}
                     if comparable_prev != comparable_now:
                         raise ValueError(f"conflicting duplicate contract {key[1]}")
+                    duplicate_rows.append({
+                        "source_file": path.name, "source_line": line_no,
+                        "trade_date": key[0], "contract_no": key[1],
+                        "classification": "exact_duplicate_deduplicated",
+                    })
                     continue
                 accepted[key] = record
             except Exception as exc:
@@ -232,6 +251,8 @@ def normalize_floorsheet_csv(
         "source": source, "input_file": path.name, "input_sha256": digest,
         "rows_seen": row_count, "unique_rows_accepted": len(accepted),
         "rows_rejected": len(rejected), "reject_ratio": round(reject_ratio, 6),
+        "duplicate_rows_detected": len(duplicate_rows),
+        "duplicate_audit": duplicate_rows,
         "quarantine_path": str(quarantine_path.relative_to(ROOT)) if quarantine_path else None,
         "sessions_written": written,
         "status": "normalized" if not rejected else "normalized_with_quarantine",

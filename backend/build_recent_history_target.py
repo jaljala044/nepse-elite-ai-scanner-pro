@@ -47,7 +47,7 @@ def load_source_dates(paths: list[str | Path]) -> dict[date, dict[str, list[str]
                 try:
                     row = json.loads(line)
                     day = date.fromisoformat(str(row["date"]))
-                    source = str(row.get("repo_id") or row.get("source_id") or row.get("source") or "").strip()
+                    source = str(row.get("repo_id") or row.get("repository") or row.get("source_id") or row.get("source") or "").strip()
                     path = str(row["path"]).strip()
                     if not source or not path:
                         raise ValueError("source identifier and path are required")

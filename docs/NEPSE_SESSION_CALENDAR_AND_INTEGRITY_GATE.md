@@ -104,3 +104,38 @@ These are secondary-source leads and/or government holiday candidates. The
 canonical calendar remains empty until dated primary NEPSE notices or equivalent
 exchange records are captured, preserved, hashed and reviewed. Do not mark any
 candidate date verified solely from this lead file.
+
+## Independent index/OHLCV date cross-check — implementation
+
+The project now includes `backend/build_market_date_crosscheck.py`. It pins the
+SocrateAI repository to a commit, inventories dated adjusted index CSVs, fetches
+the most recent 120 daily index files, and validates the single
+`NEPSE_index` row's date, numeric fields and OHLC bounds. It joins those dates
+to date-level symbol coverage emitted by the Jaljala OHLCV audit. It can also
+join floorsheet manifests when supplied. It labels results as observed-session
+candidates only; it does not write the verified session calendar.
+
+Initial repository-tree inspection on 2026-11-24 found **5,368 dated adjusted
+index CSVs**, spanning **2003-07-17 to 2026-11-24**. The latest 120 distinct
+index-file dates span **2026-05-18 to 2026-11-24**. There are **110** such
+index-file dates from 2026-06-03 onward. This is an index-source candidate
+window, not a claim of 120 exchange-certified sessions.
+
+The index archive has no dated adjusted index files for the following reported
+closure/suspension candidates inspected so far: **2026-09-21; 2026-10-19 to
+2026-10-23; 2026-11-09 to 2026-11-12; and 2026-11-16**. Their absence is
+consistent with the published closure reports but is not itself primary proof.
+A valid 2026-11-24 adjusted index file was inspected and contains exactly one
+`NEPSE_index` row; the automated validator now checks the full latest-120
+window rather than extrapolating from this one sample.
+
+The OHLCV audit report now emits per-date unique-symbol coverage for each pinned
+source, allowing a direct date-level comparison rather than relying only on
+per-symbol first/last dates. The OHLCV audit still has known invalid rows and
+cross-source conflicts, so this date comparison is a coverage diagnostic, not
+a data-quality pass.
+
+CI runs the new validator and uploads
+`market-date-crosscheck.json` alongside the OHLCV audit artifacts. A failed
+OHLCV quality gate does not suppress the independent date diagnostic; the
+cross-check runs when the audit report exists.

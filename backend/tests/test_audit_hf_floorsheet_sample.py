@@ -4,6 +4,7 @@ from pathlib import Path
 
 from audit_hf_floorsheet_sample import (
     audit_floorsheet_rows, compare_index_controls, compare_reference_turnover,
+    compare_sector_controls,
     find_nepse_index_row, validate_index_ohlc,
 )
 
@@ -105,6 +106,24 @@ class HFFloorsheetSampleAuditTests(unittest.TestCase):
         self.assertIn("index_high_below_open", {x["reason"] for x in result["errors"]})
         self.assertTrue(result["previous_close_diagnostic"]["open_equals_derived_previous_close"])
         self.assertEqual(result["previous_close_diagnostic"]["derived_previous_close"], "2594.27")
+
+    def test_compares_sector_controls_and_preserves_unmapped_instruments(self):
+        floor_rows = [
+            {"sector": "Development Banks", "quantity": "10", "amount": "1000.00"},
+            {"sector": "Commercial Banks", "quantity": "20", "amount": "2000.00"},
+            {"sector": "Non-Convertible Debentures", "quantity": "5", "amount": "500.00"},
+        ]
+        index_rows = [
+            {"sector": "Development Bank Index", "total_transaction": "1", "turnover_volume": "10", "turnover_values": "1000.00"},
+            {"sector": "Banking SubIndex", "total_transaction": "1", "turnover_volume": "19", "turnover_values": "1900.00"},
+        ]
+        result = compare_sector_controls(floor_rows, index_rows)
+        self.assertEqual(result["exact_match_sector_count"], 1)
+        self.assertEqual(result["different_sector_count"], 1)
+        self.assertEqual(result["unmapped_floorsheet_sectors"], ["Non-Convertible Debentures"])
+        commercial = next(x for x in result["sector_comparisons"] if x["floorsheet_sector"] == "Commercial Banks")
+        self.assertEqual(commercial["status"], "sector_control_difference")
+        self.assertEqual(commercial["comparisons"]["share_quantity"]["difference"], "1")
 
     def test_compares_reference_turnover_without_assuming_exact_equality(self):
         floor = {"total_amount": "4773857657.46"}

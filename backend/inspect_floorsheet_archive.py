@@ -121,7 +121,7 @@ def inspect_zip(
                 if not info.is_dir():
                     suffix = Path(name).suffix.lower() or "[no_extension]"
                     extension_counts[suffix] = extension_counts.get(suffix, 0) + 1
-                    match = re.search(r"(?<!\\d)(20\\d{2})[-_]?([01]\\d)[-_]?([0-3]\\d)(?!\\d)", name)
+                    match = re.search(r"(?<!\d)(20\d{2})[-_]?([01]\d)[-_]?([0-3]\d)(?!\d)", name)
                     if match:
                         candidate = "-".join(match.groups())
                         try:

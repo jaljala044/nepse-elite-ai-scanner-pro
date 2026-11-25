@@ -781,3 +781,29 @@ The project can continue engineering, but data acquisition and production-readin
 23. Add source-specific per-security coverage so publishers are measured separately and never double-counted.
 24. Add broker aggregation determinism and source control-total reconciliation tests.
 25. Add a read-only readiness CLI that assembles evidence reports and prints blockers without mutating canonical or training data.
+
+## 2026-11-25 continuation — engineering priorities 21–25
+
+21. **Official notice capture:** added `backend/capture_official_notice.py`. It permits HTTPS NEPSE/SEBON hosts and approved redirects only, stores raw response bytes by SHA-256, records source URL, publication/retrieval timestamps, response metadata and byte count, and never auto-populates the session calendar. Tests cover hash integrity, off-domain rejection, redirects and timestamp validation. Commits `ebbd416`, `3e3b45a`, `0565b44`.
+22. **Universe snapshot validation:** added `app.universe_snapshot.validate_universe_snapshot`. It requires primary NEPSE/SEBON HTTPS provenance, raw payload SHA-256, snapshot date, UTC retrieval time, stable security IDs, explicit instrument types/statuses, effective dates and target membership. Default validation requires exactly 281 active equities + 47 active mutual funds; no symbol/type inference. It still awaits a real official registry response. Commits `01b61ec`, `cc3bf97`.
+23. **Source-specific per-security coverage:** coverage CSV now requires `source_id,symbol,date`; every publisher receives its own per-security report. Combined coverage is deliberately null when multiple sources are supplied, preventing false union coverage. Commits `c7d7281`, `95c57fe`, `a9c7d0e`; documentation `c36d9fd`.
+24. **Broker control totals:** added exact Decimal reconciliation of buyer/seller party observations against source-date controls. A contract contributes gross amount/quantity once only when one buy and one sell row agree; missing sides and mismatches are explicit anomalies. Added input-order determinism tests. Commits `ff253f7`, `893868d`.
+25. **Read-only training readiness CLI:** added `backend/evaluate_training_readiness.py`; it loads evidence reports, prints blockers and can write a readiness JSON, but never mutates canonical data or starts training. Missing evidence returns nonzero. Commits `8b5e470`, `aa67d3b`, `68c1608`.
+
+### CI verification for priorities 21–25
+- Full backend unit and contract test suites passed at `68c1608c3a4d17e8cc1508f165956e178599000f`: backend `45542491712`, contract `45542491720`.
+- Notice capture / readiness CLI tests passed at `aa67d3b1a3e5a870f21b02ca6d9074336df307d8`: backend `45542480866`, contract `45542480904`.
+- Broker control-total and deterministic aggregation tests passed at `893868dafb4f0812ec56c129c4ec14b09264e0e1`: backend `45542455502`, contract `45542455293`.
+- Universe snapshot tests passed at `cc3bf97d74fc8298aa3d1ca86f8f7cd94ddc2cce`: backend `45542359540`, contract `45542359492`.
+- Source-specific coverage tests passed at `a9c7d0e050bd5e4d5e4191026dbda0b0d4a54edc`: backend `45542407297`, contract `45542407213`.
+- Intermediate red runs during source-specific refactoring were corrected; the subsequent complete suite passed at `68c1608`.
+
+### External-data blockers unchanged
+The new utilities and validators are ready, but no official notice bytes, full date-level NEPSE calendar, verified 281 + 47 registry snapshot, or authorized raw floorsheet sample have been acquired in this session. The user's large Drive ZIP is not available through a connected Drive integration here. No raw floorsheet sample, per-security historical coverage result, canonical dataset or production signal is claimed. Existing OHLCV invalid rows, cross-source conflicts and index anomalies remain quarantined.
+
+### Next execution batch (26–30)
+26. Add a testable official registry API capture adapter, but keep endpoint contract and response fields untrusted until an actual official response is captured.
+27. Add an evidence manifest that links each calendar date to one or more raw notice capture IDs and detects conflicting overlapping scopes.
+28. Add source-specific OHLCV daily control totals and duplicate/conflict reconciliation before coverage can be considered complete.
+29. Add broker reconciliation output with per-source/date contract count, gross amount, quantity and party-row exceptions persisted as immutable artifacts.
+30. Run the read-only readiness CLI against the current actual evidence and archive the blocker report, demonstrating that the current dataset remains not training-ready.

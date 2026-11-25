@@ -91,7 +91,7 @@ def compare_manifest(manifest_path: str | Path) -> dict[str, Any]:
             "right": comparison["right_source"]["date_counts"],
         }
         source_date_matches = {
-            side: dates == {trade_date: count} if len(dates) == 1 and trade_date in dates else False
+            side: len(dates) == 1 and trade_date in dates
             for side, dates in observed_dates.items()
         }
         comparison["manifest_trade_date_check"] = {

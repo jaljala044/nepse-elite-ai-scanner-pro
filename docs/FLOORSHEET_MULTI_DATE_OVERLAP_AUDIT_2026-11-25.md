@@ -162,3 +162,62 @@ These 40 dates are the latest 40 common date-named files, not 40 exchange-verifi
 - Broker coverage JSON SHA-256: `e277915e6bb111725acaa62fe31b007dfcad9a146ade3c7e736e7b327817b619`
 
 The artifact contains only derived reports, manifests and exception/activity ledgers. Raw CSVs remained in the temporary runner workspace.
+
+
+## Third overlap batch — next older 30 shared dates (priority 100, partial)
+
+The third batch compared the 30 shared dates immediately preceding the previous 40-date window. Window: **2026-07-17 through 2026-09-01**.
+
+- Samir physical rows: **1,649,223**.
+- Samir unique contract IDs: **1,648,223**.
+- SocrateAI rows and unique contract IDs: **1,650,258**.
+- Shared contract IDs with exact row matches: **1,648,223**.
+- SocrateAI-only contracts: **2,035**; Samir-only contracts: **0**; shared field conflicts: **0**.
+- Raw source quantity surplus (SocrateAI minus Samir): **1,994,322 shares**.
+- Raw source turnover surplus: **NPR 1,756,482,535.19**.
+- Both sources: zero malformed rows, zero formula exceptions and all 30 source-date checks passed. Samir had one duplicate-ID quality exception on 2026-07-17.
+- Broker-code coverage remained identical: 91 distinct codes across both sources, no source-only codes, and identical per-date code sets on all 30 dates.
+
+### Newly isolated Samir duplicate-row anomaly — 2026-07-17
+
+The duplicate-contract ledger captured **1,000 distinct contract IDs**, each appearing exactly twice in the Samir 2026-07-17 CSV (2,000 physical rows total; 1,000 extra rows). Every pair has identical transaction fields after excluding Samir's source sequence field `sn`; the two raw rows differ only in `sn`. The 1,000 extra copies contribute **182,280 shares** and **NPR 89,427,317.60** to Samir's raw file totals.
+
+- 912 duplicate pairs are adjacent physical CSV lines; 88 are not adjacent.
+- SocrateAI has no duplicate contract IDs in this 30-date batch.
+- The 1,000 duplicate contract IDs are shared with SocrateAI; contract-level shared-row comparison still matches exactly after using unique contract IDs.
+- This is strong evidence of a Samir source-file duplication anomaly, but it is not independently adjudicated. Both physical rows are retained in the ledger; no automatic deduplication or canonical data correction is applied.
+
+If the 1,000 extra physical rows were later independently confirmed as duplicated captures, the Samir total would be lower by 182,280 shares and NPR 89,427,317.60 for this date. The source-to-source turnover difference would consequently increase by that amount. This adjustment is illustrative only and is not applied to the report's raw totals.
+
+### Combined latest 70 shared dates
+
+| Measure | Combined result |
+|---|---:|
+| Dates compared | 70 |
+| Samir physical rows | 3,710,442 |
+| Samir unique contracts | 3,709,442 |
+| SocrateAI rows / unique contracts | 3,712,942 |
+| Shared exact contract rows | 3,709,442 |
+| SocrateAI-only contracts | 3,500 |
+| Samir-only contracts | 0 |
+| Shared-row field conflicts | 0 |
+| Samir duplicate extra physical rows | 1,000 |
+| Raw quantity surplus | 3,385,477 shares |
+| Raw turnover surplus | NPR 1,851,925,427.67 |
+
+The 70 dates are the latest 70 common date-named files out of 157 common files in the one-year candidate window. They are not 70 exchange-verified trading sessions. The 1,000 Samir duplicate physical rows are included in the raw source totals above; no corrected total is promoted. Independent daily control totals remain unavailable.
+
+### Reproducibility
+
+- [Third 30-date overlap and duplicate-ledger run 45598359940](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45598359940) — passed.
+- [Backend suite run 45598359945](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45598359945) — **516 tests passed**.
+- [Backend contract tests run 45598359986](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45598359986) — passed.
+- [Integrated evidence audit run 45598360229](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45598360229) — passed.
+- Artifact ID: `15014282629`
+- Artifact ZIP SHA-256: `53d2850c1a35a8222fab0ed53efd16b7d4210a5b048fe770b477c0f483f17987`
+- Duplicate ledger JSON SHA-256: `3e047277f5de91f00559959e4bd0f3f1ce018c25e4e94d1d6f996f9ad7dc60da`
+- Duplicate ledger CSV SHA-256: `90d57079473d3fea35ff84d63865e41e855448ef2de9b347c5986aebce8bb06a`
+- Report JSON SHA-256: `f621c5abf92be288c63a3389bd8c926a6b35cb6ed69da7df61cad2dc2d1bfc2a`
+- Manifest SHA-256: `5c86a735d7c85a43fb9e0ddbed4062ae7471503655503eb59f166d929b8c397e`
+
+The artifact contains derived reports and row-level exception ledgers, not the raw CSV payloads.

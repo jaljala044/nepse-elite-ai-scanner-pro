@@ -90,3 +90,67 @@ def review_urek_floorsheet_headers(headers: Iterable[str]) -> HeaderReview:
         observed_headers=observed,
         profile_id=f"{UREK_REPO_ID}@{UREK_PINNED_REVISION}:{UREK_FOLDER}",
     )
+
+
+# The daily SamirWagle capture is sourced from Merolagani's public floorsheet
+# page. Its date field is generated with Python date.today() by the scraper;
+# it is not an exchange-issued trade-date field and must remain provisional.
+SAMIR_REPO_ID = "SamirWagle/Nepse-All-Scraper"
+SAMIR_PINNED_COMMIT = "e6160adc6bdf3d19562167388e3d9d4f645c455a"
+SAMIR_FLOORSHEET_PATH = "data/floorsheet/floorsheet_2026-11-24.csv"
+SAMIR_BLOB_SHA1 = "22eaa891b30aac2fe4cf197053efa014953351c0"
+SAMIR_RAW_SHA256 = "2687b7ed6bc5ebd737fa459ca8dd620941bb3ec1da6613fbd620550495018f55"
+SAMIR_RAW_SIZE_BYTES = 3538179
+
+SAMIR_DECLARED_HEADERS = (
+    "date", "sn", "contract_no", "stock_symbol", "buyer", "seller",
+    "quantity", "rate", "amount",
+)
+SAMIR_CANONICAL_COLUMNS = {
+    "trade_date": "date",
+    "contract_id": "contract_no",
+    "symbol": "stock_symbol",
+    "buyer_broker_code": "buyer",
+    "seller_broker_code": "seller",
+    "quantity": "quantity",
+    "rate": "rate",
+    "amount": "amount",
+}
+SAMIR_SOURCE_ONLY_HEADERS = ("sn",)
+
+
+def samir_merolagani_capture_mapping() -> CsvFloorsheetMapping:
+    """Map the nine observed CSV fields; date remains unverified capture date."""
+    return CsvFloorsheetMapping(columns=dict(SAMIR_CANONICAL_COLUMNS))
+
+
+def review_samir_merolagani_headers(headers: Iterable[str]) -> HeaderReview:
+    """Compare headers with the exact pinned daily capture's observed header."""
+    if isinstance(headers, (str, bytes)):
+        raise ValueError("headers must be an iterable of header strings, not text")
+    observed = tuple(headers)
+    if any(not isinstance(item, str) or not item.strip() for item in observed):
+        raise ValueError("headers must contain only nonblank strings")
+
+    duplicates = tuple(sorted({
+        item for item in observed if observed.count(item) > 1
+    }))
+    expected = set(SAMIR_DECLARED_HEADERS)
+    actual = set(observed)
+    missing = tuple(sorted(expected - actual))
+    unexpected = tuple(sorted(actual - expected))
+    valid = (
+        len(observed) == len(SAMIR_DECLARED_HEADERS)
+        and not missing
+        and not unexpected
+        and not duplicates
+    )
+    return HeaderReview(
+        valid=valid,
+        missing_headers=missing,
+        unexpected_headers=unexpected,
+        duplicate_headers=duplicates,
+        observed_headers=observed,
+        profile_id=f"{SAMIR_REPO_ID}@{SAMIR_PINNED_COMMIT}:{SAMIR_FLOORSHEET_PATH}",
+        evidence_status="raw_header_observed_capture_date_semantics_unverified",
+    )

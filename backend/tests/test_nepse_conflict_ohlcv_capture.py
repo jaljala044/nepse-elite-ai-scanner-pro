@@ -38,7 +38,8 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
             def getAuthorizationHeaders(self):
                 return {"Authorization": "Salter test-token", "Host": "www.nepalstock.com"}
 
-            def getPOSTPayloadIDForFloorSheet(self):
+            def getPOSTPayloadIDForFloorSheet(self, business_date=None):
+                seen["payload_date"] = business_date
                 return 123456
 
             def get_full_url(self, url):
@@ -93,6 +94,8 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
         self.assertEqual(result["open_from_first_contract"], 940)
         self.assertFalse(seen["http2"])
         self.assertNotIn("Host", seen["headers"])
+        self.assertEqual(seen["headers"]["Origin"], "https://www.nepalstock.com")
+        self.assertEqual(seen["payload_date"], "2025-07-28")
         self.assertEqual(seen["headers"]["Authorization"], "Salter test-token")
         self.assertEqual(seen["json"], {"id": 123456})
 

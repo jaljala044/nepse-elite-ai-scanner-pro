@@ -1,1 +1,97 @@
-[]
+[
+  {
+    "contractQuantity": null,
+    "contractRate": 510.0,
+    "time": 1795584300
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 496.1,
+    "time": 1795584360
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 500.0,
+    "time": 1795585860
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 509.0,
+    "time": 1795587180
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 501.4,
+    "time": 1795587300
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 501.0,
+    "time": 1795587720
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 505.0,
+    "time": 1795589880
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 501.0,
+    "time": 1795590060
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 505.0,
+    "time": 1795591260
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 505.0,
+    "time": 1795591320
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 502.3,
+    "time": 1795592340
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 505.0,
+    "time": 1795592820
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 501.7,
+    "time": 1795595040
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 501.7,
+    "time": 1795595460
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 488.0,
+    "time": 1795595580
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 502.0,
+    "time": 1795596900
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 505.0,
+    "time": 1795597200
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 506.0,
+    "time": 1795597500
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 505.1,
+    "time": 1795598040
+  }
+]

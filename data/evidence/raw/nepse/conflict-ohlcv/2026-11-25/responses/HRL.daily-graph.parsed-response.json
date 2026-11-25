@@ -1,1 +1,837 @@
-[]
+[
+  {
+    "contractQuantity": null,
+    "contractRate": 480.0,
+    "time": 1795583760
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 480.1,
+    "time": 1795583880
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 482.9,
+    "time": 1795583940
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 483.0,
+    "time": 1795584000
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 483.0,
+    "time": 1795584060
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 480.1,
+    "time": 1795584120
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 480.2,
+    "time": 1795584180
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 480.0,
+    "time": 1795584240
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795584300
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795584360
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795584420
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795584480
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795584540
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795584600
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795584660
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795584720
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.8,
+    "time": 1795584900
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795584960
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795585020
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795585080
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795585140
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.7,
+    "time": 1795585200
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.7,
+    "time": 1795585260
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795585320
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.8,
+    "time": 1795585380
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.8,
+    "time": 1795585440
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.8,
+    "time": 1795585500
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.8,
+    "time": 1795585620
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795585680
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.6,
+    "time": 1795585740
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.6,
+    "time": 1795585920
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.4,
+    "time": 1795585980
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795586040
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795586100
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795586220
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.5,
+    "time": 1795586280
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795586340
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.2,
+    "time": 1795586400
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.6,
+    "time": 1795586520
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.1,
+    "time": 1795586700
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795586760
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.1,
+    "time": 1795586820
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795587000
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795587060
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.4,
+    "time": 1795587240
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795587300
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.4,
+    "time": 1795587360
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.5,
+    "time": 1795587480
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.6,
+    "time": 1795587540
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.4,
+    "time": 1795587600
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795587660
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795587900
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795588020
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795588080
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795588140
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795588260
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795588440
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.8,
+    "time": 1795588500
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.9,
+    "time": 1795588560
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795588620
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795588680
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795588800
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.9,
+    "time": 1795588860
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 479.0,
+    "time": 1795588920
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.3,
+    "time": 1795588980
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589040
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589100
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589160
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589220
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589280
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589340
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589460
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.2,
+    "time": 1795589520
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.5,
+    "time": 1795589580
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.5,
+    "time": 1795589700
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.1,
+    "time": 1795589880
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.5,
+    "time": 1795590000
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795590060
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795590120
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795590180
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795590300
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.5,
+    "time": 1795590360
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795590420
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795590480
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795590600
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795590660
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.2,
+    "time": 1795590840
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795590960
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.2,
+    "time": 1795591020
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795591080
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795591200
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795591260
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795591380
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795591500
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795591560
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795591680
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795591740
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.2,
+    "time": 1795591860
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.2,
+    "time": 1795591920
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795592160
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795592220
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.1,
+    "time": 1795592340
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 465.0,
+    "time": 1795592400
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795592460
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795592520
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.1,
+    "time": 1795592580
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795592760
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795592880
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.9,
+    "time": 1795593000
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795593060
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795593120
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795593240
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795593300
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.5,
+    "time": 1795593360
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795593420
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795593480
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795593660
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.0,
+    "time": 1795593720
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795593780
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795593840
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795593900
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795593960
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795594020
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795594320
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.1,
+    "time": 1795594380
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.5,
+    "time": 1795594560
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.1,
+    "time": 1795594620
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.4,
+    "time": 1795594680
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.6,
+    "time": 1795594740
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795594860
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.9,
+    "time": 1795594920
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.2,
+    "time": 1795594980
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.2,
+    "time": 1795595100
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.0,
+    "time": 1795595160
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.1,
+    "time": 1795595280
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795595340
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.2,
+    "time": 1795595400
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.2,
+    "time": 1795595460
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.3,
+    "time": 1795595760
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 474.0,
+    "time": 1795595820
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795595880
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.1,
+    "time": 1795595940
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795596060
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.3,
+    "time": 1795596180
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.3,
+    "time": 1795596360
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795596420
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795596480
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.9,
+    "time": 1795596540
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795596600
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.9,
+    "time": 1795596660
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.9,
+    "time": 1795596720
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 475.2,
+    "time": 1795596780
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795596840
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.1,
+    "time": 1795596960
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.2,
+    "time": 1795597020
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795597080
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.4,
+    "time": 1795597380
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795597440
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.3,
+    "time": 1795597500
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.3,
+    "time": 1795597560
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.1,
+    "time": 1795597620
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795597680
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.1,
+    "time": 1795597740
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.0,
+    "time": 1795597860
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 477.5,
+    "time": 1795597920
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 478.0,
+    "time": 1795597980
+  },
+  {
+    "contractQuantity": null,
+    "contractRate": 476.0,
+    "time": 1795598040
+  }
+]

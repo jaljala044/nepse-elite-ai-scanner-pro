@@ -118,7 +118,7 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -136,6 +136,62 @@
         ],
         "comparison_to_repository_sources": "matches_source_a",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_endpoint_attempts": {
+        "today_price": {
+          "status": "http_500_outside_observed_retention",
+          "body": "Searched Date is not valid.",
+          "response_sha256": "cca881461d563205a8c609c97ca56ed629037478322de2eefdd297a31825710e",
+          "response_path": "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/market-price-volume.2025-07-28.response-body.bin"
+        },
+        "per_security_history": {
+          "status": "empty_collection_outside_observed_365_day_window",
+          "note": "Valid empty response is not proof that no trading occurred."
+        },
+        "company_floorsheet": {
+          "status": "nginx_403_on_both_official_hosts",
+          "tested_symbol": "BGWT",
+          "response_bytes": 548,
+          "response_git_blob_oid": "ae3d7d99f9b35f02662b99555ee5309a7c5032e6",
+          "response_paths": [
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.clean-np.page-0.response-body.bin",
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.com.page-0.response-body.bin"
+          ],
+          "request_contract": "requested-date payload ID, clean browser headers, Origin, X-Requested-With, no explicit Host"
+        },
+        "legacy_routes": {
+          "status": "retired_routes_return_spa_shell",
+          "routes": [
+            "/todaysprice",
+            "/company/transactions/{symbol}",
+            "/datanepse/previous.php"
+          ]
+        }
+      },
+      "secondary_archive_analysis": {
+        "repository": "socrateai-official/nepse-open-data",
+        "commit": "7648ec7ce9988e032975d6cf8bcc876ba7da7ae5",
+        "commit_date": "2025-07-28T11:22:16Z",
+        "raw_floorsheet_blob": "9c5533626b354d5fefca06d6762d51e0b9beaac6",
+        "row_count": 170727,
+        "symbol_trade_count": 194,
+        "symbol_volume": 14028,
+        "full_day_vwap": 944.9918,
+        "raw_floor_sheet_ohlcv": {
+          "open": 940,
+          "high": 992,
+          "low": 925,
+          "volume": 14028
+        },
+        "source_b_close": 945,
+        "upstream_provenance": "unverified; repository README does not identify the source and issue #2 asks for provenance without an answer",
+        "promotion_allowed": false
+      },
+      "close_methodology_hypothesis": {
+        "applicable_period": "2025-03-20 through 2025-09-22",
+        "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
+        "verified": false,
+        "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
       }
     },
     {
@@ -248,7 +304,7 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -266,6 +322,62 @@
         ],
         "comparison_to_repository_sources": "matches_source_a",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_endpoint_attempts": {
+        "today_price": {
+          "status": "http_500_outside_observed_retention",
+          "body": "Searched Date is not valid.",
+          "response_sha256": "cca881461d563205a8c609c97ca56ed629037478322de2eefdd297a31825710e",
+          "response_path": "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/market-price-volume.2025-07-28.response-body.bin"
+        },
+        "per_security_history": {
+          "status": "empty_collection_outside_observed_365_day_window",
+          "note": "Valid empty response is not proof that no trading occurred."
+        },
+        "company_floorsheet": {
+          "status": "nginx_403_on_both_official_hosts",
+          "tested_symbol": "BGWT",
+          "response_bytes": 548,
+          "response_git_blob_oid": "ae3d7d99f9b35f02662b99555ee5309a7c5032e6",
+          "response_paths": [
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.clean-np.page-0.response-body.bin",
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.com.page-0.response-body.bin"
+          ],
+          "request_contract": "requested-date payload ID, clean browser headers, Origin, X-Requested-With, no explicit Host"
+        },
+        "legacy_routes": {
+          "status": "retired_routes_return_spa_shell",
+          "routes": [
+            "/todaysprice",
+            "/company/transactions/{symbol}",
+            "/datanepse/previous.php"
+          ]
+        }
+      },
+      "secondary_archive_analysis": {
+        "repository": "socrateai-official/nepse-open-data",
+        "commit": "7648ec7ce9988e032975d6cf8bcc876ba7da7ae5",
+        "commit_date": "2025-07-28T11:22:16Z",
+        "raw_floorsheet_blob": "9c5533626b354d5fefca06d6762d51e0b9beaac6",
+        "row_count": 170727,
+        "symbol_trade_count": 333,
+        "symbol_volume": 29753,
+        "full_day_vwap": 470.8399,
+        "raw_floor_sheet_ohlcv": {
+          "open": 471.1,
+          "high": 480.5,
+          "low": 460,
+          "volume": 29753
+        },
+        "source_b_close": 470.83,
+        "upstream_provenance": "unverified; repository README does not identify the source and issue #2 asks for provenance without an answer",
+        "promotion_allowed": false
+      },
+      "close_methodology_hypothesis": {
+        "applicable_period": "2025-03-20 through 2025-09-22",
+        "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
+        "verified": false,
+        "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
       }
     },
     {
@@ -301,7 +413,7 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -319,6 +431,62 @@
         ],
         "comparison_to_repository_sources": "matches_source_a",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_endpoint_attempts": {
+        "today_price": {
+          "status": "http_500_outside_observed_retention",
+          "body": "Searched Date is not valid.",
+          "response_sha256": "cca881461d563205a8c609c97ca56ed629037478322de2eefdd297a31825710e",
+          "response_path": "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/market-price-volume.2025-07-28.response-body.bin"
+        },
+        "per_security_history": {
+          "status": "empty_collection_outside_observed_365_day_window",
+          "note": "Valid empty response is not proof that no trading occurred."
+        },
+        "company_floorsheet": {
+          "status": "nginx_403_on_both_official_hosts",
+          "tested_symbol": "BGWT",
+          "response_bytes": 548,
+          "response_git_blob_oid": "ae3d7d99f9b35f02662b99555ee5309a7c5032e6",
+          "response_paths": [
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.clean-np.page-0.response-body.bin",
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.com.page-0.response-body.bin"
+          ],
+          "request_contract": "requested-date payload ID, clean browser headers, Origin, X-Requested-With, no explicit Host"
+        },
+        "legacy_routes": {
+          "status": "retired_routes_return_spa_shell",
+          "routes": [
+            "/todaysprice",
+            "/company/transactions/{symbol}",
+            "/datanepse/previous.php"
+          ]
+        }
+      },
+      "secondary_archive_analysis": {
+        "repository": "socrateai-official/nepse-open-data",
+        "commit": "7648ec7ce9988e032975d6cf8bcc876ba7da7ae5",
+        "commit_date": "2025-07-28T11:22:16Z",
+        "raw_floorsheet_blob": "9c5533626b354d5fefca06d6762d51e0b9beaac6",
+        "row_count": 170727,
+        "symbol_trade_count": 74,
+        "symbol_volume": 3165,
+        "full_day_vwap": 794.8381,
+        "raw_floor_sheet_ohlcv": {
+          "open": 796,
+          "high": 811,
+          "low": 780.3,
+          "volume": 3165
+        },
+        "source_b_close": 794.83,
+        "upstream_provenance": "unverified; repository README does not identify the source and issue #2 asks for provenance without an answer",
+        "promotion_allowed": false
+      },
+      "close_methodology_hypothesis": {
+        "applicable_period": "2025-03-20 through 2025-09-22",
+        "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
+        "verified": false,
+        "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
       }
     },
     {
@@ -354,7 +522,7 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -372,6 +540,62 @@
         ],
         "comparison_to_repository_sources": "matches_source_a",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_endpoint_attempts": {
+        "today_price": {
+          "status": "http_500_outside_observed_retention",
+          "body": "Searched Date is not valid.",
+          "response_sha256": "cca881461d563205a8c609c97ca56ed629037478322de2eefdd297a31825710e",
+          "response_path": "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/market-price-volume.2025-07-28.response-body.bin"
+        },
+        "per_security_history": {
+          "status": "empty_collection_outside_observed_365_day_window",
+          "note": "Valid empty response is not proof that no trading occurred."
+        },
+        "company_floorsheet": {
+          "status": "nginx_403_on_both_official_hosts",
+          "tested_symbol": "BGWT",
+          "response_bytes": 548,
+          "response_git_blob_oid": "ae3d7d99f9b35f02662b99555ee5309a7c5032e6",
+          "response_paths": [
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.clean-np.page-0.response-body.bin",
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.com.page-0.response-body.bin"
+          ],
+          "request_contract": "requested-date payload ID, clean browser headers, Origin, X-Requested-With, no explicit Host"
+        },
+        "legacy_routes": {
+          "status": "retired_routes_return_spa_shell",
+          "routes": [
+            "/todaysprice",
+            "/company/transactions/{symbol}",
+            "/datanepse/previous.php"
+          ]
+        }
+      },
+      "secondary_archive_analysis": {
+        "repository": "socrateai-official/nepse-open-data",
+        "commit": "7648ec7ce9988e032975d6cf8bcc876ba7da7ae5",
+        "commit_date": "2025-07-28T11:22:16Z",
+        "raw_floorsheet_blob": "9c5533626b354d5fefca06d6762d51e0b9beaac6",
+        "row_count": 170727,
+        "symbol_trade_count": 1030,
+        "symbol_volume": 296715,
+        "full_day_vwap": 350.0754,
+        "raw_floor_sheet_ohlcv": {
+          "open": 346.7,
+          "high": 362,
+          "low": 341.4,
+          "volume": 296715
+        },
+        "source_b_close": 350.07,
+        "upstream_provenance": "unverified; repository README does not identify the source and issue #2 asks for provenance without an answer",
+        "promotion_allowed": false
+      },
+      "close_methodology_hypothesis": {
+        "applicable_period": "2025-03-20 through 2025-09-22",
+        "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
+        "verified": false,
+        "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
       }
     },
     {
@@ -484,7 +708,7 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -502,6 +726,62 @@
         ],
         "comparison_to_repository_sources": "matches_source_a",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_endpoint_attempts": {
+        "today_price": {
+          "status": "http_500_outside_observed_retention",
+          "body": "Searched Date is not valid.",
+          "response_sha256": "cca881461d563205a8c609c97ca56ed629037478322de2eefdd297a31825710e",
+          "response_path": "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/market-price-volume.2025-07-28.response-body.bin"
+        },
+        "per_security_history": {
+          "status": "empty_collection_outside_observed_365_day_window",
+          "note": "Valid empty response is not proof that no trading occurred."
+        },
+        "company_floorsheet": {
+          "status": "nginx_403_on_both_official_hosts",
+          "tested_symbol": "BGWT",
+          "response_bytes": 548,
+          "response_git_blob_oid": "ae3d7d99f9b35f02662b99555ee5309a7c5032e6",
+          "response_paths": [
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.clean-np.page-0.response-body.bin",
+            "data/evidence/raw/nepse/conflict-ohlcv/run-45681502604/responses/company-floor.BGWT.2025-07-28.com.page-0.response-body.bin"
+          ],
+          "request_contract": "requested-date payload ID, clean browser headers, Origin, X-Requested-With, no explicit Host"
+        },
+        "legacy_routes": {
+          "status": "retired_routes_return_spa_shell",
+          "routes": [
+            "/todaysprice",
+            "/company/transactions/{symbol}",
+            "/datanepse/previous.php"
+          ]
+        }
+      },
+      "secondary_archive_analysis": {
+        "repository": "socrateai-official/nepse-open-data",
+        "commit": "7648ec7ce9988e032975d6cf8bcc876ba7da7ae5",
+        "commit_date": "2025-07-28T11:22:16Z",
+        "raw_floorsheet_blob": "9c5533626b354d5fefca06d6762d51e0b9beaac6",
+        "row_count": 170727,
+        "symbol_trade_count": 300,
+        "symbol_volume": 32288,
+        "full_day_vwap": 504.0059,
+        "raw_floor_sheet_ohlcv": {
+          "open": 509,
+          "high": 515,
+          "low": 495,
+          "volume": 32288
+        },
+        "source_b_close": 504,
+        "upstream_provenance": "unverified; repository README does not identify the source and issue #2 asks for provenance without an answer",
+        "promotion_allowed": false
+      },
+      "close_methodology_hypothesis": {
+        "applicable_period": "2025-03-20 through 2025-09-22",
+        "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
+        "verified": false,
+        "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
       }
     }
   ],

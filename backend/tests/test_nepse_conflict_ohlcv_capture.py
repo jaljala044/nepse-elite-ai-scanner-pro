@@ -1,6 +1,6 @@
 from __future__ import annotations
 import unittest
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header
 
 
 def conflict():
@@ -34,6 +34,40 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
         self.assertEqual(client.request_url, "/api/nots/market/today-price?size=500&businessDate=2025-07-28")
         self.assertIsNone(client.payload_date)
         self.assertEqual(result, {"payload_id": 123456})
+
+
+    def test_today_price_probe_omits_explicit_host_header(self):
+        class FakeHTTP:
+            def __init__(self):
+                self.kwargs = None
+
+            def post(self, url, **kwargs):
+                self.kwargs = {"url": url, **kwargs}
+                return "response"
+
+        class FakeClient:
+            def __init__(self):
+                self.client = FakeHTTP()
+
+            def getAuthorizationHeaders(self):
+                return {
+                    "Authorization": "Salter test-token",
+                    "Host": "nepalstock.com.np",
+                    "Content-Type": "application/json",
+                }
+
+            def get_full_url(self, url):
+                return "https://nepalstock.com.np" + url
+
+            def getPOSTPayloadIDForFloorSheet(self):
+                return 123456
+
+        client = FakeClient()
+        result = request_today_price_without_host_header(client, "/api/nots/nepse-data/today-price")
+        self.assertEqual(result, "response")
+        self.assertNotIn("Host", client.client.kwargs["headers"])
+        self.assertEqual(client.client.kwargs["headers"]["Authorization"], "Salter test-token")
+        self.assertEqual(client.client.kwargs["json"], {"id": 123456})
 
     def test_official_row_matching_source_a_is_detected(self):
         payload = {"content": [{

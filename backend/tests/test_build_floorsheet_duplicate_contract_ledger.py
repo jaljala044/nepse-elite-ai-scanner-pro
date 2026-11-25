@@ -16,7 +16,7 @@ class DuplicateContractLedgerTests(unittest.TestCase):
         self.left.write_text(
             "date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"
             "2026-11-24,1,C1,NABIL,11,22,2,100,200\n"
-            "2026-11-24,1,C1,NABIL,11,22,2,100,200\n"
+            "2026-11-24,2,C1,NABIL,11,22,2,100,200\n"
             "2026-11-24,3,C2,NABIL,11,22,1,100,100\n",
             encoding="utf-8",
         )
@@ -48,7 +48,9 @@ class DuplicateContractLedgerTests(unittest.TestCase):
         self.assertEqual(report["duplicate_contract_id_count"], 1)
         self.assertEqual(report["duplicate_physical_row_count"], 2)
         self.assertEqual(report["duplicate_extra_row_count"], 1)
-        self.assertTrue(all(x["duplicate_rows_identical"] for x in report["entries"]))
+        self.assertFalse(any(x["duplicate_rows_identical"] for x in report["entries"]))
+        self.assertTrue(all(x["trade_payload_identical"] for x in report["entries"]))
+        self.assertTrue(all(x["trade_payload_variant_count"] == 1 for x in report["entries"]))
         self.assertEqual([x["occurrence_index"] for x in report["entries"]], [1, 2])
         self.assertEqual([x["physical_csv_line_number"] for x in report["entries"]], [2, 3])
         self.assertFalse(report["training_eligible"])

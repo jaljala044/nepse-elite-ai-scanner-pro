@@ -101,3 +101,52 @@ The MeroLagani search snapshot does not expose an independently checkable daily 
 - [Pinned scraper implementation](https://github.com/SamirWagle/Nepse-All-Scraper/blob/e6160adc6bdf3d19562167388e3d9d4f645c455a/scraper/core/floorsheet.py)
 - [Pinned daily GitHub Actions commit](https://github.com/SamirWagle/Nepse-All-Scraper/commit/e6160adc6bdf3d19562167388e3d9d4f645c455a)
 - [MeroLagani datewise floorsheet page](https://eng.merolagani.com/Floorsheet.aspx)
+
+
+## Contract-level comparison with SocrateAI same-date file — 2026-11-25
+
+A second complete CSV for the same date was retrieved from the pinned SocrateAI repository tree:
+
+- Repository: [socrateai-official/nepse-open-data](https://github.com/socrateai-official/nepse-open-data)
+- Pinned commit: \`cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3\`
+- File: \`floorsheet/floorsheet_2026-11-24.csv\`
+- Git blob SHA-1: \`e7150873219d66a21345df2dfbd78f6c5a4b1152\`
+- Size: **3,058,892 bytes**
+- Observed header: \`transaction,symbol,buyer,seller,quantity,rate,amount,date\`
+
+### Exact row-set comparison
+
+| Measure | Samir / Mero capture | SocrateAI |
+|---|---:|---:|
+| CSV rows | 52,369 | 52,387 |
+| Unique contract IDs | 52,369 | 52,387 |
+| Malformed rows | 0 | 0 |
+| Duplicate contract IDs | 0 | 0 |
+| Formula exceptions | 0 | 0 |
+| Total quantity | 14,662,346 | 14,670,177 |
+| Total gross amount | NPR 5,551,668,556.66 | NPR 5,553,019,249.46 |
+
+All **52,369 shared contract IDs** match exactly across date, symbol, buyer code, seller code, quantity, rate and amount. There are **zero shared-contract field conflicts**. SocrateAI contains **18 additional contracts**; Samir contains no contract ID that is absent from SocrateAI.
+
+Those 18 additional SocrateAI records account exactly for the entire daily-control variance:
+
+| Additional-symbol group | Extra contracts | Quantity | Gross amount |
+|---|---:|---:|---:|
+| RSY2 | 16 | 2,950 | NPR 26,987.00 |
+| NMLBBLP | 1 | 4,856 | NPR 1,295,580.80 |
+| ICFCD89 | 1 | 25 | NPR 28,125.00 |
+| **Total** | **18** | **7,831** | **NPR 1,350,692.80** |
+
+The SocrateAI row totals exactly match MeroLagani's indexed daily quantity and gross-amount summary. This is strong same-day consistency evidence for the 18-row addition, not proof that SocrateAI and MeroLagani are independent acquisition origins. SocrateAI's raw upstream acquisition lineage still requires confirmation.
+
+### Revised conclusion
+
+The earlier anomaly is now isolated: the Samir CSV is a 52,369-contract subset of a same-day 52,387-contract SocrateAI copy. Its 16 serial-number gaps include the 18-contract omission pattern only indirectly; the serial gaps must not be equated one-for-one with missing contracts. The 18 contracts are identified by transaction IDs in the comparison artifact, and their aggregate exactly closes the published daily control difference.
+
+The SocrateAI copy is therefore the **better completeness candidate for 2026-11-24**, because it contains every Samir contract plus the 18 control-reconciling records. It is not yet accepted as canonical: provenance independence, exact original NEPSE source chain, rights and target-universe membership remain unresolved. Keep both copies, hashes, and the 18-record exception set in the source review ledger. Do not rewrite Samir's source file or promote either data source to training.
+
+### Pinned reproducibility references
+
+- [SocrateAI pinned CSV](https://github.com/socrateai-official/nepse-open-data/blob/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-11-24.csv)
+- [SocrateAI pinned commit](https://github.com/socrateai-official/nepse-open-data/commit/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3)
+- [Samir pinned CSV](https://github.com/SamirWagle/Nepse-All-Scraper/blob/e6160adc6bdf3d19562167388e3d9d4f645c455a/data/floorsheet/floorsheet_2026-11-24.csv)

@@ -49,6 +49,22 @@ class ReviewedFloorsheetExtractionTests(unittest.TestCase):
                 self.assertEqual(main(), 0)
             self.assertEqual(json.loads(manifest.read_text())["extracted_member_count"], 1)
 
+    def test_cli_refuses_to_overwrite_existing_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = self._archive(root, [("day.csv", b"sample")])
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            manifest = root / "report.json"
+            manifest.write_text("preserve")
+            argv = [
+                "extract_reviewed_floorsheet_members.py", str(archive), str(root / "out"),
+                "--expected-archive-sha256", digest, "--member", "day.csv",
+                "--manifest-output", str(manifest),
+            ]
+            with patch("sys.argv", argv), self.assertRaises(FileExistsError):
+                main()
+            self.assertEqual(manifest.read_text(), "preserve")
+
     def test_archive_hash_mismatch_blocks_extraction(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

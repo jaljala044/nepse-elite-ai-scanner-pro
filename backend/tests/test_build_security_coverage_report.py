@@ -41,10 +41,10 @@ class SecurityCoverageReportTests(unittest.TestCase):
                 "published_at":"2026-01-01T10:00:00+05:45","retrieved_at_utc":"2026-01-05T00:00:00Z",
                 "verified_at_utc":"2026-01-05T00:00:00Z","scope":"all securities","notes":"fixture"})
         self.write_csv(self.calendar, cal_fields, cal_rows)
-        self.write_csv(self.data, ["symbol","date"], [
-            {"symbol":"AAA","date":"2026-01-02"},
-            {"symbol":"AAA","date":"2026-01-03"},
-            {"symbol":"FUND1","date":"2026-01-04"},
+        self.write_csv(self.data, ["source_id","symbol","date"], [
+            {"source_id":"publisher-a","symbol":"AAA","date":"2026-01-02"},
+            {"source_id":"publisher-a","symbol":"AAA","date":"2026-01-03"},
+            {"source_id":"publisher-a","symbol":"FUND1","date":"2026-01-04"},
         ])
 
     def test_coverage_counts_only_explicit_open_sessions(self):
@@ -64,7 +64,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
     def test_unknown_calendar_date_is_not_added_to_denominator(self):
         self.write_inputs()
         with self.data.open("a", encoding="utf-8") as stream:
-            stream.write("AAA,2026-01-05\n")
+            stream.write("publisher-a,AAA,2026-01-05\n")
         report = build_security_coverage_report(
             self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
         self.assertIn("2026-01-05", report["unverified_calendar_observation_dates"])
@@ -73,12 +73,24 @@ class SecurityCoverageReportTests(unittest.TestCase):
     def test_duplicate_source_rows_do_not_inflate_coverage(self):
         self.write_inputs()
         with self.data.open("a", encoding="utf-8") as stream:
-            stream.write("AAA,2026-01-02\n")
+            stream.write("publisher-a,AAA,2026-01-02\n")
         report = build_security_coverage_report(
             self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
         aaa = next(row for row in report["per_security"] if row["symbol"] == "AAA")
         self.assertEqual(aaa["observed_expected_sessions"], 0)
         self.assertEqual(aaa["duplicate_session_rows"], ["2026-01-02"])
+
+    def test_publishers_are_reported_separately_not_combined(self):
+        self.write_inputs()
+        with self.data.open("a", encoding="utf-8") as stream:
+            stream.write("publisher-b,AAA,2026-01-02\n")
+        report = build_security_coverage_report(
+            self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+        self.assertEqual(report["source_count"], 2)
+        self.assertIsNone(report["aggregate_coverage_ratio"])
+        self.assertEqual([x["source_id"] for x in report["source_specific_reports"]],
+                         ["publisher-a", "publisher-b"])
+        self.assertEqual(report["source_specific_reports"][1]["coverage_ratio"], 0.5)
 
     def test_unknown_instrument_type_fails_closed(self):
         self.write_inputs()

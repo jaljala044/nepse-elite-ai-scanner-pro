@@ -38,9 +38,7 @@ jobs:
           python backend/audit_nepse_holiday_api_archive.py \
             --input-root data/evidence/raw/nepse/holiday-api-authenticated \
             --output "$OUT/nepse-holiday-api-archive.json"
-          python backend/audit_616_session_candidate_manifest.py \\
-            --repo-root . \\
-            --output "$OUT/nepse-616-session-candidate-audit.json"
+          python backend/audit_616_session_candidate_manifest.py --repo-root . --output "$OUT/nepse-616-session-candidate-audit.json"
           python - <<'PY'
           import json
           from pathlib import Path

@@ -286,9 +286,12 @@ def request_date_specific_price_volume(client, endpoint, business_date):
     day-of-month component matches the requested historical session.
     """
     url = f"{endpoint}?size=500&businessDate={business_date}"
+    # The payload ID is bound to the current NEPSE market session/day,
+    # not the historical businessDate filter. This matches the exact
+    # nepse-client v0.1.4 getPriceVolumeHistory call contract.
     return client.requestPOSTAPI(
         url=url,
-        payload_generator=lambda: client.getPOSTPayloadIDForFloorSheet(business_date),
+        payload_generator=client.getPOSTPayloadIDForFloorSheet,
     )
 
 
@@ -353,6 +356,20 @@ def capture(ledger_path, output_dir):
                 request_errors.setdefault("market-price-volume", {})[business_date] = {
                     "type": type(exc).__name__, "message": str(exc)[:300]
                 }
+        # Current-session today-price control without a historical
+        # businessDate filter. This distinguishes route-wide 401 from a
+        # historical-date query restriction.
+        active_business_date = "current-session"
+        try:
+            client.requestPOSTAPI(
+                url=f"{market_price_volume_path}?size=500",
+                payload_generator=client.getPOSTPayloadIDForFloorSheet,
+            )
+        except Exception as exc:
+            request_errors["market-price-volume-current-session"] = {
+                "type": type(exc).__name__, "message": str(exc)[:300]
+            }
+
         # Same-session, minimal floor-sheet POST control. This uses the
         # same Salter authorization and floor-sheet payload generator but a
         # different POST route; size=1 limits the captured public response.
@@ -442,6 +459,20 @@ def capture(ledger_path, output_dir):
             "records": rows,
         }
 
+    current_market_price_volume = reports.get("market-price-volume.current-session")
+    current_market_price_volume_report = {
+        "status": "not_captured" if current_market_price_volume is None else (
+            "captured" if current_market_price_volume["http_status"] == 200
+            and current_market_price_volume["parsed"] is not None else "non_200_or_unparseable"
+        ),
+        "http_status": current_market_price_volume["http_status"] if current_market_price_volume else None,
+        "source_url": current_market_price_volume["source_url"] if current_market_price_volume else None,
+        "response_sha256": current_market_price_volume["response_sha256"] if current_market_price_volume else None,
+        "response_bytes": current_market_price_volume["response_bytes"] if current_market_price_volume else None,
+        "parsed_type": type(current_market_price_volume["parsed"]).__name__ if current_market_price_volume else None,
+        "request_error": request_errors.get("market-price-volume-current-session"),
+    }
+
     floor_control = reports.get("floor-sheet-control")
     floor_sheet_control_report = {
         "status": "not_captured" if floor_control is None else (
@@ -520,6 +551,7 @@ def capture(ledger_path, output_dir):
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,
         "floor_sheet_control": floor_sheet_control_report,
+        "current_session_market_price_volume": current_market_price_volume_report,
         "date_specific_market_price_volume": market_price_volume_reports,
         "date_specific_conflict_comparisons": date_specific_comparisons,
         "resolved_conflict_comparisons": resolved_comparisons,

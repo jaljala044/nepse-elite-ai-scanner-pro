@@ -75,6 +75,22 @@ class TemporalRegistryTests(unittest.TestCase):
         self.assertEqual([a.action_id for a in result["actions"]], ["A1"])
         self.assertTrue(result["point_in_time_eligible"])
 
+    def test_non_finite_corporate_action_factor_rejected(self):
+        for factor in (float("nan"), float("inf"), 0.0, -1.0):
+            with self.subTest(factor=factor), self.assertRaisesRegex(ValueError, "finite and positive"):
+                CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
+                    "2026-11-18T09:00:00Z","2026-11-18T09:00:00Z",factor,"e1")
+
+    def test_available_at_cannot_precede_announcement(self):
+        with self.assertRaisesRegex(ValueError, "cannot precede"):
+            CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
+                "2026-11-20T09:00:00Z","2026-11-19T09:00:00Z",1.1,"e1")
+
+    def test_naive_announcement_timestamp_rejected(self):
+        with self.assertRaisesRegex(ValueError, "announced_at must be timezone-aware"):
+            CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
+                "2026-11-18T09:00:00","2026-11-18T09:00:00Z",1.1,"e1")
+
     def test_naive_corporate_action_timestamp_rejected(self):
         action = CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
                                        "2026-11-18T09:00:00","2026-11-18T09:00:00",1.1,"e1")

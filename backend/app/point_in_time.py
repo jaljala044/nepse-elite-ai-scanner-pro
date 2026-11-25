@@ -49,7 +49,7 @@ def build_as_of_snapshot(records: list[dict], decision_time: str) -> dict:
         record_id = record.get("record_id")
         if record_id is not None and (not isinstance(record_id, str) or not record_id.strip()):
             raise ValueError(f"record {index}: record_id must be a nonblank string when supplied")
-    selected.sort(key=lambda r: (r["available_at"], r.get("record_id", "")))
+    selected.sort(key=lambda r: (_aware(r["available_at"]), r.get("record_id", "")))
     max_available = max(
         (_aware(r["available_at"]) for r in selected), default=None
     )

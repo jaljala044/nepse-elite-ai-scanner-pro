@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import time
 from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
@@ -424,6 +425,147 @@ def parse_legacy_todaysprice_html(html):
     }
 
 
+class _LegacyFloorTableParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.rows = []
+        self._row = None
+        self._cell = None
+        self.pagination = []
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag == "tr":
+            self._row = []
+        elif tag in ("td", "th") and self._row is not None:
+            self._cell = []
+
+    def handle_data(self, data):
+        if self._cell is not None:
+            self._cell.append(data)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in ("td", "th") and self._cell is not None:
+            value = " ".join(" ".join(self._cell).split())
+            self._row.append(value)
+            self._cell = None
+            if "/" in value and re.fullmatch(r"\d+\s*/\s*\d+", value):
+                self.pagination.append(value)
+        elif tag == "tr" and self._row is not None:
+            if self._row:
+                self.rows.append(self._row)
+            self._row = None
+
+
+def parse_legacy_floor_html(html, expected_date):
+    """Parse NEPSE legacy company/transactions table rows."""
+    parser = _LegacyFloorTableParser()
+    parser.feed(html)
+    trades = []
+    for row in parser.rows:
+        if len(row) < 8:
+            continue
+        contract_no = row[1].replace(",", "").strip()
+        if not re.fullmatch(r"\d{16}", contract_no):
+            continue
+        if contract_no[:8] != expected_date.replace("-", ""):
+            continue
+        try:
+            quantity = int(row[5].replace(",", "").strip())
+            rate = float(row[6].replace(",", "").strip())
+            amount = float(row[7].replace(",", "").strip())
+        except (ValueError, IndexError):
+            continue
+        trades.append({
+            "contract_no": contract_no,
+            "buyer_broker": row[3],
+            "seller_broker": row[4],
+            "quantity": quantity,
+            "rate": rate,
+            "amount": amount,
+        })
+    if not trades:
+        return {
+            "status": "no_trades_or_unparseable",
+            "row_count": len(parser.rows),
+            "pagination": parser.pagination,
+            "row_preview": parser.rows[:4],
+        }
+    trades.sort(key=lambda item: item["contract_no"])
+    total_quantity = sum(item["quantity"] for item in trades)
+    total_amount = sum(item["amount"] for item in trades)
+    return {
+        "status": "parsed",
+        "row_count": len(parser.rows),
+        "trade_count": len(trades),
+        "pagination": parser.pagination,
+        "open_from_first_contract": trades[0]["rate"],
+        "high": max(item["rate"] for item in trades),
+        "low": min(item["rate"] for item in trades),
+        "last_contract_rate": trades[-1]["rate"],
+        "volume": total_quantity,
+        "full_day_vwap": total_amount / total_quantity if total_quantity else None,
+        "first_contract_no": trades[0]["contract_no"],
+        "last_contract_no": trades[-1]["contract_no"],
+        "trades": trades,
+    }
+
+
+def fetch_legacy_nepse_floor_rows(symbol, business_date, output_dir):
+    """Fetch the historical trade ledger from NEPSE's legacy company page."""
+    url = f"http://www.nepalstock.com.np/company/transactions/{symbol}"
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36"
+        ),
+        "Referer": "http://www.nepalstock.com.np/",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    try:
+        with httpx.Client(
+            http2=False, verify=True, timeout=90.0, follow_redirects=True
+        ) as session:
+            response = session.post(
+                url,
+                data={
+                    "startDate": business_date,
+                    "endDate": business_date,
+                    "_limit": 5000,
+                },
+                headers=headers,
+            )
+        body = response.content
+        safe_symbol = "".join(ch for ch in symbol if ch.isalnum())
+        body_path = Path(output_dir) / f"legacy-floor.{safe_symbol}.response-body.html"
+        body_path.write_bytes(body)
+        parsed = parse_legacy_floor_html(response.text, business_date)
+        return {
+            "symbol": symbol,
+            "business_date": business_date,
+            "requested_url": url,
+            "final_url": str(response.url),
+            "http_status": response.status_code,
+            "content_type": response.headers.get("content-type"),
+            "response_bytes": len(body),
+            "response_sha256": hashlib.sha256(body).hexdigest(),
+            "response_path": str(body_path),
+            **parsed,
+        }
+    except Exception as exc:
+        return {
+            "symbol": symbol,
+            "business_date": business_date,
+            "requested_url": url,
+            "status": "request_error",
+            "error_type": type(exc).__name__,
+            "error": str(exc)[:300],
+        }
+
+
+
 def fetch_legacy_nepse_daily_row(symbol, business_date, output_dir):
     """Probe NEPSE's legacy date/symbol POST endpoint and preserve its HTML."""
     url = "http://www.nepalstock.com.np/todaysprice"
@@ -631,11 +773,18 @@ def capture(ledger_path, output_dir):
     # Probe the legacy NEPSE date/symbol EOD endpoint. It predates the
     # rolling-365-day JSON API and may preserve historical records.
     legacy_todays_price_reports = []
+    legacy_floor_sheet_reports = []
     for conflict in conflicts:
         if conflict["date"] != "2025-07-28":
             continue
         legacy_todays_price_reports.append(
             fetch_legacy_nepse_daily_row(
+                conflict["symbol"], conflict["date"], output_dir
+            )
+        )
+        time.sleep(0.5)
+        legacy_floor_sheet_reports.append(
+            fetch_legacy_nepse_floor_rows(
                 conflict["symbol"], conflict["date"], output_dir
             )
         )
@@ -825,6 +974,7 @@ def capture(ledger_path, output_dir):
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
         "runtime_clock": runtime_clock,
         "legacy_todays_price": legacy_todays_price_reports,
+        "legacy_floor_sheet": legacy_floor_sheet_reports,
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,

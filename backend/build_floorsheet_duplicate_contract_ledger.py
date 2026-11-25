@@ -72,6 +72,15 @@ def duplicate_ledger(manifest_path: str | Path) -> dict[str, Any]:
                     json.dumps(item["raw_row"], sort_keys=True, separators=(",", ":"))
                     for item in rows
                 }
+                trade_payloads = []
+                for item in rows:
+                    payload_row = dict(item["raw_row"])
+                    if source_format == "samir":
+                        payload_row.pop("sn", None)
+                    trade_payloads.append(json.dumps(
+                        payload_row, sort_keys=True, separators=(",", ":")
+                    ))
+                trade_payload_variant_count = len(set(trade_payloads))
                 for occurrence, item in enumerate(rows, start=1):
                     row = item["raw_row"]
                     entries.append({
@@ -87,6 +96,9 @@ def duplicate_ledger(manifest_path: str | Path) -> dict[str, Any]:
                         "physical_csv_line_number": item["physical_csv_line_number"],
                         "duplicate_rows_identical": len(variants) == 1,
                         "row_variant_count": len(variants),
+                        "source_sequence_field": "sn" if source_format == "samir" else None,
+                        "trade_payload_identical": trade_payload_variant_count == 1,
+                        "trade_payload_variant_count": trade_payload_variant_count,
                         "raw_row": row,
                         "disposition": "unresolved_duplicate_contract_id_no_auto_deduplication",
                     })
@@ -132,6 +144,7 @@ def write_csv(path: Path, report: dict[str, Any]) -> None:
         "trade_date", "source", "source_repository", "source_commit",
         "source_file", "source_sha256", "contract_id", "occurrence_index",
         "occurrence_count", "physical_csv_line_number", "duplicate_rows_identical", "row_variant_count",
+        "source_sequence_field", "trade_payload_identical", "trade_payload_variant_count",
         "raw_row", "disposition",
     )
     path.parent.mkdir(parents=True, exist_ok=True)

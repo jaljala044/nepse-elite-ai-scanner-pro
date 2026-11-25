@@ -289,3 +289,21 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - P1 remains blocked. Current increment and next five actions are documented
   in `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
 
+
+### CI and generated broker evidence — verified
+
+- Latest backend suite: run `45617995122`, success, 535 tests, head
+  `16bffbfd4faa5a1093d72499ac76791ba1068dbb`.
+- Historical data-integrity workflow: run `45617821684`, success; broker
+  derivation executed against the pinned raw sample and produced 81,636 party
+  observations and 15,466 aggregate rows.
+- Artifact ZIP SHA-256:
+  `074a627f3d7ee403e8bffcfba31a4a9cdbcd45822a9076189c5ce0b53a5bdcc6`;
+  party CSV SHA-256:
+  `050139c4f6c4ecc65a49c762f2e7cce0b7d7ad2d75c193349a7d1b0e7fefe9d0`;
+  aggregate JSON SHA-256:
+  `9c4cec23837cba310a6202080f8e7ec6ac36d0397913cdee88073d80037725e0`.
+- No buyer/seller party row is mapped to a canonical broker entity. P1 remains
+  blocked by calendar recovery, source rights/completeness, independent
+  exchange controls, corporate actions and primary OHLCV conflict resolution.
+

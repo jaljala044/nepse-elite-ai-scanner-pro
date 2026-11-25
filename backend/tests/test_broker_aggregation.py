@@ -48,6 +48,18 @@ class BrokerAggregationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source_broker_code"):
             aggregate_broker_observations([item])
 
+    def test_verified_identity_aggregates_across_source_codes(self):
+        first = row(code="BROKER-1", status="verified", line=1)
+        second = row(code="BROKER-1", status="verified", line=2, amount="100.10")
+        first["source_broker_code"] = "11"
+        second["source_broker_code"] = "12"
+        result = aggregate_broker_observations([first, second])
+        self.assertEqual(len(result["aggregates"]), 1)
+        aggregate = result["aggregates"][0]
+        self.assertEqual(aggregate["broker_entity_id"], "BROKER-1")
+        self.assertEqual(aggregate["source_broker_codes"], ["11", "12"])
+        self.assertEqual(aggregate["amount"], "200.20")
+
     def test_identity_status_and_entity_consistency(self):
         with self.assertRaisesRegex(ValueError, "unresolved identity"):
             aggregate_broker_observations([row(code="B11", status="unmapped")])

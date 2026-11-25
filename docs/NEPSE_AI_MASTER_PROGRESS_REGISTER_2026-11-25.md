@@ -1185,3 +1185,52 @@ Verified GitHub Actions:
 - Pinned Samir/MeroLagani sample-audit workflow: **passed** — [run 45551652712](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45551652712).
 
 The earlier failures on commits before \`4ae7d5d\` were due to the case-sensitive test assertion and are superseded by the successful final runs above. No test or audit result changes the source-rights, official-calendar or official-universe blockers. The final data readiness status remains \`REVIEW_REQUIRED\`.
+
+
+## 12. Multi-date floorsheet comparison — priorities 91–100 (2026-11-25)
+
+The next batch moved the pipeline from a one-day contract comparison to a bounded, reproducible multi-date comparison.
+
+### Completed in this work session
+
+| Priority | Work | Result |
+|---|---|---|
+| 91 | Add manifest-driven multi-date contract comparison | Implemented in `backend/compare_floorsheet_manifest.py`; emits per-date comparisons and aggregate status |
+| 92 | Acquire pinned overlapping archive files | Added `backend/acquire_floorsheet_overlap.py`; selects bounded date overlap from pinned repository trees |
+| 93 | Verify source payload identity | Recomputes Git blob SHA-1 before parsing and records payload SHA-256 in manifest; path traversal, hash mismatch, duplicate dates and invalid dates fail closed |
+| 94 | Enforce manifest date consistency | Both source row-date fields must match the manifest date; mismatches are retained as review failures |
+| 95 | Execute ten-date source comparison | Latest 10 common dates in the one-year candidate window acquired and compared |
+| 96 | Quantify repeated source asymmetry | 571,619 shared contracts matched exactly; SocrateAI had 262 additional contracts; zero Samir-only contracts; zero shared-row field conflicts |
+
+### Ten-date execution evidence
+
+Dates: 2026-10-28, 2026-10-29, 2026-10-30, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05, 2026-11-19, 2026-11-20 and 2026-11-24.
+
+- Samir: 571,619 contracts.
+- SocrateAI: 571,881 contracts.
+- Shared IDs and exact shared-row matches: 571,619.
+- SocrateAI-only: 262; Samir-only: 0; shared conflicts: 0.
+- SocrateAI quantity surplus: 187,674 shares.
+- SocrateAI gross-turnover surplus: NPR 19,958,116.86.
+- Both sources: zero malformed rows, duplicate contract IDs and quantity-rate-amount formula exceptions in this sample; all row dates match the manifest dates.
+- These are source-to-source differences, not independently verified missing-trade counts. No independent daily controls were supplied for these ten dates.
+
+Detailed report: `docs/FLOORSHEET_MULTI_DATE_OVERLAP_AUDIT_2026-11-25.md`.
+
+Workflow and artifact:
+- Multi-date workflow [run 45596074299](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596074299) passed.
+- Backend suite [run 45596074194](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596074194): **506 tests passed**.
+- Artifact ID `15013057991`; ZIP SHA-256 `c0c0153df5534876fa3346ddbf3e66ec94f42ad36e3a3181bfde0a449d301c6a`.
+- Report SHA-256 `5c743bec5e0535817304e142e88fa8942d4f2b411cea42e17da3ed10eebab15e`.
+- Manifest SHA-256 `14fe0a9cf4c0298a6b1c7b93f53bef1f7f5f27731357571c23e0f3d76563df81`.
+
+### Remaining priorities in this batch
+
+| Priority | Next action | Acceptance requirement |
+|---|---|---|
+| 97 | Build a per-date exception ledger for the 262 source-only contracts | Every exception carries source/date/contract ID, raw values and file hashes; no auto-resolution |
+| 98 | Compare broker-code distributions and code presence across the ten dates | Preserve raw codes; do not infer effective-dated legal identity |
+| 99 | Compare observed symbols against a dated official target register | Do not classify or discard securities without primary registry evidence |
+| 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | Batch execution, immutable manifests, source hashes, daily exceptions and explicit independent-control gaps |
+
+**Readiness remains REVIEW_REQUIRED.** The multi-date result improves source-comparison evidence but does not resolve source rights/lineage, the primary NEPSE session calendar, the dated 281-equity + 47-mutual-fund registry, or independent daily control totals. No canonical data or model-training data was promoted.

@@ -50,6 +50,7 @@ class DuplicateContractLedgerTests(unittest.TestCase):
         self.assertEqual(report["duplicate_extra_row_count"], 1)
         self.assertTrue(all(x["duplicate_rows_identical"] for x in report["entries"]))
         self.assertEqual([x["occurrence_index"] for x in report["entries"]], [1, 2])
+        self.assertEqual([x["physical_csv_line_number"] for x in report["entries"]], [2, 3])
         self.assertFalse(report["training_eligible"])
 
     def test_hash_mismatch_fails_closed(self):

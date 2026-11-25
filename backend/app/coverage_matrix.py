@@ -67,6 +67,9 @@ def _manifest_sources(payload: dict[str, Any], source_label: str) -> list[dict[s
                 "dataset": dataset_key,
                 "revision": dataset.get("revision"),
                 "listing_complete": dataset.get("listing_complete"),
+                "inventory_complete": dataset.get("inventory_complete"),
+                "files_found": dataset.get("files_found"),
+                "files_considered": dataset.get("files_considered"),
                 "files": dataset.get("records", []),
             })
         return result
@@ -157,6 +160,9 @@ def build_coverage(calendar: dict[str, dict[str, str]], manifest_paths: list[Pat
                 "revision": revision,
                 "file_count_in_manifest": len(files),
                 "listing_complete": source_info.get("listing_complete"),
+                "inventory_complete": source_info.get("inventory_complete"),
+                "files_found": source_info.get("files_found"),
+                "files_considered": source_info.get("files_considered"),
                 "dated_file_count": sum(counts.values()),
                 **dict(sorted(counts.items())),
             })

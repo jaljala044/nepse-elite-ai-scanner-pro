@@ -114,3 +114,37 @@ A green CI run means the implemented checks executed successfully. It does not
 override skipped inputs, empty calendar evidence, unresolved source conflicts,
 unknown licensing, or incomplete corporate-action records. P1 remains blocked
 until the real-data acceptance audit has no unresolved critical blockers.
+
+
+## P1 execution increment — evidence acquisition contracts
+
+Created and pushed empty, explicit templates (not fabricated records):
+- `data/evidence/templates/source-object-manifest.template.jsonl`
+- `data/evidence/templates/source-file-date-manifest.template.jsonl`
+- `data/evidence/templates/calendar-evidence-manifest.template.json`
+- `data/evidence/templates/corporate-action-review.template.csv`
+- `data/evidence/templates/ohlcv-conflict-ledger.template.csv`
+- `data/evidence/templates/broker-party-observations.template.csv`
+
+Added `docs/P1_EVIDENCE_MANIFEST_CONTRACTS_2026-11-25.md`, documenting the
+required fields, provenance rules, raw-byte SHA-256 requirements, date coverage
+semantics, calendar evidence scope/conflict handling, corporate-action review,
+OHLCV quarantine, broker party observation contract and promotion rules.
+
+These six templates and the contract make the next acquisition work
+reproducible, but contain no real captured source objects or verified claims.
+They do not clear any P1 evidence gate. Canonical session calendar remains at
+zero verified rows and the 616-session source list remains unrecovered.
+
+## Next five execution tasks after the contract increment
+
+1. Acquire and hash a bounded raw floorsheet sample from a pinned publisher
+   revision; retain the immutable bytes and source metadata, and check terms.
+2. Acquire a pinned EOD sample for the same date and reconcile contract/date
+   coverage without treating vendor agreement as independent provenance.
+3. Capture original NEPSE calendar notices (including the September 21
+   exceptional suspension), archive bytes and populate claims only after review.
+4. Retrieve the original 616-session generator inputs/calendar and reproduce
+   the exact date set; retain disagreements as unresolved.
+5. Populate the corporate-action, OHLCV conflict and broker observation ledgers
+   from real source evidence, then rerun the integrated acceptance audit.

@@ -17,7 +17,7 @@ from typing import Any
 from app.session_calendar import load_calendar, schedule_candidate
 
 UNIVERSE_FIELDS = ("security_id", "symbol", "instrument_type", "valid_from", "valid_to", "target_in_scope")
-DATA_FIELDS = ("symbol", "date")
+DATA_FIELDS = ("source_id", "symbol", "date")
 
 
 def _read_universe(path: str | Path) -> list[dict[str, Any]]:
@@ -63,8 +63,8 @@ def _read_universe(path: str | Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _read_observations(paths: list[str | Path]) -> dict[str, Counter]:
-    observed: dict[str, Counter] = defaultdict(Counter)
+def _read_observations(paths: list[str | Path]) -> dict[str, dict[str, Counter]]:
+    observed: dict[str, dict[str, Counter]] = defaultdict(lambda: defaultdict(Counter))
     for source_path in paths:
         with Path(source_path).open(encoding="utf-8-sig", newline="") as stream:
             reader = csv.DictReader(stream)
@@ -72,11 +72,12 @@ def _read_observations(paths: list[str | Path]) -> dict[str, Counter]:
             if missing:
                 raise ValueError(f"{source_path}: data missing columns: " + ", ".join(sorted(missing)))
             for line, row in enumerate(reader, 2):
+                source_id = (row.get("source_id") or "").strip()
                 symbol = (row.get("symbol") or "").strip().upper()
-                if not symbol:
-                    raise ValueError(f"{source_path}:{line}: blank symbol")
+                if not source_id or not symbol:
+                    raise ValueError(f"{source_path}:{line}: source_id and symbol are required")
                 day = date.fromisoformat((row.get("date") or "").strip()).isoformat()
-                observed[symbol][day] += 1
+                observed[source_id][symbol][day] += 1
     return observed
 
 
@@ -91,7 +92,7 @@ def build_security_coverage_report(
         raise ValueError("end date must not precede start date")
     universe = _read_universe(universe_path)
     calendar = load_calendar(calendar_path)
-    observed = _read_observations(data_paths)
+    observed_by_source = _read_observations(data_paths)
 
     sessions = sorted(
         day for day, evidence in calendar.items()
@@ -100,65 +101,78 @@ def build_security_coverage_report(
     verified_closed = {day for day, evidence in calendar.items()
                        if start <= day <= end and evidence["status"] in {"verified_closed", "verified_exceptional_closed"}}
     target = [row for row in universe if row["target_in_scope"]]
-    per_security = []
-    expected_total = observed_total = 0
-    unknown_calendar_candidates = set()
-    unexpected_observations = []
-    for security in sorted(target, key=lambda row: (row["instrument_type"], row["symbol"], row["security_id"])):
-        expected = [
-            day for day in sessions
-            if security["valid_from"] <= day and (security["valid_to"] is None or day <= security["valid_to"])
-        ]
-        found = observed.get(security["symbol"], Counter())
-        observed_dates = {date.fromisoformat(day) for day, count in found.items() if count > 0}
-        in_range = {day for day in observed_dates if start <= day <= end}
-        matched = sorted(day for day in expected if found.get(day.isoformat(), 0) == 1)
-        missing = sorted(day.isoformat() for day in expected if found.get(day.isoformat(), 0) == 0)
-        duplicates = sorted(day.isoformat() for day in expected if found.get(day.isoformat(), 0) > 1)
-        unexpected = sorted(day.isoformat() for day in in_range if day not in set(expected))
-        expected_total += len(expected)
-        observed_total += len(matched)
-        for day in in_range:
-            if day not in calendar:
-                unknown_calendar_candidates.add(day.isoformat())
-            elif day in verified_closed:
-                unexpected_observations.append({"symbol": security["symbol"], "date": day.isoformat(), "reason": "observation_on_verified_closed_date"})
-            elif day not in set(expected):
-                unexpected_observations.append({"symbol": security["symbol"], "date": day.isoformat(), "reason": "outside_security_effective_interval_or_not_verified_open"})
-        per_security.append({
-            "security_id": security["security_id"],
-            "symbol": security["symbol"],
-            "instrument_type": security["instrument_type"],
-            "valid_from": security["valid_from"].isoformat(),
-            "valid_to": security["valid_to"].isoformat() if security["valid_to"] else None,
-            "expected_verified_sessions": len(expected),
-            "observed_expected_sessions": len(matched),
-            "missing_sessions": missing,
-            "duplicate_session_rows": duplicates,
-            "observed_outside_expected_sessions": unexpected,
-            "coverage_ratio": (len(matched) / len(expected)) if expected else None,
+    type_counts = Counter(row["instrument_type"] for row in target)
+    per_source = []
+    for source_id, observed in sorted(observed_by_source.items()):
+        per_security = []
+        expected_total = observed_total = 0
+        unknown_calendar_candidates = set()
+        unexpected_observations = []
+        for security in sorted(target, key=lambda row: (row["instrument_type"], row["symbol"], row["security_id"])):
+            expected = [
+                day for day in sessions
+                if security["valid_from"] <= day and (security["valid_to"] is None or day <= security["valid_to"])
+            ]
+            found = observed.get(security["symbol"], Counter())
+            observed_dates = {date.fromisoformat(day) for day, count in found.items() if count > 0}
+            in_range = {day for day in observed_dates if start <= day <= end}
+            matched = sorted(day for day in expected if found.get(day.isoformat(), 0) == 1)
+            missing = sorted(day.isoformat() for day in expected if found.get(day.isoformat(), 0) == 0)
+            duplicates = sorted(day.isoformat() for day in expected if found.get(day.isoformat(), 0) > 1)
+            unexpected = sorted(day.isoformat() for day in in_range if day not in set(expected))
+            expected_total += len(expected)
+            observed_total += len(matched)
+            for day in in_range:
+                if day not in calendar:
+                    unknown_calendar_candidates.add(day.isoformat())
+                elif day in verified_closed:
+                    unexpected_observations.append({"symbol": security["symbol"], "date": day.isoformat(), "reason": "observation_on_verified_closed_date"})
+                elif day not in set(expected):
+                    unexpected_observations.append({"symbol": security["symbol"], "date": day.isoformat(), "reason": "outside_security_effective_interval_or_not_verified_open"})
+            per_security.append({
+                "security_id": security["security_id"],
+                "symbol": security["symbol"],
+                "instrument_type": security["instrument_type"],
+                "valid_from": security["valid_from"].isoformat(),
+                "valid_to": security["valid_to"].isoformat() if security["valid_to"] else None,
+                "expected_verified_sessions": len(expected),
+                "observed_expected_sessions": len(matched),
+                "missing_sessions": missing,
+                "duplicate_session_rows": duplicates,
+                "observed_outside_expected_sessions": unexpected,
+                "coverage_ratio": (len(matched) / len(expected)) if expected else None,
+            })
+        per_source.append({
+            "source_id": source_id,
+            "expected_security_session_observations": expected_total,
+            "matched_security_session_observations": observed_total,
+            "coverage_ratio": observed_total / expected_total if expected_total else None,
+            "unverified_calendar_observation_dates": sorted(unknown_calendar_candidates),
+            "unexpected_observations": unexpected_observations,
+            "per_security": per_security,
         })
 
-    type_counts = Counter(row["instrument_type"] for row in target)
+    # Never combine publishers into one coverage numerator/denominator.
+    single_source = per_source[0] if len(per_source) == 1 else None
     return {
         "start_date": start.isoformat(),
         "end_date": end.isoformat(),
-        "target_security_count": len(target),
-        "target_equity_count": type_counts.get("equity", 0),
-        "target_mutual_fund_count": type_counts.get("mutual_fund", 0),
+        "target_security_count": len({row["security_id"] for row in target}),
+        "target_equity_count": len({row["security_id"] for row in target if row["instrument_type"] == "equity"}),
+        "target_mutual_fund_count": len({row["security_id"] for row in target if row["instrument_type"] == "mutual_fund"}),
         "verified_open_session_count": len(sessions),
-        "verified_closed_date_count": len(verified_closed),
-        "expected_security_session_observations": expected_total,
-        "matched_security_session_observations": observed_total,
-        "aggregate_coverage_ratio": observed_total / expected_total if expected_total else None,
-        "unverified_calendar_observation_dates": sorted(unknown_calendar_candidates),
-        "unexpected_observations": unexpected_observations,
-        "per_security": per_security,
+        "source_count": len(per_source),
+        "source_specific_reports": per_source,
+        "per_security": single_source["per_security"] if single_source else [],
+        "expected_security_session_observations": single_source["expected_security_session_observations"] if single_source else None,
+        "matched_security_session_observations": single_source["matched_security_session_observations"] if single_source else None,
+        "aggregate_coverage_ratio": single_source["coverage_ratio"] if single_source else None,
         "status": "coverage_diagnostic_only",
         "promotion_allowed": False,
         "limitations": [
             "Expected sessions include only explicit verified_open or verified_exceptional_open dates.",
             "Unknown dates are excluded from the denominator and reported separately; no weekday or file-presence inference is used.",
+            "Each publisher is reported separately; coverage ratios from different sources are never merged.",
             "This report measures supplied source rows, not proof of complete market capture or data rights.",
             "Duplicate rows remain anomalies and do not increase matched-session coverage.",
         ],

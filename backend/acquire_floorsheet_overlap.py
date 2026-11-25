@@ -52,6 +52,7 @@ def git_blob_sha1(payload: bytes) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--skip-latest", type=int, default=0)
     parser.add_argument("--end-date", default="2026-11-25")
     parser.add_argument("--days", type=int, default=365)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -59,6 +60,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.limit < 1 or args.limit > 30:
         parser.error("--limit must be between 1 and 30")
+    if args.skip_latest < 0:
+        parser.error("--skip-latest must be non-negative")
     if args.days < 1 or args.days > 366:
         parser.error("--days must be between 1 and 366")
     try:
@@ -69,10 +72,11 @@ def main() -> None:
     samir = tree_files(SAMIR_REPO, SAMIR_COMMIT, SAMIR_PATTERN)
     socrate = tree_files(SOCRATE_REPO, SOCRATE_COMMIT, SOCRATE_PATTERN)
     start_date = end_date - timedelta(days=args.days - 1)
-    overlap = sorted(
-        d for d in set(samir) & set(socrate)
-        if start_date <= date.fromisoformat(d) <= end_date
-    )[-args.limit:]
+    overlap = select_overlap_dates(
+        set(samir), set(socrate),
+        start_date=start_date, end_date=end_date,
+        limit=args.limit, skip_latest=args.skip_latest,
+    )
     if not overlap:
         raise RuntimeError("no overlapping dated floorsheet files found in requested window")
 
@@ -121,6 +125,7 @@ def main() -> None:
     args.manifest.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "selected_date_count": len(overlap),
+        "skip_latest": args.skip_latest,
         "first_selected_date": overlap[0],
         "last_selected_date": overlap[-1],
         "manifest": str(args.manifest),

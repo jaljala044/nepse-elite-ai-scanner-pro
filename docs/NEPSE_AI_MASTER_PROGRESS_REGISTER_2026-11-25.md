@@ -378,3 +378,27 @@ When the project owner asks for all progress, retrieve this register and current
 - Add integration-level tests linking raw capture to broker ingestion, point-in-time snapshots and feature generation using synthetic fixtures.
 - Add effective-date-aware broker identity mapping and corporate-action/security-master as-of joins.
 - Build a reproducible dataset/label contract and fold-level evaluation report before any model training.
+
+
+## 14. Work-session update — next five engineering priorities / integration layer (2026-11-25)
+
+### Implemented in GitHub
+1. **Broker identity effective dating:** extended `BrokerIdentityLink` with inclusive `valid_from` / `valid_to`; historical resolution now accepts an explicit `as_of` date, excludes dated mappings when no as-of date is supplied, rejects reversed date ranges and returns ambiguous when multiple effective mappings overlap. Regression tests cover historical mapping changes, missing as-of, overlap and invalid ranges. Commits: [7930b01](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/7930b018fc7c56f6c8036f566f7b703f6d869d51), [f3105c3](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/f3105c396fd4f2606d58c68f532513db255a5510).
+2. **Temporal security master and corporate actions:** added `backend/app/temporal_registry.py` with effective-dated security lifecycle resolution, conflicting-overlap ambiguity, evidence IDs, and corporate-action as-of filtering by `available_at` (not merely ex-date). Five tests cover lifecycle changes, ambiguity, invalid ranges, late announcements and timezone enforcement. Commits: [59e9782](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/59e9782baa096fe4f9c9de675c285f82fb384121), [40e2725](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/40e2725b6b35acdfdaa7ed640609854be5f1b550).
+3. **Point-in-time feature integration:** added `backend/app/feature_pipeline.py` to apply availability-time filtering before market breadth, per-security descriptive features and broker participation are computed. Synthetic test proves a future OHLCV row is excluded before feature calculation. Commits: [ec1844b](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/ec1844b0b9349342c6f9f7c74bec1aec235e5f28), [1f06c96](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/1f06c96a0145756f8ee15f5a6ab46725b84e7c97).
+4. **Walk-forward evaluation report:** added `backend/app/walk_forward_report.py`; expanding chronological folds now compute a prevalence benchmark from training outcomes only, rather than using test-fold prevalence. Tests cover fold chronology, insufficient history and invalid probabilities. Commits: [6fa7a3d](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/6fa7a3db4b398f43171bca27399791adf4f694c2), [b7b1e05](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/b7b1e0557c7ae52f0e3558b9108f1ce92367e1e9).
+5. **Raw-capture path hardening:** corrected capture-key validation to reject Windows backslash path separators as well as slash traversal. Commit: [372b1f2](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/372b1f22ac3e3dd295fc6431e1b26bed26af8387).
+
+### Verification and limitations
+- Backend test workflow triggered by the latest push: [run 45534978362](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534978362). At register update time it was still **in progress**; no passing CI claim is made yet.
+- The changes are tested through committed synthetic unit tests, but no local execution or real NEPSE source ingestion is claimed here.
+- Security-master and corporate-action records are data structures/lookups only; no authoritative NEPSE/SEBON/CDSC corporate-action feed or verified registry has been loaded.
+- Feature outputs remain descriptive and depend on correctly sourced, point-in-time input rows. No accumulation/distribution intent classifier, trained model, calibration, trading signal or live decision engine is claimed.
+- Walk-forward report is an evaluation scaffold; no verified real dataset or forecast series has been evaluated, and no predictive edge is established.
+- Raw capture still does not fetch the network, manage TLS, verify actual exchange session dates, or prove data rights. Caller must use TLS verification and provide redacted metadata.
+
+### Next acceptance gates
+- Confirm backend CI completion and fix failures before declaring these slices green.
+- Add full synthetic end-to-end capture → normalization → as-of registry → feature → fold evaluation test.
+- Add source lineage, raw fixture hashes, and documented field contracts for floorsheet and OHLCV.
+- Keep real-data activation blocked until primary session evidence, official dated 281-equity + 47-mutual-fund manifest, broker source identity, source rights and coverage are verified.

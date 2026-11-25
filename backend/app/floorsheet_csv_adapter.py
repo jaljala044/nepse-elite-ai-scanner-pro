@@ -30,6 +30,12 @@ class CsvFloorsheetMapping:
     encoding: str = "utf-8-sig"
 
     def __post_init__(self):
+        if not isinstance(self.columns, Mapping):
+            raise ValueError("columns must be a mapping")
+        if not isinstance(self.delimiter, str) or len(self.delimiter) != 1:
+            raise ValueError("delimiter must be exactly one character")
+        if not isinstance(self.encoding, str) or not self.encoding.strip():
+            raise ValueError("encoding must be a nonblank string")
         missing = sorted(set(REQUIRED_FIELDS) - set(self.columns))
         extra = sorted(set(self.columns) - set(REQUIRED_FIELDS))
         if missing:
@@ -40,8 +46,8 @@ class CsvFloorsheetMapping:
             raise ValueError("mapped source headers must be nonblank strings")
         if len(set(self.columns[k] for k in REQUIRED_FIELDS)) != len(REQUIRED_FIELDS):
             raise ValueError("each normalized field must map to a distinct source header")
-        if len(self.delimiter) != 1:
-            raise ValueError("delimiter must be exactly one character")
+        if self.delimiter in {"\\r", "\\n"}:
+            raise ValueError("delimiter cannot be a newline")
 
 
 def parse_floorsheet_csv(
@@ -51,8 +57,12 @@ def parse_floorsheet_csv(
     mapping: CsvFloorsheetMapping,
 ) -> dict:
     """Parse only explicitly mapped CSV headers; never infer unknown columns."""
-    if not source_id.strip():
-        raise ValueError("source_id is required")
+    if not isinstance(payload, bytes):
+        raise ValueError("payload must be bytes")
+    if not isinstance(source_id, str) or not source_id.strip():
+        raise ValueError("source_id must be a nonblank string")
+    if not isinstance(mapping, CsvFloorsheetMapping):
+        raise ValueError("mapping must be a CsvFloorsheetMapping")
     digest = hashlib.sha256(payload).hexdigest()
     try:
         text = payload.decode(mapping.encoding)
@@ -61,6 +71,8 @@ def parse_floorsheet_csv(
     reader = csv.DictReader(io.StringIO(text, newline=""), delimiter=mapping.delimiter)
     if reader.fieldnames is None:
         raise ValueError("CSV header row is required")
+    if any(not isinstance(header, str) or not header.strip() for header in reader.fieldnames):
+        raise ValueError("source headers must be nonblank strings")
     if len(set(reader.fieldnames)) != len(reader.fieldnames):
         raise ValueError("duplicate source headers are not allowed")
     missing_headers = sorted(set(mapping.columns.values()) - set(reader.fieldnames))

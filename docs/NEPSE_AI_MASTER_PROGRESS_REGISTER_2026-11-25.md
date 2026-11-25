@@ -1228,9 +1228,20 @@ Workflow and artifact:
 
 | Priority | Next action | Acceptance requirement |
 |---|---|---|
-| 97 | Build a per-date exception ledger for the 262 source-only contracts | Every exception carries source/date/contract ID, raw values and file hashes; no auto-resolution |
+| 97 | Build a per-date exception ledger for the 262 source-only contracts | **Complete:** 262 hash-linked SocrateAI-only rows; all unresolved and no auto-resolution |
 | 98 | Compare broker-code distributions and code presence across the ten dates | Preserve raw codes; do not infer effective-dated legal identity |
 | 99 | Compare observed symbols against a dated official target register | Do not classify or discard securities without primary registry evidence |
 | 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | Batch execution, immutable manifests, source hashes, daily exceptions and explicit independent-control gaps |
 
 **Readiness remains REVIEW_REQUIRED.** The multi-date result improves source-comparison evidence but does not resolve source rights/lineage, the primary NEPSE session calendar, the dated 281-equity + 47-mutual-fund registry, or independent daily control totals. No canonical data or model-training data was promoted.
+
+
+### Priority 97 — hash-linked exception ledger
+
+- Added `backend/build_floorsheet_source_exception_ledger.py` and regression tests.
+- The bounded overlap workflow now creates JSON and CSV ledgers for source-only rows and shared-field conflicts, linked to both source revisions and both file hashes.
+- For this ten-date run: **262** exceptions, all `right_source_only` / SocrateAI-only; zero conflict entries; all remain unresolved.
+- Artifact [15012988544](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596489553) contains the report, manifest and exception ledger. ZIP SHA-256: `2433f2b88396f5461efefb60096a766d15c39a0943f28e6d8f42655476fc0056`.
+- Backend suite: **509 tests passed** [run 45596489636](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596489636); contract tests and integrated evidence audit also passed [run 45596451411](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596451411) and [run 45596451157](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596451157).
+
+Priorities 98–100 remain open: cross-date broker-code distribution, dated official instrument-universe reconciliation, and expanding from the 10-date pilot to all shared one-year dates with independent controls.

@@ -304,3 +304,24 @@ When the project owner asks for all progress, retrieve this register and current
 8. Point-in-time feature store.
 9. Explainable footprint features and historical episode retrieval.
 10. Walk-forward scenario validation, leakage tests and calibration.
+
+
+## 10. Work-session update — active-universe and exception-evidence acquisition (2026-11-25)
+
+### Active-universe search extended
+- Additional search did not locate a reproducible official NEPSE/SEBON endpoint response or downloadable registry containing stable security IDs, symbol, instrument type and lifecycle effective dates together.
+- A broad third-party symbol page mixes equities, funds and debt-like symbols; symbol-only scraping is not safe for membership classification.
+- Research update: [ACTIVE_UNIVERSE_SOURCE_RESEARCH_2026-11-25.md](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/ACTIVE_UNIVERSE_SOURCE_RESEARCH_2026-11-25.md), commit `51f67e5a74449c55f0e7180796061fa904440e3a`.
+- Outcome: no manifest created; exact 281 + 47 remains a project scope target pending authoritative instrument registry evidence.
+
+### Exception artifact re-acquired
+- Re-downloaded OHLCV audit artifact ID `14921283424` to continue ledger work. Its ZIP contains the aggregate audit JSON and SocrateAI cross-check JSON. The artifacts expose all 1,331 invalid-row candidate values and eight cross-source conflicts, but do not themselves expose every original CSV line number in a directly reusable field.
+- Do not invent missing row numbers. Ledger recreation must either retrieve original pinned ticker CSVs to recover exact source lines or preserve the line number as explicitly unavailable.
+- Existing committed validator remains a useful gate, but ledger data files still need a controlled commit or reproducible immutable artifact workflow.
+
+### Priority execution update
+- Priority 1: calendar research documented; primary official circular and full date-level calendar still missing.
+- Priority 2: enriched 196,784-row artifact downloaded, hash verified and all CSV rows independently counted; calendar join blocked.
+- Priority 3: source audit artifact re-acquired; ledger recreation/commit and adjudication still open.
+- Priority 4: additional official registry search completed without finding sufficient source; no manifest.
+- Priority 5: remains blocked until verified date calendar and universe manifest exist.

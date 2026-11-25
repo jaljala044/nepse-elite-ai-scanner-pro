@@ -84,6 +84,22 @@ class ReviewedFloorsheetExtractionTests(unittest.TestCase):
                 )
             self.assertEqual(target.read_bytes(), b"keep")
 
+    def test_preexisting_partial_temp_file_is_never_removed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = self._archive(root, [("day.csv", b"new")])
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            output = root / "out"
+            output.mkdir()
+            partial = output / "day.csv.extracting"
+            partial.write_bytes(b"preserve")
+            with self.assertRaises(FileExistsError):
+                extract_reviewed_csv_members(
+                    archive, output, member_names=["day.csv"], expected_archive_sha256=digest
+                )
+            self.assertEqual(partial.read_bytes(), b"preserve")
+            self.assertFalse((output / "day.csv").exists())
+
     def test_member_and_total_size_limits_block_extraction(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -1,0 +1,55 @@
+name: multi-date-floorsheet-overlap-audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/acquire_floorsheet_overlap.py"
+      - "backend/compare_floorsheet_manifest.py"
+      - "backend/compare_floorsheet_source_csvs.py"
+      - "backend/tests/test_acquire_floorsheet_overlap.py"
+      - ".github/workflows/multi-date-floorsheet-overlap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-overlap-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test bounded acquisition and comparison utilities
+        working-directory: backend
+        run: |
+          python -m unittest discover -s tests -p "test_acquire_floorsheet_overlap.py" -v
+          python -m unittest discover -s tests -p "test_compare_floorsheet_manifest.py" -v
+          python -m unittest discover -s tests -p "test_compare_floorsheet_source_csvs.py" -v
+      - name: Acquire latest 10 pinned overlapping dates
+        run: |
+          python backend/acquire_floorsheet_overlap.py \
+            --limit 10 \
+            --end-date 2026-11-25 \
+            --days 365 \
+            --output-dir /tmp/floorsheet-overlap-raw \
+            --manifest /tmp/floorsheet-overlap-manifest.json
+      - name: Compare contract sets, rows and dates
+        run: |
+          python backend/compare_floorsheet_manifest.py \
+            --manifest /tmp/floorsheet-overlap-manifest.json \
+            --output /tmp/floorsheet-overlap-report.json
+      - name: Upload comparison metadata report
+        uses: actions/upload-artifact@v4
+        with:
+          name: floorsheet-multi-date-overlap-audit
+          path: |
+            /tmp/floorsheet-overlap-report.json
+            /tmp/floorsheet-overlap-manifest.json
+          if-no-files-found: error
+          retention-days: 30

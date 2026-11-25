@@ -35,10 +35,21 @@ jobs:
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000
-      - name: Upload inventory manifest
+      - name: Build source-separated date coverage report
+        working-directory: backend
+        run: |
+          manifest="$(find ../data/raw/huggingface/manifests -type f -name '*.json' | sort | tail -n 1)"
+          test -n "$manifest"
+          python build_coverage_matrix.py \
+            --calendar ../data/reference/nepse-session-calendar-candidates-2026.csv \
+            --manifest "$manifest" \
+            --output ../data/reports/hf-source-coverage-candidates.json
+      - name: Upload inventory and coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: nepse-hf-inventory
-          path: data/raw/huggingface/manifests/*.json
+          name: nepse-historical-data-audit
+          path: |
+            data/raw/huggingface/manifests/*.json
+            data/reports/hf-source-coverage-candidates.json
           if-no-files-found: error
           retention-days: 30

@@ -309,3 +309,26 @@ The five older records remain quarantined. We must not promote Source A or Sourc
 
 
 The main conflict ledger was updated in commit 23a313f5303868169f365138c1821093de063456 to preserve the exact 2025-07-28 endpoint failures, raw response paths, SocrateAI trade counts/VWAPs, and the unverified provenance/close-methodology caveats for all five older records.
+
+
+### Follow-up research: official recovery channel and archive provenance audit
+
+The endpoint-authentication fix remains PASS as recorded above. A further public-source audit did not identify an accessible original NEPSE EOD export for 2025-07-28:
+
+- NEPSE's current official FAQ lists the Research Branch as the contact for other data/statistics/information: research@nepalstock.com.np, extension 125 (https://www.nepalstock.com/faq).
+- NEPSE's current homepage separately lists Murahari Parajuli at extension 125 with mparajuli@nepalstock.com (https://www.nepalstock.com.np/). Because the published email domains differ, verify the correct recipient with NEPSE before sending.
+- NEPSE's published Data Usage Procedure 2077 describes a formal historical-data application route. The procedure and fees are dated; obtain current written confirmation of eligibility, price and permitted use before any payment (https://content.sharesansar.com/photos/FEB12/Dec%202/API_NEPSE.PDF).
+- A separately maintained public archive, srijankarki07/nepse-data, explicitly states that its entire historical EOD archive is scraped from ShareSansar, not directly from NEPSE. It is therefore not an independent primary source (https://github.com/srijankarki07/nepse-data).
+- The ShareSansarScraper archive likewise explicitly identifies ShareSansar as its upstream and says it is unofficial/not affiliated with NEPSE (https://omitnomis.github.io/ShareSansarScraper/about.html).
+- Public search also surfaced SocrateAI's trade-level archive, but its upstream provenance remains undocumented as already recorded above; it cannot be elevated to NEPSE-primary status merely because its aggregates align with Source B.
+
+A submission-ready request has been added at docs/NEPSE_HISTORICAL_DATA_REQUEST_2025-07-28.md. It asks NEPSE for the official EOD board, time-and-sales/floorsheet, closing-price methodology, provenance/certification, and current historical-data access requirements. It is a draft only and has not been sent.
+
+A broker TMS browser profile is not connected to any signed-in site, and no broker identity/URL or credentials have been supplied. No broker account was accessed. If a broker export is later provided or an authorized session is connected, retain it as a distinct broker-origin source unless NEPSE certifies it.
+
+### Evidence gate after follow-up research
+
+- Endpoint authentication: PASS (Nepal-local date/payload mismatch fixed; successful live NEPSE responses and 2026-11-19 official EOD rows are preserved in run evidence).
+- Five 2025-07-28 rows: NOT PASS — original NEPSE-issued/certified data has not been obtained. Public archives are secondary or have unresolved provenance.
+- All five remain quarantined; no canonical promotion, no training, no PR merge.
+- Next external dependency: receive a verifiable NEPSE Research Branch export/confirmation, or a broker time-and-sales export for corroboration plus NEPSE confirmation of the EOD methodology.

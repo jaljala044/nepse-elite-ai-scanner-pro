@@ -1,7 +1,8 @@
 """Reproducible chronological forecast evaluation with train-only prevalence baseline."""
 from __future__ import annotations
 
-from math import log
+from math import isfinite, log
+from datetime import date
 from app.scenario_validation import walk_forward_splits
 
 
@@ -28,7 +29,21 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
     Each fold's benchmark prevalence is calculated only from outcomes strictly
     before that fold's test start. No shuffled splits or test-derived baseline.
     """
-    ordered = sorted(rows, key=lambda r: (r["observation_date"], r.get("forecast_id", "")))
+    normalized_rows = []
+    for index, row in enumerate(rows):
+        try:
+            observation_date = date.fromisoformat(str(row["observation_date"])).isoformat()
+            actual_value = row["actual"]
+            if isinstance(actual_value, bool) or actual_value not in (0, 1, "0", "1"):
+                raise ValueError("actual must be exactly binary 0 or 1")
+            probability = float(row["probability"])
+            if not isfinite(probability) or not 0 <= probability <= 1:
+                raise ValueError("probability must be finite and between zero and one")
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"invalid walk-forward row {index}: {exc}") from exc
+        normalized_rows.append({**row, "observation_date": observation_date,
+                                "actual": int(actual_value), "probability": probability})
+    ordered = sorted(normalized_rows, key=lambda r: (r["observation_date"], r.get("forecast_id", "")))
     dates = sorted({r["observation_date"] for r in ordered})
     folds = walk_forward_splits(dates, min_train_dates, test_dates, step_dates)
     reports = []
@@ -41,10 +56,8 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
             raise AssertionError("test window crossed before test period")
         if not train:
             continue
-        labels = [int(r["actual"]) for r in test]
-        probabilities = [float(r["probability"]) for r in test]
-        if any(y not in (0, 1) for y in labels) or any(not 0 <= p <= 1 for p in probabilities):
-            raise ValueError("invalid binary label or probability")
+        labels = [r["actual"] for r in test]
+        probabilities = [r["probability"] for r in test]
         prevalence = sum(int(r["actual"]) for r in train) / len(train)
         reports.append({"fold": index, **fold, "train_rows": len(train),
                         "test_rows": len(test), **_scores(labels, probabilities, prevalence)})

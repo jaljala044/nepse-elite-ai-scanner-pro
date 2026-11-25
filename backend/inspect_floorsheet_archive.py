@@ -76,6 +76,8 @@ def inspect_zip(
     seen_names = set()
     seen_casefold = {}
     total_uncompressed = 0
+    total_compressed = 0
+    extension_counts = {}
 
     try:
         with zipfile.ZipFile(path, "r") as archive:
@@ -111,6 +113,10 @@ def inspect_zip(
                 if info.file_size > max_member_uncompressed:
                     member_issues.append("member_size_limit_exceeded")
                 total_uncompressed += max(info.file_size, 0)
+                total_compressed += max(info.compress_size, 0)
+                if not info.is_dir():
+                    suffix = Path(name).suffix.lower() or "[no_extension]"
+                    extension_counts[suffix] = extension_counts.get(suffix, 0) + 1
                 ratio = (
                     float("inf") if info.file_size > 0 and info.compress_size == 0
                     else (info.file_size / info.compress_size if info.compress_size else 0.0)
@@ -150,6 +156,9 @@ def inspect_zip(
         "file_count": sum(not entry["is_directory"] for entry in entries),
         "directory_count": sum(entry["is_directory"] for entry in entries),
         "total_declared_uncompressed_bytes": total_uncompressed,
+        "total_declared_compressed_bytes": total_compressed,
+        "csv_member_count": extension_counts.get(".csv", 0),
+        "file_extension_counts": dict(sorted(extension_counts.items())),
         "limits": {
             "max_entries": max_entries,
             "max_total_uncompressed_bytes": max_total_uncompressed,

@@ -1,0 +1,65 @@
+name: Capture official NEPSE market-summary history
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nepse-market-summary-history
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned NEPSE client
+        run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+      - name: Capture official market-summary-history response
+        id: capture
+        shell: bash
+        run: |
+          set +e
+          capture_date="$(date -u +%Y-%m-%d)"
+          python backend/capture_nepse_market_summary_history.py --output-dir "evidence/nepse-market-summary-history/$capture_date" --candidate-csv data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv
+          status=$?
+          echo "capture_date=$capture_date" >> "$GITHUB_OUTPUT"
+          echo "capture_exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Commit captured raw response when HTTP 200
+        if: steps.capture.outputs.capture_exit_code == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          capture_date="${{ steps.capture.outputs.capture_date }}"
+          target="data/evidence/raw/nepse/market-summary-history/$capture_date"
+          mkdir -p "$target"
+          cp "evidence/nepse-market-summary-history/$capture_date/"* "$target/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          if ! git diff --cached --quiet; then
+            git commit -m "data: archive official NEPSE market-summary history"
+            git pull --rebase origin main
+            git push
+          else
+            echo "No new official market-summary history bytes to commit."
+          fi
+      - name: Upload capture artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-market-summary-history-${{ github.run_id }}
+          path: evidence/nepse-market-summary-history/
+          if-no-files-found: error
+          retention-days: 90

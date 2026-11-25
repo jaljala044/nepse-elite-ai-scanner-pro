@@ -26,9 +26,12 @@ jobs:
           python-version: "3.11"
       - name: Install collector dependency
         run: python -m pip install --upgrade pip httpx
-      - name: Run backend unit tests
+      - name: Test Hugging Face collector
         working-directory: backend
-        run: python -m unittest tests.test_hf_dataset_collector tests.test_coverage_matrix -v
+        run: python -m unittest discover -s tests -p 'test_hf_dataset_collector.py' -v
+      - name: Test coverage matrix
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_coverage_matrix.py' -v
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000
@@ -36,6 +39,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nepse-hf-inventory
-          path: data/raw/huggingface/manifests/*.json
+          path: backend/data/raw/huggingface/manifests/*.json
           if-no-files-found: error
           retention-days: 30

@@ -7,13 +7,15 @@ on:
       - ".github/workflows/capture-primary-reference-evidence.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Capture official CDSC clearing-member CSV
         shell: bash
         run: |
@@ -62,6 +64,32 @@ jobs:
             wc -c evidence/nepse/holiday-listing.html > evidence/nepse/byte-count.txt
           else
             printf 'capture_failed\n' > evidence/nepse/CAPTURE_FAILED.txt
+          fi
+      - name: Commit captured primary source evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="data/evidence/raw/cdsc/2026-11-25"
+          mkdir -p "$target"
+          if [ -f evidence/cdsc/clearing-members.csv ]; then
+            cp evidence/cdsc/clearing-members.csv "$target/clearing-members.csv"
+            cp evidence/cdsc/response-headers.txt "$target/response-headers.txt"
+            cp evidence/cdsc/source-url.txt "$target/source-url.txt"
+            cp evidence/cdsc/SHA256SUMS "$target/SHA256SUMS"
+            cp evidence/cdsc/capture-report.json "$target/capture-report.json"
+          fi
+          if [ -f evidence/nepse/holiday-listing.html ]; then
+            mkdir -p data/evidence/raw/nepse/holiday-listing/2026-11-25
+            cp evidence/nepse/* data/evidence/raw/nepse/holiday-listing/2026-11-25/ || true
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/evidence/raw/
+          if ! git diff --cached --quiet; then
+            git commit -m "data: archive captured primary reference evidence"
+            git push
+          else
+            echo "No new raw evidence bytes to commit."
           fi
       - name: Upload immutable capture artifact
         uses: actions/upload-artifact@v4

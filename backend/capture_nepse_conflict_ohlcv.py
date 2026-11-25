@@ -164,6 +164,88 @@ def analyze_history_payload(payload, conflicts):
     }
 
 
+
+def _row_symbol(row, security_id_to_symbol=None):
+    for field in ("symbol", "securitySymbol", "stockSymbol", "ticker"):
+        value = row.get(field)
+        if isinstance(value, str) and value.strip():
+            return value.strip().upper()
+    for parent in ("security", "securityData", "securityInfo", "scrip"):
+        nested = row.get(parent)
+        if isinstance(nested, dict):
+            value = _row_symbol(nested, security_id_to_symbol)
+            if value:
+                return value
+    for field in ("securityId", "security_id", "id"):
+        value = row.get(field)
+        if value is not None and security_id_to_symbol:
+            mapped = security_id_to_symbol.get(str(value))
+            if mapped:
+                return mapped
+    return None
+
+
+def analyze_date_price_volume_payload(payload, conflicts, security_id_to_symbol=None):
+    """Match a date-specific NEPSE board response to each disputed symbol."""
+    rows, pagination = _find_records(payload)
+    if not rows:
+        status = "no_primary_row" if pagination.get("container") != "unrecognized_dict_shape" else "unmapped_schema"
+        return [
+            {"symbol": item["symbol"], "date": item["date"], "status": status,
+             "primary_rows_found": 0 if status == "no_primary_row" else None,
+             "pagination": pagination}
+            for item in conflicts
+        ]
+
+    comparisons = []
+    for conflict in conflicts:
+        matches = [row for row in rows if _row_symbol(row, security_id_to_symbol) == conflict["symbol"].upper()]
+        if not matches:
+            comparisons.append({
+                "symbol": conflict["symbol"], "date": conflict["date"],
+                "status": "no_primary_row", "primary_rows_found": 0,
+            })
+            continue
+        if len(matches) != 1:
+            comparisons.append({
+                "symbol": conflict["symbol"], "date": conflict["date"],
+                "status": "multiple_primary_rows", "primary_rows_found": len(matches),
+                "primary_rows": matches,
+            })
+            continue
+
+        row = matches[0]
+        field_map = {field: _first_field(row, aliases) for field, aliases in OHLCV_FIELDS.items()}
+        values = {field: _decimal(row.get(source)) if source else None for field, source in field_map.items()}
+        if any(value is None for value in values.values()):
+            comparisons.append({
+                "symbol": conflict["symbol"], "date": conflict["date"],
+                "status": "partial_primary_fields", "field_map": field_map,
+                "missing_fields": [field for field, value in values.items() if value is None],
+                "available_primary_fields": {field: str(value) for field, value in values.items() if value is not None},
+                "primary_row": row,
+            })
+            continue
+
+        official = tuple(values[key] for key in ("open", "high", "low", "close", "volume"))
+        source_a = tuple(_decimal(value) for value in conflict["source_a"]["ohlcv"])
+        source_b = tuple(_decimal(value) for value in conflict["source_b"]["ohlcv"])
+        if official == source_a and official == source_b:
+            status = "matches_both"
+        elif official == source_a:
+            status = "matches_source_a"
+        elif official == source_b:
+            status = "matches_source_b"
+        else:
+            status = "matches_neither"
+        comparisons.append({
+            "symbol": conflict["symbol"], "date": conflict["date"], "status": status,
+            "field_map": field_map, "official_ohlcv": [str(value) for value in official],
+            "source_a_ohlcv": [str(value) for value in source_a],
+            "source_b_ohlcv": [str(value) for value in source_b], "primary_row": row,
+        })
+    return comparisons
+
 def capture(ledger_path, output_dir):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     conflicts = ledger["conflicts"]
@@ -259,19 +341,37 @@ def capture(ledger_path, output_dir):
             "response_sha256": hashlib.sha256(body).hexdigest(), "parsed": parsed,
         }
 
+    security_id_to_symbol = {}
+    security_list_report = reports.get("security-list")
+    if security_list_report and isinstance(security_list_report["parsed"], list):
+        for security in security_list_report["parsed"]:
+            if isinstance(security, dict) and security.get("id") is not None and security.get("symbol"):
+                security_id_to_symbol[str(security["id"])] = str(security["symbol"]).upper()
+
     market_price_volume_reports = {}
+    date_specific_comparisons = []
     for business_date in sorted({item["date"] for item in conflicts}):
+        date_conflicts = [item for item in conflicts if item["date"] == business_date]
         key = "market-price-volume." + business_date
         item = reports.get(key)
         if item is None:
             market_price_volume_reports[business_date] = {"status": "not_captured"}
+            date_specific_comparisons.extend({
+                "symbol": c["symbol"], "date": c["date"], "status": "primary_response_unavailable"
+            } for c in date_conflicts)
             continue
         parsed = item["parsed"]
         rows, pagination = _find_records(parsed) if parsed is not None else ([], {"container": "unparseable"})
+        date_comparisons = analyze_date_price_volume_payload(parsed, date_conflicts, security_id_to_symbol) if parsed is not None else [
+            {"symbol": c["symbol"], "date": c["date"], "status": "primary_response_unparseable"}
+            for c in date_conflicts
+        ]
+        date_specific_comparisons.extend(date_comparisons)
         market_price_volume_reports[business_date] = {
             "status": "captured" if item["http_status"] == 200 and parsed is not None else "unavailable_or_unparseable",
-            "http_status": item["http_status"], "source_url": item["source_url"],
-            "response_sha256": item["response_sha256"], "response_bytes": item["response_bytes"],
+            "http_status": item["status"], "source_url": item["url"],
+            "response_sha256": hashlib.sha256(item["body"]).hexdigest(),
+            "response_bytes": len(item["body"]),
             "record_count": len(rows), "pagination": pagination,
             "field_names": sorted({field for row in rows for field in row}),
             "records": rows,
@@ -313,9 +413,22 @@ def capture(ledger_path, output_dir):
         }
         comparison_results.extend(analysis["conflict_comparisons"])
 
-    all_matched = len(comparison_results) == len(conflicts) and all(
+    # Prefer the independent date-specific NEPSE board comparison; fall back
+    # to the per-security history only when it supplies a complete OHLCV match.
+    history_by_key = {(item["symbol"], item["date"]): item for item in comparison_results}
+    date_by_key = {(item["symbol"], item["date"]): item for item in date_specific_comparisons}
+    resolved_comparisons = []
+    for conflict in conflicts:
+        key = (conflict["symbol"], conflict["date"])
+        date_result = date_by_key.get(key)
+        history_result = history_by_key.get(key)
+        accepted = {"matches_source_a", "matches_source_b", "matches_both"}
+        chosen = date_result if date_result and date_result.get("status") in accepted else history_result or date_result
+        if chosen is not None:
+            resolved_comparisons.append(chosen)
+    all_matched = len(resolved_comparisons) == len(conflicts) and all(
         item["status"] in {"matches_source_a", "matches_source_b", "matches_both"}
-        for item in comparison_results
+        for item in resolved_comparisons
     )
     report = {
         "schema_version": 1, "source_id": "NEPSE_OFFICIAL_PRICE_VOLUME_HISTORY",
@@ -326,7 +439,7 @@ def capture(ledger_path, output_dir):
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,
-        "date_specific_market_price_volume": market_price_volume_reports,
+        "date_specific_market_price_volume": market_price_volume_reports,\n        "date_specific_conflict_comparisons": date_specific_comparisons,\n        "resolved_conflict_comparisons": resolved_comparisons,
         "request_errors": request_errors,
         "conflict_comparisons": comparison_results,
         "all_conflicts_have_primary_match": all_matched,

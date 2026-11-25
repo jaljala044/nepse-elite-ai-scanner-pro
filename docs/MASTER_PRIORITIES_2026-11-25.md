@@ -47,6 +47,13 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - It does not infer sessions, adjust prices, merge sources, or select a winning value. Different relative paths are intentionally not guessed to be the same ticker.
 - Added the focused test suite to the data-integrity workflow. Actual test execution and archive-to-archive reconciliation remain unverified; source archive roots/revisions must be supplied before a real comparison can be reported.
 
+## P1 sample provenance and repeated-candle audit — 2026-11-25
+- Inspected `03_stock_charts_ohlcv/NRN_OHLCV.csv` in both `nepse-smc-data` and `nepse-history-starter`.
+- Both paths returned the same Git blob SHA `a644cc5eaa176ad5bc3f08caf4db262e903940c6`: the two copies are byte-identical, so they are not independent source corroboration for this symbol.
+- The file has 936 rows, 936 unique dates, zero duplicate date keys, and 320 adjacent row pairs with identical OHLCV values. These are review flags only; no rows were deleted and no trading-session inference was made.
+- Enhanced the reconciliation engine to flag adjacent identical candles and reject invalid OHLC bounds or negative/non-integral volume rows. Added focused tests.
+- Sample findings are documented in `docs/NRN_SAMPLE_ROW_AUDIT_2026-11-25.md`. This does not establish the full 525-file overlap or resolve the 616-session calendar.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

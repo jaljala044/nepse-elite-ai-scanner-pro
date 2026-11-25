@@ -16,18 +16,22 @@ class CalendarCoverageMatrixTests(unittest.TestCase):
         self.manifest = self.root / "source.jsonl"
         with self.calendar.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=[
-                "date", "status", "source_id", "evidence_uri", "verified_at_utc", "notes"
+                "date", "status", "source_id", "evidence_uri", "raw_evidence_sha256", "published_at", "retrieved_at_utc", "verified_at_utc", "scope", "notes"
             ])
             writer.writeheader()
             writer.writerow({
                 "date": "2026-11-23", "status": "verified_open",
                 "source_id": "nepse_notice_1", "evidence_uri": "https://example.invalid/1",
-                "verified_at_utc": "2026-11-24T00:00:00Z", "notes": "test"
+                "raw_evidence_sha256": "a" * 64, "published_at": "2026-11-23T09:00:00+05:45",
+                "retrieved_at_utc": "2026-11-24T00:00:00Z",
+                "verified_at_utc": "2026-11-24T00:00:00Z", "scope": "all securities", "notes": "test"
             })
             writer.writerow({
                 "date": "2026-11-24", "status": "verified_closed",
                 "source_id": "nepse_notice_2", "evidence_uri": "https://example.invalid/2",
-                "verified_at_utc": "2026-11-24T00:00:00Z", "notes": "test closure"
+                "raw_evidence_sha256": "b" * 64, "published_at": "2026-11-24T09:00:00+05:45",
+                "retrieved_at_utc": "2026-11-24T10:00:00Z",
+                "verified_at_utc": "2026-11-24T10:00:00Z", "scope": "all securities", "notes": "test closure"
             })
         rows = [
             {"date": "2026-11-23", "repo_id": "source/A", "path": "floorsheet/2026-11-23.csv", "size_bytes": 100},

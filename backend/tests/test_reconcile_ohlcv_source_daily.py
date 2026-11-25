@@ -97,7 +97,7 @@ class OhlcvSourceDailyReconciliationTests(unittest.TestCase):
             "source_id,symbol,date,open,high,low,close,volume,extra\n"
             "A,AAA,2026-11-24,9,11,8,10,100,unmapped\n",
             encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "extra_unmapped_columns"):
+        with self.assertRaisesRegex(ValueError, "unsupported columns"):
             reconcile_ohlcv_sources([self.a])
 
     def test_invalid_control_totals_rejected(self):

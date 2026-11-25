@@ -1,0 +1,43 @@
+name: Repeated adjacent OHLCV candidate audit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/extract_repeated_adjacent_ohlcv.py"
+      - ".github/workflows/repeated-adjacent-ohlcv-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout audit code
+        uses: actions/checkout@v4
+      - name: Checkout pinned NEPSE SMC archive
+        uses: actions/checkout@v4
+        with:
+          repository: jaljala044/nepse-smc-data
+          ref: 937cfcf93d78dfcf28a9f09bb13291447988157b
+          path: sources/nepse-smc-data
+      - name: Checkout pinned history starter archive
+        uses: actions/checkout@v4
+        with:
+          repository: jaljala044/nepse-history-starter
+          ref: b60728d39f34e0f9e428675d817fd52ed2784da6
+          path: sources/nepse-history-starter
+      - name: Extract repeated adjacent-row candidates
+        run: |
+          python scripts/extract_repeated_adjacent_ohlcv.py \
+            --source jaljala044/nepse-smc-data 937cfcf93d78dfcf28a9f09bb13291447988157b sources/nepse-smc-data/03_stock_charts_ohlcv \
+            --source jaljala044/nepse-history-starter b60728d39f34e0f9e428675d817fd52ed2784da6 sources/nepse-history-starter/03_stock_charts_ohlcv \
+            --out reports/repeated-adjacent-ohlcv
+      - name: Upload candidate ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: repeated-adjacent-ohlcv-candidates
+          path: reports/repeated-adjacent-ohlcv/
+          if-no-files-found: error
+          retention-days: 90

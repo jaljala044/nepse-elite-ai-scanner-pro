@@ -1,0 +1,34 @@
+{
+  "source_id": "srijankarki07/nepse-data",
+  "revision": "e6e6fe77cd3378204c7938e66601cee2339a8b7a",
+  "path": "data/daily/2026/2026-11-19.csv",
+  "blob_oid": "79fbb09935a1b704a3e247a06c1c2ed55220dcba",
+  "byte_count": 17912,
+  "sha256": "98a12d21865c80cb96362fbb8a33631c55fc1ca49d61528b8255409f20bbb732",
+  "source_data_rights": "repository README states daily data is scraped from ShareSansar and is not covered by repository MIT license; ShareSansar terms permit reading rather than republishing. Data file is therefore not copied into project.",
+  "comparison_source": {
+    "id": "rajeevpaudel/nepse-history",
+    "revision": "927a15986012b31dba6c29c2266fb17f966a087b",
+    "path": "data/ohlcv/2026/2026-11-19.csv",
+    "blob_oid": "231e3cf047df1e7ac0c070baf917aa1b98b3961f",
+    "lineage": "same source as floorsheet, derived EOD"
+  },
+  "date": "2026-11-19",
+  "srijan_symbols": 347,
+  "derived_symbols": 346,
+  "common_symbols": 346,
+  "only_srijan": [
+    "RSY2"
+  ],
+  "only_derived": [],
+  "symbols_with_any_ohlcv_difference": 77,
+  "field_difference_counts": {
+    "open": 4,
+    "high": 7,
+    "low": 72,
+    "close": 1,
+    "volume": 0
+  },
+  "interpretation": "Independent repository lineage, but data source is ShareSansar republication; source is not primary NEPSE. Preserve discrepancy evidence; no automatic source selection.",
+  "canonical_promotion_allowed": false
+}

@@ -74,3 +74,28 @@ The enriched artifact independently confirms:
 - Combined: 196,784 total = 196,542 baseline-comparable + 240 date-gap candidates + 2 invalid-bound candidates.
 
 The JSON summary and CSV records agree. All 196,784 remain review-only; baseline eligibility means only consecutive calendar dates with OHLC bounds passing, **not** verified exchange sessions.
+
+
+## Cross-archive candidate concordance check — 2026-11-25
+
+The enriched workflow artifact was downloaded from GitHub Actions and independently inspected locally. The downloaded ZIP SHA-256 is `4b8b7c27c642fee768eb3b031928e785a5ef296dc346b4d5c3b8212ba09def67`, matching the workflow artifact digest. The CSV contains 196,784 rows and 15 columns.
+
+A second-level comparison normalized the OHLCV JSON field (sorted keys, compact JSON) and grouped on `(symbol, previous_date, current_date, normalized_ohlcv)`:
+- 102,246 distinct signature/date tuples across both archives.
+- 94,538 tuples appear in both archives.
+- 7,708 tuples appear in only one archive.
+
+This is a reproducible archive-concordance statistic, not independent publisher confirmation: the two GitHub repositories may share upstream data or copied files. Do not count a match across mirrors as independent provenance. The 7,708 single-archive tuples are not automatically errors; they may reflect different date coverage, ticker coverage or archive histories.
+
+Per-source archive scope in this artifact:
+- `nepse-smc-data`: 462 symbol files; candidate current dates 2011-06-20 through 2026-11-20.
+- `nepse-history-starter`: 483 symbol files; candidate current dates 2024-03-06 through 2026-11-20.
+
+Year distribution of the 196,784 candidates:
+- 2011: 1 invalid-OHLC-bound repeated signature.
+- 2016: 3 consecutive-date valid-bound candidates and 1 invalid-OHLC-bound repeated signature.
+- 2024: 69,036 consecutive-date valid-bound + 78 date-gap candidates.
+- 2025: 84,732 consecutive-date valid-bound + 70 date-gap candidates.
+- 2026: 42,771 consecutive-date valid-bound + 92 date-gap candidates.
+
+The 196,542 consecutive-calendar-date candidates remain review-only, not exchange-session-confirmed. No source rows were modified. This analysis does not resolve the calendar blocker or authorize OHLCV repair/training.

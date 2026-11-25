@@ -371,3 +371,65 @@ integrity workflow passed its focused collector, coverage, OHLCV and broker
 party derivation steps and uploaded the artifact. This verifies the code and
 one sample run only; it does not prove historical completeness or canonical
 identity resolution.
+
+
+## P1 execution increment — multi-date broker coverage and conflict quarantine
+
+### Current CDSC directory comparison
+
+The primary CDSC current List of Clearing Members page was rechecked. It
+currently renders 92 clearing-member entries and their CM numbers. Three
+pinned floorsheet samples were scanned for buyer/seller codes and compared to
+that current numeric directory:
+
+- 2015-01-04: 2,343 contracts; 49 observed codes; 49/49 current CM-number
+  matches.
+- 2026-11-18: 41,594 contracts; 91 observed codes; 91/91 matches.
+- 2026-11-19: 40,818 contracts; 91 observed codes; 91/91 matches.
+
+No sample code is absent from the current directory. Code 55 appears in the
+2015 sample but not in the two 2026 samples. This is numeric directory
+coverage only, not effective-dated historical legal identity. The rendered
+CDSC extraction has not yet been archived as raw HTTP bytes and has no raw
+response SHA-256. Full code sets and caveats are in
+`data/evidence/acquired/broker-current-directory-multidate-coverage.json`.
+All historical identity links remain candidate/unmapped.
+
+### Populated OHLCV conflict quarantine
+
+Added `data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json` with all
+8 same-date mismatches across API, BGWT, HRL, MEHL, RAWA, RHGCL and ULHC.
+Each row carries both pinned repository revisions, exact relative paths,
+Git blob OIDs and both reported OHLCV tuples. Git blob OIDs are explicitly
+not represented as SHA-256. No independent primary NEPSE evidence is yet
+attached; all eight remain quarantined and canonical promotion is false.
+
+### Historical floorsheet arithmetic exception
+
+The 2015-01-04 sample's single amount exception is now isolated in
+`data/evidence/acquired/floorsheet-2015-01-04-amount-exception.json`:
+contract `201501042415022`, symbol NMBSF1, quantity 2,610, rate 10.87,
+reported amount 28,371.00 versus calculated 28,370.70 (difference 0.30).
+The raw row is not changed; it is quarantined from monetary control totals
+pending original trade record or source correction evidence.
+
+### Status
+
+This increment improves broker code coverage measurement and makes every
+known OHLCV conflict and the historical amount exception machine-readable.
+It does not resolve the historical legal identity problem, prove any date is
+an NEPSE session, resolve the OHLCV conflicts, or satisfy the primary-source
+and rights gates. P1 remains blocked.
+
+### Next five tasks
+
+1. Archive the current CDSC CSV export as raw bytes with retrieval metadata,
+   SHA-256 and license/use review; compare it against the rendered snapshot.
+2. Obtain primary dated broker-number/name records or effective-dated SEBON /
+   company registrar evidence for historical code transitions.
+3. Resolve the 2025-07-28 four-symbol conflict cluster with primary exchange or
+   issuer records and independent trade-level data; retain both candidates.
+4. Resolve the 2015 NMBSF1 0.30 amount discrepancy from the original transaction
+   record or publisher correction log.
+5. Continue recovery of primary NEPSE session notices and the exact 616-date
+   calendar input; do not promote candidates based on broker or file coverage.

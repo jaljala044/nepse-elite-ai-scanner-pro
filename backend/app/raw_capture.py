@@ -117,7 +117,7 @@ def persist_capture(root: str | Path, payload: bytes, manifest: dict[str, Any]) 
         raise ValueError("manifest payload_bytes does not match exact payload bytes")
     source = str(manifest["source_id"])
     session = manifest.get("verified_session_date") or manifest.get("claimed_session_date") or "unknown-date"
-    if any(part in {"", ".", ".."} or "/" in part or "\\\\" in part for part in (source, session)):
+    if any(part in {"", ".", ".."} or "/" in part or "\\" in part for part in (source, session)):
         raise ValueError("unsafe source/date path component")
 
     directory = Path(root) / source / session / digest

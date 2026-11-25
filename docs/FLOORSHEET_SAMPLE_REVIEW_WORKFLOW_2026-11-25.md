@@ -15,21 +15,16 @@ Review the inventory and select exact member paths. Prefer one or a few represen
 
 The extraction helper is `backend/extract_reviewed_floorsheet_members.py`:
 
-```python
-from extract_reviewed_floorsheet_members import extract_reviewed_csv_members
-
-result = extract_reviewed_csv_members(
-    "path/to/floorsheet.zip",
-    "data/raw/floorsheet_sample",
-    member_names=["floorsheet/2026-11-24.csv"],
-    expected_archive_sha256="<reviewed outer ZIP SHA-256>",
-    max_total_extracted_bytes=50 * 1024 * 1024,
-    max_member_bytes=50 * 1024 * 1024,
-)
+```bash
+python backend/extract_reviewed_floorsheet_members.py /path/to/floorsheet.zip data/raw/floorsheet_sample \
+  --expected-archive-sha256 "<reviewed outer ZIP SHA-256>" \
+  --member "floorsheet/2026-11-24.csv" \
+  --max-total-extracted-bytes 52428800 \
+  --max-member-bytes 52428800 \
+  --manifest-output data/reports/floorsheet-sample-extraction.json
 ```
 
-The function refuses unsafe inventories, mismatched archive hashes, non-CSV members, unlisted members, duplicate allowlist entries, size-limit breaches and overwrites. It records a SHA-256 for each extracted member after full read/CRC verification.
-
+Repeat `--member` for each exact CSV path selected from the reviewed inventory. The function refuses unsafe inventories, mismatched archive hashes, non-CSV members, unlisted members, duplicate allowlist entries, size-limit breaches and overwrites. It records a SHA-256 for each extracted member after full read/CRC verification.
 ## 3. Review the CSV header mapping
 
 Use `app.floorsheet_csv_adapter.CsvFloorsheetMapping` with the exact source header strings. The normalized fields are:

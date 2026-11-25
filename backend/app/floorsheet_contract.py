@@ -34,6 +34,8 @@ class FloorsheetContract:
             raise ValueError("source_payload_sha256 must be a 64-character hex digest")
         if self.source_row_number < 1:
             raise ValueError("source_row_number must be positive")
+        if any(not value.is_finite() for value in (self.quantity, self.rate, self.amount)):
+            raise ValueError("quantity, rate and amount must be finite decimals")
         if min(self.quantity, self.rate, self.amount) <= 0:
             raise ValueError("quantity, rate and amount must be positive")
 

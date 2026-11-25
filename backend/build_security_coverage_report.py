@@ -108,6 +108,19 @@ def build_security_coverage_report(
         expected_total = observed_total = 0
         unknown_calendar_candidates = set()
         unexpected_observations = []
+        target_symbols = {row["symbol"] for row in target}
+        unknown_symbol_observations = []
+        for unknown_symbol, day_counts in sorted(observed.items()):
+            if unknown_symbol in target_symbols:
+                continue
+            for observed_day, row_count in sorted(day_counts.items()):
+                observed_date = date.fromisoformat(observed_day)
+                if start <= observed_date <= end:
+                    unknown_symbol_observations.append({
+                        "symbol": unknown_symbol, "date": observed_day,
+                        "row_count": row_count,
+                        "reason": "symbol_not_in_target_universe_snapshot",
+                    })
         for security in sorted(target, key=lambda row: (row["instrument_type"], row["symbol"], row["security_id"])):
             expected = [
                 day for day in sessions
@@ -149,6 +162,8 @@ def build_security_coverage_report(
             "coverage_ratio": observed_total / expected_total if expected_total else None,
             "unverified_calendar_observation_dates": sorted(unknown_calendar_candidates),
             "unexpected_observations": unexpected_observations,
+            "unknown_symbol_observation_count": sum(row["row_count"] for row in unknown_symbol_observations),
+            "unknown_symbol_observations": unknown_symbol_observations,
             "per_security": per_security,
         })
 

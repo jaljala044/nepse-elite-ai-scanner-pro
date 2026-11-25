@@ -66,10 +66,17 @@ def validate_calendar_evidence_manifest(rows: list[dict], captures: list[dict]) 
             raise ValueError(f"calendar row {index}: status missing or unsupported")
         if not isinstance(source_ids, list) or not source_ids:
             raise ValueError(f"calendar row {index}: source_ids must be a non-empty list")
+        if any(not isinstance(source_id, str) or not source_id.strip() for source_id in source_ids):
+            raise ValueError(f"calendar row {index}: source_ids must contain nonblank strings")
+        if len(source_ids) != len(set(source_ids)):
+            raise ValueError(f"calendar row {index}: duplicate source_ids are not allowed")
         for source_id in source_ids:
             if source_id not in capture_by_id:
                 raise ValueError(f"calendar row {index}: missing captured evidence for {source_id}")
-        scope = _scope_ids(str(row.get("scope") or ""))
+        scope_value = row.get("scope")
+        if not isinstance(scope_value, str) or not scope_value.strip():
+            raise ValueError(f"calendar row {index}: scope is required")
+        scope = _scope_ids(scope_value)
         by_date[day].append({**row, "_scope_ids": scope})
 
     conflicts = []

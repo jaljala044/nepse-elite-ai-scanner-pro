@@ -178,6 +178,12 @@ def build_security_coverage_report(
         "target_security_count": len({row["security_id"] for row in target}),
         "target_equity_count": len({row["security_id"] for row in target if row["instrument_type"] == "equity"}),
         "target_mutual_fund_count": len({row["security_id"] for row in target if row["instrument_type"] == "mutual_fund"}),
+        "expected_target_equity_count": 281,
+        "expected_target_mutual_fund_count": 47,
+        "target_universe_counts_match": (
+            len({row["security_id"] for row in target if row["instrument_type"] == "equity"}) == 281
+            and len({row["security_id"] for row in target if row["instrument_type"] == "mutual_fund"}) == 47
+        ),
         "verified_open_session_count": len(sessions),
         "source_count": len(per_source),
         "source_specific_reports": per_source,

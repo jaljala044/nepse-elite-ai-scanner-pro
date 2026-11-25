@@ -234,3 +234,32 @@ Run #23's capture artifact uploaded successfully, but the same-day evidence comm
 - 2026-11-19 API/HRL/RHGCL: full primary OHLCV confirmed; quarantined pending corporate-action/price-basis review.
 - 2025-07-28 BGWT/MEHL/RAWA/RHGCL/ULHC: original NEPSE EOD response unavailable outside the 365-day retention window. ShareSansar archive plus unverified SocrateAI trade-level archive corroborate values/methodology but do not satisfy primary-provenance gate.
 - All five older records remain quarantined. No canonical promotion, no training, no PR merge.
+
+### Run #24: immutable evidence commit verified
+
+Workflow run #24: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45679244595
+- Focused capture regression tests: PASS.
+- Capture step: PASS.
+- Evidence commit: PASS.
+- Artifact upload: PASS.
+- Final completeness gate: correctly FAILED because the five 2025-07-28 records remain unavailable from the official endpoint.
+- Evidence was committed immutably under data/evidence/raw/nepse/conflict-ohlcv/run-45679244595/. Capture report Git blob: 1c68711df49e635340985d256977946f17fe5cb6.
+- Runtime clock again showed UTC date 2026-11-25 and Nepal date 2026-11-26. Current-session and all controlled today-price requests returned HTTP 200, 180,192-byte JSON responses.
+- 2026-11-19 date-specific response returned HTTP 200 with 347 records; API, HRL and RHGCL matched Source B on all five OHLCV fields.
+- 2025-07-28 date-specific response is preserved at data/evidence/raw/nepse/conflict-ohlcv/run-45679244595/responses/market-price-volume.2025-07-28.response-body.bin, Git blob d324c03fce63f26b4c6721a707840389b95a66af. Exact 27-byte response: "Searched Date is not valid."
+
+The run-specific evidence directory includes the ledger snapshot, so each run's state is preserved and later ledger updates cannot rewrite its historical record.
+
+### External path to original 2025 evidence
+
+NEPSE's official FAQ directs requests for other information/data to its Research Branch: research@nepalstock.com.np, extension 125. NEPSE's data-usage procedure allows institutions/researchers/investors to apply for real-time or historical API data, subject to the stated application and fee procedure. This is the verified official route for obtaining an original 2025-07-28 EOD export after the public API's rolling retention window has expired.
+
+A broker TMS manual also documents a "Market Time and Sales History" report that can filter by security and date range and returns trade time, price and quantity. A broker-generated export for 2025-07-28 could provide trade-level evidence and allow independent calculation of the final-15-minute close, but access requires the user's broker TMS login.
+
+The TinyFish browser connector has been suggested as an optional way to navigate an authenticated broker TMS portal if the user connects it. It is not connected yet and no TMS account was accessed.
+
+### Five older records — final evidence status for this pass
+
+The five 2025-07-28 records remain quarantined because the official EOD endpoint refuses the date and the third-party floorsheet archive's upstream provenance is undocumented. The ShareSansar archive and SocrateAI floorsheet are useful corroboration, and the closing-price methodology provides a plausible explanation for Source A vs Source B close differences, but neither satisfies the primary NEPSE evidence gate.
+
+No promotion, no training, and no merge. The next necessary input is an official NEPSE historical EOD export or broker TMS Market Time and Sales History export for 2025-07-28.

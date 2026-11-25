@@ -42,7 +42,8 @@ jobs:
       - name: Acquire latest 10 pinned overlapping dates
         run: |
           python backend/acquire_floorsheet_overlap.py \
-            --limit 10 \
+            --limit 30 \
+            --skip-latest 10 \
             --end-date 2026-11-25 \
             --days 365 \
             --output-dir /tmp/floorsheet-overlap-raw \

@@ -21,6 +21,30 @@ class WalkForwardReportTests(unittest.TestCase):
         rows = [{"observation_date":"2026-01-01","actual":1,"probability":0.8}]
         self.assertEqual(build_walk_forward_report(rows, 2, 1)["status"], "insufficient_sample")
 
+    def test_fractional_binary_label_rejected_instead_of_truncated(self):
+        rows = [
+            {"observation_date":"2026-01-01","actual":1,"probability":0.8},
+            {"observation_date":"2026-01-02","actual":0.5,"probability":0.2},
+        ]
+        with self.assertRaisesRegex(ValueError, "exactly binary"):
+            build_walk_forward_report(rows, 1, 1)
+
+    def test_non_finite_probability_rejected(self):
+        rows = [
+            {"observation_date":"2026-01-01","actual":1,"probability":0.8},
+            {"observation_date":"2026-01-02","actual":0,"probability":float("nan")},
+        ]
+        with self.assertRaisesRegex(ValueError, "finite"):
+            build_walk_forward_report(rows, 1, 1)
+
+    def test_non_iso_observation_date_rejected(self):
+        rows = [
+            {"observation_date":"2026-01-01","actual":1,"probability":0.8},
+            {"observation_date":"yesterday","actual":0,"probability":0.2},
+        ]
+        with self.assertRaisesRegex(ValueError, "invalid walk-forward row"):
+            build_walk_forward_report(rows, 1, 1)
+
     def test_invalid_probability_rejected(self):
         rows = [
             {"observation_date":"2026-01-01","actual":1,"probability":0.8},

@@ -87,6 +87,12 @@ def read_ohlcv(path: Path) -> tuple[dict[str, list[dict[str, str]]], list[dict[s
                                              path=path, row_number=row_number)
                     for field in NUMERIC_FIELDS
                 }
+                opened, high, low, closed = (Decimal(values[k]) for k in ("open", "high", "low", "close"))
+                volume = Decimal(values["volume"])
+                if low <= 0 or not low <= min(opened, closed) <= max(opened, closed) <= high:
+                    raise ValueError(f"{path}:{row_number}: OHLC values violate candle high/low bounds")
+                if volume < 0 or volume != volume.to_integral_value():
+                    raise ValueError(f"{path}:{row_number}: volume must be a non-negative whole number")
             except ValueError as exc:
                 errors.append({"row": row_number, "date": day, "error": str(exc)})
                 continue
@@ -102,6 +108,18 @@ def _compare_symbol(left_path: Path | None, right_path: Path | None,
     duplicates = {
         "left": {d: len(v) for d, v in left_rows.items() if len(v) > 1},
         "right": {d: len(v) for d, v in right_rows.items() if len(v) > 1},
+    }
+    def repeated_adjacent(rows: dict[str, list[dict[str, str]]]) -> list[dict[str, str]]:
+        ordered = sorted((day, values[0]) for day, values in rows.items() if len(values) == 1)
+        flags = []
+        for (prior_day, prior), (day, current) in zip(ordered, ordered[1:]):
+            if prior == current:
+                flags.append({"prior_date": prior_day, "date": day,
+                              "reason": "adjacent_identical_ohlcv_candle"})
+        return flags
+    repeated_candles = {
+        "left": repeated_adjacent(left_rows),
+        "right": repeated_adjacent(right_rows),
     }
     mismatches = []
     for day in sorted(left_dates & right_dates):
@@ -124,6 +142,7 @@ def _compare_symbol(left_path: Path | None, right_path: Path | None,
         "right_only_dates": sorted(right_dates - left_dates),
         "field_value_mismatches": mismatches,
         "duplicate_dates": duplicates,
+        "adjacent_identical_candles": repeated_candles,
         "invalid_rows": {"left": left_errors, "right": right_errors},
         "left_row_count": sum(map(len, left_rows.values())),
         "right_row_count": sum(map(len, right_rows.values())),

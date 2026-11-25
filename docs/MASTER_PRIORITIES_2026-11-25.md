@@ -364,3 +364,25 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   dates absent from the holiday API.
 - See `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md` and
   `data/reports/nepse-holiday-calendar-reconciliation-2026.json`.
+
+
+### P1 historical primary holiday evidence — 2015–2025 capture success
+
+- Extended the official NEPSE holiday API capture workflow to request every
+  year from 2015 through 2025. All 11 requests returned HTTP 200 and the raw
+  responses, parsed JSON, headers, source URLs and SHA-256 records were
+  committed. The existing 2026 capture remains preserved separately.
+- Across 2015–2026 the API returned 499 records; 498 unique dates when
+  counted within each annual response; one repeated date row occurs in 2020
+  (2020-04-13 has both a SEBON-lockdown and New Year description).
+- 2018 and 2019 responses end on November 9 and October 30; completeness is
+  not established. All records have null instrumentTypeId and activeStatus.
+- These 2015–2025 records are archived as evidence leads, not promoted into
+  the canonical calendar. No dates absent from the API are inferred open.
+- Run 45623107909 succeeded; artifact 15027700386, ZIP SHA-256
+  `ce8959b0f185d92c936a0c5e137cb2645b33c5d6d23b1ff38c15e2e1d68b7eec`.
+- Detailed audit:
+  `docs/NEPSE_OFFICIAL_HOLIDAY_API_MULTYEAR_AUDIT_2015-2026.md`.
+- P1 remains active: recover the exact 616-session list, verify historical
+  open sessions and holiday scope/completeness, and reconcile all raw source
+  and corporate-action evidence before P2.

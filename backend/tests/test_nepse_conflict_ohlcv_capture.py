@@ -5,7 +5,7 @@ import os
 import tempfile
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html, parse_legacy_floor_html, fetch_official_company_floorsheet, fetch_official_company_floorsheet_clean
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html, parse_legacy_floor_html, fetch_official_company_floorsheet_clean
 
 
 def conflict():
@@ -95,28 +95,6 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
         self.assertNotIn("Host", seen["headers"])
         self.assertEqual(seen["headers"]["Authorization"], "Salter test-token")
         self.assertEqual(seen["json"], {"id": 123456})
-
-    def test_official_company_floorsheet_aggregates_api_records(self):
-        class FakeClient:
-            def getFloorSheetOf(self, symbol, business_date, size):
-                self.args = (symbol, business_date, size)
-                return [
-                    {"contractId": "2025072801000064", "contractQuantity": 10, "contractRate": 940, "contractAmount": 9400},
-                    {"contractId": "2025072801000065", "contractQuantity": 20, "contractRate": 960, "contractAmount": 19200},
-                ]
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            result = fetch_official_company_floorsheet(
-                FakeClient(), "BGWT", "2025-07-28", temp_dir
-            )
-            self.assertEqual(result["status"], "captured")
-            self.assertEqual(result["record_count"], 2)
-            self.assertEqual(result["open_from_first_contract"], 940)
-            self.assertEqual(result["high"], 960)
-            self.assertEqual(result["low"], 940)
-            self.assertEqual(result["volume"], 30)
-            self.assertAlmostEqual(result["full_day_vwap"], 953.333333, places=5)
-            self.assertTrue(os.path.exists(result["response_path"]))
 
     def test_legacy_nepse_floor_parser_aggregates_trade_rows(self):
         html = """

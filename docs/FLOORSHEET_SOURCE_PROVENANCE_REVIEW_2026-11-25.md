@@ -42,3 +42,17 @@ The profile is intentionally marked \`publisher_schema_declared_raw_header_not_y
 - Compare the Urek and SocrateAI same-date files at contract level while keeping lineage status explicitly unresolved.
 - Obtain written or published terms for storage and intended analytics use before any redistribution or public release.
 - Keep all samples in a non-canonical review area until data rights, date correctness, coverage and control totals are accepted.
+
+
+## Pinned MeroLagani-derived capture audit — 2026-11-25
+
+A source CSV from SamirWagle was fully acquired and inspected for one date. See [MEROLAGANI_FLOORSHEET_CAPTURE_AUDIT_2026-11-24.md](MEROLAGANI_FLOORSHEET_CAPTURE_AUDIT_2026-11-24.md).
+
+- Pinned file: \`SamirWagle/Nepse-All-Scraper@e6160adc6bdf3d19562167388e3d9d4f645c455a:data/floorsheet/floorsheet_2026-11-24.csv\`.
+- Size 3,538,179 bytes; Git blob SHA-1 \`22eaa891b30aac2fe4cf197053efa014953351c0\`; computed full-payload SHA-256 \`2687b7ed6bc5ebd737fa459ca8dd620941bb3ec1da6613fbd620550495018f55\`.
+- The pinned scraper code requests \`https://merolagani.com/Floorsheet.aspx\`, paginates the displayed table and writes Python \`date.today()\` to the CSV date field. This must be treated as capture date until confirmed against the original page/date context.
+- The complete file has 52,369 rows, unique contract IDs, 347 symbols and no quantity × rate = amount exceptions.
+- The first eight CSV rows match the indexed MeroLagani page snippet for 2026-11-24. The indexed MeroLagani page displays total quantity 14,670,177 and total amount NPR 5,553,019,249.46; the Samir CSV sums to quantity 14,662,346 and NPR 5,551,668,556.66. The mismatch is unresolved and the CSV's serial column has 16 gaps.
+- The pinned repo README uses a license badge marked “Educational”; the pinned repository tree contains no LICENSE or COPYING file. No data reuse / redistribution grant was established.
+
+Decision: the file is a valuable dated sample and MeroLagani-derived comparison lead, but is **not** accepted as a complete daily dataset. Keep the control-total conflict, serial gaps, capture-date semantics and licensing status attached to the source. No canonical or training promotion.

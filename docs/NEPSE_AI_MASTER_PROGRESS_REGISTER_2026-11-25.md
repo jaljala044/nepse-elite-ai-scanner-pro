@@ -1169,3 +1169,19 @@ Created \`docs/NEPSE_DATA_PIPELINE_READINESS_2026-11-25.md\`.
 New unit tests and workflows were added for the source profiles, independent controls, source comparison and 91-code crosswalk. The GitHub connector did not expose workflow run/status records for the new commits during this session. **The new tests are not claimed as passing** until an actual GitHub Actions run or a local reproducible test run is recorded. Earlier backend suite result of 464 passed tests predates this batch.
 
 No raw floorsheet file was committed to the project repository, no source was selected as a canonical dataset for all dates, and no training data was promoted.
+
+
+### Final CI verification — priorities 81–90
+
+After correcting one case-sensitive assertion in \`test_broker_code_crosswalk_artifact.py\` (the official CDSC directory stores "CITIZENS" uppercase), the final code commit is:
+
+\`4ae7d5d04e261f2a392840dfd61506bc98f4aa7f\`
+
+Verified GitHub Actions:
+- Backend suite: **497 tests passed** — [run 45553280566](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45553280566).
+- Backend contract tests: **passed** — [run 45553280557](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45553280557).
+- Integrated evidence audit: **passed** — [run 45553280453](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45553280453).
+- Pinned-source comparison workflow: **passed** — [run 45553060979](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45553060979).
+- Pinned Samir/MeroLagani sample-audit workflow: **passed** — [run 45551652712](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45551652712).
+
+The earlier failures on commits before \`4ae7d5d\` were due to the case-sensitive test assertion and are superseded by the successful final runs above. No test or audit result changes the source-rights, official-calendar or official-universe blockers. The final data readiness status remains \`REVIEW_REQUIRED\`.

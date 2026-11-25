@@ -2,6 +2,13 @@ name: Capture official NEPSE conflict OHLCV history
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - fix/p1-empty-nepse-responses
+    paths:
+      - backend/capture_nepse_conflict_ohlcv.py
+      - backend/tests/test_nepse_conflict_ohlcv_capture.py
+      - .github/workflows/capture-nepse-conflict-ohlcv.yml
 
 permissions:
   contents: write
@@ -23,6 +30,9 @@ jobs:
           python-version: "3.12"
       - name: Install pinned NEPSE client
         run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+      - name: Run conflict-capture regression tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p "test_nepse_conflict_ohlcv_capture.py" -v
       - name: Capture primary OHLCV conflict records
         id: capture
         continue-on-error: true

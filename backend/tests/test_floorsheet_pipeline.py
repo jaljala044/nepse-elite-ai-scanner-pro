@@ -69,6 +69,8 @@ class FloorsheetPipelineTests(unittest.TestCase):
         result = run_floorsheet_pipeline(payload, source_id="fixture",
                                          mapping=MAPPING, broker_links=LINKS)
         self.assertEqual(len(result["rejected_rows"]), 1)
+        self.assertEqual(result["rejected_rows"][0]["raw_source_row"]["Qty"], "bad")
+        self.assertEqual(result["rejected_rows"][0]["source_row_number"], 2)
         self.assertEqual(result["eligible_contract_count"], 0)
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from datetime import date, datetime, timezone
 from urllib.parse import urlparse
 
 OPEN = {"verified_open", "verified_exceptional_open"}
@@ -31,6 +32,8 @@ def validate_calendar_evidence_manifest(rows: list[dict], captures: list[dict]) 
         source_id = str(capture.get("source_id") or "").strip()
         digest = str(capture.get("raw_evidence_sha256") or "").lower()
         url = str(capture.get("final_url") or capture.get("url") or "")
+        retrieved_at = str(capture.get("retrieved_at_utc") or "")
+        raw_path = str(capture.get("raw_evidence_path") or "")
         parsed = urlparse(url)
         if not source_id or source_id in capture_by_id:
             raise ValueError("capture source IDs must be present and unique")
@@ -40,6 +43,14 @@ def validate_calendar_evidence_manifest(rows: list[dict], captures: list[dict]) 
             raise ValueError(f"capture {source_id}: URL is not an approved official host")
         if not re.fullmatch(r"[0-9a-f]{64}", digest):
             raise ValueError(f"capture {source_id}: invalid raw evidence SHA-256")
+        if not raw_path or not retrieved_at:
+            raise ValueError(f"capture {source_id}: raw evidence path and retrieval timestamp are required")
+        try:
+            retrieved = datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError(f"capture {source_id}: invalid retrieval timestamp") from exc
+        if retrieved.tzinfo is None or retrieved.utcoffset() != timezone.utc.utcoffset(retrieved):
+            raise ValueError(f"capture {source_id}: retrieval timestamp must be UTC")
         capture_by_id[source_id] = capture
 
     by_date = defaultdict(list)
@@ -47,8 +58,12 @@ def validate_calendar_evidence_manifest(rows: list[dict], captures: list[dict]) 
         day = str(row.get("date") or "")
         status = row.get("status")
         source_ids = row.get("source_ids")
-        if not day or status not in ALLOWED:
-            raise ValueError(f"calendar row {index}: date/status missing or unsupported")
+        try:
+            date.fromisoformat(day)
+        except ValueError as exc:
+            raise ValueError(f"calendar row {index}: date must be ISO format") from exc
+        if status not in ALLOWED:
+            raise ValueError(f"calendar row {index}: status missing or unsupported")
         if not isinstance(source_ids, list) or not source_ids:
             raise ValueError(f"calendar row {index}: source_ids must be a non-empty list")
         for source_id in source_ids:

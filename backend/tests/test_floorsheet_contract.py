@@ -49,7 +49,7 @@ class FloorsheetContractTests(unittest.TestCase):
         row = {"trade_date":"2026-11-24","contract_id":None,"symbol":"NABIL",
                "buyer_broker_code":"11","seller_broker_code":"42",
                "quantity":"10","rate":"100","amount":"1000"}
-        with self.assertRaisesRegex(ValueError, "must be present"):
+        with self.assertRaisesRegex(ValueError, "nonblank strings"):
             FloorsheetContract.from_mapping(row, source_id="fixture",
                 payload_sha256=self.digest, row_number=1)
 
@@ -57,7 +57,7 @@ class FloorsheetContractTests(unittest.TestCase):
         row = {"trade_date":"not-a-date","contract_id":"C1","symbol":"NABIL",
                "buyer_broker_code":"11","seller_broker_code":"42",
                "quantity":"10","rate":"100","amount":"1000"}
-        with self.assertRaisesRegex(ValueError, "valid ISO date"):
+        with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
             FloorsheetContract.from_mapping(row, source_id="fixture",
                 payload_sha256=self.digest, row_number=1)
 

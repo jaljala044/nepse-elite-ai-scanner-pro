@@ -8,6 +8,72 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+@dataclass(frozen=True)
+class BrokerNameObservation:
+    source_id: str
+    source_broker_code: str
+    observed_name: str
+    observed_at: date
+    evidence_id: str
+
+    def __post_init__(self):
+        if not all((self.source_id.strip(), self.source_broker_code.strip(),
+                    self.observed_name.strip(), self.evidence_id.strip())):
+            raise ValueError("broker name observations require source, code, name and evidence")
+
+
+@dataclass(frozen=True)
+class BrokerEntityName:
+    broker_entity_id: str
+    name: str
+    valid_from: date | None
+    valid_to: date | None
+    evidence_id: str
+
+    def __post_init__(self):
+        if not all((self.broker_entity_id.strip(), self.name.strip(), self.evidence_id.strip())):
+            raise ValueError("broker entity names require ID, name and evidence")
+        if self.valid_from and self.valid_to and self.valid_to < self.valid_from:
+            raise ValueError("valid_to must be on or after valid_from")
+
+
+def _normalized_name(value: str) -> str:
+    """Conservative exact normalization; deliberately no fuzzy matching."""
+    return " ".join(value.casefold().replace(".", " ").replace(",", " ").split())
+
+
+def reconcile_broker_source_name(observed_name: str, as_of: date,
+                                 known_names: list[BrokerEntityName]) -> dict:
+    """Return review candidates only; a name match never creates a verified link."""
+    if not observed_name.strip():
+        raise ValueError("observed_name is required")
+    candidates = [item for item in known_names
+                  if (item.valid_from is None or item.valid_from <= as_of)
+                  and (item.valid_to is None or as_of <= item.valid_to)
+                  and _normalized_name(item.name) == _normalized_name(observed_name)]
+    entities = sorted({item.broker_entity_id for item in candidates})
+    if len(entities) == 1:
+        return {"status": "candidate_requires_evidence", "broker_entity_id": entities[0],
+                "evidence_ids": sorted({item.evidence_id for item in candidates}),
+                "auto_verified": False}
+    if len(entities) > 1:
+        return {"status": "ambiguous", "broker_entity_id": None,
+                "candidate_entity_ids": entities,
+                "evidence_ids": sorted({item.evidence_id for item in candidates}),
+                "auto_verified": False}
+    return {"status": "unmapped", "broker_entity_id": None,
+            "evidence_ids": [], "auto_verified": False}
+
+
+def broker_name_history(observations: list[BrokerNameObservation]) -> list[dict]:
+    """Preserve observed source names by source/code/date; never collapse history."""
+    return [
+        {"source_id": item.source_id, "source_broker_code": item.source_broker_code,
+         "observed_name": item.observed_name, "observed_at": item.observed_at.isoformat(),
+         "evidence_id": item.evidence_id}
+        for item in sorted(observations, key=lambda x: (x.source_id, x.source_broker_code, x.observed_at, x.evidence_id))
+    ]
+
 
 VALID_LINK_STATUSES = {"verified", "ambiguous", "unmapped", "rejected"}
 

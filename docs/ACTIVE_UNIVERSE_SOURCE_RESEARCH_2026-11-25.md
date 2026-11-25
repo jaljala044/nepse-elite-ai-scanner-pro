@@ -51,3 +51,15 @@ A further search for an official instrument-type and lifecycle registry/API did 
 A third-party NEPSE SIMPLE symbol page exposes a broad mixed set of symbols, including ordinary shares, mutual funds and debt-like instruments. This reinforces why symbol-only scraping is unsafe: instrument classes must be identified from an authoritative registry, not guessed from ticker shape or a broad list.
 
 No exact 281 + 47 manifest has been generated. The required next acquisition is an official NEPSE/SEBON/registrar/CDSC data export or documented official endpoint with stable instrument IDs and lifecycle dates. CDSC/registrar data may corroborate units/scheme identities but should not silently replace NEPSE's exchange listing/trading status.
+
+## Official stock-list evidence refresh — 2026-11-25
+
+A fresh public-source check confirms that NEPSE's own [stock-list page](https://www.nepalstock.com.np/stocklist) is indexed with a dated market snapshot (the accessible indexed page reports 2026-10-15, 3:00 PM). The page exposes a search-by-symbol/company-name interface and a long live/dated symbol display. The official [asset list page](https://www.nepalstock.com.np/assetlist.html) also links to corporate information and Listed Securities.
+
+This is stronger source provenance than a third-party ticker list, but it is not yet a machine-captured immutable instrument registry:
+- the stock-list page is a market/trading display, not a complete lifecycle registry;
+- the accessible page does not expose a verified security-ID / instrument-type / effective listing, suspension, resumption and delisting table in the captured text;
+- the indexed stock-list snapshot is dated 2026-10-15, not the requested 2026-11-25 point-in-time snapshot;
+- a candidate /api/nots/security?nonDelisted=true route appears in third-party NEPSE API client documentation, but the endpoint response was not retrievable through the current research connector and has not been independently confirmed as a stable official contract.
+
+Accordingly, the page is retained as a primary-source discovery lead, not as the 281-equity + 47-fund manifest. No symbols are promoted from the page into the target universe based solely on display presence or ticker shape. The next evidence capture must preserve the official raw response, retrieval timestamp, SHA-256, security ID, symbol, instrument type, status and effective dates, then reconcile every difference to the exact target counts.

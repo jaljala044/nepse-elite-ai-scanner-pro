@@ -185,5 +185,31 @@ class FloorsheetPipelineTests(unittest.TestCase):
 
 
 
+    def test_samir_merolagani_controls_accept_quantity_and_amount_only(self):
+        from app.floorsheet_source_profiles import samir_merolagani_capture_mapping
+
+        payload = (
+            "date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"
+            "2026-11-24,1,2026112405013267,BBC,58,11,1,100,100\n"
+        ).encode("utf-8")
+        result = run_floorsheet_pipeline(
+            payload,
+            source_id="SamirWagle/Nepse-All-Scraper@pinned",
+            mapping=samir_merolagani_capture_mapping(),
+            broker_links=[],
+            source_controls=[{
+                "source_id": "SamirWagle/Nepse-All-Scraper@pinned",
+                "trade_date": "2026-11-24",
+                "quantity": "14670177",
+                "gross_amount": "5553019249.46",
+            }],
+        )
+        control = result["source_control_reconciliation"]
+        self.assertEqual(control["status"], "failed")
+        self.assertEqual(set(control["results"][0]["differences"]),
+                         {"quantity", "gross_amount"})
+
+
+
 if __name__ == "__main__":
     unittest.main()

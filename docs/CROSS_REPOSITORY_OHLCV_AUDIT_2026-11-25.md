@@ -262,3 +262,73 @@ pinned starter revision.
    symbol/date; absence from the three-row sample ledger is not sufficient.
 4. Do not select a source or build canonical adjusted/unadjusted series until
    the above checks are complete.
+
+
+## External pinned EOD cross-check of all eight conflicting rows
+
+To investigate the clustered conflicts, fetched two additional dated EOD files
+at the exact source commits pinned in the starter backfill manifest:
+
+- `srijankarki07/nepse-data` commit
+  `e6e6fe77cd3378204c7938e66601cee2339a8b7a`
+- `socrateai-official/nepse-open-data` commit
+  `f602a5b61e68582d28834d16f71151a4bae98d5`
+
+File blob references:
+- Srijan 2025-07-28: `329146bbdb0ef66722933f8aba0542c7e4ec78f8`
+- SocrateAI 2025-07-28: `c6642c2d179b34800b5758ad4225b0861dbf5313`
+- Srijan 2026-11-19: `79fbb09935a1b704a3e247a06c1c2ed55220dcba`
+- SocrateAI 2026-11-19: `132bcc7b973104958cac641b7ef3a9b45d1fa25d`
+
+### 2025-07-28 cluster
+
+For all five affected symbols, Srijan's dated EOD file matches the SMC
+repository's OHLCV values exactly. SocrateAI's unadjusted file instead matches
+the starter archive's OHLC price values (and most of its volume values; some
+volume counts differ slightly).
+
+| Symbol | SMC close / volume | Starter close / volume | Srijan close / volume | SocrateAI close / volume |
+|---|---:|---:|---:|---:|
+| BGWT | 957.17 / 14,028 | 945.00 / 14,028 | 957.17 / 14,028 | 945.00 / 14,016 |
+| MEHL | 475.63 / 29,753 | 470.83 / 29,753 | 475.63 / 29,753 | 470.83 / 29,753 |
+| RAWA | 796.90 / 3,165 | 794.83 / 3,165 | 796.90 / 3,165 | 794.83 / 3,165 |
+| RHGCL | 357.05 / 296,715 | 350.07 / 296,715 | 357.05 / 296,715 | 350.07 / 296,683 |
+| ULHC | 510.75 / 32,288 | 504.00 / 32,288 | 510.75 / 32,288 | 504.00 / 32,285 |
+
+### 2026-11-19 cluster
+
+For API, HRL and RHGCL, the starter archive's OHLC values match Srijan; both
+Srijan and SocrateAI agree on the Close values. The SMC file differs in Close
+for all three. Volume counts differ slightly between Srijan and SocrateAI for
+API and HRL.
+
+| Symbol | SMC close / volume | Starter close / volume | Srijan close / volume | SocrateAI close / volume |
+|---|---:|---:|---:|---:|
+| API | 333.00 / 26,717 | 331.80 / 105,340 | 331.80 / 105,340 | 331.80 / 105,326 |
+| HRL | 486.00 / 18,817 | 483.90 / 49,184 | 483.90 / 49,184 | 483.90 / 49,148 |
+| RHGCL | 256.00 / 4,216 | 258.00 / 9,054 | 258.00 / 9,054 | 258.00 / 9,054 |
+
+### Assessment
+
+- The 2025-07-28 conflict has a clear two-source split: SMC aligns with Srijan;
+  starter aligns with SocrateAI on OHLC. The source pairings also differ in
+  some volume counts. This is strong evidence of distinct upstream snapshots
+  or extraction/correction behavior, but the upstream lineage between these
+  public datasets has not been independently established.
+- The 2026-11-19 close conflicts are more strongly resolved in favor of the
+  starter/Srijan/SocrateAI close values: both external pinned datasets agree
+  with the starter on Close for all three symbols, while SMC differs. SMC
+  volume values also differ materially. This is strong corroboration, not a
+  substitute for a primary exchange record.
+- Do not promote any disputed row automatically. Preserve source-specific
+  versions and evidence. If the project requires a canonical value, obtain
+  exchange-published EOD data or another authoritative primary record and
+  retain all source observations.
+- The source repositories are separately maintained, but this review has not
+  proven that their underlying feeds are independent. Label them as
+  corroborating datasets, not guaranteed independent witnesses.
+
+**Updated status:** all eight conflicts now have two additional pinned EOD
+cross-checks. The 2026 close discrepancies have strong multi-dataset
+corroboration; the 2025 cluster remains a split-source conflict. Primary
+exchange verification and upstream lineage remain open.

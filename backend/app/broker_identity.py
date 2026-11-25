@@ -28,6 +28,8 @@ class BrokerIdentityLink:
     link_status: str
     evidence_id: str | None
     reviewed_at: str | None = None
+    valid_from: date | None = None
+    valid_to: date | None = None
 
 
 def validate_identity_link(link: BrokerIdentityLink) -> None:
@@ -40,33 +42,39 @@ def validate_identity_link(link: BrokerIdentityLink) -> None:
             raise ValueError("verified links require broker_entity_id and evidence_id")
     elif link.broker_entity_id is not None:
         raise ValueError("non-verified links must not assign broker_entity_id")
-    if link.valid_from if hasattr(link, "valid_from") else False:
-        pass
+    if link.valid_from and link.valid_to and link.valid_to < link.valid_from:
+        raise ValueError("valid_to must be on or after valid_from")
 
 
 def resolve_broker_identity(
     source_id: str,
     source_broker_code: str,
     links: list[BrokerIdentityLink],
+    as_of: date | str | None = None,
 ) -> dict:
-    """Resolve only one explicit verified mapping; never fuzzy-match names."""
+    """Resolve one explicit verified link valid on as_of; never fuzzy-match."""
+    if isinstance(as_of, str):
+        as_of = date.fromisoformat(as_of)
     matches = [
         link for link in links
         if link.source_id == source_id and link.source_broker_code == source_broker_code
     ]
     for link in matches:
         validate_identity_link(link)
+    if as_of is None:
+        matches = [x for x in matches if x.valid_from is None and x.valid_to is None]
+    else:
+        matches = [x for x in matches
+                   if (x.valid_from is None or x.valid_from <= as_of)
+                   and (x.valid_to is None or as_of <= x.valid_to)]
     if not matches:
         return {"status": "unmapped", "broker_entity_id": None, "evidence_ids": []}
-    verified = [link for link in matches if link.link_status == "verified"]
+    verified = [x for x in matches if x.link_status == "verified"]
     if len(verified) == 1 and len(matches) == 1:
-        link = verified[0]
-        return {
-            "status": "verified",
-            "broker_entity_id": link.broker_entity_id,
-            "evidence_ids": [link.evidence_id],
-        }
-    if any(link.link_status == "ambiguous" for link in matches) or len(matches) > 1:
+        x = verified[0]
+        return {"status": "verified", "broker_entity_id": x.broker_entity_id,
+                "evidence_ids": [x.evidence_id]}
+    if any(x.link_status == "ambiguous" for x in matches) or len(matches) > 1:
         return {"status": "ambiguous", "broker_entity_id": None,
                 "evidence_ids": sorted({x.evidence_id for x in matches if x.evidence_id})}
     return {"status": "unmapped", "broker_entity_id": None,

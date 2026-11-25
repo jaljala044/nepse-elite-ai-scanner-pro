@@ -2,11 +2,11 @@
 
 **Status:** Draft for submission by the project owner. Not sent.
 
-**Published contact route:** NEPSE FAQ lists the Research Branch for data and information requests at research@nepalstock.com.np, extension 125. NEPSE's current homepage also lists Murahari Parajuli at extension 125 (mparajuli@nepalstock.com). Confirm the correct recipient/address with NEPSE before sending because the published addresses differ.
+**Verified official contact route (checked 2026-11-25):** NEPSE's official data-search page lists Information Officer Murahari Parajuli, extension 125, at mparajuli@nepalstock.com. The NEPSE FAQ has separately listed the Research Branch at research@nepalstock.com.np, extension 125. Start by addressing the Information Officer at the currently listed official data-search contact and copy/confirm the Research Branch address before sending, because the two official pages publish different mailboxes. Reference: https://www.nepalstock.com.np/datasearch.php and https://www.nepalstock.com/faq.
 
 ## Email draft
 
-**To:** research@nepalstock.com.np  
+**To:** mparajuli@nepalstock.com  
 **Subject:** Request for official historical EOD data — 28 July 2025 (BGWT, MEHL, RAWA, RHGCL, ULHC)
 
 Dear Research Branch,
@@ -29,7 +29,7 @@ If available, please provide:
 
 This request is specifically intended to resolve conflicting archived OHLCV values and preserve auditable point-in-time evidence. Please advise whether a certified PDF, signed CSV/XLSX export, or other verifiable official format can be supplied.
 
-I will complete the applicant details and provide any required institutional, research, or identity documents through your prescribed channel.
+I will complete the applicant details and provide any required institutional, research, or identity documents through your prescribed channel. If this mailbox is not responsible for historical data requests, please forward this request to the Research Branch or confirm the correct recipient.
 
 Thank you,
 

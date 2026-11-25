@@ -208,7 +208,7 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
                 raise ValueError("control counts must be non-negative integers")
             if isinstance(value, int):
                 parsed_count = value
-            elif isinstance(value, str) and re.fullmatch(r"\\d+", value):
+            elif isinstance(value, str) and re.fullmatch(r"\d+", value):
                 parsed_count = int(value)
             else:
                 raise ValueError("control counts must be non-negative integers")

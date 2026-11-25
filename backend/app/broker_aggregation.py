@@ -23,11 +23,13 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
     })
     seen_lineages = set()
     for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError(f"row {index}: expected object")
         side = row.get("side")
-        if side not in {"buy", "sell"}:
+        if not isinstance(side, str) or side not in {"buy", "sell"}:
             raise ValueError(f"row {index}: side must be buy or sell")
         status = row.get("identity_status")
-        if status not in {"verified", "unmapped", "ambiguous", "rejected"}:
+        if not isinstance(status, str) or status not in {"verified", "unmapped", "ambiguous", "rejected"}:
             raise ValueError(f"row {index}: unsupported identity_status")
         broker_id = row.get("broker_entity_id")
         if status == "verified" and (not isinstance(broker_id, str) or not broker_id.strip()):
@@ -40,14 +42,16 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
             raise ValueError(f"row {index}: amount and quantity must be decimals") from exc
         if not amount.is_finite() or not quantity.is_finite() or amount < 0 or quantity < 0:
             raise ValueError(f"row {index}: amount and quantity must be finite and non-negative")
-        required = ("trade_date", "symbol", "source_id", "contract_id", "source_payload_sha256", "source_row_number")
-        if any(row.get(k) is None or not str(row.get(k)).strip() for k in required):
+        required = ("trade_date", "symbol", "source_id", "contract_id", "source_payload_sha256")
+        if any(not isinstance(row.get(k), str) or not row[k].strip() for k in required):
             raise ValueError(f"row {index}: missing grouping or lineage field")
+        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", row["trade_date"]):
+            raise ValueError(f"row {index}: trade_date must be ISO date")
         try:
-            date.fromisoformat(str(row["trade_date"]))
+            date.fromisoformat(row["trade_date"])
         except ValueError as exc:
             raise ValueError(f"row {index}: trade_date must be ISO date") from exc
-        if str(row["symbol"]) != str(row["symbol"]).strip().upper():
+        if row["symbol"] != row["symbol"].strip().upper():
             raise ValueError(f"row {index}: symbol must be uppercase")
         payload_hash = str(row["source_payload_sha256"]).lower()
         if not re.fullmatch(r"[0-9a-f]{64}", payload_hash):
@@ -59,7 +63,7 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         if source_row_number < 1 or str(source_row_number) != str(row["source_row_number"]):
             raise ValueError(f"row {index}: source_row_number must be a positive integer")
         identity_evidence = row.get("identity_evidence_ids", [])
-        if not isinstance(identity_evidence, list) or any(not str(value).strip() for value in identity_evidence):
+        if not isinstance(identity_evidence, list) or any(not isinstance(value, str) or not value.strip() for value in identity_evidence):
             raise ValueError(f"row {index}: identity_evidence_ids must be a list of nonblank IDs")
         if status == "verified" and not identity_evidence:
             raise ValueError(f"row {index}: verified identity requires identity evidence IDs")
@@ -136,10 +140,18 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
 
     contracts = defaultdict(list)
     for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError(f"row {index}: expected object")
         required = ("source_id", "trade_date", "contract_id", "side", "amount", "quantity")
-        if any(row.get(key) in (None, "") for key in required):
+        if any(not isinstance(row.get(key), str) or not row[key].strip() for key in required[:3]):
             raise ValueError(f"row {index}: missing source control reconciliation field")
-        if row["side"] not in {"buy", "sell"}:
+        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", row["trade_date"]):
+            raise ValueError(f"row {index}: trade_date must be ISO date")
+        try:
+            date.fromisoformat(row["trade_date"])
+        except ValueError as exc:
+            raise ValueError(f"row {index}: trade_date must be ISO date") from exc
+        if not isinstance(row["side"], str) or row["side"] not in {"buy", "sell"}:
             raise ValueError(f"row {index}: side must be buy or sell")
         try:
             amount = Decimal(str(row["amount"]))
@@ -179,13 +191,25 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
     expected = {}
     for index, control in enumerate(controls):
         key = (control.get("source_id"), control.get("trade_date"))
-        if not all(key) or key in expected:
+        if (
+            not isinstance(control.get("source_id"), str) or not control["source_id"].strip()
+            or not isinstance(control.get("trade_date"), str)
+            or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", control["trade_date"])
+            or key in expected
+        ):
             raise ValueError(f"control {index}: missing or duplicate source/date control key")
         try:
+            date.fromisoformat(control["trade_date"])
+            contract_count = control["contract_count"]
+            party_count = control["party_observation_count"]
+            if (isinstance(contract_count, bool) or not isinstance(contract_count, int)
+                    or contract_count < 0 or isinstance(party_count, bool)
+                    or not isinstance(party_count, int) or party_count < 0):
+                raise ValueError("control counts must be non-negative integers")
             expected[key] = {
-                "contract_count": int(control["contract_count"]),
+                "contract_count": contract_count,
                 "gross_amount": Decimal(str(control["gross_amount"])),
-                "party_observation_count": int(control["party_observation_count"]),
+                "party_observation_count": party_count,
             }
         except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
             raise ValueError(f"control {index}: invalid source control totals") from exc

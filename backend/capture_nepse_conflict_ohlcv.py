@@ -791,6 +791,7 @@ def capture(ledger_path, output_dir):
 
     client.client.event_hooks["response"].append(preserve_response)
     request_errors = {}
+    official_company_floorsheet_reports = []
     try:
         # Capture NEPSE's date-specific market price-volume endpoint once per
         # disputed session. Preserve raw responses for independent field review.
@@ -885,6 +886,18 @@ def capture(ledger_path, output_dir):
                 request_errors.setdefault(symbol, {})["daily_graph"] = {
                     "type": type(exc).__name__, "message": str(exc)[:300]
                 }
+        # Historical symbol-specific floor sheet endpoint may retain
+        # transaction rows beyond the rolling EOD window.
+        for conflict in conflicts:
+            if conflict["date"] != "2025-07-28":
+                continue
+            active_business_date = f"{conflict['symbol']}.{conflict['date']}"
+            official_company_floorsheet_reports.append(
+                fetch_official_company_floorsheet(
+                    client, conflict["symbol"], conflict["date"], output_dir
+                )
+            )
+            time.sleep(0.5)
     finally:
         client.close()
 
@@ -893,18 +906,6 @@ def capture(ledger_path, output_dir):
     legacy_full_market_report = fetch_legacy_nepse_full_market_page(
         "2025-07-28", output_dir
     )
-    official_company_floorsheet_reports = []
-    for conflict in conflicts:
-        if conflict["date"] != "2025-07-28":
-            continue
-        active_business_date = f"{conflict['symbol']}.{conflict['date']}"
-        official_company_floorsheet_reports.append(
-            fetch_official_company_floorsheet(
-                client, conflict["symbol"], conflict["date"], output_dir
-            )
-        )
-        time.sleep(0.5)
-
     legacy_todays_price_reports = []
     legacy_floor_sheet_reports = []
     for conflict in conflicts:

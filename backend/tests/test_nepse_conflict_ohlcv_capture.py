@@ -4,7 +4,7 @@ import httpx
 import os
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html, parse_legacy_floor_html
 
 
 def conflict():
@@ -18,6 +18,25 @@ def conflict():
 class NepseConflictOhlcvCaptureTests(unittest.TestCase):
 
 
+
+
+    def test_legacy_nepse_floor_parser_aggregates_trade_rows(self):
+        html = """
+        <table>
+          <tr><th>S.No</th><th>Contract</th><th>Symbol</th><th>Buyer</th><th>Seller</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+          <tr><td>1</td><td>2025072801000064</td><td>BGWT</td><td>58</td><td>17</td><td>10</td><td>940</td><td>9400</td></tr>
+          <tr><td>2</td><td>2025072801000065</td><td>BGWT</td><td>58</td><td>17</td><td>20</td><td>960</td><td>19200</td></tr>
+          <tr><td>1/1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </table>
+        """
+        result = parse_legacy_floor_html(html, "2025-07-28")
+        self.assertEqual(result["status"], "parsed")
+        self.assertEqual(result["trade_count"], 2)
+        self.assertEqual(result["open_from_first_contract"], 940)
+        self.assertEqual(result["high"], 960)
+        self.assertEqual(result["low"], 940)
+        self.assertEqual(result["volume"], 30)
+        self.assertAlmostEqual(result["full_day_vwap"], 953.333333, places=5)
 
     def test_legacy_nepse_table_parser_extracts_official_daily_fields(self):
         cells = ["x"] * 13 + ["145", "992.0", "933.4", "957.17", "14028", "12345678", "940.0"]

@@ -8,6 +8,7 @@ import hashlib
 import json
 from collections import Counter
 from decimal import Decimal, InvalidOperation
+from datetime import date as date_type
 from pathlib import Path
 from typing import Any
 
@@ -62,11 +63,13 @@ def read_source(path: str | Path, source_format: str) -> dict[str, Any]:
     malformed_rows = 0
     formula_mismatch_ids: list[str] = []
     date_counts: Counter[str] = Counter()
+    input_row_count = 0
     quantity_total = Decimal("0")
     amount_total = Decimal("0")
     symbols: set[str] = set()
 
     for row in reader:
+        input_row_count += 1
         if None in row or any(row.get(header) is None for header in headers):
             malformed_rows += 1
             continue
@@ -78,7 +81,12 @@ def read_source(path: str | Path, source_format: str) -> dict[str, Any]:
         contract_id = raw["contract_no"] if source_format == "samir" else raw["transaction"]
         date = raw["date"]
         symbol = raw["stock_symbol"] if source_format == "samir" else raw["symbol"]
-        if not contract_id or len(date) != 10 or date[4] != "-" or date[7] != "-":
+        if not contract_id:
+            malformed_rows += 1
+            continue
+        try:
+            date_type.fromisoformat(date)
+        except ValueError:
             malformed_rows += 1
             continue
 
@@ -118,11 +126,16 @@ def read_source(path: str | Path, source_format: str) -> dict[str, Any]:
         "byte_size": len(payload),
         "sha256": digest,
         "headers": list(headers),
-        "row_count": sum(date_counts.values()),
+        "row_count": input_row_count,
+        "valid_row_count": sum(date_counts.values()),
         "unique_contract_count": len(rows),
         "duplicate_contract_ids": sorted(set(duplicate_contract_ids)),
         "malformed_rows": malformed_rows,
         "formula_mismatch_contract_ids": sorted(set(formula_mismatch_ids)),
+        "data_quality_status": (
+            "passed" if not malformed_rows and not duplicate_contract_ids
+            and not formula_mismatch_ids else "review_required"
+        ),
         "date_counts": dict(date_counts),
         "symbols": sorted(symbols),
         "quantity": quantity_total,

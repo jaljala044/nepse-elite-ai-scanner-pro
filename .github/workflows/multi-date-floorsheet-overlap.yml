@@ -10,6 +10,8 @@ on:
       - "backend/tests/test_acquire_floorsheet_overlap.py"
       - "backend/tests/test_compare_floorsheet_manifest.py"
       - "backend/tests/test_compare_floorsheet_source_csvs.py"
+      - "backend/build_floorsheet_source_exception_ledger.py"
+      - "backend/tests/test_build_floorsheet_source_exception_ledger.py"
       - ".github/workflows/multi-date-floorsheet-overlap.yml"
   workflow_dispatch:
 
@@ -33,6 +35,7 @@ jobs:
           python -m unittest discover -s tests -p "test_acquire_floorsheet_overlap.py" -v
           python -m unittest discover -s tests -p "test_compare_floorsheet_manifest.py" -v
           python -m unittest discover -s tests -p "test_compare_floorsheet_source_csvs.py" -v
+          python -m unittest discover -s tests -p "test_build_floorsheet_source_exception_ledger.py" -v
       - name: Acquire latest 10 pinned overlapping dates
         run: |
           python backend/acquire_floorsheet_overlap.py \
@@ -46,12 +49,21 @@ jobs:
           python backend/compare_floorsheet_manifest.py \
             --manifest /tmp/floorsheet-overlap-raw/manifest.json \
             --output /tmp/floorsheet-overlap-report.json
-      - name: Upload comparison metadata report
+      - name: Build unresolved source-exception ledger
+        run: |
+          python backend/build_floorsheet_source_exception_ledger.py \\
+            --report /tmp/floorsheet-overlap-report.json \\
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \\
+            --json-output /tmp/floorsheet-source-exception-ledger.json \\
+            --csv-output /tmp/floorsheet-source-exception-ledger.csv
+      - name: Upload comparison and exception evidence
         uses: actions/upload-artifact@v4
         with:
           name: floorsheet-multi-date-overlap-audit
           path: |
             /tmp/floorsheet-overlap-report.json
             /tmp/floorsheet-overlap-raw/manifest.json
+            /tmp/floorsheet-source-exception-ledger.json
+            /tmp/floorsheet-source-exception-ledger.csv
           if-no-files-found: error
           retention-days: 30

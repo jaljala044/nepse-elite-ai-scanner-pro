@@ -11,7 +11,9 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import stat
+from datetime import date
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -78,6 +80,8 @@ def inspect_zip(
     total_uncompressed = 0
     total_compressed = 0
     extension_counts = {}
+    filename_dates = {}
+    filename_date_errors = []
 
     try:
         with zipfile.ZipFile(path, "r") as archive:
@@ -117,6 +121,14 @@ def inspect_zip(
                 if not info.is_dir():
                     suffix = Path(name).suffix.lower() or "[no_extension]"
                     extension_counts[suffix] = extension_counts.get(suffix, 0) + 1
+                    match = re.search(r"(?<!\\d)(20\\d{2})[-_]?([01]\\d)[-_]?([0-3]\\d)(?!\\d)", name)
+                    if match:
+                        candidate = "-".join(match.groups())
+                        try:
+                            date.fromisoformat(candidate)
+                            filename_dates.setdefault(candidate, []).append(name)
+                        except ValueError:
+                            filename_date_errors.append({"member": name, "candidate": candidate})
                 ratio = (
                     float("inf") if info.file_size > 0 and info.compress_size == 0
                     else (info.file_size / info.compress_size if info.compress_size else 0.0)
@@ -159,6 +171,13 @@ def inspect_zip(
         "total_declared_compressed_bytes": total_compressed,
         "csv_member_count": extension_counts.get(".csv", 0),
         "file_extension_counts": dict(sorted(extension_counts.items())),
+        "filename_date_candidates": [
+            {"date": value, "member_names": sorted(names),
+             "calendar_status": "unverified_filename_candidate_only"}
+            for value, names in sorted(filename_dates.items())
+        ],
+        "filename_date_candidate_count": len(filename_dates),
+        "filename_date_parse_errors": filename_date_errors,
         "limits": {
             "max_entries": max_entries,
             "max_total_uncompressed_bytes": max_total_uncompressed,

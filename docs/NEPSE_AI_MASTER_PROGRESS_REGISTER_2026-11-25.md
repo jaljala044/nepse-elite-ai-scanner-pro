@@ -334,3 +334,22 @@ When the project owner asks for all progress, retrieve this register and current
 - The new document explicitly distinguishes engineering contracts from implemented/live capabilities. It does not claim production ingestion, broker mapping, feature store, predictive performance or deployment.
 - Implementation sequencing is dependency-aware: Priority 6 capture/idempotency primitives first; Priority 7 broker registry and reconciliation; Priority 8 as-of store; Priority 9 explainable feature/episode layer; Priority 10 validation engine. Parallel synthetic fixtures are allowed, but real-data model activation remains blocked by unresolved session calendar, universe, provenance, rights and coverage.
 - Next coding slice: implement and test Priority 6 immutable raw-envelope, hash, append-only persistence and idempotency against synthetic fixtures. Then implement broker identity tables and reconciliation fixtures. No live exchange endpoint has been activated.
+
+
+## 12. Work-session update — Priority 6 implementation slice (2026-11-25)
+
+### Implemented in repository
+- Added `backend/app/raw_capture.py` (commit `090d65cbf8e8ed8412d8fcd2231f28cb40ecf14b`): standard-library raw-response envelope builder, timezone-aware UTC normalization, exact-byte SHA-256 and byte count, explicit session-evidence status validation, and immutable content-addressed persistence using atomic no-clobber file creation. It refuses payload/hash mismatch, path traversal components, and conflicting metadata for the same content hash; identical payload+manifest repeats are idempotent.
+- Added `backend/tests/test_raw_capture.py` (commit `37d0544a3c785003a2cc9d5419afb6d750203580`): seven test cases cover exact bytes/hash, UTC conversion, naive timestamp rejection, evidence requirements for confirmed session statuses, idempotent persistence, hash mismatch and conflict non-overwrite.
+- The code does not perform network requests and cannot disable/enable TLS. Its contract explicitly requires callers to supply redacted metadata and use a TLS-verifying HTTP client. It does not infer session dates or promote source data.
+
+### Verification status and limits
+- The existing `.github/workflows/backend-tests.yml` is configured to run unittest discovery on pushes to `main`, pull requests and manual dispatch. The connector's commit-associated workflow lookup returned no run for the test commit; therefore the seven tests are **authored but not yet confirmed executed**. Do not call this a passing CI result.
+- No live NEPSE endpoint was called, no Google Sheet was modified, and no live ingestion was activated.
+- Priorities 7–10 remain engineering contracts, not implemented features. Broker mapping, point-in-time feature generation, footprint signals and predictive validation are not yet live.
+
+### Next implementation actions
+1. Obtain an actual successful backend-tests workflow result; fix any failures before proceeding.
+2. Add source/session/fetch metadata validation and captured-fixture integration tests around raw capture.
+3. Implement broker source-ID/name history and explicit ambiguous/unmapped identity states.
+4. Continue only with synthetic fixtures until primary session calendar, instrument registry, source lineage and rights gates are met.

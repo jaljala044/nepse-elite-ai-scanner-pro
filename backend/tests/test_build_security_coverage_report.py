@@ -58,7 +58,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
         self.assertEqual(aaa["expected_verified_sessions"], 2)
         self.assertEqual(aaa["observed_expected_sessions"], 1)
         self.assertEqual(aaa["missing_sessions"], ["2026-01-04"])
-        self.assertEqual(report["unexpected_observations"][0]["reason"], "observation_on_verified_closed_date")
+        self.assertEqual(report["source_specific_reports"][0]["unexpected_observations"][0]["reason"], "observation_on_verified_closed_date")
         self.assertFalse(report["promotion_allowed"])
 
     def test_unknown_calendar_date_is_not_added_to_denominator(self):
@@ -67,7 +67,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
             stream.write("publisher-a,AAA,2026-01-05\n")
         report = build_security_coverage_report(
             self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
-        self.assertIn("2026-01-05", report["unverified_calendar_observation_dates"])
+        self.assertIn("2026-01-05", report["source_specific_reports"][0]["unverified_calendar_observation_dates"])
         self.assertEqual(report["verified_open_session_count"], 2)
 
     def test_duplicate_source_rows_do_not_inflate_coverage(self):
@@ -90,7 +90,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
         self.assertIsNone(report["aggregate_coverage_ratio"])
         self.assertEqual([x["source_id"] for x in report["source_specific_reports"]],
                          ["publisher-a", "publisher-b"])
-        self.assertEqual(report["source_specific_reports"][1]["coverage_ratio"], 0.5)
+        self.assertEqual(report["source_specific_reports"][1]["coverage_ratio"], 0.25)
 
     def test_unknown_instrument_type_fails_closed(self):
         self.write_inputs()

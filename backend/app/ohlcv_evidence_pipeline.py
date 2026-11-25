@@ -82,10 +82,15 @@ def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
         }
         output.append(enriched)
         counts[enriched["row_status"]] += 1
+    rejected_rows = [item for item in parsed["exceptions"] if item.get("status") == "rejected"]
+    if parsed["input_rows"] != len(output) + len(rejected_rows):
+        raise AssertionError("OHLCV parser row conservation failed")
     return {
         "source_id": source_id, "source_payload_sha256": parsed["source_payload_sha256"],
         "input_rows": parsed["input_rows"], "parsed_rows": parsed["parsed_rows"],
-        "rows": output, "counts": counts,
+        "rows": output, "rejected_rows": rejected_rows,
+        "counts": {**counts, "parser_rejected": len(rejected_rows)},
+        "row_conservation_passed": True,
         "promotion_allowed": False,
-        "policy": "require_dated_security_primary_session_and_point_in_time_evidence",
+        "policy": "require_dated_security_primary_session_and_point_in_time_evidence_retain_parser_rejections",
     }

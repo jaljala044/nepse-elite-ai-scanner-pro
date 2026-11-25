@@ -51,6 +51,7 @@ class FloorsheetSourceComparisonTests(unittest.TestCase):
             left, right, left_format="samir", right_format="socrate",
             independent_control={
                 "trade_date":"2026-11-24","quantity":"9","gross_amount":"930",
+                "transaction_count":3,
             },
         )
         self.assertEqual(result["comparison"]["shared_contract_count"], 2)
@@ -60,7 +61,24 @@ class FloorsheetSourceComparisonTests(unittest.TestCase):
         self.assertEqual(result["comparison"]["right_only_contracts"][0]["contract_id"], "C3")
         self.assertEqual(result["independent_control"]["left"]["status"], "failed")
         self.assertEqual(result["independent_control"]["right"]["status"], "passed")
+        self.assertEqual(result["independent_control"]["left"]["transaction_count_difference"], -1)
+        self.assertEqual(result["independent_control"]["right"]["transaction_count_difference"], 0)
         self.assertFalse(result["acceptance"]["canonical_source_selected"])
+
+    def test_transaction_count_control_fails_when_only_row_count_differs(self):
+        left, right = self.make_pair()
+        result = compare_sources(
+            left, right, left_format="samir", right_format="socrate",
+            independent_control={
+                "trade_date":"2026-11-24","quantity":"5","gross_amount":"530",
+                "transaction_count":3,
+            },
+        )
+        self.assertEqual(result["independent_control"]["left"]["status"], "failed")
+        self.assertIn(
+            "transaction_count_mismatch",
+            result["independent_control"]["left"]["differences"],
+        )
 
     def test_shared_contract_field_conflict_is_not_hidden(self):
         left, right = self.make_pair(conflict=True)

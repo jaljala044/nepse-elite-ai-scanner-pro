@@ -161,11 +161,11 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
             prefix = f"attempt-{attempt_number:02d}"
             (output_dir / f"{prefix}-response-body.bin").write_bytes(body)
             (output_dir / f"{prefix}-response-headers.json").write_text(
-                json.dumps(captured.get("headers", {}), indent=2) + "\\n",
+                json.dumps(captured.get("headers", {}), indent=2) + "\n",
                 encoding="utf-8",
             )
             (output_dir / f"{prefix}-SHA256SUMS").write_text(
-                f"{attempt['response_sha256']}  {prefix}-response-body.bin\\n",
+                f"{attempt['response_sha256']}  {prefix}-response-body.bin\n",
                 encoding="utf-8",
             )
 
@@ -204,32 +204,32 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
 
     if successful_body is not None:
         (output_dir / "response-body.bin").write_bytes(successful_body)
-        (output_dir / "source-url.txt").write_text(successful_url + "\\n", encoding="utf-8")
+        (output_dir / "source-url.txt").write_text(successful_url + "\n", encoding="utf-8")
         (output_dir / "response-headers.json").write_text(
-            json.dumps(successful_headers, indent=2) + "\\n",
+            json.dumps(successful_headers, indent=2) + "\n",
             encoding="utf-8",
         )
         (output_dir / "SHA256SUMS").write_text(
-            f"{report['response_sha256']}  response-body.bin\\n",
+            f"{report['response_sha256']}  response-body.bin\n",
             encoding="utf-8",
         )
         if successful_payload is not None:
             (output_dir / "parsed-response.json").write_text(
-                json.dumps(successful_payload, indent=2, ensure_ascii=False) + "\\n",
+                json.dumps(successful_payload, indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
             report["payload_analysis"] = analyze_payload(
                 successful_payload, load_candidate_dates(candidate_csv)
             )
             (output_dir / "payload-analysis.json").write_text(
-                json.dumps(report["payload_analysis"], indent=2, ensure_ascii=False) + "\\n",
+                json.dumps(report["payload_analysis"], indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
         else:
             report["json_parse_error"] = "JSONDecodeError"
 
     (output_dir / "capture-report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\\n",
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     return report

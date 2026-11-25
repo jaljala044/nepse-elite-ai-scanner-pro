@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: primary-reference-evidence-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   capture:
     runs-on: ubuntu-latest
@@ -100,6 +104,7 @@ jobs:
           git add data/evidence/raw/
           if ! git diff --cached --quiet; then
             git commit -m "data: archive captured primary reference evidence"
+            git pull --rebase origin main
             git push
           else
             echo "No new raw evidence bytes to commit."

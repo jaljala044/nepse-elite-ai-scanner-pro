@@ -263,3 +263,46 @@ The TinyFish browser connector has been suggested as an optional way to navigate
 The five 2025-07-28 records remain quarantined because the official EOD endpoint refuses the date and the third-party floorsheet archive's upstream provenance is undocumented. The ShareSansar archive and SocrateAI floorsheet are useful corroboration, and the closing-price methodology provides a plausible explanation for Source A vs Source B close differences, but neither satisfies the primary NEPSE evidence gate.
 
 No promotion, no training, and no merge. The next necessary input is an official NEPSE historical EOD export or broker TMS Market Time and Sales History export for 2025-07-28.
+
+### Run #42: company-specific historical floor-sheet API also blocked
+
+Workflow run #42: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45681502604
+- Capture regression tests: PASS.
+- Capture: PASS.
+- Immutable evidence commit: PASS.
+- Artifact upload: PASS.
+- Final completeness gate: correctly FAILED only because the five 2025-07-28 records remain unavailable.
+
+The official company-specific floorsheet route from nepse-client v0.1.4 was tested for BGWT on both official hostnames:
+- https://nepalstock.com.np/api/nots/security/floorsheet/{securityId}
+- https://www.nepalstock.com/api/nots/security/floorsheet/{securityId}
+
+Both returned HTTP 403 from nginx (548-byte identical response body), even after:
+- using the requested historical businessDate in the floor-sheet payload ID,
+- using clean browser-style headers,
+- including Origin, X-Requested-With and Sec-Fetch headers,
+- omitting the explicit Host header,
+- testing both official hostnames.
+
+Raw 403 response blobs are preserved in run-45681502604 under responses/company-floor.BGWT.*.page-0.response-body.bin. This is a separate route-level access restriction, not the today-price authentication issue.
+
+The old NEPSE PHP routes documented by historical scrapers were also tested and found retired:
+- /todaysprice on www.nepalstock.com.np returns the modern SPA shell, not the old daily table.
+- /company/transactions/{symbol} returns the modern SPA shell, not historical floorsheet rows.
+- /datanepse/previous.php on www.nepalstock.com returns the modern SPA shell, not historical market data.
+
+### Official route to obtain the five older records
+
+NEPSE's published Data Usage Procedure 2077 (signed company-secretary PDF) provides a formal historical-data access route. Its non-commercial educational/research category lists historical data up to 2 years at NPR 10,000 one-time and up to 5 years at NPR 50,000 one-time, with the table marking these free for students; all-years data is NPR 100,000 (NPR 5,000 for students). Its commercial financial-tool/data-distributor category lists up to 3 years at NPR 50,000, up to 5 years at NPR 75,000 and more than 5 years at NPR 100,000. The document's installation fee applies to real-time delayed API data, not historical-only data. This is a 2077 procedure and current rates/eligibility must be confirmed with NEPSE before payment.
+
+NEPSE's FAQ directs requests for other data and informational materials to its Research Branch: research@nepalstock.com.np, extension 125. Official procedure reference: https://content.sharesansar.com/photos/FEB12/Dec%202/API_NEPSE.PDF
+
+For 2025-07-28 (within two years of this investigation date), the Research Branch should be asked for the official daily EOD price board and/or historical time-and-sales/floorsheet export for BGWT, MEHL, RAWA, RHGCL and ULHC, including open, high, low, official close, volume, and the closing-price calculation method used on that date. The request should also ask for the permitted research/commercial category and current fee.
+
+A broker TMS Market Time and Sales History export is an alternative if the user has authorized broker access. It should include trade timestamps, rates and quantities so the final-15-minute weighted-average closing price can be independently recomputed. TinyFish has been suggested but is not connected; no broker account has been accessed.
+
+### Updated blocker
+
+The public today-price route is authenticated and working for dates inside its retention window. The historical company_floorsheet route is blocked by nginx on both official hosts. The old PHP historical pages are retired. No public unauthenticated official NEPSE route remains that can return the July 2025 evidence.
+
+The five older records remain quarantined. We must not promote Source A or Source B based only on secondary archives. No training, no canonical promotion, no merge.

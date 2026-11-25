@@ -93,7 +93,7 @@ The MeroLagani search snapshot does not expose an independently checkable daily 
 6. No broker identity is verified by code alone. The 91 observed broker codes are source codes; resolve them only through effective-dated, evidence-backed broker links.
 7. The repository's “Educational” license label and lack of an explicit license file leave data-use rights unresolved.
 
-**Acceptance:** sample acquisition and raw-hash capture complete; header observed; row-level syntax and arithmetic checks pass; Mero daily control-total reconciliation fails; serial continuity has anomalies; provenance/rights unresolved. **Review only. No canonical storage or model-training promotion.**
+**Acceptance:** Samir sample acquisition/hash/header and row-level syntax/math checks complete; Samir's daily control reconciliation fails; SocrateAI's same-date file includes all Samir rows plus the 18 records that close Mero's controls; no shared-row conflicts. The SocrateAI source origin and rights remain unresolved, and the official 281 + 47 universe remains unverified. **Review only. No canonical storage or model-training promotion.**
 
 ## Reproducible links
 

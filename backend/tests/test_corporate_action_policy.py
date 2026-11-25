@@ -56,6 +56,14 @@ class CorporateActionPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot precede"):
             action(available_at="2026-11-19T00:00:00Z")
 
+    def test_non_date_ex_date_rejected(self):
+        with self.assertRaisesRegex(ValueError, "ex_date must be a date"):
+            action(ex_date="2026-11-30")
+
+    def test_unparseable_factor_rejected_as_value_error(self):
+        with self.assertRaisesRegex(ValueError, "finite positive decimal"):
+            action(factor="not-a-number")
+
     def test_missing_source_tier_rejected(self):
         with self.assertRaisesRegex(ValueError, "source tier"):
             action(source_tier="")

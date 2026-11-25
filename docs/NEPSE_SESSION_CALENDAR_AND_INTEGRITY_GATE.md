@@ -484,3 +484,13 @@ The CLI is read-only. Missing evidence yields explicit blockers and a nonzero ex
 ## Integrated evidence audit workflow
 
 `.github/workflows/integrated-evidence-audit.yml` runs the backend regression suite, then executes registry validation, calendar evidence validation, raw-source inventory, source-specific OHLCV daily reconciliation, per-security coverage, floorsheet-window row audit and broker identity coverage when their required evidence inputs are present. Missing inputs are recorded as skipped rather than treated as passes. The workflow always writes a readiness report and uploads the artifacts. It never promotes canonical data or starts model training.
+
+## Raw source inventory and cross-source adjustment controls
+
+- `backend/audit_source_evidence_inventory.py` validates JSONL source-object manifests against raw files under a pinned raw root. It checks path containment, existence and SHA-256 and reports missing or mismatched objects without repair.
+- `backend/build_calendar_coverage_matrix.py` now distinguishes (a) files on verified closures, (b) files on dates with no calendar evidence and (c) verified open dates with no source files. The matrix remains an observation reconciliation, not a session classifier.
+- `backend/audit_ohlcv_adjustment_basis.py` flags unknown, mixed and cross-source adjusted/unadjusted basis. It never modifies OHLCV prices.
+- `backend/report_broker_identity_coverage.py` uses source-hashed input and reports verified/unresolved party observations and gross amount coverage by date/security/side.
+- `backend/reconcile_broker_control_totals.py` persists immutable input-hashed party/control comparisons; contract gross totals are counted once only when buyer/seller observations agree.
+
+The integrated workflow runs available registry, calendar, source inventory, calendar matrix, OHLCV daily totals, adjustment-basis, per-security coverage, floorsheet-window, broker identity and readiness audits. If required inputs are absent, it writes explicit `skipped_missing_input` status files. A successful workflow means the orchestration and tests completed; it does not mean missing datasets have been verified.

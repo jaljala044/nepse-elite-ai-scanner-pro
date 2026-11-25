@@ -108,8 +108,10 @@ def reconcile_ohlcv_sources(paths: list[str | Path], control_path: str | Path | 
                 if key in controls:
                     raise ValueError(f"control line {line}: duplicate source/date")
                 controls[key] = (int(row["row_count"]), Decimal(row["total_volume"]))
+        daily_keys = set()
         for item in daily:
             key = (item["source_id"], item["date"])
+            daily_keys.add(key)
             expected = controls.get(key)
             differences = []
             if expected is None:
@@ -122,6 +124,9 @@ def reconcile_ohlcv_sources(paths: list[str | Path], control_path: str | Path | 
             control_results.append({"source_id": key[0], "date": key[1],
                                     "differences": differences,
                                     "status": "passed" if not differences else "failed"})
+        for key in sorted(set(controls) - daily_keys):
+            control_results.append({"source_id": key[0], "date": key[1],
+                                    "differences": ["missing_source_rows"], "status": "failed"})
     return {
         "source_date_count": len(daily),
         "daily_source_totals": daily,

@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timezone
+import math
 from typing import Iterable
 
 ALLOWED_INSTRUMENT_TYPES = {
@@ -59,8 +60,27 @@ class CorporateActionRecord:
         if not all((self.action_id, self.security_id, self.action_type, self.announced_at,
                     self.available_at, self.evidence_id)):
             raise ValueError("corporate action identifiers, timestamps and evidence are required")
-        if self.factor is not None and self.factor <= 0:
-            raise ValueError("corporate-action factor must be positive")
+        if not isinstance(self.ex_date, date):
+            raise ValueError("corporate-action ex_date must be a date")
+        def parse_aware(value: str, field: str) -> datetime:
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ValueError(f"{field} must be an ISO-8601 timestamp") from exc
+            if parsed.tzinfo is None:
+                raise ValueError(f"{field} must be timezone-aware")
+            return parsed.astimezone(timezone.utc)
+        announced = parse_aware(self.announced_at, "announced_at")
+        available = parse_aware(self.available_at, "available_at")
+        if available < announced:
+            raise ValueError("available_at cannot precede announced_at")
+        if self.factor is not None:
+            try:
+                factor = float(self.factor)
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError("corporate-action factor must be finite and positive") from exc
+            if not math.isfinite(factor) or factor <= 0:
+                raise ValueError("corporate-action factor must be finite and positive")
 
 
 def validate_security_master_snapshot(records: Iterable[SecurityMasterRecord]) -> dict:

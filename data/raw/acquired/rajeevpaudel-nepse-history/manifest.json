@@ -1,0 +1,1146 @@
+{
+  "2026-07-05": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-09T14:05:24+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-06": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 46215,
+    "fetched_at": "2026-07-09T14:06:22+00:00",
+    "retries": 1,
+    "notes": "row-count shortfall=31"
+  },
+  "2026-07-07": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 72020,
+    "fetched_at": "2026-07-09T14:07:54+00:00",
+    "retries": 1,
+    "notes": "row-count shortfall=2"
+  },
+  "2026-07-08": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 77606,
+    "fetched_at": "2026-07-09T14:09:24+00:00",
+    "retries": 0,
+    "notes": "row-count shortfall=21"
+  },
+  "2026-07-09": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 57864,
+    "fetched_at": "2026-07-09T14:05:19+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-10": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 53432,
+    "fetched_at": "2026-07-10T12:38:25+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-11": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-12T11:27:12+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-12": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-13T12:43:19+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-13": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 51295,
+    "fetched_at": "2026-07-13T12:43:08+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-14": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 53854,
+    "fetched_at": "2026-07-14T11:44:28+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-15": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 38836,
+    "fetched_at": "2026-07-15T11:48:21+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-16": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 39595,
+    "fetched_at": "2026-07-16T11:54:12+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-17": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 58094,
+    "fetched_at": "2026-07-17T11:40:16+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-18": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-19T11:23:46+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-19": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-20T12:27:49+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-20": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 67155,
+    "fetched_at": "2026-07-20T12:27:35+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-21": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 75010,
+    "fetched_at": "2026-07-21T12:00:32+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-22": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 56094,
+    "fetched_at": "2026-07-22T12:03:29+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-23": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 57782,
+    "fetched_at": "2026-07-23T12:02:59+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-24": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 70152,
+    "fetched_at": "2026-07-24T11:57:46+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=6"
+  },
+  "2026-07-25": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-26T11:38:12+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-26": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-07-27T13:22:43+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-07-27": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 69803,
+    "fetched_at": "2026-07-27T13:22:33+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-28": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 55580,
+    "fetched_at": "2026-07-28T12:12:19+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-29": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 48072,
+    "fetched_at": "2026-07-29T12:19:15+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-30": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 44651,
+    "fetched_at": "2026-07-30T12:04:08+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-07-31": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 46752,
+    "fetched_at": "2026-07-31T12:16:08+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-01": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-02T11:34:33+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-02": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-03T13:20:31+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-03": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 63648,
+    "fetched_at": "2026-08-03T13:20:13+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-04": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 52272,
+    "fetched_at": "2026-08-04T12:18:24+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-05": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 61284,
+    "fetched_at": "2026-08-05T12:18:22+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=2"
+  },
+  "2026-08-06": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 60381,
+    "fetched_at": "2026-08-06T12:18:27+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-07": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 46912,
+    "fetched_at": "2026-08-07T11:06:36+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-08": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-09T10:53:27+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-09": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-10T11:21:44+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-10": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 53524,
+    "fetched_at": "2026-08-10T11:21:34+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-11": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 52073,
+    "fetched_at": "2026-08-11T11:04:18+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-12": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 43990,
+    "fetched_at": "2026-08-12T11:10:49+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-13": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 45822,
+    "fetched_at": "2026-08-13T11:11:23+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-14": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 43060,
+    "fetched_at": "2026-08-14T11:09:01+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-15": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-16T10:38:49+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-16": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-17T10:48:06+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-17": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 56818,
+    "fetched_at": "2026-08-17T10:48:02+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-18": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 55246,
+    "fetched_at": "2026-08-18T10:46:24+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-19": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 42709,
+    "fetched_at": "2026-08-19T10:47:22+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-20": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 47919,
+    "fetched_at": "2026-08-20T10:46:21+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-21": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 59805,
+    "fetched_at": "2026-08-21T10:46:01+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-22": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-23T10:39:25+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-23": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-24T10:52:34+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-24": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 53153,
+    "fetched_at": "2026-08-24T10:52:19+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-25": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 46589,
+    "fetched_at": "2026-08-25T10:48:39+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-26": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 61442,
+    "fetched_at": "2026-08-26T10:51:57+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-08-27": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 52525,
+    "fetched_at": "2026-08-27T20:30:03+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=50"
+  },
+  "2026-08-28": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-29T15:04:23+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-29": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-30T14:53:17+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-30": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-08-31T17:38:04+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-08-31": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 68137,
+    "fetched_at": "2026-08-31T17:37:49+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-01": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 48341,
+    "fetched_at": "2026-09-01T14:52:28+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-02": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 39673,
+    "fetched_at": "2026-09-02T14:28:12+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-03": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 40692,
+    "fetched_at": "2026-09-03T14:33:10+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-04": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-05T13:28:49+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-05": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-06T13:41:29+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-06": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-07T15:50:46+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-07": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 50844,
+    "fetched_at": "2026-09-07T15:50:29+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-08": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-09T14:34:13+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-09": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 50804,
+    "fetched_at": "2026-09-09T14:33:56+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-10": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 44198,
+    "fetched_at": "2026-09-10T14:25:26+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-11": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 49006,
+    "fetched_at": "2026-09-11T14:25:02+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-12": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-13T14:22:31+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-13": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-14T16:22:31+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-14": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 49074,
+    "fetched_at": "2026-09-14T16:22:27+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-15": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 78869,
+    "fetched_at": "2026-09-15T14:59:44+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-16": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 55830,
+    "fetched_at": "2026-09-16T14:58:18+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-17": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 51728,
+    "fetched_at": "2026-09-17T14:59:50+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-18": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 64072,
+    "fetched_at": "2026-09-18T14:30:23+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-19": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-20T14:14:01+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-20": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-21T16:29:20+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-21": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-22T14:51:41+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-22": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 70691,
+    "fetched_at": "2026-09-22T14:51:35+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-23": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 57947,
+    "fetched_at": "2026-09-23T15:00:50+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-24": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 51685,
+    "fetched_at": "2026-09-24T15:04:38+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=31"
+  },
+  "2026-09-25": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-26T14:29:10+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-26": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-27T15:10:31+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-27": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-09-28T18:10:28+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-09-28": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 58500,
+    "fetched_at": "2026-09-28T18:09:56+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-29": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 51274,
+    "fetched_at": "2026-09-29T16:31:23+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-09-30": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 47900,
+    "fetched_at": "2026-09-30T16:25:05+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-01": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 51745,
+    "fetched_at": "2026-10-01T17:02:05+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-02": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 43685,
+    "fetched_at": "2026-10-02T16:16:24+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-03": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-04T15:21:34+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-04": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-06T16:47:15+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-05": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 44744,
+    "fetched_at": "2026-10-06T16:48:25+00:00",
+    "retries": 0,
+    "notes": "row-count shortfall=33"
+  },
+  "2026-10-06": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 41607,
+    "fetched_at": "2026-10-06T16:47:00+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-07": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 39466,
+    "fetched_at": "2026-10-07T17:25:53+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-08": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 43812,
+    "fetched_at": "2026-10-08T17:24:44+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-09": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 52044,
+    "fetched_at": "2026-10-09T16:59:52+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-10": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-11T16:19:49+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-11": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-12T19:48:25+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-12": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 49770,
+    "fetched_at": "2026-10-12T19:50:04+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=39"
+  },
+  "2026-10-13": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 46659,
+    "fetched_at": "2026-10-13T17:35:25+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-14": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 39183,
+    "fetched_at": "2026-10-14T15:06:38+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-15": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 38861,
+    "fetched_at": "2026-10-15T14:59:15+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-16": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 39295,
+    "fetched_at": "2026-10-16T14:49:24+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-17": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-18T14:00:33+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-18": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-19T16:59:45+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-19": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-20T15:02:54+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-20": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-21T15:13:59+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-21": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-22T15:14:58+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-22": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-23T15:02:31+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-23": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-24T14:00:57+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-24": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-25T14:22:10+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-25": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-10-26T16:47:48+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-10-26": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 38788,
+    "fetched_at": "2026-10-26T16:47:31+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-27": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 53030,
+    "fetched_at": "2026-10-27T15:52:55+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-28": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 63744,
+    "fetched_at": "2026-10-28T16:37:11+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-29": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 69619,
+    "fetched_at": "2026-10-29T16:55:09+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-30": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 74054,
+    "fetched_at": "2026-10-30T16:42:29+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-10-31": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-01T16:49:10+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-01": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-02T20:20:41+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-02": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 70188,
+    "fetched_at": "2026-11-02T20:22:15+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=40"
+  },
+  "2026-11-03": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 57449,
+    "fetched_at": "2026-11-03T17:56:43+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-11-04": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 59185,
+    "fetched_at": "2026-11-04T17:59:34+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-11-05": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 44412,
+    "fetched_at": "2026-11-05T18:00:03+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-11-06": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 33215,
+    "fetched_at": "2026-11-06T17:28:38+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-11-07": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-08T16:40:04+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-08": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-09T20:42:25+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-09": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-10T17:47:09+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-10": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-11T17:53:27+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-11": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-12T18:15:28+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-12": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-13T17:42:54+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-13": {
+    "source": "nepse",
+    "status": "ok",
+    "row_count": 31323,
+    "fetched_at": "2026-11-13T17:42:38+00:00",
+    "retries": 0,
+    "notes": ""
+  },
+  "2026-11-14": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-15T17:04:39+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-15": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-16T20:25:05+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-16": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-17T19:10:50+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-17": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 48767,
+    "fetched_at": "2026-11-17T19:11:50+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=21"
+  },
+  "2026-11-18": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 41594,
+    "fetched_at": "2026-11-18T18:51:45+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=33"
+  },
+  "2026-11-19": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 40818,
+    "fetched_at": "2026-11-19T18:59:58+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=19"
+  },
+  "2026-11-20": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 39927,
+    "fetched_at": "2026-11-20T18:36:38+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=39"
+  },
+  "2026-11-21": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-22T17:48:50+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-22": {
+    "source": "missing",
+    "status": "missing",
+    "row_count": 0,
+    "fetched_at": "2026-11-23T22:02:10+00:00",
+    "retries": 0,
+    "notes": "no session (holiday/weekend or out of archive range)"
+  },
+  "2026-11-23": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 42821,
+    "fetched_at": "2026-11-23T22:03:11+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=33"
+  },
+  "2026-11-24": {
+    "source": "merolagani",
+    "status": "ok",
+    "row_count": 52369,
+    "fetched_at": "2026-11-24T20:40:21+00:00",
+    "retries": 0,
+    "notes": "nepse did not return this date; row-count shortfall=18"
+  }
+}

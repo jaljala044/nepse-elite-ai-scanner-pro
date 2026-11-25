@@ -2,7 +2,8 @@ import unittest
 from datetime import date
 from app.broker_identity import (
     BrokerIdentityLink, aggregate_broker_side, resolve_broker_identity,
-    validate_identity_link,
+    validate_identity_link, BrokerNameObservation, BrokerEntityName,
+    reconcile_broker_source_name, broker_name_history,
 )
 
 
@@ -79,6 +80,31 @@ class BrokerIdentityTests(unittest.TestCase):
                                    valid_from=date(2024,1,2), valid_to=date(2024,1,1))
         with self.assertRaises(ValueError):
             validate_identity_link(link)
+
+    def test_exact_name_match_is_only_a_review_candidate(self):
+        names = [BrokerEntityName("B42", "ABC Securities Ltd", date(2020,1,1), None, "registry-1")]
+        result = reconcile_broker_source_name("ABC Securities Ltd", date(2024,1,1), names)
+        self.assertEqual(result["status"], "candidate_requires_evidence")
+        self.assertFalse(result["auto_verified"])
+
+    def test_same_name_on_multiple_entities_is_ambiguous(self):
+        names = [
+            BrokerEntityName("B42", "ABC Securities", date(2020,1,1), None, "e1"),
+            BrokerEntityName("B99", "ABC Securities", date(2020,1,1), None, "e2"),
+        ]
+        self.assertEqual(reconcile_broker_source_name("ABC Securities", date(2024,1,1), names)["status"], "ambiguous")
+
+    def test_historical_name_is_not_used_outside_validity(self):
+        names = [BrokerEntityName("B42", "Old Broker Name", date(2020,1,1), date(2022,12,31), "e1")]
+        self.assertEqual(reconcile_broker_source_name("Old Broker Name", date(2024,1,1), names)["status"], "unmapped")
+
+    def test_source_name_history_is_preserved_in_date_order(self):
+        observations = [
+            BrokerNameObservation("src", "42", "New Name", date(2024,1,1), "e2"),
+            BrokerNameObservation("src", "42", "Old Name", date(2020,1,1), "e1"),
+        ]
+        history = broker_name_history(observations)
+        self.assertEqual([x["observed_name"] for x in history], ["Old Name", "New Name"])
 
 
 if __name__ == "__main__":

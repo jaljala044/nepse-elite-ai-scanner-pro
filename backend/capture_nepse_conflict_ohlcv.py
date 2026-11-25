@@ -9,6 +9,7 @@ import json
 import os
 import time
 from datetime import date, datetime, timedelta, timezone
+from html.parser import HTMLParser
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlparse
@@ -366,6 +367,112 @@ def request_today_price_with_browser_headers(client, endpoint, response_hook):
         )
 
 
+
+class _LegacyPriceTableParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.cells = []
+        self._inside_td = False
+        self._parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() == "td":
+            self._inside_td = True
+            self._parts = []
+
+    def handle_data(self, data):
+        if self._inside_td:
+            self._parts.append(data)
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "td" and self._inside_td:
+            self.cells.append(" ".join(" ".join(self._parts).split()))
+            self._inside_td = False
+            self._parts = []
+
+
+def parse_legacy_todaysprice_html(html):
+    """Parse the legacy NEPSE /todaysprice table as documented by NPdata."""
+    parser = _LegacyPriceTableParser()
+    parser.feed(html)
+    cells = parser.cells
+    if len(cells) >= 12 and "No Data Available!" in cells[11]:
+        return {"status": "no_data", "td_cell_count": len(cells)}
+    if len(cells) < 20:
+        return {
+            "status": "unparseable",
+            "td_cell_count": len(cells),
+            "td_preview": cells[:30],
+        }
+    names = [
+        "transaction_no", "max_price", "min_price", "closing_price",
+        "traded_shares", "amount", "previous_closing",
+    ]
+    values = cells[13:20]
+    parsed = {}
+    for name, value in zip(names, values):
+        normalized = value.replace(",", "").strip()
+        try:
+            parsed[name] = float(normalized)
+        except (TypeError, ValueError):
+            parsed[name] = None
+    return {
+        "status": "parsed" if all(parsed[k] is not None for k in names) else "partial",
+        "td_cell_count": len(cells),
+        "raw_fields": dict(zip(names, values)),
+        "fields": parsed,
+    }
+
+
+def fetch_legacy_nepse_daily_row(symbol, business_date, output_dir):
+    """Probe NEPSE's legacy date/symbol POST endpoint and preserve its HTML."""
+    url = "http://www.nepalstock.com.np/todaysprice"
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36"
+        ),
+        "Referer": "http://www.nepalstock.com.np/",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    try:
+        with httpx.Client(
+            http2=False, verify=True, timeout=45.0, follow_redirects=True
+        ) as session:
+            response = session.post(
+                url,
+                data={"stock-symbol": symbol, "startDate": business_date},
+                headers=headers,
+            )
+        body = response.content
+        safe_symbol = "".join(ch for ch in symbol if ch.isalnum())
+        body_path = Path(output_dir) / f"legacy-todays-price.{safe_symbol}.response-body.html"
+        body_path.write_bytes(body)
+        parsed = parse_legacy_todaysprice_html(response.text)
+        return {
+            "symbol": symbol,
+            "business_date": business_date,
+            "requested_url": url,
+            "final_url": str(response.url),
+            "http_status": response.status_code,
+            "content_type": response.headers.get("content-type"),
+            "response_bytes": len(body),
+            "response_sha256": hashlib.sha256(body).hexdigest(),
+            "response_path": str(body_path),
+            **parsed,
+        }
+    except Exception as exc:
+        return {
+            "symbol": symbol,
+            "business_date": business_date,
+            "requested_url": url,
+            "status": "request_error",
+            "error_type": type(exc).__name__,
+            "error": str(exc)[:300],
+        }
+
+
 def capture(ledger_path, output_dir):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     conflicts = ledger["conflicts"]
@@ -520,6 +627,19 @@ def capture(ledger_path, output_dir):
                 }
     finally:
         client.close()
+
+    # Probe the legacy NEPSE date/symbol EOD endpoint. It predates the
+    # rolling-365-day JSON API and may preserve historical records.
+    legacy_todays_price_reports = []
+    for conflict in conflicts:
+        if conflict["date"] != "2025-07-28":
+            continue
+        legacy_todays_price_reports.append(
+            fetch_legacy_nepse_daily_row(
+                conflict["symbol"], conflict["date"], output_dir
+            )
+        )
+        time.sleep(0.5)
 
     reports = {}
     for symbol, item in captured.items():
@@ -704,6 +824,7 @@ def capture(ledger_path, output_dir):
         "client_version": "nepse-client==0.1.4",
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
         "runtime_clock": runtime_clock,
+        "legacy_todays_price": legacy_todays_price_reports,
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,

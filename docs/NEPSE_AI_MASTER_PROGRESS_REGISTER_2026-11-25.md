@@ -325,3 +325,12 @@ When the project owner asks for all progress, retrieve this register and current
 - Priority 3: source audit artifact re-acquired; ledger recreation/commit and adjudication still open.
 - Priority 4: additional official registry search completed without finding sufficient source; no manifest.
 - Priority 5: remains blocked until verified date calendar and universe manifest exist.
+
+
+## 11. Work-session update — priorities 6–10 engineering contracts (2026-11-25)
+
+- Retrieved the live master register (blob SHA `a8dafdcae6897b9f147420f25eeb9a64c6717199`) and latest repository commit history before editing.
+- Added [NEPSE_AI_ENGINEERING_CONTRACTS_PRIORITIES_6_TO_10.md](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/NEPSE_AI_ENGINEERING_CONTRACTS_PRIORITIES_6_TO_10.md). It defines immutable floorsheet capture and safe ingestion invariants; broker identity and aggregation models; point-in-time temporal fields and leakage barriers; explainable market/security footprint features and episode retrieval; and walk-forward scenario validation, baselines, calibration, costs and negative tests.
+- The new document explicitly distinguishes engineering contracts from implemented/live capabilities. It does not claim production ingestion, broker mapping, feature store, predictive performance or deployment.
+- Implementation sequencing is dependency-aware: Priority 6 capture/idempotency primitives first; Priority 7 broker registry and reconciliation; Priority 8 as-of store; Priority 9 explainable feature/episode layer; Priority 10 validation engine. Parallel synthetic fixtures are allowed, but real-data model activation remains blocked by unresolved session calendar, universe, provenance, rights and coverage.
+- Next coding slice: implement and test Priority 6 immutable raw-envelope, hash, append-only persistence and idempotency against synthetic fixtures. Then implement broker identity tables and reconciliation fixtures. No live exchange endpoint has been activated.

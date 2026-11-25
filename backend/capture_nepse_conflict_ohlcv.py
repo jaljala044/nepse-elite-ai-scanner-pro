@@ -1,7 +1,8 @@
-import httpx
 #!/usr/bin/env python3
 """Capture official NEPSE price/volume history for quarantined OHLCV conflicts."""
 from __future__ import annotations
+
+import httpx
 import argparse, csv, hashlib, json
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation

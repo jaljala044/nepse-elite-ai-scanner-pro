@@ -78,6 +78,13 @@ class OhlcvSourceDailyReconciliationTests(unittest.TestCase):
         result = reconcile_ohlcv_sources([self.a], self.controls)
         self.assertEqual(result["control_total_results"][0]["differences"], ["missing_source_rows"])
 
+    def test_invalid_ohlc_bounds_rejected(self):
+        self.write_rows(self.a, [self.row("A")])
+        content = self.a.read_text(encoding="utf-8")
+        self.a.write_text(content.replace(",9,11,8,10,", ",9,7,8,10,"), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "invalid_ohlc_bounds"):
+            reconcile_ohlcv_sources([self.a])
+
     def test_duplicate_csv_headers_rejected(self):
         self.a.write_text(
             "source_id,symbol,date,open,high,low,close,volume,volume\n",

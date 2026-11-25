@@ -2,7 +2,22 @@
 """Capture official NEPSE price/volume history for quarantined OHLCV conflicts."""
 from __future__ import annotations
 
+import os
+import time
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
+
 import httpx
+
+
+def configure_nepse_timezone():
+    """Make date.today()/datetime.now() use NEPSE local time, not runner UTC."""
+    os.environ["TZ"] = "Asia/Kathmandu"
+    if hasattr(time, "tzset"):
+        time.tzset()
+
+
+configure_nepse_timezone()
 import argparse, csv, hashlib, json
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -365,6 +380,16 @@ def capture(ledger_path, output_dir):
 
     from nepse_client import NepseClient
     client = NepseClient(timeout=90.0)
+    # Record and initialize the market-session ID against Nepal-local date.
+    primary_dummy_id = client.getDummyID()
+    primary_market_status = client.dummy_id_manager.data or {}
+    runtime_clock = {
+        "utc_now": datetime.now(timezone.utc).isoformat(),
+        "system_date_after_tz_setup": date.today().isoformat(),
+        "nepal_date": datetime.now(ZoneInfo("Asia/Kathmandu")).date().isoformat(),
+        "market_status_as_of": primary_market_status.get("asOf"),
+        "market_status_id": primary_dummy_id,
+    }
     graph_path_prefix = client.api_end_points.get("company_daily_graph", "")
     market_price_volume_path = client.api_end_points.get("todays_price", "")
     floor_sheet_path = client.api_end_points.get("floor_sheet", "")
@@ -442,6 +467,7 @@ def capture(ledger_path, output_dir):
         try:
             client_com.base_url = "https://www.nepalstock.com"
             client_com._update_dynamic_headers()
+            client_com.getDummyID()
             client_com.client.event_hooks["response"].append(preserve_response)
             active_business_date = "current-session-com-host"
             request_today_price_without_host_header(client_com, market_price_volume_path)
@@ -675,6 +701,7 @@ def capture(ledger_path, output_dir):
         "endpoint_path": "/api/nots/market/history/security/{securityId}",
         "client_version": "nepse-client==0.1.4",
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
+        "runtime_clock": runtime_clock,
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,

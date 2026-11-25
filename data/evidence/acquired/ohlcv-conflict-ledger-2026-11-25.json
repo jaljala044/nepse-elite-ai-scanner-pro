@@ -891,5 +891,113 @@
     "interpretation": "Store full-day VWAP as a separate measure, not as OHLCV close. Source A is the stronger provisional close candidate if the target field is the exchange session close, but MeroLagani's LTP label is not NEPSE primary certification.",
     "primary_evidence_gate": "not_pass",
     "canonical_promotion_allowed": false
+  },
+  "latest_secondary_source_recheck": {
+    "checked_at_session_date": "2026-11-25/26",
+    "target_date": "2025-07-28",
+    "merolagani": {
+      "freshly_rechecked_symbols": [
+        "BGWT",
+        "MEHL",
+        "RAWA",
+        "RHGCL"
+      ],
+      "earlier_completed_check_symbol": [
+        "ULHC"
+      ],
+      "fresh_results": {
+        "BGWT": {
+          "market_date": "2025/07/28",
+          "ltp": 957.17,
+          "percentage_change": 0.84,
+          "high": 992,
+          "low": 933.4,
+          "open": 940,
+          "quantity": 14028,
+          "turnover": 13256345,
+          "records_returned": 1
+        },
+        "MEHL": {
+          "market_date": "2025/07/28",
+          "ltp": 475.63,
+          "percentage_change": -1.05,
+          "high": 480.5,
+          "low": 460,
+          "open": 471.1,
+          "quantity": 29753,
+          "turnover": 14008898.1,
+          "records_returned": 1
+        },
+        "RAWA": {
+          "market_date": "2025/07/28",
+          "ltp": 796.9,
+          "percentage_change": -1.64,
+          "high": 811,
+          "low": 780.3,
+          "open": 796,
+          "quantity": 3165,
+          "turnover": 2515662.5,
+          "records_returned": 1
+        },
+        "RHGCL": {
+          "market_date": "2025/07/28",
+          "ltp": 357.05,
+          "percentage_change": 5.03,
+          "high": 362,
+          "low": 341.4,
+          "open": 346.7,
+          "quantity": 296715,
+          "turnover": 103872614.4,
+          "records_returned": 1
+        }
+      },
+      "ULHC": {
+        "status": "previous_completed_verification_retained",
+        "fresh_retry": "provider_side_task_error",
+        "ltp": 510.75,
+        "percentage_change": 0.49,
+        "high": 515,
+        "low": 495,
+        "open": 509,
+        "quantity": 32288,
+        "turnover": 16273342.1,
+        "records_returned": 1
+      },
+      "labels": [
+        "Date",
+        "LTP",
+        "% Change",
+        "High",
+        "Low",
+        "Open",
+        "Qty.",
+        "Turnover"
+      ],
+      "conclusion": "Four fresh rows and the earlier completed ULHC row match Source A on LTP/open/high/low/quantity. Secondary evidence only; not NEPSE primary certification."
+    },
+    "chukul": {
+      "url": "https://chukul.com/",
+      "status": "access_blocked_unverified",
+      "browser_attempts": [
+        "homepage with trailing slash timed out after 30s",
+        "homepage without trailing slash timed out after 30s",
+        "screenshot timed out after 45s"
+      ],
+      "content_fetch": {
+        "homepage": "empty_content",
+        "stocks_path": "empty_content",
+        "stock_path": "404"
+      },
+      "symbols": [
+        "BGWT",
+        "MEHL",
+        "RAWA",
+        "RHGCL",
+        "ULHC"
+      ],
+      "result": "No dated historical rows or usable history/API route could be inspected. This is not evidence that Chukul lacks the data."
+    },
+    "primary_evidence_gate": "not_pass",
+    "canonical_promotion_allowed": false
   }
 }

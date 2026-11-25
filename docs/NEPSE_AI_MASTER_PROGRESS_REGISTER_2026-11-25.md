@@ -704,3 +704,19 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 - Across the 120 index-date candidates, the two OHLCV archives each have median daily symbol counts around 347 (SMC 346.5; history-starter 347), with max 378. These are raw archive symbol counts, not coverage against the agreed 281 equities + 47 funds; mixed instrument types and lifecycle statuses remain unresolved.
 - This separates two issues previously conflated by the failed workflow step: (a) the index-source quality gate fails on three malformed/duplicate index rows; and (b) the OHLCV archives have real date-level gaps/partial coverage on 2026-07-24 and no coverage for the latest two index dates. No missing date is assumed to be a holiday or closed session.
 
+
+## 2026-11-25 continuation — floorsheet contract fail-closed validation
+
+- `FloorsheetContract.from_mapping` now rejects missing/blank required text fields and invalid ISO trade dates before constructing a contract. This closes a gap where `str(None)` could otherwise turn a missing contract ID or broker code into the nonblank literal `None`.
+- `reconcile_floorsheet_rows` now rejects negative or non-finite amount tolerances rather than silently marking every row as an amount exception.
+- Added tests for missing contract identifiers, invalid dates, NaN/infinite values and invalid tolerances. Parser errors retain the raw source row and physical CSV line.
+- Commits: `08a00211efa3bdd288059fac2cab0d5075f847bf`, `2d369e0aaf1e9345231a6d086a364b4f95749da6`, `5357ce24ece55d9bee2e137dff0d95f8191bf364`, `8bc236f40f87879b5a91e7a2ef79c1f62749bf26`.
+- CI: both backend and contract workflows passed for `08a0021` (runs `45541272760`, `45541272833`) and `2d369e0` (runs `45541281785`, `45541281784`). Contract workflow passed for `5357ce2` (`45541289472`) and `8bc236f` (`45541297432`); backend runs `45541289459` and `45541297422` were still in progress when this entry was prepared.
+
+### Next five acceptance tasks
+1. Finish CI verification for the latest floorsheet validation commits; fix any failures before further ingestion changes.
+2. Obtain and hash a real, authorized floorsheet CSV sample; validate source headers, date format, row counts, control totals and duplicate/amount exceptions without guessing mappings.
+3. Capture a primary NEPSE/SEBON instrument registry response with stable security IDs and instrument/lifecycle fields; reconcile the 281-equity + 47-fund target without inferring membership.
+4. Capture primary NEPSE session notices and build a date-level `confirmed_open` / `confirmed_closed` / `exceptional_session` / `unverified` register.
+5. Use the verified calendar and universe to classify the 196,784 repeated-row candidates and calculate per-instrument coverage; preserve all unresolved rows.
+

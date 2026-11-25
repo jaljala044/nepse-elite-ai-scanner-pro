@@ -64,6 +64,25 @@ class DataReadinessEvidenceTests(unittest.TestCase):
             historical_coverage=0.99)
         self.assertFalse(result["session_calendar_verified"])
 
+    def test_malformed_provenance_hash_blocks_lineage(self):
+        result = assemble_training_evidence(
+            universe_report={"manifest_verified": True},
+            session_reports=[{"status": "verified", "session_state": "confirmed_trading_session"}],
+            provenance_reports=[{"training_eligibility": {"rights_clearance": True},
+                                 "capture": {"payload_sha256": "a" * 64, "source_record_id": "r"},
+                                 "provenance_sha256": "not-a-hash"}],
+            ohlcv_report={"integrity_status": "passed", "unresolved_exception_count": 0,
+                          "coverage_ratio": 0.99},
+            broker_report={"identity_policy_status": "passed",
+                            "unresolved_identity_policy_violations": 0,
+                            "verified_amount_coverage": 0.99},
+            point_in_time_report={"leakage_status": "passed", "future_input_count": 0,
+                                  "premature_label_count": 0},
+            corporate_action_reviewed=True, holdout_protocol_id="wf",
+            historical_coverage=0.99)
+        self.assertFalse(result["source_lineage_complete"])
+        self.assertFalse(result["training_readiness"]["training_ready"])
+
     def test_missing_source_record_id_blocks_lineage(self):
         result = assemble_training_evidence(
             universe_report={"manifest_verified": True},

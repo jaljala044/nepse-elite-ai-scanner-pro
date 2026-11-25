@@ -44,6 +44,7 @@ jobs:
               "source_object_manifest": "data/evidence/source-object-manifest.jsonl",
               "raw_source_root": "data/raw",
               "calendar_manifest": "data/evidence/calendar-evidence-manifest.json",
+              "source_date_manifest": "data/evidence/source-file-date-manifest.jsonl",
               "ohlcv_inputs": "data/normalized/ohlcv",
               "security_universe_csv": "data/reference/security_master_snapshot.csv",
               "session_calendar_csv": "data/reference/nepse_session_calendar.csv",
@@ -91,6 +92,15 @@ jobs:
             python backend/reconcile_ohlcv_source_daily.py "${args[@]}" \
               --output "$OUT/ohlcv-daily-reconciliation.json"
           fi
+          if [ -f data/evidence/source-file-date-manifest.jsonl ] && [ -f data/reference/nepse_session_calendar.csv ]; then
+            python backend/build_calendar_coverage_matrix.py \
+              --manifest data/evidence/source-file-date-manifest.jsonl \
+              --calendar data/reference/nepse_session_calendar.csv \
+              --start-date 2025-11-25 --end-date 2026-11-25 \
+              --output "$OUT/calendar-coverage-matrix.json"
+          else
+            printf '{"status":"skipped_missing_source_date_manifest_or_calendar"}\\n' > "$OUT/calendar-coverage-matrix-status.json"
+          fi
           if [ -f data/reports/floorsheet-window-acquisition.json ] && [ -f data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv ]; then
             schema=$(python - <<'PY'
           import json
@@ -125,6 +135,12 @@ jobs:
               --output "$OUT/security-coverage.json" || true
           else
             printf '{"status":"skipped_missing_universe_calendar_or_ohlcv_inputs"}\\n' > "$OUT/security-coverage-status.json"
+          fi
+          if compgen -G "data/normalized/ohlcv/*.csv" > /dev/null; then
+            args=()
+            for file in data/normalized/ohlcv/*.csv; do args+=(--input "$file"); done
+            python backend/audit_ohlcv_adjustment_basis.py \
+              "${args[@]}" --output "$OUT/ohlcv-adjustment-basis.json" || true
           fi
           if [ -f data/normalized/broker-party-observations.csv ]; then
             python backend/report_broker_identity_coverage.py \

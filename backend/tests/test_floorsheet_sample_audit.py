@@ -60,13 +60,32 @@ class FloorsheetSampleAuditTests(unittest.TestCase):
     def test_rejected_rows_affect_ratio_and_gate(self):
         parsed = dict(self.parsed)
         parsed["input_data_rows"] = 2
-        parsed["errors"] = [{"source_row_number": 3, "error": "bad row"}]
+        parsed["errors"] = [{"source_row_number": 3, "error": "bad row", "raw_source_row": {"bad": "row"}}]
         result = build_floorsheet_sample_acceptance_report(
             parsed, self.reconciled, mapping_reviewed=True,
             verified_session_dates=["2026-11-24"],
         )
         self.assertEqual(result["rejected_row_ratio"], 0.5)
         self.assertEqual(result["sample_quality_gate"], "review_required")
+
+    def test_tampered_reconciliation_rows_rejected(self):
+        altered = dict(self.reconciled)
+        altered["rows"] = [dict(self.reconciled["rows"][0], amount_reconciliation_exception=True)]
+        with self.assertRaisesRegex(ValueError, "recomputed source-row evidence"):
+            build_floorsheet_sample_acceptance_report(self.parsed, altered)
+
+    def test_rejected_row_without_raw_evidence_rejected(self):
+        parsed = dict(self.parsed)
+        parsed["input_data_rows"] = 2
+        parsed["errors"] = [{"source_row_number": 3, "error": "bad row"}]
+        with self.assertRaisesRegex(ValueError, "raw source row"):
+            build_floorsheet_sample_acceptance_report(parsed, self.reconciled)
+
+    def test_duplicate_verified_session_dates_rejected(self):
+        with self.assertRaisesRegex(ValueError, "must be unique"):
+            build_floorsheet_sample_acceptance_report(
+                self.parsed, self.reconciled, verified_session_dates=["2026-11-24", "2026-11-24"]
+            )
 
     def test_source_lineage_mismatch_rejected(self):
         parsed = dict(self.parsed)

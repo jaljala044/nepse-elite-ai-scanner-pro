@@ -106,6 +106,22 @@ class SecurityCoverageReportTests(unittest.TestCase):
             "reason":"symbol_not_in_target_universe_snapshot"
         }])
 
+    def test_excluded_debenture_can_remain_in_reference_universe(self):
+        self.write_inputs()
+        with self.universe.open("a", encoding="utf-8") as stream:
+            stream.write("D1,DEBT1,non_convertible_debenture,2020-01-01,,false\\n")
+        report = build_security_coverage_report(
+            self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+        self.assertEqual(report["target_security_count"], 2)
+
+    def test_debenture_cannot_be_marked_in_target_scope(self):
+        self.write_inputs()
+        with self.universe.open("a", encoding="utf-8") as stream:
+            stream.write("D1,DEBT1,non_convertible_debenture,2020-01-01,,true\\n")
+        with self.assertRaisesRegex(ValueError, "only equity and mutual_fund"):
+            build_security_coverage_report(
+                self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+
     def test_unknown_instrument_type_fails_closed(self):
         self.write_inputs()
         rows = list(csv.DictReader(self.universe.open(encoding="utf-8")))

@@ -63,7 +63,7 @@ def build_immutable_report(party_paths: list[Path], controls_path: Path, output:
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     report = {**body, "report_sha256": digest}
     output.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(report, indent=2, ensure_ascii=False) + "\\n"
+    encoded = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     if output.exists():
         if output.read_text(encoding="utf-8") != encoded:
             raise RuntimeError("immutable broker report path already contains different content")

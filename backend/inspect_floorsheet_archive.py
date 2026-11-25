@@ -72,6 +72,7 @@ def inspect_zip(
     ):
         raise ValueError("max_compression_ratio must be finite and positive")
 
+    before_stat = path.stat()
     archive_hash = sha256_file(path)
     entries = []
     issues = []
@@ -158,6 +159,12 @@ def inspect_zip(
                 })
     except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
         raise ValueError(f"cannot inspect ZIP central directory: {exc}") from exc
+
+    after_stat = path.stat()
+    if (before_stat.st_size, before_stat.st_mtime_ns, before_stat.st_ino) != (
+        after_stat.st_size, after_stat.st_mtime_ns, after_stat.st_ino
+    ) or sha256_file(path) != archive_hash:
+        raise ValueError("archive changed during inventory; discard this report and retry")
 
     return {
         "archive_path": str(path),

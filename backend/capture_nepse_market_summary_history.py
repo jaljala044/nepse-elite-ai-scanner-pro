@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 SOURCE_ID = "NEPSE_OFFICIAL_MARKET_SUMMARY_HISTORY"
 ENDPOINT_PATH = "/api/nots/market-summary-history"
-SOURCE_URL = "https://nepalstock.com.np" + ENDPOINT_PATH
+SOURCE_URL = "https://nepalstock.com.np" + ENDPOINT_PATH  # fallback host: https://newweb.nepalstock.com
 DATE_FIELDS = ("businessDate", "business_date", "businessdate", "date")
 
 
@@ -106,85 +106,133 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
 
 def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
-    captured: dict = {}
-    request_error = None
+    attempts: list[dict] = []
+    successful_payload = None
+    successful_url = None
+    successful_headers: dict = {}
+    successful_body: bytes | None = None
 
     from nepse_client import NepseClient
 
-    client = NepseClient(timeout=90.0)
+    base_urls = ("https://nepalstock.com.np", "https://newweb.nepalstock.com")
+    for attempt_number, base_url in enumerate(base_urls, start=1):
+        captured: dict = {}
+        request_error = None
+        client = NepseClient(timeout=90.0)
+        client.base_url = base_url
+        client.headers["Host"] = base_url.removeprefix("https://")
+        client.headers["Referer"] = base_url
 
-    def preserve_response(response) -> None:
-        if urlparse(str(response.url)).path != ENDPOINT_PATH:
-            return
-        response.read()
-        captured["body"] = response.content
-        captured["status"] = response.status_code
-        captured["url"] = str(response.url)
-        captured["headers"] = {
-            key: response.headers.get(key)
-            for key in ("date", "content-type", "content-length", "server")
-            if response.headers.get(key) is not None
+        def preserve_response(response) -> None:
+            if urlparse(str(response.url)).path != ENDPOINT_PATH:
+                return
+            response.read()
+            captured["body"] = response.content
+            captured["status"] = response.status_code
+            captured["url"] = str(response.url)
+            captured["headers"] = {
+                key: response.headers.get(key)
+                for key in ("date", "content-type", "content-length", "server")
+                if response.headers.get(key) is not None
+            }
+
+        client.client.event_hooks["response"].append(preserve_response)
+        try:
+            client.requestGETAPI(ENDPOINT_PATH)
+        except Exception as exc:
+            request_error = {"type": type(exc).__name__, "message": str(exc)[:300]}
+        finally:
+            client.close()
+
+        body = captured.get("body", b"")
+        attempt = {
+            "attempt_number": attempt_number,
+            "base_url": base_url,
+            "source_url": captured.get("url", base_url + ENDPOINT_PATH),
+            "http_status": captured.get("status"),
+            "response_headers": captured.get("headers", {}),
+            "response_bytes": len(body),
+            "response_sha256": hashlib.sha256(body).hexdigest() if body else None,
+            "response_preserved": bool(body),
+            "request_error": request_error,
         }
+        attempts.append(attempt)
+        if body:
+            prefix = f"attempt-{attempt_number:02d}"
+            (output_dir / f"{prefix}-response-body.bin").write_bytes(body)
+            (output_dir / f"{prefix}-response-headers.json").write_text(
+                json.dumps(captured.get("headers", {}), indent=2) + "\n",
+                encoding="utf-8",
+            )
+            (output_dir / f"{prefix}-SHA256SUMS").write_text(
+                f"{attempt['response_sha256']}  {prefix}-response-body.bin\n",
+                encoding="utf-8",
+            )
 
-    client.client.event_hooks["response"].append(preserve_response)
-    try:
-        client.requestGETAPI(ENDPOINT_PATH)
-    except Exception as exc:
-        request_error = {"type": type(exc).__name__, "message": str(exc)[:300]}
-    finally:
-        client.close()
+        if captured.get("status") == 200 and body:
+            successful_payload = None
+            try:
+                successful_payload = json.loads(body)
+            except Exception:
+                pass
+            successful_url = captured.get("url", base_url + ENDPOINT_PATH)
+            successful_headers = captured.get("headers", {})
+            successful_body = body
+            break
 
     report = {
         "source_id": SOURCE_ID,
-        "source_url": captured.get("url", SOURCE_URL),
+        "source_url": successful_url or attempts[-1]["source_url"],
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "http_status": captured.get("status"),
-        "response_headers": captured.get("headers", {}),
-        "response_bytes": len(captured.get("body", b"")),
-        "response_sha256": None,
-        "response_preserved": bool(captured.get("body")),
-        "request_error": request_error,
+        "attempts": attempts,
+        "selected_attempt_number": next(
+            (item["attempt_number"] for item in attempts if item["http_status"] == 200 and item["response_preserved"]),
+            None,
+        ),
+        "http_status": next(
+            (item["http_status"] for item in attempts if item["http_status"] == 200 and item["response_preserved"]),
+            attempts[-1]["http_status"],
+        ),
+        "response_headers": successful_headers,
+        "response_bytes": len(successful_body or b""),
+        "response_sha256": hashlib.sha256(successful_body).hexdigest() if successful_body else None,
+        "response_preserved": bool(successful_body),
         "calendar_claims_promoted": False,
         "canonical_calendar_promotion_allowed": False,
-        "policy": "raw_primary_source_capture_only; review schema and date scope before any calendar promotion",
+        "policy": "raw primary-source capture only; review schema and date scope before any calendar promotion",
     }
 
-    if "body" in captured:
-        body = captured["body"]
-        report["response_sha256"] = hashlib.sha256(body).hexdigest()
-        (output_dir / "response-body.bin").write_bytes(body)
-        try:
-            payload = json.loads(body)
-            (output_dir / "parsed-response.json").write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
-                encoding="utf-8",
-            )
-            report["payload_analysis"] = analyze_payload(
-                payload, load_candidate_dates(candidate_csv)
-            )
-        except Exception as exc:
-            report["json_parse_error"] = type(exc).__name__
+    if successful_body is not None:
+        (output_dir / "response-body.bin").write_bytes(successful_body)
+        (output_dir / "source-url.txt").write_text(successful_url + "\n", encoding="utf-8")
         (output_dir / "response-headers.json").write_text(
-            json.dumps(captured.get("headers", {}), indent=2) + "\n",
+            json.dumps(successful_headers, indent=2) + "\n",
             encoding="utf-8",
         )
-        (output_dir / "source-url.txt").write_text(captured["url"] + "\n", encoding="utf-8")
         (output_dir / "SHA256SUMS").write_text(
             f"{report['response_sha256']}  response-body.bin\n",
             encoding="utf-8",
         )
-        if "payload_analysis" in report:
+        if successful_payload is not None:
+            (output_dir / "parsed-response.json").write_text(
+                json.dumps(successful_payload, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+            report["payload_analysis"] = analyze_payload(
+                successful_payload, load_candidate_dates(candidate_csv)
+            )
             (output_dir / "payload-analysis.json").write_text(
                 json.dumps(report["payload_analysis"], indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
+        else:
+            report["json_parse_error"] = "JSONDecodeError"
 
     (output_dir / "capture-report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     return report
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)

@@ -31,10 +31,13 @@ class CsvFloorsheetMapping:
 
     def __post_init__(self):
         missing = sorted(set(REQUIRED_FIELDS) - set(self.columns))
+        extra = sorted(set(self.columns) - set(REQUIRED_FIELDS))
         if missing:
             raise ValueError(f"mapping missing normalized fields: {missing}")
-        if any(not str(self.columns[k]).strip() for k in REQUIRED_FIELDS):
-            raise ValueError("mapped source headers cannot be blank")
+        if extra:
+            raise ValueError(f"mapping contains unsupported normalized fields: {extra}")
+        if any(not isinstance(self.columns[k], str) or not self.columns[k].strip() for k in REQUIRED_FIELDS):
+            raise ValueError("mapped source headers must be nonblank strings")
         if len(set(self.columns[k] for k in REQUIRED_FIELDS)) != len(REQUIRED_FIELDS):
             raise ValueError("each normalized field must map to a distinct source header")
         if len(self.delimiter) != 1:

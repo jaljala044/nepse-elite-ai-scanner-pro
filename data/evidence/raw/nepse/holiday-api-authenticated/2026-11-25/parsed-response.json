@@ -1,0 +1,289 @@
+[
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-12-30",
+    "holidayDescription": "Tamu Lhosar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-12-25",
+    "holidayDescription": "Christmas Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-12-24",
+    "holidayDescription": "Udhauli Parva and Yomari Punhi",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-16",
+    "holidayDescription": "Chhath Parva",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-15",
+    "holidayDescription": "Chhath Parva",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-12",
+    "holidayDescription": "Tihar Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-11",
+    "holidayDescription": "Tihar Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-10",
+    "holidayDescription": "Tihar Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-09",
+    "holidayDescription": "Tihar Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-11-08",
+    "holidayDescription": "Tihar Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-23",
+    "holidayDescription": "Dashain bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-22",
+    "holidayDescription": "Dashain bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-21",
+    "holidayDescription": "Bijaya Dashami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-20",
+    "holidayDescription": "MahaNawami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-19",
+    "holidayDescription": "Astami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-18",
+    "holidayDescription": "MahaAstami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-17",
+    "holidayDescription": "Fulpati",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-10-11",
+    "holidayDescription": "Ghatasthapana",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-09-25",
+    "holidayDescription": "Indra Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-09-21",
+    "holidayDescription": "Emergengy Market Close",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-09-08",
+    "holidayDescription": "Gen Z Sahid Diwas",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-09-04",
+    "holidayDescription": "Shree Krishna Janmasthami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-08-28",
+    "holidayDescription": "Janai Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-05-29",
+    "holidayDescription": "Republic Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-05-28",
+    "holidayDescription": "Bakar EID",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-05-01",
+    "holidayDescription": "Buddha Jyanti",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-04-14",
+    "holidayDescription": "New Year",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-27",
+    "holidayDescription": "Ram Nawami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-18",
+    "holidayDescription": "Ghode Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-08",
+    "holidayDescription": "International Woman Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-06",
+    "holidayDescription": "Election Holiday",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-05",
+    "holidayDescription": "Election Holiday",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-04",
+    "holidayDescription": "Election Holiday",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-03-02",
+    "holidayDescription": "Fagu Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-02-19",
+    "holidayDescription": "Prajatantra Diwas",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-02-18",
+    "holidayDescription": "Gyalpo Lhosar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-02-15",
+    "holidayDescription": "Mahashiva Ratri",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-01-30",
+    "holidayDescription": "Martyrs Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-01-19",
+    "holidayDescription": "Sonam Lhosar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-01-15",
+    "holidayDescription": "Maghe Sankranti",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2026-01-11",
+    "holidayDescription": "Prithvi Jayanti",
+    "activeStatus": null
+  }
+]

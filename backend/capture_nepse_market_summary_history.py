@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 SOURCE_ID = "NEPSE_OFFICIAL_MARKET_SUMMARY_HISTORY"
 ENDPOINT_PATH = "/api/nots/market-summary-history"
-SOURCE_URL = "https://nepalstock.com.np" + ENDPOINT_PATH
+SOURCE_URL = "https://nepalstock.com.np" + ENDPOINT_PATH  # fallback host: https://newweb.nepalstock.com
 DATE_FIELDS = ("businessDate", "business_date", "businessdate", "date")
 
 

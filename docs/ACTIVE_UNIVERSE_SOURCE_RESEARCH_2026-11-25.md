@@ -63,3 +63,15 @@ This is stronger source provenance than a third-party ticker list, but it is not
 - a candidate /api/nots/security?nonDelisted=true route appears in third-party NEPSE API client documentation, but the endpoint response was not retrievable through the current research connector and has not been independently confirmed as a stable official contract.
 
 Accordingly, the page is retained as a primary-source discovery lead, not as the 281-equity + 47-fund manifest. No symbols are promoted from the page into the target universe based solely on display presence or ticker shape. The next evidence capture must preserve the official raw response, retrieval timestamp, SHA-256, security ID, symbol, instrument type, status and effective dates, then reconcile every difference to the exact target counts.
+
+
+## SEBON registry-source refresh — 2026-11-25
+
+The official SEBON site exposes separate catalogues for [MFS Approved](https://sebon.gov.np/mfs-approved), [MFS Pipeline](https://sebon.gov.np/mfs-pipeline), and [Securities Registered](https://sebon.gov.np/securities-registered). These are useful primary source collections, but they are not, by themselves, a single exchange listing/trading lifecycle manifest.
+
+- The SEBON MFS Approved page's search index currently surfaces an approved-list item dated **2026-10-05** (2083-06-19), and the MFS Pipeline index surfaces filings dated **2026-10-28** and **2026-10-30**. The page opened through the current research renderer returned an older July 2026 page snapshot, so the October search-index entries need exact PDF-byte capture and validation before they can be used as a frozen register.
+- The latest directly opened approved PDF in the page renderer is dated **2026-07-09**, "Mutual Fund Scheme Approved", as of 2083/03/25. It contains 33 approval/additional-unit registration rows across six PDF pages; repeated rows include later additional-unit registrations for already named schemes. It reports unit/issue totals, not the number of distinct exchange-listed and currently tradable mutual-fund scrips.
+- The official SEBON Securities Registered page was accessible as a catalogue heading, but its extracted page content exposed no row-level registry table or downloadable instrument/status export during this review.
+- A current prospectus list contains offers and new fund names, but a prospectus is not proof that the resulting unit is already listed and trading on NEPSE.
+
+Therefore these SEBON primary sources improve the regulator-side scheme and registration evidence, but they do **not** yet validate a current 47-fund NEPSE trading list. The 281-equity + 47-fund scope remains an explicit project target, not an independently verified registry count. The next step is to capture exact dated PDFs/registrar records and crosswalk scheme names to NEPSE security IDs, ticker symbols and actual first/last trading dates.

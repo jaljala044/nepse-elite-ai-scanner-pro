@@ -64,7 +64,7 @@ jobs:
               --manifest data/evidence/source-object-manifest.jsonl --raw-root data/raw \
               --output "$OUT/source-evidence-inventory.json" || true
           else
-            printf '{"status":"skipped_missing_source_manifest_or_raw_root"}\\n' > "$OUT/source-evidence-inventory-status.json"
+            printf '{"status":"skipped_missing_source_manifest_or_raw_root"}\n' > "$OUT/source-evidence-inventory-status.json"
           fi
           if [ -f data/evidence/security-registry-snapshot.json ]; then
             python - <<'PY'
@@ -99,7 +99,7 @@ jobs:
               --start-date 2025-11-25 --end-date 2026-11-25 \
               --output "$OUT/calendar-coverage-matrix.json"
           else
-            printf '{"status":"skipped_missing_source_date_manifest_or_calendar"}\\n' > "$OUT/calendar-coverage-matrix-status.json"
+            printf '{"status":"skipped_missing_source_date_manifest_or_calendar"}\n' > "$OUT/calendar-coverage-matrix-status.json"
           fi
           if [ -f data/reports/floorsheet-window-acquisition.json ] && [ -f data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv ]; then
             schema=$(python - <<'PY'
@@ -118,12 +118,12 @@ jobs:
                 --output "$OUT/floorsheet-window-audit.json"
               floorsheet_status=$?
               set -e
-              printf '{"audit_exit_code":%s,"canonical_promotion_allowed":false}\\n' "$floorsheet_status" > "$OUT/floorsheet-status.json"
+              printf '{"audit_exit_code":%s,"canonical_promotion_allowed":false}\n' "$floorsheet_status" > "$OUT/floorsheet-status.json"
             else
-              printf '{"status":"skipped_missing_or_invalid_source_schema"}\\n' > "$OUT/floorsheet-status.json"
+              printf '{"status":"skipped_missing_or_invalid_source_schema"}\n' > "$OUT/floorsheet-status.json"
             fi
           else
-            printf '{"status":"skipped_missing_acquisition_manifest_or_date_list"}\\n' > "$OUT/floorsheet-status.json"
+            printf '{"status":"skipped_missing_acquisition_manifest_or_date_list"}\n' > "$OUT/floorsheet-status.json"
           fi
           if [ -f data/reference/security_master_snapshot.csv ] && [ -f data/reference/nepse_session_calendar.csv ] && compgen -G "data/normalized/ohlcv/*.csv" > /dev/null; then
             args=()
@@ -134,7 +134,7 @@ jobs:
               "${args[@]}" --start-date 2025-11-25 --end-date 2026-11-25 \
               --output "$OUT/security-coverage.json" || true
           else
-            printf '{"status":"skipped_missing_universe_calendar_or_ohlcv_inputs"}\\n' > "$OUT/security-coverage-status.json"
+            printf '{"status":"skipped_missing_universe_calendar_or_ohlcv_inputs"}\n' > "$OUT/security-coverage-status.json"
           fi
           if compgen -G "data/normalized/ohlcv/*.csv" > /dev/null; then
             args=()

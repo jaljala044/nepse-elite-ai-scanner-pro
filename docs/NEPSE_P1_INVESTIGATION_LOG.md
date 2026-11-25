@@ -332,3 +332,50 @@ A broker TMS browser profile is not connected to any signed-in site, and no brok
 - Five 2025-07-28 rows: NOT PASS — original NEPSE-issued/certified data has not been obtained. Public archives are secondary or have unresolved provenance.
 - All five remain quarantined; no canonical promotion, no training, no PR merge.
 - Next external dependency: receive a verifiable NEPSE Research Branch export/confirmation, or a broker time-and-sales export for corroboration plus NEPSE confirmation of the EOD methodology.
+
+
+### 2026-11-25 follow-up: requested market sites checked; ShareSansar daily archive recovers all five rows
+
+The user asked for direct checks of Chukul, ShareSansar, ShareHu, and MeroLagani for BGWT, MEHL, RAWA, RHGCL and ULHC on 2025-07-28.
+
+#### ShareSansar-sourced dated daily board recovered
+
+Retrieved the dated CSV:
+https://omitnomis.github.io/ShareSansarScraper/Data/2025_07_28.csv
+
+The archive's own README/about page says it scrapes ShareSansar's "today's share price" board, stores daily CSVs, and is unofficial/not affiliated with ShareSansar or NEPSE:
+- https://omitnomis.github.io/ShareSansarScraper/
+- https://omitnomis.github.io/ShareSansarScraper/about.html
+
+Extracted rows from the exact 2025-07-28 CSV:
+
+| Symbol | Open | High | Low | Close | LTP | VWAP | Volume | Transactions |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| BGWT | 940.00 | 992.00 | 933.40 | 945.00 | 992.00 | 944.99 | 14,028 | 194 |
+| MEHL | 471.10 | 480.50 | 460.00 | 470.83 | 478.00 | 470.84 | 29,753 | 333 |
+| RAWA | 796.00 | 811.00 | 780.30 | 794.83 | 798.00 | 794.84 | 3,165 | 74 |
+| RHGCL | 346.70 | 362.00 | 341.40 | 350.07 | 362.00 | 350.08 | 296,715 | 1,030 |
+| ULHC | 509.00 | 515.00 | 495.00 | 504.00 | 512.00 | 504.01 | 32,288 | 300 |
+
+All five OHLCV rows exactly match Source B. The CSV also separately exposes LTP and VWAP, which is important: for these records, the Close column matches the full-day VWAP to rounding, while LTP is materially different. This provides a plausible data-field explanation for the conflict: Source B is consistent with the ShareSansar archive's Close/VWAP fields; Source A's close values are not this archive's Close values. Do not infer from this alone which field NEPSE officially designated as the session close on 2025-07-28.
+
+This corrects/extends the earlier source audit: the previously inspected srijankarki07/nepse-data ShareSansar-derived daily archive matched Source A, while this separate OmitNomis ShareSansar-scraped daily archive matches Source B. The archives are distinct scrapers and claim the same upstream site, but they do not agree on these five close values. They are not independent exchange-primary evidence. Preserve both datasets and their provenance separately; do not collapse them into a single "ShareSansar value."
+
+The CSV URL was retrieved successfully in this investigation. No immutable raw copy or SHA-256 was added to the repository in this pass, so the public URL and extracted rows are the evidence reference for now.
+
+#### Other requested sites / access outcome
+
+- Chukul: stock-profile URLs for the five symbols were requested, but the public page extractor returned empty content for all five. Search did not surface dated 2025-07-28 OHLCV rows or a publicly documented historical OHLCV endpoint. A search result surfaced a current live-market API only; it is not historical proof.
+- MeroLagani: its public Datewise Shareprices page is live and has a date filter, but the page fetched in this pass rendered the current 2026-11-25 board. Search did not return a July 2025 dated row, and no confirmed request parameter/POST contract for historical date retrieval was established. Do not claim MeroLagani independently confirms the five rows.
+- ShareHu (sharehu.com): direct fetch returned HTTP 403 and search returned no NEPSE historical data. Search surfaced Share Hub Nepal at sharehubnepal.com, which documents an all-time price-history API, but states that it requires a licensed Data API account, bearer token, and allow-listed server IP. No account or licence is available in this session; no API call was authenticated. This is a possible paid access route, not retrieved evidence.
+- Note: sharehub.com is a parked domain, not the Nepal data service. The relevant service found in search is sharehubnepal.com; this may or may not be the site the user intended by "sharehu.com".
+
+#### Updated five-record evidence interpretation
+
+The new ShareSansar-scraped CSV makes Source B the strongest *secondary-board field match* for all five records. It also clarifies why the earlier SocrateAI trade aggregation matched B: the ShareSansar archive Close and VWAP are aligned to full-day VWAP. But because the other ShareSansar-derived archive matched Source A, and because NEPSE's 2025 weighted-close policy may distinguish official close from full-day VWAP/LTP, this does not yet settle the official exchange close definition. Obtain the original NEPSE EOD board or certified historical report and the official close methodology before canonical promotion.
+
+#### Updated decision
+
+- Endpoint authentication: PASS, as previously verified.
+- Five 2025-07-28 records: secondary evidence expanded; all five ShareSansarScraper CSV OHLCV rows match Source B exactly. Conflicting ShareSansar-derived archive matches Source A. Primary NEPSE proof and close-field semantics remain NOT PASS.
+- All five remain quarantined. No canonical promotion, no training, no PR merge.

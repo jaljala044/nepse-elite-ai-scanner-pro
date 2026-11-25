@@ -174,5 +174,47 @@ class BrokerAggregationTests(unittest.TestCase):
         self.assertEqual(sum(x["contract_count"] for x in result["aggregates"]), 2)
 
 
+    def test_partial_independent_controls_can_check_amount_and_quantity(self):
+        buyer = row(line=1, side="buy", amount="100.10", quantity="2")
+        seller = row(line=1, side="sell", amount="100.10", quantity="2")
+        controls = [{
+            "source_id": "src",
+            "trade_date": "2026-11-24",
+            "gross_amount": "100.10",
+            "quantity": "2",
+        }]
+        result = reconcile_source_control_totals([buyer, seller], controls)
+        self.assertEqual(result["passed_source_dates"], 1)
+        self.assertEqual(result["failed_source_dates"], 0)
+        self.assertEqual(result["results"][0]["status"], "passed")
+
+    def test_partial_control_mismatches_are_reported_for_available_fields(self):
+        buyer = row(line=1, side="buy", amount="100.10", quantity="2")
+        seller = row(line=1, side="sell", amount="100.10", quantity="2")
+        controls = [{
+            "source_id": "src",
+            "trade_date": "2026-11-24",
+            "gross_amount": "100.11",
+            "quantity": "3",
+        }]
+        result = reconcile_source_control_totals([buyer, seller], controls)
+        self.assertEqual(result["failed_source_dates"], 1)
+        self.assertEqual(
+            set(result["results"][0]["differences"]),
+            {"gross_amount", "quantity"},
+        )
+
+    def test_partial_control_requires_at_least_one_independent_total(self):
+        with self.assertRaisesRegex(ValueError, "at least one independent total"):
+            reconcile_source_control_totals([], [{
+                "source_id": "src",
+                "trade_date": "2026-11-24",
+            }])
+
+    def test_control_records_must_be_objects(self):
+        with self.assertRaisesRegex(ValueError, "expected object"):
+            reconcile_source_control_totals([], ["not-a-control"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,1 +1,1 @@
-trade_date,symbol,side,amount,quantity,identity_status,broker_entity_id,source_id,contract_id,source_payload_sha256,source_row_number,identity_evidence_ids
+trade_date,symbol,side,amount,quantity,identity_status,broker_entity_id,source_broker_code,source_id,contract_id,source_payload_sha256,source_row_number,identity_evidence_ids

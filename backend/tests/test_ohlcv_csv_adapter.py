@@ -33,6 +33,12 @@ class OhlcvCsvAdapterTests(unittest.TestCase):
         self.assertEqual(result["parsed_rows"], 0)
         self.assertEqual(result["exceptions"][0]["source_row_number"], 2)
 
+    def test_zero_volume_is_allowed_for_a_verified_session_row(self):
+        result = parse_ohlcv_csv(self.payload("NABIL,2026-11-24,100,110,95,105,0"),
+                                 source_id="fixture", mapping=MAPPING)
+        self.assertEqual(result["parsed_rows"], 1)
+        self.assertEqual(result["rows"][0]["volume"], "0")
+
     def test_missing_mapped_header_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "mapped OHLCV headers absent"):
             parse_ohlcv_csv(b"Date,Ticker\n2026-11-24,NABIL\n",

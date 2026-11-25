@@ -565,3 +565,20 @@ calendar remains blocked. Next evidence task: obtain the original NEPSE
 notice documents (not just article summaries), preserve their exact bytes,
 compute SHA-256, and independently review each date/scope before adding
 verified calendar rows.
+
+
+
+## Primary holiday evidence — 2026 API capture
+
+The official NEPSE holiday API is now captured as raw, hash-pinned evidence.
+The 2026 response contains 41 unique dates, all with null
+`instrumentTypeId`. The canonical calendar includes 40
+`verified_closed` dates and one `verified_exceptional_closed` date
+(2026-09-21). Raw response SHA-256:
+`dd1777e3c61623048e00dc170d860659b14b8821ffabff8338002ccafdb2ea8f`.
+
+Only explicit dates from this official response were promoted. Absence from
+the holiday list is not evidence that a date was open. The current canonical
+calendar has 41 verified closure dates and zero verified open dates. The
+616-session historical date list and historical open-session evidence remain
+separate, unresolved requirements.

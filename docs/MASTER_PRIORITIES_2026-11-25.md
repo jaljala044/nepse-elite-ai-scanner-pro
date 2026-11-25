@@ -26,7 +26,14 @@ populated and independently verified.
 - Added unit tests for immutable revision resolution and retained the existing calendar/coverage tests.
 - GitHub file contents have been re-fetched to verify commits. CI has not yet been observed for these latest commits.
 
-**Still blocked:** the exact date list behind the starter archive's reported 616 calendar-approved sessions has not been located in the inspected repository paths. The 198 market-summary dates are only candidates, not a substitute.
+**616-session calendar recovery investigation:** the starter backfill manifest reports
+616 calendar-approved sessions, and its README says the original extraction used
+a pinned session calendar. However, the manifest does not identify a calendar
+path, blob SHA, exact date list, or generation command. The inspected import
+utility does not enforce a session calendar. The count is therefore not yet
+independently reproducible. See
+`docs/616_SESSION_CALENDAR_RECOVERY_AUDIT_2026-11-25.md`. The 198 market-summary
+dates remain candidates only; confirmed sessions added by this investigation: 0.
 
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.

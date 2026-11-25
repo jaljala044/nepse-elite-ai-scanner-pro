@@ -46,3 +46,16 @@ The observed-date reference calendar remains unverified against primary NEPSE ev
 3. Obtain a primary-source NEPSE session calendar with source URL, retrieval time, raw response and SHA-256.
 4. Join candidate pairs to verified session dates; distinguish true sessions, closures, holidays and unresolved dates.
 5. Preserve unresolved cases as review-only; do not auto-repair or use them as training labels.
+
+
+## Baseline reconciliation — 2026-11-25
+
+The apparent +122 / +120 discrepancy is explained by scope differences between the broad row-adjacency extractor and the previous baseline metric:
+
+- Exactly 120 candidates in each archive have adjacent CSV rows whose dates are more than one calendar day apart. The prior metric counted only identical signatures on consecutive calendar dates.
+- Two additional `nepse-smc-data` candidates have a one-day date gap but violate OHLC bounds (AHPC, 2011-06-19 → 2011-06-20; API, 2016-09-03 → 2016-09-04). The previous baseline excluded these invalid OHLC rows.
+- Therefore baseline-comparable counts are exactly 94,421 for `nepse-smc-data` and 102,121 for `nepse-history-starter`, matching the original audit.
+
+The broader extractor is intentionally retained because date-gap repeats and repeated signatures on invalid OHLC rows remain useful review evidence. The updated extractor now emits `calendar_day_gap`, `ohlc_bounds_valid`, `baseline_metric_eligible` and `review_reason`, so these populations are separated rather than silently discarded.
+
+This reconciliation does **not** verify NEPSE session dates. Consecutive calendar dates are not necessarily consecutive exchange sessions, especially across weekends, holidays and historical trading-week changes.

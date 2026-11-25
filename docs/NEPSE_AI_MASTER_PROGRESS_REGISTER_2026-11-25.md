@@ -637,3 +637,12 @@ When the project owner asks for all progress, retrieve this register and current
 3. Validate and classify repeated-row candidates only where the calendar and source evidence support a disposition.
 4. Commit or reproducibly regenerate the immutable 1,339-row exception ledger; investigate conflicts without altering raw values.
 5. Continue official 281-equity + 47-fund registry acquisition and then rerun per-instrument coverage.
+
+
+### CI confirmation — 2026-11-25
+
+The dependency-install correction is verified: both GitHub Actions workflows passed on commit `d287cd3fd36a726e292bc86dd198e1f6ed5e881d`:
+- [backend-tests run 45538843851](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45538843851) — success.
+- [Backend contract tests run 45538843708](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45538843708) — success.
+
+A later documentation-only progress-register commit `969d27b85b98ea94622368518461b01ab1f2ed32` triggered another backend-tests run `45538872570`; it was still in progress at the time of this update. The verified green result therefore applies to `d287cd3`, not yet to the later documentation commit.

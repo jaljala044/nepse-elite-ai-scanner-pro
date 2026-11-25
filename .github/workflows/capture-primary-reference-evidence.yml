@@ -1,0 +1,66 @@
+name: Capture primary reference evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Capture official CDSC clearing-member CSV
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/cdsc evidence/nepse
+          url="https://cdsc.com.np/export-clearing-member-csv"
+          curl --fail --location --retry 3 --retry-all-errors --max-time 90 \
+            --dump-header evidence/cdsc/response-headers.txt \
+            --output evidence/cdsc/clearing-members.csv \
+            "$url"
+          printf '%s\n' "$url" > evidence/cdsc/source-url.txt
+          sha256sum evidence/cdsc/clearing-members.csv > evidence/cdsc/SHA256SUMS
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          p = Path("evidence/cdsc/clearing-members.csv")
+          with p.open(encoding="utf-8-sig", newline="") as f:
+              rows = list(csv.DictReader(f))
+          report = {
+              "source_url": "https://cdsc.com.np/export-clearing-member-csv",
+              "byte_count": p.stat().st_size,
+              "row_count": len(rows),
+              "columns": list(rows[0]) if rows else [],
+              "cm_numbers": sorted({str(r.get("CM NO.", r.get("CM No.", ""))).strip() for r in rows if str(r.get("CM NO.", r.get("CM No.", ""))).strip()}),
+              "raw_bytes_preserved": True,
+              "historical_effective_date_coverage": False,
+              "canonical_identity_promotion_allowed": False
+          }
+          Path("evidence/cdsc/capture-report.json").write_text(json.dumps(report, indent=2) + "\n")
+          print(json.dumps(report, indent=2))
+          PY
+      - name: Capture official NEPSE holiday listing response
+        shell: bash
+        run: |
+          set -u
+          url="https://www.nepalstock.com/holiday-listing"
+          if curl --location --retry 2 --retry-all-errors --max-time 90 \
+            --dump-header evidence/nepse/holiday-response-headers.txt \
+            --output evidence/nepse/holiday-listing.html \
+            "$url"; then
+            printf '%s\n' "$url" > evidence/nepse/source-url.txt
+            sha256sum evidence/nepse/holiday-listing.html > evidence/nepse/SHA256SUMS
+            wc -c evidence/nepse/holiday-listing.html > evidence/nepse/byte-count.txt
+          else
+            printf 'capture_failed\n' > evidence/nepse/CAPTURE_FAILED.txt
+          fi
+      - name: Upload immutable capture artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: primary-reference-evidence-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90

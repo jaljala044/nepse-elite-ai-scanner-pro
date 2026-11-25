@@ -2,7 +2,7 @@
 """Capture official NEPSE price/volume history for quarantined OHLCV conflicts."""
 from __future__ import annotations
 import argparse, csv, hashlib, json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlparse
@@ -189,10 +189,17 @@ def capture(ledger_path, output_dir):
     try:
         for symbol, symbol_conflicts in sorted(by_symbol.items()):
             active_symbol = symbol
-            start_date = min(item["date"] for item in symbol_conflicts)
-            end_date = max(item["date"] for item in symbol_conflicts)
+            # Query a surrounding window, not only the exact disputed date.
+            # This verifies that the symbol ID and history endpoint return records
+            # in the relevant period and makes an isolated missing session visible.
+            conflict_start = date.fromisoformat(min(item["date"] for item in symbol_conflicts))
+            conflict_end = date.fromisoformat(max(item["date"] for item in symbol_conflicts))
+            query_start = conflict_start - timedelta(days=30)
+            query_end = conflict_end + timedelta(days=30)
             try:
-                client.getCompanyPriceVolumeHistory(symbol, start_date=start_date, end_date=end_date)
+                client.getCompanyPriceVolumeHistory(
+                    symbol, start_date=query_start, end_date=query_end
+                )
             except Exception as exc:
                 request_errors[symbol] = {"type": type(exc).__name__, "message": str(exc)[:300]}
     finally:
@@ -228,6 +235,8 @@ def capture(ledger_path, output_dir):
             "response_sha256": response["response_sha256"],
             "record_count": analysis["record_count"], "pagination": analysis["pagination"],
             "date_field": analysis["date_field"],
+            "query_start_date": (date.fromisoformat(min(item["date"] for item in symbol_conflicts)) - timedelta(days=30)).isoformat(),
+            "query_end_date": (date.fromisoformat(max(item["date"] for item in symbol_conflicts)) + timedelta(days=30)).isoformat(),
         }
         comparison_results.extend(analysis["conflict_comparisons"])
 

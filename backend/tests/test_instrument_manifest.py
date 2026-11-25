@@ -41,6 +41,26 @@ class InstrumentManifestTests(unittest.TestCase):
         result = validate_instrument_manifest([r], as_of="2026-11-25")
         self.assertFalse(result["promotion_allowed"])
 
+    def test_non_object_record_is_reported_without_crashing(self):
+        result = validate_instrument_manifest([None], as_of="2026-11-25")
+        self.assertEqual(result["errors"][0]["error"], "record_must_be_object")
+
+    def test_non_string_status_is_reported_without_crashing(self):
+        r = row(1)
+        r["status"] = 1
+        result = validate_instrument_manifest([r], as_of="2026-11-25")
+        self.assertIn("missing_or_invalid_required_fields", [e["error"] for e in result["errors"]])
+
+    def test_non_iso_effective_date_rejected(self):
+        r = row(1)
+        r["valid_from"] = "20260101"
+        result = validate_instrument_manifest([r], as_of="2026-11-25")
+        self.assertIn("invalid_effective_date", [e["error"] for e in result["errors"]])
+
+    def test_non_iso_as_of_date_rejected(self):
+        with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
+            validate_instrument_manifest([], as_of="20261125")
+
     def test_future_instrument_not_active_as_of(self):
         r = row(1)
         r["valid_from"] = "2027-01-01"

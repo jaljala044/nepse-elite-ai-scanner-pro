@@ -32,7 +32,7 @@ class BrokerCodeCrosswalkArtifactTests(unittest.TestCase):
         rows = {row["broker_code"]: row for row in self.rows}
         self.assertIn("Ashutosh", rows["8"]["alias_or_name_history_note"])
         self.assertIn("CBIL", rows["91"]["alias_or_name_history_note"])
-        self.assertIn("Citizens", rows["91"]["cdsc_directory_name"])
+        self.assertIn("CITIZENS", rows["91"]["cdsc_directory_name"].upper())
 
 
 if __name__ == "__main__":

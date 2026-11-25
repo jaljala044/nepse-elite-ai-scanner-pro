@@ -54,6 +54,23 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - Enhanced the reconciliation engine to flag adjacent identical candles and reject invalid OHLC bounds or negative/non-integral volume rows. Added focused tests.
 - Sample findings are documented in `docs/NRN_SAMPLE_ROW_AUDIT_2026-11-25.md`. This does not establish the full 525-file overlap or resolve the 616-session calendar.
 
+## P1 cross-repository OHLCV audit — 2026-11-25
+
+- Enumerated both `03_stock_charts_ohlcv` directories through the GitHub
+  Contents API: 525 files each, 525 exact filename matches, and no one-sided
+  filenames.
+- Compared Git blob SHAs for all 525 paths: 500 are byte-identical copies
+  (95.24%); 25 differ. Identical copies are not independent corroboration.
+- Fetched and structurally inventoried both versions of all 25 differing
+  files: matching Date/OHLCV headers, row counts/date ranges recorded, and
+  zero duplicate date keys observed in these 50 files.
+- The SMC repository is longer for 24 of the 25 differing tickers; SOHL is
+  the exception. Longer history is not automatically more accurate.
+- See `docs/CROSS_REPOSITORY_OHLCV_AUDIT_2026-11-25.md` for the full table
+  and limitations. Full row-by-row OHLCV reconciliation, pinned source
+  revisions, upstream lineage verification, and session/corporate-action
+  reconciliation remain pending. Canonical promotion remains blocked.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

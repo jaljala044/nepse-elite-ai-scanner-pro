@@ -56,6 +56,10 @@ class CorporateActionPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot precede"):
             action(available_at="2026-11-19T00:00:00Z")
 
+    def test_missing_source_tier_rejected(self):
+        with self.assertRaisesRegex(ValueError, "source tier"):
+            action(source_tier="")
+
     def test_invalid_factor_rejected(self):
         with self.assertRaisesRegex(ValueError, "finite positive"):
             action(factor="NaN")

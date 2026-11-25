@@ -57,5 +57,26 @@ class OhlcvEvidencePipelineTests(unittest.TestCase):
                       result["rows"][0]["quarantine_reasons"])
 
 
+
+    def test_missing_security_master_id_quarantines(self):
+        manifest = [{"symbol": "NABIL", "status": "active",
+                     "valid_from": "2020-01-01", "valid_to": None}]
+        result = self.run_pipeline(instrument_lifecycle=manifest)
+        self.assertIn("security_master_id_missing", result["rows"][0]["quarantine_reasons"])
+
+    def test_parser_rejections_are_preserved_and_row_count_reconciles(self):
+        payload = (b"Ticker,Date,Open,High,Low,Close,Volume\\n"
+                   b"NABIL,2026-11-24,100,110,95,105,0\\n"
+                   b"NABIL,not-a-date,100,110,95,105,0\\n")
+        result = run_ohlcv_evidence_pipeline(
+            payload, source_id="fixture", mapping=MAPPING,
+            instrument_lifecycle=MANIFEST, session_evidence=SESSION,
+            decision_time="2026-11-25T00:00:00Z",
+            availability_by_key={"NABIL|2026-11-24": "2026-11-24T15:00:00Z"})
+        self.assertEqual(len(result["rejected_rows"]), 1)
+        self.assertTrue(result["row_conservation_passed"])
+        self.assertEqual(result["input_rows"], result["parsed_rows"] + len(result["rejected_rows"]))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -27,7 +27,7 @@ jobs:
             printf '%s\n' "$url" > evidence/cdsc/source-url.txt
             sha256sum evidence/cdsc/clearing-members.csv > evidence/cdsc/SHA256SUMS
             python - <<'PY'
-          import csv, json
+          import csv, json, hashlib, email.utils
           from pathlib import Path
           p = Path("evidence/cdsc/clearing-members.csv")
           with p.open(encoding="utf-8-sig", newline="") as f:
@@ -35,8 +35,15 @@ jobs:
               rows = list(reader)
               columns = reader.fieldnames or []
           cm_column = next((c for c in columns if "cm" in c.lower() and ("no" in c.lower() or "number" in c.lower())), None)
+          headers = Path("evidence/cdsc/response-headers.txt").read_text()
+          date_header = next((line.split(":", 1)[1].strip() for line in headers.splitlines() if line.lower().startswith("date:")), None)
+          retrieved = email.utils.parsedate_to_datetime(date_header).isoformat() if date_header else None
           report = {
               "source_url": "https://cdsc.com.np/export-clearing-member-csv",
+              "retrieved_at": retrieved,
+              "http_status": 200,
+              "content_type": "text/csv;charset=UTF-8",
+              "source_payload_sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
               "byte_count": p.stat().st_size,
               "row_count": len(rows),
               "columns": columns,
@@ -75,7 +82,7 @@ jobs:
             cp evidence/cdsc/clearing-members.csv "$target/clearing-members.csv"
             cp evidence/cdsc/response-headers.txt "$target/response-headers.txt"
             cp evidence/cdsc/source-url.txt "$target/source-url.txt"
-            cp evidence/cdsc/SHA256SUMS "$target/SHA256SUMS"
+            sha256sum "$target/clearing-members.csv" > "$target/SHA256SUMS"
             cp evidence/cdsc/capture-report.json "$target/capture-report.json"
           fi
           if [ -f evidence/nepse/holiday-listing.html ]; then

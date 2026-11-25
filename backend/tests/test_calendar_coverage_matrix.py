@@ -82,6 +82,26 @@ class CalendarCoverageMatrixTests(unittest.TestCase):
                               date(2026,11,25), date(2026,11,25))
         self.assertIn("source_file_on_verified_closed_date", report["rows"][0]["flags"])
 
+    def test_reconciles_verified_open_gaps_and_unverified_source_dates(self):
+        with self.calendar.open("a", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=[
+                "date", "status", "source_id", "evidence_uri", "raw_evidence_sha256",
+                "published_at", "retrieved_at_utc", "verified_at_utc", "scope", "notes"
+            ])
+            writer.writerow({
+                "date":"2026-11-25","status":"verified_open","source_id":"notice-open",
+                "evidence_uri":"https://example.invalid/open","raw_evidence_sha256":"c"*64,
+                "published_at":"","retrieved_at_utc":"2026-11-25T00:00:00Z",
+                "verified_at_utc":"2026-11-25T00:00:00Z","scope":"all securities","notes":"open"
+            })
+        with self.manifest.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"date":"2026-11-26","repo_id":"source/A",
+                                     "path":"ohlcv/2026-11-26.csv","size_bytes":20}) + "\n")
+        report = build_matrix([self.manifest], self.calendar,
+                              date(2026,11,25), date(2026,11,26))
+        self.assertIn("verified_open_date_without_source_file", report["rows"][0]["flags"])
+        self.assertIn("source_file_on_unverified_calendar_date", report["rows"][1]["flags"])
+
     def test_reversed_date_range_rejected(self):
         with self.assertRaises(ValueError):
             build_matrix([self.manifest], self.calendar, date(2026, 11, 28), date(2026, 11, 23))

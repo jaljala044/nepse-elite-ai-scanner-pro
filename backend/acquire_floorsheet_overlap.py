@@ -49,6 +49,26 @@ def git_blob_sha1(payload: bytes) -> str:
     return hashlib.sha1(header + payload).hexdigest()
 
 
+def select_overlap_dates(
+    samir_dates: set[str],
+    socrate_dates: set[str],
+    *,
+    start_date: date,
+    end_date: date,
+    limit: int,
+    skip_latest: int = 0,
+) -> list[str]:
+    ordered = sorted(
+        d for d in samir_dates & socrate_dates
+        if start_date <= date.fromisoformat(d) <= end_date
+    )
+    end_index = len(ordered) - skip_latest
+    if end_index <= 0:
+        return []
+    start_index = max(0, end_index - limit)
+    return ordered[start_index:end_index]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=10)

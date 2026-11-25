@@ -23,7 +23,7 @@ def audit_archive(root: Path) -> dict:
                 raise ValueError("capture directory year does not match requested_year")
             body_path = year_dir / "response-body.bin"
             parsed_path = year_dir / "parsed-response.json"
-            if not body_dir_exists := body_path.is_file():
+            if not body_path.is_file():
                 raise ValueError("raw response-body.bin is missing")
             raw = body_path.read_bytes()
             digest = hashlib.sha256(raw).hexdigest()

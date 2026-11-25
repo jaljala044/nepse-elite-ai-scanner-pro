@@ -71,6 +71,38 @@ The loader preserves the six source tables separately in DuckDB and emits row-le
 including floorsheet arithmetic, broker-flow reconciliation, OHLC anomalies and EOD
 source-overlap differences. It does not auto-correct prices or generate buy/sell instructions.
 
+
+## Historical coverage matrix (new)
+
+The first coverage utility is deliberately conservative. It compares dated source
+files against an evidence-backed calendar and keeps unverified dates visible.
+It does not infer exchange sessions from weekdays, and it does not claim that a
+file's presence proves row completeness.
+
+Prepare an evidence-backed calendar CSV with these columns:
+
+```csv
+session_date,calendar_status,evidence_source,evidence_ref,decision_reason
+```
+
+Allowed statuses: `confirmed_session`, `confirmed_non_session`,
+`candidate_unverified`, and `conflict`. Do not populate confirmed statuses
+without recorded evidence.
+
+Generate a source-separated file-level report from one or more inventory manifests:
+
+```bash
+python build_coverage_matrix.py --calendar ../data/reference/nepse-session-calendar.csv \
+  --manifest ../data/reports/github-source-inventory.json \
+  --manifest ../data/raw/huggingface/manifests/hf_inventory_YYYYMMDDTHHMMSSZ.json \
+  --output ../data/reports/historical-coverage-matrix.json
+```
+
+The report flags dated files on confirmed sessions, files on confirmed
+non-sessions, calendar conflicts, unverified dates and undated files. It does
+not infer missing sessions. Symbol-level coverage and row-level acceptance
+remain separate follow-on gates.
+
 ## CSV format
 Required columns: `symbol,date,open,high,low,close,volume`. Dates should be ISO `YYYY-MM-DD`; prices and volume must be positive (volume may be zero). One file may contain multiple symbols.
 

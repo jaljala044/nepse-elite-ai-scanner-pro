@@ -64,6 +64,8 @@ class FloorsheetContract:
 def reconcile_floorsheet_rows(rows: Iterable[FloorsheetContract],
                               amount_tolerance: Decimal = Decimal("0.01")) -> dict:
     """Classify exact repeats and conflicting contract IDs without dropping rows."""
+    if not amount_tolerance.is_finite() or amount_tolerance < 0:
+        raise ValueError("amount_tolerance must be finite and non-negative")
     materialized = list(rows)
     by_contract = {}
     for row in materialized:

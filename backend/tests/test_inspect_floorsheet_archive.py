@@ -24,6 +24,9 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
             self.assertEqual(result["inventory_mode"], "central_directory_only_no_extraction")
             self.assertEqual(result["member_count"], 2)
             self.assertEqual(result["file_count"], 2)
+            self.assertEqual(result["csv_member_count"], 2)
+            self.assertEqual(result["file_extension_counts"], {".csv": 2})
+            self.assertGreater(result["total_declared_compressed_bytes"], 0)
             self.assertEqual(result["archive_sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
             self.assertFalse((Path(tmp) / "2026-01-01.csv").exists())
 

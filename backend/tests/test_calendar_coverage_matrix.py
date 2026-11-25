@@ -77,7 +77,7 @@ class CalendarCoverageMatrixTests(unittest.TestCase):
             })
         with self.manifest.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps({"date":"2026-11-25","repo_id":"source/A",
-                                     "path":"floorsheet/2026-11-25.csv","size_bytes":10}) + "\\n")
+                                     "path":"floorsheet/2026-11-25.csv","size_bytes":10}) + "\n")
         report = build_matrix([self.manifest], self.calendar,
                               date(2026,11,25), date(2026,11,25))
         self.assertIn("source_file_on_verified_closed_date", report["rows"][0]["flags"])

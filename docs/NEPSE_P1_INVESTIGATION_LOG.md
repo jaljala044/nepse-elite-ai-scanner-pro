@@ -306,3 +306,6 @@ A broker TMS Market Time and Sales History export is an alternative if the user 
 The public today-price route is authenticated and working for dates inside its retention window. The historical company_floorsheet route is blocked by nginx on both official hosts. The old PHP historical pages are retired. No public unauthenticated official NEPSE route remains that can return the July 2025 evidence.
 
 The five older records remain quarantined. We must not promote Source A or Source B based only on secondary archives. No training, no canonical promotion, no merge.
+
+
+The main conflict ledger was updated in commit 23a313f5303868169f365138c1821093de063456 to preserve the exact 2025-07-28 endpoint failures, raw response paths, SocrateAI trade counts/VWAPs, and the unverified provenance/close-methodology caveats for all five older records.

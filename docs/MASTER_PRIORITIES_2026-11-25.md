@@ -137,6 +137,23 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   observations; do not automatically overwrite or promote disputed rows.
   Primary exchange verification and upstream-feed independence remain open.
 
+## P1 2026 calendar evidence triage — 2026-11-25
+
+- Reviewed the 2083 Nepal Rastra Bank holiday PDF for government/banking
+  holiday context and compared it with NEPSE-specific secondary closure
+  reports for May 28–29, Sep 8, Sep 25, Oct 19–23, Nov 9–12 and Nov 16.
+- Kept the Sep 21 Data Hub outage as an exceptional operational-suspension
+  lead, not a routine holiday.
+- Rechecked the weekday regime boundary: Monday–Friday candidates from
+  2026-04-06; schedule candidates still do not establish actual trading.
+- Rechecked the calendar loader's fail-closed contract: only evidence-backed
+  verified statuses with raw SHA-256, source URI/ID, UTC retrieval and
+  verification timestamps and scope are accepted. OHLCV rows on unverified
+  dates remain quarantined.
+- No new calendar dates were promoted. Primary NEPSE notice bytes have not
+  yet been archived and hashed. Full review:
+  `docs/NEPSE_SESSION_CALENDAR_AND_INTEGRITY_GATE.md`.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

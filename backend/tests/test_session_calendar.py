@@ -19,7 +19,7 @@ class SessionCalendarTests(unittest.TestCase):
 
     def write_calendar(self, rows):
         with self.calendar.open("w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=["date", "status", "source_id", "evidence_uri", "verified_at_utc", "notes"])
+            w = csv.DictWriter(f, fieldnames=["date", "status", "source_id", "evidence_uri", "raw_evidence_sha256", "published_at", "retrieved_at_utc", "verified_at_utc", "scope", "notes"])
             w.writeheader()
             w.writerows(rows)
 
@@ -36,7 +36,10 @@ class SessionCalendarTests(unittest.TestCase):
 
     def evidence(self, day="2026-11-23", status="verified_open"):
         return {"date": day, "status": status, "source_id": "exchange_notice_001",
-                "evidence_uri": "https://example.invalid/notice", "verified_at_utc": "2026-11-24T00:00:00Z",
+                "evidence_uri": "https://example.invalid/notice", "raw_evidence_sha256": "a" * 64,
+                "published_at": "2026-11-23T09:00:00+05:45",
+                "retrieved_at_utc": "2026-11-24T00:00:00Z",
+                "verified_at_utc": "2026-11-24T00:00:00Z", "scope": "all securities",
                 "notes": "test fixture"}
 
     def test_weekday_rules_are_candidates_not_verified_sessions(self):
@@ -62,8 +65,24 @@ class SessionCalendarTests(unittest.TestCase):
         self.assertFalse(schedule_candidate(date(2026, 4, 12))[0])  # Sunday under new regime
 
     def test_calendar_requires_evidence_fields(self):
-        self.write_calendar([{"date": "2026-11-23", "status": "verified_open", "source_id": "", "evidence_uri": "", "verified_at_utc": "", "notes": ""}])
-        with self.assertRaises(ValueError):
+        row = self.evidence()
+        row["raw_evidence_sha256"] = ""
+        self.write_calendar([row])
+        with self.assertRaisesRegex(ValueError, "require source, URI, raw hash"):
+            load_calendar(self.calendar)
+
+    def test_calendar_rejects_invalid_raw_evidence_hash(self):
+        row = self.evidence()
+        row["raw_evidence_sha256"] = "not-a-hash"
+        self.write_calendar([row])
+        with self.assertRaisesRegex(ValueError, "64-character hex digest"):
+            load_calendar(self.calendar)
+
+    def test_calendar_requires_utc_retrieval_timestamp(self):
+        row = self.evidence()
+        row["retrieved_at_utc"] = "2026-11-24T00:00:00"
+        self.write_calendar([row])
+        with self.assertRaisesRegex(ValueError, "retrieved_at_utc must include UTC"):
             load_calendar(self.calendar)
 
     def test_exceptional_open_session_is_accepted_with_evidence(self):

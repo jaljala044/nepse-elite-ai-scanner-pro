@@ -56,7 +56,9 @@ class OfficialNepseHolidayCaptureTests(unittest.TestCase):
 
         candidate_path = ROOT / "data/reference/nepse-session-calendar-candidates-2026.csv"
         with candidate_path.open(encoding="utf-8-sig", newline="") as stream:
-            candidates = {row["date"] for row in csv.DictReader(stream)}
+            reader = csv.DictReader(stream)
+            date_column = "session_date" if "session_date" in (reader.fieldnames or []) else "date"
+            candidates = {row[date_column] for row in reader}
         self.assertEqual(holiday_dates & candidates, set())
 
 

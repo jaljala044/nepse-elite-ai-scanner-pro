@@ -88,6 +88,22 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   independent source evidence, revision pinning, corporate-action review and
   session-calendar reconciliation. No rows were merged or overwritten.
 
+## P1 immutable-source rerun — 2026-11-25
+
+- Repeated both 525-file directory inventories and all 50 CSV fetches for the
+  25 differing ticker pairs using explicit immutable refs:
+  - `nepse-smc-data`: `a55a9097375782d0a982f1f94a881f0a4e036698`
+  - `nepse-history-starter`: `2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe`
+- The pinned directory comparison again yielded 525 matching paths, 500
+  identical blob SHAs and 25 differing blobs. All 50 fetched file blob SHAs
+  matched the previously recorded values; row counts, date-key differences
+  and eight OHLCV conflicts were reproduced.
+- The prior revision-pinning caveat is closed for this audit snapshot. This
+  establishes reproducibility of the content, not correctness or independent
+  provenance. The eight conflicts remain quarantined; calendar,
+  corporate-action and upstream-lineage checks remain open.
+- Full details: `docs/CROSS_REPOSITORY_OHLCV_AUDIT_2026-11-25.md`.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

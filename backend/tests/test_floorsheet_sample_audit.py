@@ -31,11 +31,17 @@ class FloorsheetSampleAuditTests(unittest.TestCase):
             "errors": [],
         }
         self.reconciled = reconcile_floorsheet_rows([self.row])
+        self.session_evidence = [{
+            "date": "2026-11-24", "evidence_id": "NEPSE-CIRCULAR-1",
+            "source_id": "nepse-primary", "source_payload_sha256": hashlib.sha256(b"official notice").hexdigest(),
+            "evidence_tier": "primary_exchange", "reviewed": True,
+        }]
 
     def test_clean_sample_only_passes_quality_gate_after_mapping_and_calendar_review(self):
         result = build_floorsheet_sample_acceptance_report(
             self.parsed, self.reconciled, mapping_reviewed=True,
             verified_session_dates=["2026-11-24"],
+            verified_session_date_evidence=self.session_evidence,
         )
         self.assertEqual(result["sample_quality_gate"], "passed_for_rights_review")
         self.assertFalse(result["promotion_allowed"])
@@ -64,6 +70,7 @@ class FloorsheetSampleAuditTests(unittest.TestCase):
         result = build_floorsheet_sample_acceptance_report(
             parsed, self.reconciled, mapping_reviewed=True,
             verified_session_dates=["2026-11-24"],
+            verified_session_date_evidence=self.session_evidence,
         )
         self.assertEqual(result["rejected_row_ratio"], 0.5)
         self.assertEqual(result["sample_quality_gate"], "review_required")
@@ -80,6 +87,22 @@ class FloorsheetSampleAuditTests(unittest.TestCase):
         parsed["errors"] = [{"source_row_number": 3, "error": "bad row"}]
         with self.assertRaisesRegex(ValueError, "raw source row"):
             build_floorsheet_sample_acceptance_report(parsed, self.reconciled)
+
+    def test_date_string_without_primary_evidence_does_not_pass_gate(self):
+        result = build_floorsheet_sample_acceptance_report(
+            self.parsed, self.reconciled, mapping_reviewed=True,
+            verified_session_dates=["2026-11-24"],
+        )
+        self.assertEqual(result["sample_quality_gate"], "review_required")
+        self.assertEqual(result["calendar_unverified_dates"], ["2026-11-24"])
+
+    def test_unreviewed_or_nonprimary_session_evidence_rejected(self):
+        bad = [dict(self.session_evidence[0], reviewed=False)]
+        with self.assertRaisesRegex(ValueError, "reviewed primary-exchange"):
+            build_floorsheet_sample_acceptance_report(
+                self.parsed, self.reconciled, mapping_reviewed=True,
+                verified_session_date_evidence=bad,
+            )
 
     def test_duplicate_verified_session_dates_rejected(self):
         with self.assertRaisesRegex(ValueError, "must be unique"):

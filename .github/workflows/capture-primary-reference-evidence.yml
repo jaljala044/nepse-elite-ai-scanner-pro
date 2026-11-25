@@ -69,7 +69,7 @@ jobs:
           urls=("https://www.nepalstock.com/holiday-listing" "https://nepalstock.com/holiday-listing")
           captured=0
           for url in "${urls[@]}"; do
-            if curl --http1.1 --location --retry 3 --retry-all-errors --max-time 90 \
+            if curl --http1.1 --location --retry 1 --retry-all-errors --connect-timeout 10 --max-time 25 \
               --dump-header evidence/nepse/holiday-response-headers.txt \
               --output evidence/nepse/holiday-listing.html "$url"; then
               printf '%s\n' "$url" > evidence/nepse/source-url.txt

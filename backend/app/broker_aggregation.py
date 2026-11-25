@@ -75,14 +75,23 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
             raise ValueError(f"row {index}: identity_evidence_ids must be a list of nonblank IDs")
         if status == "verified" and not identity_evidence:
             raise ValueError(f"row {index}: verified identity requires identity evidence IDs")
-        group_key = (row["trade_date"], row["symbol"], broker_id, source_broker_code, side, status)
+        # A verified canonical identity aggregates across source-specific codes;
+        # unresolved codes remain distinct by provider/source and source code.
+        unresolved_source_id = row["source_id"] if status != "verified" else None
+        unresolved_code = source_broker_code if status != "verified" else None
+        group_key = (row["trade_date"], row["symbol"], broker_id,
+                     unresolved_source_id, unresolved_code, side, status)
         item = groups.setdefault(group_key, {
             "trade_date": row["trade_date"], "symbol": row["symbol"],
-            "broker_entity_id": broker_id, "source_broker_code": source_broker_code,
+            "broker_entity_id": broker_id,
+            "source_broker_code": source_broker_code if status != "verified" else None,
+            "source_broker_codes": set(),
             "side": side, "identity_status": status,
             "contract_count": 0, "quantity": Decimal("0"), "amount": Decimal("0"),
             "source_ids": set(), "evidence_ids": set(),
         })
+        if source_broker_code is not None:
+            item["source_broker_codes"].add(source_broker_code)
         lineage = (payload_hash, source_row_number, side)
         if lineage in seen_lineages:
             raise ValueError(f"duplicate party observation lineage: {lineage}")

@@ -47,6 +47,18 @@ class BrokerAggregationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "64-character hex digest"):
             aggregate_broker_observations([item])
 
+    def test_whitespace_only_verified_broker_id_rejected(self):
+        item = row(line=1)
+        item["broker_entity_id"] = "   "
+        with self.assertRaisesRegex(ValueError, "nonblank broker_entity_id"):
+            aggregate_broker_observations([item])
+
+    def test_whitespace_only_lineage_field_rejected(self):
+        item = row(line=1)
+        item["contract_id"] = "   "
+        with self.assertRaisesRegex(ValueError, "missing grouping or lineage"):
+            aggregate_broker_observations([item])
+
     def test_verified_identity_requires_evidence_ids(self):
         item = row(line=1)
         item["identity_evidence_ids"] = []

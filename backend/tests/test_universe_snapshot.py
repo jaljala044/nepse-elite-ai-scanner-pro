@@ -56,6 +56,41 @@ class UniverseSnapshotTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate target"):
             validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
 
+    def test_non_object_record_rejected(self):
+        item = self.snapshot()
+        item["records"][0] = None
+        with self.assertRaisesRegex(ValueError, "expected object"):
+            validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
+    def test_non_string_symbol_rejected(self):
+        item = self.snapshot()
+        item["records"][0]["symbol"] = 123
+        with self.assertRaisesRegex(ValueError, "symbol must be a nonblank string"):
+            validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
+    def test_non_string_instrument_type_rejected(self):
+        item = self.snapshot()
+        item["records"][0]["instrument_type"] = []
+        with self.assertRaisesRegex(ValueError, "unknown instrument_type"):
+            validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
+    def test_source_url_credentials_and_nonstandard_port_rejected(self):
+        for url in (
+            "https://user@www.nepalstock.com.np/stocklist",
+            "https://www.nepalstock.com.np:8443/stocklist",
+        ):
+            with self.subTest(url=url):
+                item = self.snapshot()
+                item["source_url"] = url
+                with self.assertRaisesRegex(ValueError, "approved official"):
+                    validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
+    def test_non_iso_snapshot_date_rejected(self):
+        item = self.snapshot()
+        item["snapshot_as_of"] = "20261125"
+        with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
+            validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
     def test_naive_retrieval_timestamp_rejected(self):
         item = self.snapshot()
         item["retrieved_at_utc"] = "2026-11-25T00:00:00"

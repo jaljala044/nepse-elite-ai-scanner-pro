@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -55,7 +55,7 @@ def reconcile_ohlcv_sources(paths: list[str | Path], control_path: str | Path | 
     duplicates = []
     for (source_id, day), group in sorted(by_source_day.items()):
         symbols = [row["symbol"] for row in group]
-        duplicate_symbols = sorted(symbol for symbol, count in __import__("collections").Counter(symbols).items() if count > 1)
+        duplicate_symbols = sorted(symbol for symbol, count in Counter(symbols).items() if count > 1)
         for symbol in duplicate_symbols:
             duplicates.append({"source_id": source_id, "date": day, "symbol": symbol,
                                "row_count": symbols.count(symbol)})
@@ -142,7 +142,7 @@ def main() -> int:
     args = parser.parse_args()
     report = reconcile_ohlcv_sources(args.input, args.control_totals)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({
         "source_date_count": report["source_date_count"],
         "duplicate_source_symbol_date_count": len(report["duplicate_source_symbol_dates"]),

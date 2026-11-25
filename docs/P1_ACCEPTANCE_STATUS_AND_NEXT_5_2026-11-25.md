@@ -148,3 +148,57 @@ zero verified rows and the 616-session source list remains unrecovered.
    the exact date set; retain disagreements as unresolved.
 5. Populate the corporate-action, OHLCV conflict and broker observation ledgers
    from real source evidence, then rerun the integrated acceptance audit.
+
+
+## P1 raw-source acquisition — pinned floorsheet sample
+
+Acquired and preserved one complete source file from a pinned public
+community-maintained repository:
+
+- Source: `rajeevpaudel/nepse-history`
+- Immutable revision: `927a15986012b31dba6c29c2266fb17f966a087b`
+- Original path: `data/floorsheet/2026/2026-11-19.csv`
+- Original Git blob OID: `4bbe20319f12b993218b27047f8e46567cfb8cbf`
+- Preserved project path:
+  `data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-floorsheet.csv`
+- Byte count: 2,300,941
+- SHA-256 of raw bytes:
+  `771d856187844f5608cb31225c03d065a4ce13fe655601d465c4e167a7b62e15`
+- Rows: 40,818 trade contracts; all rows have date 2026-11-19 and the expected
+  eight CSV columns. Structural validation found zero malformed rows.
+- Verified copied file Git blob OID and byte count exactly match the pinned
+  source object.
+
+Source limitation and rights review: upstream README says historical data is
+collected via Merolagani; it documents per-day row shortfalls on 2,427 of about
+4,100 days, 112 failed date-fetch attempts later retried, and no intraday trade
+timestamps. It describes the underlying trade data as public market
+information but explicitly advises independent verification of NEPSE and
+Merolagani terms for redistribution/commercial use. Therefore this sample is
+community-maintained corroborating data, not a primary exchange record; no
+completeness, beneficial ownership or commercial redistribution claim is made.
+
+Manifests created:
+- `data/evidence/acquired/source-object-manifest.jsonl`
+- `data/evidence/acquired/source-file-date-manifest.jsonl`
+
+The source sample is staged and hash-verified, but one date does not establish
+historical coverage, session validity, broker identity or source completeness.
+The calendar, 616-session recovery, corporate-action reconciliation, OHLCV
+conflicts and broad floorsheet coverage remain unresolved. P1 remains blocked.
+
+## Next five execution tasks after first source acquisition
+
+1. Capture the source repository's per-date `manifest.json` and discrepancy
+   records at the same immutable revision; link its status/row counts to this
+   sample and assess source completeness for the date.
+2. Acquire a same-date independent EOD/index record and compare trade-derived
+   aggregates with published daily values, retaining source lineage caveats.
+3. Convert the 40,818 contracts into separately hashed buyer/seller execution-
+   channel observations, without assigning beneficial owners; reconcile row
+   counts and amount/quantity controls.
+4. Capture primary NEPSE calendar notices and recover the exact 616-session
+   generator inputs/calendar; no weekday-only inference.
+5. Expand pinned source acquisition across a stratified historical sample,
+   populate corporate-action and OHLCV conflict evidence, then rerun the full
+   integrated acceptance audit.

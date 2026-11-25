@@ -66,6 +66,25 @@ class SessionCalendarTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_calendar(self.calendar)
 
+    def test_exceptional_open_session_is_accepted_with_evidence(self):
+        self.write_calendar([self.evidence(status="verified_exceptional_open")])
+        self.write_prices([self.row()])
+        report = audit_ohlcv([self.data], self.calendar)
+        self.assertEqual(report["rows_accepted"], 1)
+        self.assertTrue(report["gate_pass"])
+
+    def test_verification_timestamp_must_be_utc_aware(self):
+        row = self.evidence()
+        row["verified_at_utc"] = "2026-11-24T00:00:00"
+        self.write_calendar([row])
+        with self.assertRaisesRegex(ValueError, "must include UTC timezone"):
+            load_calendar(self.calendar)
+
+    def test_unsupported_calendar_status_is_rejected(self):
+        self.write_calendar([self.evidence(status="candidate_open")])
+        with self.assertRaisesRegex(ValueError, "unsupported evidence-backed"):
+            load_calendar(self.calendar)
+
     def test_only_explicit_open_dates_pass(self):
         self.write_calendar([self.evidence()])
         self.write_prices([self.row()])

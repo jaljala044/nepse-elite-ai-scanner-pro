@@ -33,5 +33,21 @@ class AuditBundleTests(unittest.TestCase):
             build_audit_bundle({})
 
 
+
+    def test_dictionary_keys_that_stringify_identically_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "collide after string normalization"):
+            canonical_json_bytes({1: "numeric", "1": "string"})
+
+    def test_non_finite_decimal_is_rejected(self):
+        from decimal import Decimal
+        with self.assertRaisesRegex(ValueError, "non-finite Decimal"):
+            canonical_json_bytes({"bad": Decimal("NaN")})
+
+    def test_mixed_type_set_is_serialized_deterministically(self):
+        one = canonical_json_bytes({"values": {1, "1", 2}})
+        two = canonical_json_bytes({"values": {2, "1", 1}})
+        self.assertEqual(one, two)
+
+
 if __name__ == "__main__":
     unittest.main()

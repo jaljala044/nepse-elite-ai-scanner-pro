@@ -967,3 +967,56 @@ The current environment does not provide access to the user's Drive archive or t
 - Final code commit `1f09326dba1ad1e94c8120cc3ebb5d40f2936871`: backend suite **464 tests passed** (run [45549268913](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45549268913)); backend contract tests passed (run [45549268889](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45549268889)); integrated evidence audit passed (run [45549268906](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45549268906)).
 - The NUL-byte path test is implemented against the validator directly because ZIP-writing libraries normalize/truncate NUL bytes in member names; the validator itself rejects the NUL byte.
 - These changes improve validation and source handling only. They do not establish Drive archive access, source-data rights, official session dates, verified 281+47 membership, one-year history coverage, or model predictive performance. No canonical data promotion or training is authorized.
+
+
+## 10. Work-session update — next data-pipeline priorities 81–90 (2026-11-25)
+
+### Priority 81 — acquire and stage a bounded floorsheet sample
+
+- The repository already has a one-session public-source smoke path for the Urek dataset. The documented 2024-01-02 run normalized **85,435 floorsheet rows** with zero parser rejects; this is a one-day parser/sample result, not full-history validation.
+- The separate pinned acquisition workflow selects Urek revision \`11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0\`, sample date \`2026-08-26\`, enforces per-file byte ceilings and acquires same-date index/SocrateAI comparison data.
+- In this work session, the sample archive bytes were not downloaded or rehashed locally; raw sample SHA-256 and physical header review remain open. Do not represent the sample as reverified in this session.
+- Dataset page checked on 2026-11-25: its preview displays the 11 source fields and rows dated 2024-01-02; its card declares MIT and states the source is compiled from public NEPSE data. It does not identify a primary endpoint or reproducible source chain.
+
+### Priority 82 — verify sample source and provenance
+
+Created [FLOORSHEET_SOURCE_PROVENANCE_REVIEW_2026-11-25.md](FLOORSHEET_SOURCE_PROVENANCE_REVIEW_2026-11-25.md).
+
+- Urek: public publisher claim and MIT declaration located; exact upstream collection method/endpoint not documented in reviewed card.
+- SocrateAI: public README and MIT licence file inspected; reviewed README does not document the original acquisition endpoint. Earlier matching overlap with Urek does not prove independent lineage.
+- SamirWagle: inspected the scraper code. It explicitly requests \`https://merolagani.com/Floorsheet.aspx\`, paginates its table, and stamps each row with \`date.today()\`. This is a Merolagani-derived daily capture path, not evidence of historical trade dates for a backfill.
+- YONEPSE source credits identify NEPSE's official API for live floorsheets and trailing-year index history, and SocrateAI for older index series. This is third-party source documentation, not an exchange API contract.
+- Result: the candidate source chain is better documented, but independent lineage and upstream data rights remain unresolved.
+
+### Priority 83 — map real source headers to the canonical contract
+
+Added:
+- \`backend/app/floorsheet_source_profiles.py\`
+- \`backend/tests/test_floorsheet_source_profiles.py\`
+- \`docs/FLOORSHEET_SOURCE_PROFILE_UREK_2026-11-25.md\`
+
+Explicit Urek mapping: \`calculation_date\` → trade date; \`contract_no\` → contract ID; \`stock_symbol\` → symbol; \`buyer\` and \`seller\` → broker codes; and quantity/rate/amount → corresponding canonical values. The source-only fields \`time\`, \`sector\` and \`id\` are not fabricated into canonical fields; the immutable raw CSV retains them. Contract numbers are kept as strings. Five unit tests were added, including schema mismatch and synthetic adapter round-trip checks.
+
+**Important limitation:** the mapping is marked \`publisher_schema_declared_raw_header_not_yet_reviewed\`. The tests use a synthetic fixture. A physical sample CSV header and hash must be checked before setting the source mapping to reviewed.
+
+### Current execution state for priorities 81–90
+
+| Priority | Status at this update |
+|---|---|
+| 81. Acquire bounded sample | Earlier one-day parser smoke exists; pinned sample bytes/hash not reverified in this session |
+| 82. Verify source/provenance | Source-level review documented; independent lineage/rights unresolved |
+| 83. Map source headers | Explicit profile and tests added; physical header verification pending |
+| 84. Reconcile contracts/control totals | Not started in this sequence; reuse existing audit code after raw sample verification |
+| 85. Verify broker-code coverage | Not started in this sequence |
+| 86. Compare overlapping dates/sources | Prior 70-date archive comparison exists; rerun one-day row-level evidence after sample bytes are available |
+| 87. Identify missing trading dates | Needs primary date-level NEPSE calendar; existing candidate dates remain unverified |
+| 88. Verify active universe | Official dated 281 + 47 registry still missing |
+| 89. Assess one-year / six-month coverage | Blocked on verified universe and session dates |
+| 90. Produce source-backed readiness report | Final readiness remains blocked until priorities 84–89 are evidenced |
+
+Commits for the new Urek source profile, tests and profile documentation:
+- \`5b3a895b01a6e671f1d08808e55bd89bffdecedb\`
+- \`3f1fc33a068d7194e0c75e7be33d4d03109a9216\`
+- \`e7b80947ee8cbc8616b27845e51962270eb12155\`
+
+The added unit-test commit has not yet exposed a GitHub status check through the current connector (combined status returned no check records). Do not claim CI passed until an actual workflow run is inspected.

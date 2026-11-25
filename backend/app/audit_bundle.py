@@ -13,15 +13,25 @@ def _json_safe(value: Any) -> Any:
     if is_dataclass(value):
         return _json_safe(asdict(value))
     if isinstance(value, Decimal):
+        if not value.is_finite():
+            raise ValueError("non-finite Decimal values are not allowed in audit bundles")
         return str(value)
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     if isinstance(value, dict):
-        return {str(k): _json_safe(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
+        normalized = {}
+        for key, item in value.items():
+            name = str(key)
+            if name in normalized:
+                raise ValueError(f"dictionary keys collide after string normalization: {name}")
+            normalized[name] = _json_safe(item)
+        return {k: normalized[k] for k in sorted(normalized)}
     if isinstance(value, (list, tuple)):
         return [_json_safe(v) for v in value]
     if isinstance(value, set):
-        return sorted(_json_safe(v) for v in value)
+        normalized = [_json_safe(v) for v in value]
+        return sorted(normalized, key=lambda item: json.dumps(
+            item, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False))
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     raise TypeError(f"unsupported audit bundle value: {type(value).__name__}")
@@ -41,8 +51,8 @@ def build_audit_bundle(artifacts: dict[str, Any], *, schema_version: int = 1) ->
         raise ValueError("schema_version must be positive")
     entries = {}
     for name in sorted(artifacts):
-        if not name.strip():
-            raise ValueError("artifact names cannot be blank")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("artifact names must be non-blank strings")
         payload = canonical_json_bytes(artifacts[name])
         entries[name] = {
             "sha256": hashlib.sha256(payload).hexdigest(),

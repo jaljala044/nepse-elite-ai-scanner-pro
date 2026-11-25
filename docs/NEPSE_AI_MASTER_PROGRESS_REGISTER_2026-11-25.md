@@ -696,3 +696,11 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 - Recent index cross-check is not a missing-file/transport failure: all 120 selected index files downloaded, 117 contain one valid row and 3 have anomalies (2026-06-01 exact duplicate rows; 2026-07-03 index high below OHLC; 2026-07-07 conflicting duplicate rows). The workflow step exits nonzero on those quality anomalies. No date-level exchange calendar is thereby verified.
 - YONEPSE comparison is also a third-party mirror comparison. Its 120 dates classify as 116 numeric-difference cases, 3 SocrateAI row anomalies and 1 provisional latest date; numeric precision/turnover differences require separate field-level review, not automatic source selection.
 
+
+### Latest 120-date OHLCV coverage drill-down
+
+- The 120-date comparison spans 2026-05-18 through 2026-11-24. Across the two OHLCV archives, 117 dates have records in both; one date (2026-07-24) has records in only `nepse-smc-data`; two dates (2026-11-23 and 2026-11-24) have no records in either archive.
+- On 2026-07-24, `nepse-smc-data` contains only 25 symbols (AHPC, API, BGWT, CHL, HDHPC, HIDCL, HLI, HRL, KDBY, KEF, MEHL, MEL, MERO, NIFRA, NRIC, RADHI, RAWA, RHGCL, SKBBL, SMJC, SOHL, SPDL, UAIL, ULHC and UNHPL); `nepse-history-starter` contains zero.
+- Across the 120 index-date candidates, the two OHLCV archives each have median daily symbol counts around 347 (SMC 346.5; history-starter 347), with max 378. These are raw archive symbol counts, not coverage against the agreed 281 equities + 47 funds; mixed instrument types and lifecycle statuses remain unresolved.
+- This separates two issues previously conflated by the failed workflow step: (a) the index-source quality gate fails on three malformed/duplicate index rows; and (b) the OHLCV archives have real date-level gaps/partial coverage on 2026-07-24 and no coverage for the latest two index dates. No missing date is assumed to be a holiday or closed session.
+

@@ -1,0 +1,47 @@
+name: Training readiness evidence audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/data_readiness_evidence.py"
+      - "backend/app/training_readiness.py"
+      - "backend/evaluate_training_readiness.py"
+      - ".github/workflows/training-readiness-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  readiness-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run read-only readiness evaluation
+        shell: bash
+        run: |
+          mkdir -p data/reports
+          set +e
+          python backend/evaluate_training_readiness.py \
+            --evidence-snapshot-id "github-${GITHUB_SHA}" \
+            --output data/reports/training-readiness-current.json
+          result=$?
+          set -e
+          if [ "$result" -eq 2 ]; then
+            echo "::notice::Readiness evaluation completed: model training remains blocked by missing or failed evidence."
+            exit 0
+          fi
+          exit "$result"
+      - name: Upload readiness blocker report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-training-readiness-blockers
+          path: data/reports/training-readiness-current.json
+          if-no-files-found: error

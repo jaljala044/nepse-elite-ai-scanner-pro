@@ -34,10 +34,13 @@ def _read_universe(path: str | Path) -> list[dict[str, Any]]:
             scope = (raw.get("target_in_scope") or "").strip().lower()
             if not symbol or not security_id:
                 raise ValueError(f"{path}:{line}: security_id and symbol are required")
-            if kind not in {"equity", "mutual_fund"}:
-                raise ValueError(f"{path}:{line}: unsupported target instrument_type {kind!r}")
+            if kind not in {"equity", "mutual_fund", "convertible_debenture",
+                            "non_convertible_debenture", "preference_share", "other"}:
+                raise ValueError(f"{path}:{line}: unsupported instrument_type {kind!r}")
             if scope not in {"true", "false"}:
                 raise ValueError(f"{path}:{line}: target_in_scope must be true or false")
+            if scope == "true" and kind not in {"equity", "mutual_fund"}:
+                raise ValueError(f"{path}:{line}: target universe permits only equity and mutual_fund")
             start = date.fromisoformat(raw["valid_from"].strip())
             end = date.fromisoformat(raw["valid_to"].strip()) if (raw.get("valid_to") or "").strip() else None
             if end is not None and end < start:

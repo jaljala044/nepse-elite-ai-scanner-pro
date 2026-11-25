@@ -5,7 +5,7 @@ import os
 import tempfile
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html, parse_legacy_floor_html, fetch_official_company_floorsheet
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html, parse_legacy_floor_html, fetch_official_company_floorsheet, fetch_official_company_floorsheet_clean
 
 
 def conflict():
@@ -21,6 +21,80 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
 
 
 
+
+
+    def test_clean_company_floorsheet_uses_nepse_browser_headers(self):
+        class FakeClient:
+            base_url = "https://www.nepalstock.com"
+
+            api_end_points = {"company_floorsheet": "/api/nots/security/floorsheet/"}
+
+            def getSecurityIDKeyMap(self):
+                return {"BGWT": 12}
+
+            def _build_query_params(self, **kwargs):
+                return "businessDate=2025-07-28&size=500"
+
+            def getAuthorizationHeaders(self):
+                return {"Authorization": "Salter test-token", "Host": "www.nepalstock.com"}
+
+            def getPOSTPayloadIDForFloorSheet(self):
+                return 123456
+
+            def get_full_url(self, url):
+                return self.base_url + url
+
+        seen = {}
+
+        class FakeResponse:
+            status_code = 200
+            text = '{"floorsheets":{"content":[],"totalPages":1}}'
+
+            def json(self):
+                return {"floorsheets": {
+                    "content": [
+                        {"contractId": "2025072801000064", "contractQuantity": 10, "contractRate": 940, "contractAmount": 9400},
+                        {"contractId": "2025072801000065", "contractQuantity": 20, "contractRate": 960, "contractAmount": 19200},
+                    ],
+                    "totalPages": 1,
+                }}
+
+        class FakeHTTP:
+            def __init__(self, **kwargs):
+                seen["http2"] = kwargs["http2"]
+                seen["verify"] = kwargs["verify"]
+                seen["hooks"] = kwargs["event_hooks"]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def post(self, url, **kwargs):
+                seen["url"] = url
+                seen["headers"] = kwargs["headers"]
+                seen["json"] = kwargs["json"]
+                return FakeResponse()
+
+        original = httpx.Client
+        try:
+            httpx.Client = FakeHTTP
+            with tempfile.TemporaryDirectory() as temp_dir:
+                result = fetch_official_company_floorsheet_clean(
+                    FakeClient(), "BGWT", "2025-07-28", temp_dir,
+                    lambda response: None, "com"
+                )
+        finally:
+            httpx.Client = original
+
+        self.assertEqual(result["status"], "captured")
+        self.assertEqual(result["volume"], 30)
+        self.assertEqual(result["open_from_first_contract"], 940)
+        self.assertFalse(seen["http2"])
+        self.assertNotIn("Host", seen["headers"])
+        self.assertEqual(seen["headers"]["Authorization"], "Salter test-token")
+        self.assertEqual(seen["json"], {"id": 123456})
 
     def test_official_company_floorsheet_aggregates_api_records(self):
         class FakeClient:

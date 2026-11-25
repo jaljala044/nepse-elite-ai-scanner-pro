@@ -6,6 +6,9 @@ on:
     paths:
       - "backend/app/hf_dataset_collector.py"
       - "backend/app/coverage_matrix.py"
+      - "backend/derive_broker_party_observations.py"
+      - "backend/tests/test_derive_broker_party_observations.py"
+      - "data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-floorsheet.csv"
       - "backend/run_hf_inventory.py"
       - "backend/tests/**"
       - ".github/workflows/nepse-data-integrity.yml"
@@ -35,6 +38,20 @@ jobs:
       - name: Test row-level OHLCV reconciliation
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_ohlcv_reconciliation.py' -v
+      - name: Test broker party derivation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_derive_broker_party_observations.py' -v
+      - name: Derive broker party observations from pinned raw sample
+        working-directory: backend
+        run: |
+          python derive_broker_party_observations.py \
+            --input ../data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-floorsheet.csv \
+            --source-id rajejevpaudel/nepse-history \
+            --expected-sha256 771d856187844f5608cb31225c03d065a4ce13fe655601d465c4e167a7b62e15 \
+            --date 2026-11-19 \
+            --expected-rows 40818 \
+            --party-output ../artifacts/broker-derivation-2026-11-19/broker-party-observations.csv \
+            --aggregate-output ../artifacts/broker-derivation-2026-11-19/broker-aggregates.json
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000
@@ -54,5 +71,6 @@ jobs:
           path: |
             data/raw/huggingface/manifests/*.json
             data/reports/hf-source-coverage-candidates.json
+            artifacts/broker-derivation-2026-11-19/*
           if-no-files-found: error
           retention-days: 30

@@ -100,3 +100,17 @@ A contemporaneous ShareSansar market recap exists for 2025-07-28, but it reports
 - Endpoint authentication: a specific v0.1.4 payload-date bug is identified and patched; live verification is pending.
 - Five 2025 records: historical secondary rows recovered and all match Source A; original NEPSE evidence remains unavailable.
 - All eight conflicts remain quarantined. No canonical promotion, no training, and no merge.
+
+### Run #9: date-bound payload did not clear 401; control probe isolates route
+
+Workflow run #9: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45677289652
+Artifact ID: 15053380108
+Artifact SHA-256: fd876aba4d67ac6c178ff912be83a48e3c42390e009ee6af0efc9956cf6f914e
+
+- All five focused capture tests passed.
+- The corrected historical payload was sent for both 2025-07-28 and 2026-11-19, but both today-price requests still returned HTTP 401 with a two-byte empty-list body. Thus the v0.1.4 date-binding defect is fixed in our caller, but it was not the only cause of the 401.
+- A minimal floor-sheet POST control in the same client session returned HTTP 200 (two-byte empty-list body). This shows the session's Salter authorization and at least one floor-sheet POST route are accepted; it narrows the failure to the today-price route or its route-specific request contract. The empty control body is not evidence of a trade.
+- The per-security history GETs continued to return data for 2026-11-19 but valid empty collections for the five older 2025 records.
+- The evidence artifact uploaded successfully, but the evidence commit push was rejected because the feature branch advanced during the run. Run #9 used the previous workflow version; the new workflow commit adds a same-branch fetch/rebase before push. Recheck this in the next run.
+
+No endpoint authentication pass yet. Do not infer that HTTP 200 on the floor-sheet control fixes today-price. All eight remain quarantined; no training or promotion.

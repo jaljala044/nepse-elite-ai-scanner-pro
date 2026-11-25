@@ -176,25 +176,30 @@ def capture(ledger_path, output_dir):
     responses_dir.mkdir(parents=True, exist_ok=True)
     captured = {}
     active_symbol = None
+    active_business_date = None
 
     from nepse_client import NepseClient
     client = NepseClient(timeout=90.0)
     graph_path_prefix = client.api_end_points.get("company_daily_graph", "")
+    market_price_volume_path = client.api_end_points.get("todays_price", "")
 
     def preserve_response(response):
         path = urlparse(str(response.url)).path
         is_security_list = path == SECURITY_PATH
         is_history = path.startswith(HISTORY_PATH_PREFIX)
         is_daily_graph = bool(graph_path_prefix) and path.startswith(graph_path_prefix)
-        if not (is_security_list or is_history or is_daily_graph):
+        is_market_price_volume = bool(market_price_volume_path) and path.startswith(market_price_volume_path)
+        if not (is_security_list or is_history or is_daily_graph or is_market_price_volume):
             return
         response.read()
         if is_security_list:
             key = "security-list"
         elif is_history:
             key = active_symbol or "unknown-symbol"
-        else:
+        elif is_daily_graph:
             key = (active_symbol or "unknown-symbol") + ".daily-graph"
+        else:
+            key = "market-price-volume." + (active_business_date or "unknown-date")
         captured[key] = {
             "body": response.content, "status": response.status_code,
             "url": str(response.url),
@@ -204,6 +209,16 @@ def capture(ledger_path, output_dir):
     client.client.event_hooks["response"].append(preserve_response)
     request_errors = {}
     try:
+        # Capture NEPSE's date-specific market price-volume endpoint once per
+        # disputed session. Preserve raw responses for independent field review.
+        for business_date in sorted({item["date"] for item in conflicts}):
+            active_business_date = business_date
+            try:
+                client.getPriceVolumeHistory(business_date=business_date)
+            except Exception as exc:
+                request_errors.setdefault("market-price-volume", {})[business_date] = {
+                    "type": type(exc).__name__, "message": str(exc)[:300]
+                }
         for symbol, symbol_conflicts in sorted(by_symbol.items()):
             active_symbol = symbol
             # Query a surrounding window, not only the exact disputed date.
@@ -242,6 +257,24 @@ def capture(ledger_path, output_dir):
             "http_status": item["status"], "source_url": item["url"],
             "response_headers": item["headers"], "response_bytes": len(body),
             "response_sha256": hashlib.sha256(body).hexdigest(), "parsed": parsed,
+        }
+
+    market_price_volume_reports = {}
+    for business_date in sorted({item["date"] for item in conflicts}):
+        key = "market-price-volume." + business_date
+        item = reports.get(key)
+        if item is None:
+            market_price_volume_reports[business_date] = {"status": "not_captured"}
+            continue
+        parsed = item["parsed"]
+        rows, pagination = _find_records(parsed) if parsed is not None else ([], {"container": "unparseable"})
+        market_price_volume_reports[business_date] = {
+            "status": "captured" if item["http_status"] == 200 and parsed is not None else "unavailable_or_unparseable",
+            "http_status": item["http_status"], "source_url": item["source_url"],
+            "response_sha256": item["response_sha256"], "response_bytes": item["response_bytes"],
+            "record_count": len(rows), "pagination": pagination,
+            "field_names": sorted({field for row in rows for field in row}),
+            "records": rows,
         }
 
     graph_reports = {}
@@ -293,6 +326,7 @@ def capture(ledger_path, output_dir):
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,
+        "date_specific_market_price_volume": market_price_volume_reports,
         "request_errors": request_errors,
         "conflict_comparisons": comparison_results,
         "all_conflicts_have_primary_match": all_matched,

@@ -73,8 +73,8 @@ class FloorsheetCsvAdapterTests(unittest.TestCase):
 
     def test_newline_delimiter_and_blank_headers_rejected(self):
         with self.assertRaisesRegex(ValueError, "cannot be a newline"):
-            CsvFloorsheetMapping(dict(MAPPING.columns), delimiter="\\n")
-        payload = b"Trade Date,S.N.,Symbol,Buyer,Seller,Qty.,Rate,Amount,\\n"
+            CsvFloorsheetMapping(dict(MAPPING.columns), delimiter="\n")
+        payload = b"Trade Date,S.N.,Symbol,Buyer,Seller,Qty.,Rate,Amount,\n"
         with self.assertRaisesRegex(ValueError, "nonblank strings"):
             parse_floorsheet_csv(payload, source_id="sample", mapping=MAPPING)
 

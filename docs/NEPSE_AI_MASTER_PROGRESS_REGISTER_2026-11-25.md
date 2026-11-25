@@ -1327,3 +1327,11 @@ Cumulative latest 100 shared dates: 5,328,566 shared exact contract rows, 53,014
 **Priority 92 state: partially complete for one-day retrieval and reconciliation; not complete for durable byte pinning, independent source lineage, historical coverage or rights. No canonical promotion.**
 
 - Yonepse file is now pinned to file commit `1bfa798e84c7170f826e473e7e1ec3957c81966c`, tree `33e7fc54f0b225e92d148f0ef362fbb67045abcd`, Git blob SHA-1 `2a758194c470048e3b22aefc8954365397d9c48d`, size 3,037,252 bytes. Re-fetch at the pinned commit reproduces the 52,387-row summary. Independent SHA-256 and local raw-byte retention remain open. Priority 92 report updated again at commit `32dbea91e8fae817f4419a954cd928fcdf1e1e5d`.
+
+### I. Priority 93 — Yonepse reference mapping audit
+
+- On the pinned 2026-11-24 Yonepse payload, 350 distinct stock IDs were observed; 346 mapped through the same-commit community securities registry, four remained unmapped (`8111`, `469`, `700`, `661`).
+- Mapped traded instruments comprised 279 Equities, 43 Mutual Funds and 24 Non-Convertible Debentures. The debentures are retained for raw audit only and excluded from the active target scanner universe. These are traded IDs on one date, not proof of full target-universe membership.
+- 91/91 observed buyer/seller broker codes mapped to `brokers.json.memberCode`; all matched directory entries were marked active in that snapshot. This is a current directory candidate, not historical legal-identity proof.
+- Report: [Priority 93 Yonepse reference mapping audit](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/PRIORITY_93_YONEPSE_REFERENCE_MAPPING_AUDIT_2026-11-25.md), commit `7275800d84e26b09ae978a61d372e53f33941d3d`.
+- Official dated instrument registry, four unresolved stock IDs, and effective-dated broker identity remain open. No canonical promotion.

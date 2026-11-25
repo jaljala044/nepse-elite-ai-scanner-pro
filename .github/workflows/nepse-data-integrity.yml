@@ -46,7 +46,7 @@ jobs:
         run: |
           python derive_broker_party_observations.py \
             --input ../data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-floorsheet.csv \
-            --source-id rajejevpaudel/nepse-history \
+            --source-id rajeevpaudel/nepse-history \
             --expected-sha256 771d856187844f5608cb31225c03d065a4ce13fe655601d465c4e167a7b62e15 \
             --date 2026-11-19 \
             --expected-rows 40818 \

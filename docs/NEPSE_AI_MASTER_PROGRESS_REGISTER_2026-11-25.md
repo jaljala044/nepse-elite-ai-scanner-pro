@@ -646,3 +646,42 @@ The dependency-install correction is verified: both GitHub Actions workflows pas
 - [Backend contract tests run 45538843708](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45538843708) — success.
 
 A later documentation-only progress-register commit `969d27b85b98ea94622368518461b01ab1f2ed32` triggered another backend-tests run `45538872570`; it was still in progress at the time of this update. The verified green result therefore applies to `d287cd3`, not yet to the later documentation commit.
+
+## 2026-11-25 continuation — priorities 6–10 pipeline hardening
+
+### Priority 6 — floorsheet ingestion row conservation and raw rejected-row retention
+- Hardened `backend/app/floorsheet_csv_adapter.py` so parser-rejected rows and rows with extra unmapped columns retain the original raw CSV row plus physical source line number. The exact input payload SHA-256 remains attached to successfully parsed contracts.
+- Hardened `backend/app/floorsheet_contract.py` to reject non-finite Decimal values (NaN and infinities), in addition to non-positive quantities/rates/amounts.
+- Added regression coverage for raw-row preservation and non-finite contract values.
+- Commits: `21fdb44c4595c2f71ef7f45dd38b7f30fcbdee1f`, `296c34285f4eaf7cc2d092d82eb8cd747f294fff`, `0009264d858b51fd5bdaf6b73dbdea2b4f8e4d98`, `922271f3445984864801b9046406c600f785170f`.
+
+### Priority 7 — broker identity and aggregation safety
+- Reviewed existing effective-dated broker identity resolution: only explicit verified links with evidence can resolve; overlapping mappings remain ambiguous; historical source names are retained.
+- Hardened `backend/app/footprint_features.py` broker participation summary to use exact Decimal arithmetic, reject non-finite/negative amounts, reject unsupported statuses and reject unresolved rows carrying a canonical broker ID.
+- Added exact-decimal and fail-closed identity tests. Existing broker aggregation continues to preserve unresolved observations and include them in coverage denominators.
+- Commits: `a3a354a92186d5af40ca29fd5d705368703f3abb`, `81b031121679999629097d8f88eb92e82bda1a94`.
+
+### Priority 8 — point-in-time feature store
+- Re-inspected the as-of feature path. `build_feature_snapshot` filters records by timezone-aware `available_at` before deriving breadth, security and broker features; versioned snapshots include as-of security/corporate-action joins and content-addressed immutable persistence.
+- No new feature store promotion or data ingestion is claimed. Inputs still require real-source lineage and the historical session calendar.
+
+### Priority 9 — explainable market/security/broker footprints
+- Re-inspected descriptive features: market breadth reports observed/eligible coverage; security footprints compare current volume against prior-only history; broker summaries report verified flow separately from unresolved observations.
+- The broker summary now emits exact Decimal strings instead of binary floating-point totals. These remain descriptive features, not inferred intent or buy/sell signals.
+
+### Priority 10 — chronological scenario validation
+- Re-inspected expanding walk-forward splits and Brier/log-loss reporting. The fold baseline is derived from training-only outcomes; test dates remain chronological and are not used to calculate the baseline.
+- Forecast validation still requires real point-in-time observations, a frozen prediction target/horizon and sufficient untouched chronological samples before any predictive claim.
+
+### CI status and unresolved data gates
+- Backend unit and contract workflows passed on commit `0009264d858b51fd5bdaf6b73dbdea2b4f8e4d98` (runs `45540805486`, `45540805517`).
+- The later parser row-retention change and its regression test are committed at `296c34285f4eaf7cc2d092d82eb8cd747f294fff`; its backend and contract workflows were queued/in progress at the time of this entry. Do not treat those newest runs as green until they complete.
+- The OHLCV archive workflow's exception-ledger build step succeeded, but the overall audit gate remains failed because the source audit still reports 8 cross-source conflicts and invalid OHLC rows. The workflow's separate latest-index coverage cross-check also failed. Neither issue is repaired by this pipeline work.
+- No verified live floorsheet sample, official 281-equity/47-fund manifest, complete official session calendar, source-rights clearance or one-year instrument coverage has been established here. Canonical data promotion, training and production signals remain blocked.
+
+### Next execution order
+1. Confirm CI on `296c342` and fix any regression before further feature changes.
+2. Download and inspect the newly generated exception-ledger artifact; verify row counts, source hashes and artifact integrity against the audit report.
+3. Investigate the failed latest-index coverage cross-check and distinguish missing dates from session-calendar uncertainty.
+4. Continue primary-source acquisition for the 281-equity + 47-fund universe and official session calendar.
+5. Obtain a real, authorized floorsheet sample and complete source-specific mapping plus cross-publisher reconciliation before broker history aggregation.

@@ -241,3 +241,24 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - Detailed next five actions are in
   `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
 
+
+
+## P1 first pinned raw floorsheet acquisition — 2026-11-25
+
+- Preserved the full 2026-11-19 floorsheet file from
+  `rajeevpaudel/nepse-history` at immutable revision
+  `927a15986012b31dba6c29c2266fb17f966a087b`.
+- Verified source and copied file Git blob OID match; 2,300,941 bytes,
+  40,818 contracts, 8 expected columns, all rows date-keyed to 2026-11-19,
+  zero structurally malformed rows; raw SHA-256
+  `771d856187844f5608cb31225c03d065a4ce13fe655601d465c4e167a7b62e15`.
+- Added source-object and source-file-date manifests under
+  `data/evidence/acquired/`.
+- Upstream is community-maintained and uses Merolagani historical collection;
+  its README discloses per-day row shortfalls, historical fetch failures and
+  no intraday timestamps. This is not primary exchange evidence. Redistribution
+  and commercial terms still require independent verification.
+- One date does not establish completeness, broker identity or calendar
+  validity. P1 remains blocked; details and the next five acquisition tasks
+  are in `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
+

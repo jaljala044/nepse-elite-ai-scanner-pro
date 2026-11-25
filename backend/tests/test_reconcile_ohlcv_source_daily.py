@@ -100,6 +100,18 @@ class OhlcvSourceDailyReconciliationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "extra_unmapped_columns"):
             reconcile_ohlcv_sources([self.a])
 
+    def test_invalid_control_totals_rejected(self):
+        self.write_rows(self.a, [self.row("A")])
+        for row_count, total_volume in [("-1","100"), ("1","NaN"), ("1","Infinity")]:
+            with self.subTest(row_count=row_count, total_volume=total_volume):
+                with self.controls.open("w", newline="", encoding="utf-8") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=["source_id","date","row_count","total_volume"])
+                    writer.writeheader()
+                    writer.writerow({"source_id":"A","date":"2026-11-24",
+                                     "row_count":row_count,"total_volume":total_volume})
+                with self.assertRaisesRegex(ValueError, "control line"):
+                    reconcile_ohlcv_sources([self.a], self.controls)
+
     def test_invalid_ohlcv_numeric_rejected(self):
         self.write_rows(self.a, [self.row("A", volume="NaN")])
         with self.assertRaisesRegex(ValueError, "must be finite"):

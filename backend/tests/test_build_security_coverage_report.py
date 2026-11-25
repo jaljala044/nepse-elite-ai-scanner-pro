@@ -141,7 +141,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
         rows[0]["instrument_type"] = "ticker_guess"
         self.write_csv(self.universe,
             ["security_id", "symbol", "instrument_type", "valid_from", "valid_to", "target_in_scope"], rows)
-        with self.assertRaisesRegex(ValueError, "unsupported target instrument_type"):
+        with self.assertRaisesRegex(ValueError, "unsupported instrument_type"):
             build_security_coverage_report(
                 self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
 

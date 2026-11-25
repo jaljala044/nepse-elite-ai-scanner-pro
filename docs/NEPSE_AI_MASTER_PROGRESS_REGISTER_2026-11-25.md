@@ -538,3 +538,42 @@ When the project owner asks for all progress, retrieve this register and current
 - OHLCV adapter now permits zero traded volume while requiring positive OHLC prices; a zero-volume row may occur on a valid session and must not be rejected solely for that reason. Commits: [45da0e0](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/45da0e0b9859d2204c2cdb831e0d4c7defe69d3b), regression test [c4f2aef](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/c4f2aef3f0f0d5d991efdb27af9ec5401c49ca01).
 - Historical reconciliation now labels a close-price difference as a cross-source conflict only when multiple distinct sources disagree; same-source duplicate rows remain in the duplicate review ledger. Commits: [727beca](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/727beca084f1b7711b245e6ba0200e8ef9c3f947), regression test [58f9424](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/58f94245225e06640171be38a699c4277553e16c).
 - GitHub combined-status queries returned empty status lists for the latest test commits. CI is still **unconfirmed**, not passed. No local test execution is represented as having occurred.
+
+
+## 18. Next five integration priorities — implementation record (2026-11-25)
+
+### Priority 1 — end-to-end floorsheet CSV to broker footprint aggregation
+- Added `backend/app/floorsheet_pipeline.py` and `backend/tests/test_floorsheet_pipeline.py`.
+- Integrates explicit CSV header mapping, typed floorsheet contracts, duplicate/amount reconciliation, effective-dated broker resolution and exact Decimal broker aggregation.
+- Only unique contracts without amount-reconciliation exceptions enter aggregates. All duplicates, conflicts and parser rejections remain in the audit output; unresolved broker parties remain in coverage denominators.
+- Commits: [6433da1](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/6433da116527510ce88bac0ce9cf88db6cc3a2e3), [1e6376a](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/1e6376aa2235bda028d90b57b803abde94a9c7f7).
+
+### Priority 2 — OHLCV ingestion joined to dated universe, exchange-session and point-in-time evidence
+- Added `backend/app/ohlcv_evidence_pipeline.py` and `backend/tests/test_ohlcv_evidence_pipeline.py`.
+- Each parsed row is joined to an effective-dated security identity, primary-source session evidence and explicit source-availability timestamp. Missing, ambiguous, future or unverified evidence quarantines the row.
+- The output remains review-only and cannot be promoted to canonical data. A CSV file's current capture time is not treated as proof of historical availability.
+- Commits: [53622e8](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/53622e8482a2b556f4b2be9647e476ccc6126c7d), [58a7886](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/58a788673858d053f813d290ceb373ba19d2b74c).
+
+### Priority 3 — deterministic content-addressed audit bundle
+- Added `backend/app/audit_bundle.py` and `backend/tests/test_audit_bundle.py`.
+- Canonical JSON serialization supports Decimal/date/dataclass structures, hashes every named artifact and a manifest, and rejects non-finite/unsupported values.
+- This creates reproducible audit evidence but is not itself a data-quality approval or file-persistence operation.
+- Commits: [c0626e0](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/c0626e061647a435a70c6652d1be520763d3f821), [dc68932](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/dc6893289c814b0320856e37cf517f87b26b37e9).
+
+### Priority 4 — project-level evidence assembly for the training gate
+- Added `backend/app/data_readiness_evidence.py` and `backend/tests/test_data_readiness_evidence.py`.
+- Derives training-gate booleans only from explicit upstream reports: dated universe, session evidence, rights/provenance, OHLCV integrity, broker identity policy, point-in-time leakage, corporate-action review, coverage and holdout protocol.
+- Missing inputs fail closed. Synthetic complete-evidence tests demonstrate the gate contract only; they are not evidence that this project is currently ready.
+- Commits: [ab2a1c2](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/ab2a1c2c74ed759daa2a50b34d8716c506749cbf), [2b5753c](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/2b5753c7d70c0e9b1568877d0130a6f1dfd66a02).
+
+### Priority 5 — evidence-backed source adapter profiles
+- Added `backend/app/source_adapter_profile.py` and `backend/tests/test_source_adapter_profile.py`.
+- A profile binds a named source, schema version and explicit column mapping to an exact sample payload hash, header fingerprint, reviewer, review timestamp and evidence ID. Verification fails when the sample or header differs.
+- No NEPSE, Mero Lagani or archive profile has been approved: no representative publisher export was available in this session.
+- Commits: [d37ee81](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/d37ee816e18c8c3e1cf5b42e4b00f6ac6a9c539d), [859cc20](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/859cc20823e18e755463af95c118e777d0db6358).
+
+### Verification and real-data status
+- Backend test workflow is configured for pushes affecting `backend/**`. Combined commit-status queries for the five latest test commits returned empty status arrays; no successful Actions run or local test execution is claimed.
+- All five additions currently have authored synthetic regression tests, but CI execution remains unverified.
+- No real floorsheet/market-data file was available to validate a publisher mapping or run these pipelines against the historical archive.
+- Canonical promotion and model training remain blocked pending real-source mappings, official instrument/session evidence, rights review, historical point-in-time availability, and verified quality reports.

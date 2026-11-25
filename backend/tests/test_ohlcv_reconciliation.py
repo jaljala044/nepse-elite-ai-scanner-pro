@@ -60,9 +60,9 @@ class OHLCVReconciliationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             left, right = root / "left", root / "right"
-            content = ("date,open,high,low,close,volume\\n"
-                       "2024-01-02,10,12,9,11,100\\n"
-                       "2024-01-03,10,12,9,11,100\\n")
+            content = ("date,open,high,low,close,volume\n"
+                       "2024-01-02,10,12,9,11,100\n"
+                       "2024-01-03,10,12,9,11,100\n")
             self._write(left, "ABC.csv", content)
             self._write(right, "ABC.csv", content)
             item = reconcile_roots(left, right, left_source="a", right_source="b",
@@ -73,7 +73,7 @@ class OHLCVReconciliationTests(unittest.TestCase):
     def test_invalid_candle_bounds_are_quarantined(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "bad.csv"
-            path.write_text("date,open,high,low,close,volume\\n2024-01-02,13,12,9,11,100\\n")
+            path.write_text("date,open,high,low,close,volume\n2024-01-02,13,12,9,11,100\n")
             rows, errors = read_ohlcv(path)
             self.assertEqual(rows, {})
             self.assertIn("OHLC values violate", errors[0]["error"])

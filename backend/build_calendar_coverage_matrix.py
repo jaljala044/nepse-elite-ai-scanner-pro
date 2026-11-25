@@ -73,8 +73,12 @@ def build_matrix(
         flags = []
         if not explicit:
             flags.append("calendar_evidence_missing")
+            if observed["file_count"]:
+                flags.append("source_file_on_unverified_calendar_date")
         if observed["file_count"] and explicit and explicit["status"] in {"verified_closed", "verified_exceptional_closed"}:
             flags.append("source_file_on_verified_closed_date")
+        if not observed["file_count"] and explicit and explicit["status"] in {"verified_open", "verified_exceptional_open"}:
+            flags.append("verified_open_date_without_source_file")
         rows.append({
             "date": day.isoformat(),
             "calendar_classification": classification,

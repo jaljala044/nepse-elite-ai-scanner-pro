@@ -85,6 +85,23 @@ class SessionCalendarTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "retrieved_at_utc must include UTC"):
             load_calendar(self.calendar)
 
+    def test_verification_cannot_precede_retrieval(self):
+        row = self.evidence()
+        row["verified_at_utc"] = "2026-11-23T00:00:00Z"
+        row["retrieved_at_utc"] = "2026-11-24T00:00:00Z"
+        self.write_calendar([row])
+        with self.assertRaisesRegex(ValueError, "verified_at_utc cannot precede"):
+            load_calendar(self.calendar)
+
+    def test_publication_cannot_follow_retrieval(self):
+        row = self.evidence()
+        row["published_at"] = "2026-11-25T00:00:00Z"
+        row["retrieved_at_utc"] = "2026-11-24T00:00:00Z"
+        row["verified_at_utc"] = "2026-11-25T01:00:00Z"
+        self.write_calendar([row])
+        with self.assertRaisesRegex(ValueError, "published_at cannot follow"):
+            load_calendar(self.calendar)
+
     def test_exceptional_open_session_is_accepted_with_evidence(self):
         self.write_calendar([self.evidence(status="verified_exceptional_open")])
         self.write_prices([self.row()])

@@ -21,8 +21,8 @@ class FakeResponse:
     def __exit__(self, *args):
         return False
 
-    def read(self):
-        return self.body
+    def read(self, size=-1):
+        return self.body if size < 0 else self.body[:size]
 
     def geturl(self):
         return self.url
@@ -40,6 +40,20 @@ class CaptureOfficialRegistryTests(unittest.TestCase):
             self.assertEqual(Path(result["raw_payload_path"]).read_bytes(), body)
             self.assertEqual(result["schema_review_status"], "unreviewed")
             self.assertFalse(result["manifest_verified"])
+
+    def test_response_size_limit_is_enforced(self):
+        with tempfile.TemporaryDirectory() as tmp, patch(
+            "capture_official_registry.urlopen",
+            return_value=FakeResponse(body=b'{"data":"123456"}')
+        ):
+            with self.assertRaisesRegex(ValueError, "exceeds max_response_bytes"):
+                capture_registry("https://www.nepalstock.com.np/api/nots/security",
+                                 "nepse-security-list", tmp, max_response_bytes=8)
+
+    def test_source_id_cannot_escape_output_directory(self):
+        with self.assertRaisesRegex(ValueError, "filename-safe"):
+            capture_registry("https://www.nepalstock.com.np/api/nots/security",
+                             "../outside", tempfile.gettempdir())
 
     def test_non_official_host_rejected(self):
         with self.assertRaisesRegex(ValueError, "approved official"):

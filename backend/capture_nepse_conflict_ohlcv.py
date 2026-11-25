@@ -310,6 +310,7 @@ def capture(ledger_path, output_dir):
     client = NepseClient(timeout=90.0)
     graph_path_prefix = client.api_end_points.get("company_daily_graph", "")
     market_price_volume_path = client.api_end_points.get("todays_price", "")
+    floor_sheet_path = client.api_end_points.get("floor_sheet", "")
 
     def preserve_response(response):
         path = urlparse(str(response.url)).path
@@ -317,7 +318,8 @@ def capture(ledger_path, output_dir):
         is_history = path.startswith(HISTORY_PATH_PREFIX)
         is_daily_graph = bool(graph_path_prefix) and path.startswith(graph_path_prefix)
         is_market_price_volume = bool(market_price_volume_path) and path.startswith(market_price_volume_path)
-        if not (is_security_list or is_history or is_daily_graph or is_market_price_volume):
+        is_floor_sheet_control = bool(floor_sheet_path) and path.startswith(floor_sheet_path)
+        if not (is_security_list or is_history or is_daily_graph or is_market_price_volume or is_floor_sheet_control):
             return
         response.read()
         if is_security_list:
@@ -326,8 +328,10 @@ def capture(ledger_path, output_dir):
             key = active_symbol or "unknown-symbol"
         elif is_daily_graph:
             key = (active_symbol or "unknown-symbol") + ".daily-graph"
-        else:
+        elif is_market_price_volume:
             key = "market-price-volume." + (active_business_date or "unknown-date")
+        else:
+            key = "floor-sheet-control"
         captured[key] = {
             "body": response.content, "status": response.status_code,
             "url": str(response.url),
@@ -349,6 +353,19 @@ def capture(ledger_path, output_dir):
                 request_errors.setdefault("market-price-volume", {})[business_date] = {
                     "type": type(exc).__name__, "message": str(exc)[:300]
                 }
+        # Same-session, minimal floor-sheet POST control. This uses the
+        # same Salter authorization and floor-sheet payload generator but a
+        # different POST route; size=1 limits the captured public response.
+        try:
+            client.requestPOSTAPI(
+                url=f"{floor_sheet_path}?size=1&sort=contractId,desc&page=0",
+                payload_generator=client.getPOSTPayloadIDForFloorSheet,
+            )
+        except Exception as exc:
+            request_errors["floor-sheet-control"] = {
+                "type": type(exc).__name__, "message": str(exc)[:300]
+            }
+
         for symbol, symbol_conflicts in sorted(by_symbol.items()):
             active_symbol = symbol
             # Query a surrounding window, not only the exact disputed date.
@@ -425,6 +442,22 @@ def capture(ledger_path, output_dir):
             "records": rows,
         }
 
+    floor_control = reports.get("floor-sheet-control")
+    floor_sheet_control_report = {
+        "status": "not_captured" if floor_control is None else (
+            "captured" if floor_control["http_status"] == 200 and floor_control["parsed"] is not None
+            else "non_200_or_unparseable"
+        ),
+        "http_status": floor_control["http_status"] if floor_control else None,
+        "source_url": floor_control["source_url"] if floor_control else None,
+        "response_sha256": floor_control["response_sha256"] if floor_control else None,
+        "response_bytes": floor_control["response_bytes"] if floor_control else None,
+        "parsed_type": type(floor_control["parsed"]).__name__ if floor_control else None,
+        "top_level_keys": sorted(floor_control["parsed"].keys())
+            if floor_control and isinstance(floor_control["parsed"], dict) else [],
+        "request_error": request_errors.get("floor-sheet-control"),
+    }
+
     graph_reports = {}
     for symbol in sorted(by_symbol):
         graph = reports.get(symbol + ".daily-graph")
@@ -486,6 +519,7 @@ def capture(ledger_path, output_dir):
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,
+        "floor_sheet_control": floor_sheet_control_report,
         "date_specific_market_price_volume": market_price_volume_reports,
         "date_specific_conflict_comparisons": date_specific_comparisons,
         "resolved_conflict_comparisons": resolved_comparisons,

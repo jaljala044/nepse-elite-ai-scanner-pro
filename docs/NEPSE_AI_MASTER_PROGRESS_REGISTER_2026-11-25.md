@@ -745,3 +745,39 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 
 ### Outstanding blocker
 The project can continue engineering, but data acquisition and production-readiness cannot be marked complete until an authorized floorsheet sample and primary instrument/session evidence are actually captured and verified. The latest OHLCV archive audit still fails on known source anomalies; its failed status is not replaced by the passing unit tests.
+
+## 2026-11-25 continuation — engineering priorities 11–20
+
+### Priorities 11–15
+11. Broker aggregation now validates ISO trade dates, uppercase symbols, 64-hex payload hashes, positive physical row numbers and identity evidence IDs; exact Decimal totals and unresolved identity buckets are preserved. Commits `2fa164e`, `06efce5`.
+12. Security-master validator restricts instrument classes/statuses, validates lifecycle dates, and rejects overlapping conflicting lifecycle rows or symbol assignments. This is a validator, not an acquired official registry. Commits `827edac`, `7c22411`.
+13. Calendar evidence schema requires raw evidence SHA-256, source ID/URI, retrieval and verification UTC timestamps, and scope; supports exceptional open/closed sessions. Commits `0d13d81`, `f868b38`, `ed87f4f`, `dbb6fdf`.
+14. Added `backend/build_security_coverage_report.py` and tests. It calculates per-security expected/observed sessions using only explicitly verified open dates, reports gaps, duplicates, closure conflicts and unknown-calendar observations. Diagnostic only; promotion disabled. Commits `bde20e0`, `a1e60e8`, `b481f24`; docs `5053819`.
+15. Training readiness rejects non-finite/out-of-range coverage and malformed provenance hashes. Commits `e08c1aa`, `9b9fa40`, `7e749a4`, `dddc1be`.
+
+### Priorities 16–20
+16. Corporate-action records require timezone-aware announcement/availability times, availability cannot precede announcement, and factors must be finite/positive. Commits `b26473b`, `71305c0`, `1f616f7`.
+17. Versioned feature snapshots include per-record source ID, record ID, payload hash, physical row number and availability timestamp; incomplete lineage is explicitly labeled and included in snapshot hash. Commits `500a18b`, `29e25ec`.
+18. Calendar coverage matrix carries raw hash, publication/retrieval/verification times and scope; exceptional closures flag files as anomalies. Commits `d04f7b4`, `f1951a8`, `d21ba8e`.
+19. Readiness-gate edge cases reject NaN, infinity, negative/over-100% coverage and malformed provenance hashes; covered by the tests above.
+20. Broker party-observation aggregation validates source hashes, ISO dates, symbol normalization, row number and identity evidence before aggregation. Commits `2fa164e`, `06efce5`.
+
+### CI
+- Full backend and contract test suites passed at `1f616f7`: backend run `45542179290`; contract run `45542179277`.
+- Calendar evidence/coverage tests passed at `d21ba8e`: runs `45542037741`, `45542037664`.
+- Broker observation lineage tests passed at `06efce5`: runs `45541998525`, `45541998592`.
+- Intermediate red runs during the edits were corrected; the full suite passed at `1f616f7`.
+
+### External evidence blockers remain
+- No authorized real floorsheet sample acquired; the user's Drive archive is not connected in this run, and a dataset's MIT license does not independently prove upstream data rights.
+- No primary NEPSE instrument lifecycle registry acquired; official stock-list discovery does not prove the 281-equity + 47-fund membership.
+- Session calendar CSV remains header-only; no date-level open/closed rows have been promoted without captured and hashed primary evidence.
+- Per-security coverage tool awaits verified universe, calendar and normalized source rows.
+- OHLCV invalid rows, cross-source conflicts and index anomalies remain unresolved. Canonical/training promotion and production signals remain blocked.
+
+### Next execution batch (21–25)
+21. Build a raw official-notice capture utility recording URL, publication/retrieval timestamps, bytes, SHA-256 and source ID without auto-populating the calendar.
+22. Add immutable universe-snapshot provenance validation and exact 281 + 47 checks when an explicit target snapshot is supplied.
+23. Add source-specific per-security coverage so publishers are measured separately and never double-counted.
+24. Add broker aggregation determinism and source control-total reconciliation tests.
+25. Add a read-only readiness CLI that assembles evidence reports and prints blockers without mutating canonical or training data.

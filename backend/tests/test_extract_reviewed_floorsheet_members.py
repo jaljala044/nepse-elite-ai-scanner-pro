@@ -1,10 +1,12 @@
 import hashlib
+import json
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 from pathlib import Path
 
-from extract_reviewed_floorsheet_members import extract_reviewed_csv_members
+from extract_reviewed_floorsheet_members import extract_reviewed_csv_members, main
 
 
 class ReviewedFloorsheetExtractionTests(unittest.TestCase):
@@ -31,6 +33,21 @@ class ReviewedFloorsheetExtractionTests(unittest.TestCase):
             self.assertTrue(result["members"][0]["zip_crc_verified"])
             self.assertFalse((output / "readme.txt").exists())
             self.assertFalse(result["promotion_allowed"])
+
+    def test_cli_writes_extraction_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = self._archive(root, [("day.csv", b"sample")])
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            manifest = root / "report.json"
+            argv = [
+                "extract_reviewed_floorsheet_members.py", str(archive), str(root / "out"),
+                "--expected-archive-sha256", digest, "--member", "day.csv",
+                "--manifest-output", str(manifest),
+            ]
+            with patch("sys.argv", argv):
+                self.assertEqual(main(), 0)
+            self.assertEqual(json.loads(manifest.read_text())["extracted_member_count"], 1)
 
     def test_archive_hash_mismatch_blocks_extraction(self):
         with tempfile.TemporaryDirectory() as tmp:

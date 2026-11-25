@@ -41,8 +41,12 @@ jobs:
           out = Path("data/reports/integrated-evidence-audit")
           expected = {
               "registry": "data/evidence/security-registry-snapshot.json",
+              "source_object_manifest": "data/evidence/source-object-manifest.jsonl",
+              "raw_source_root": "data/raw",
               "calendar_manifest": "data/evidence/calendar-evidence-manifest.json",
               "ohlcv_inputs": "data/normalized/ohlcv",
+              "security_universe_csv": "data/reference/security_master_snapshot.csv",
+              "session_calendar_csv": "data/reference/nepse_session_calendar.csv",
               "floorsheet_manifest": "data/reports/floorsheet-window-acquisition.json",
               "floorsheet_date_list": "data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv",
               "broker_observations": "data/normalized/broker-party-observations.csv",
@@ -54,6 +58,13 @@ jobs:
               states[name] = {"input": value, "status": "available" if present else "skipped_missing_input"}
           (out / "input-availability.json").write_text(json.dumps(states, indent=2) + "\n")
           PY
+          if [ -f data/evidence/source-object-manifest.jsonl ] && [ -d data/raw ]; then
+            python backend/audit_source_evidence_inventory.py \
+              --manifest data/evidence/source-object-manifest.jsonl --raw-root data/raw \
+              --output "$OUT/source-evidence-inventory.json" || true
+          else
+            printf '{"status":"skipped_missing_source_manifest_or_raw_root"}\\n' > "$OUT/source-evidence-inventory-status.json"
+          fi
           if [ -f data/evidence/security-registry-snapshot.json ]; then
             python - <<'PY'
           import json
@@ -103,6 +114,17 @@ jobs:
             fi
           else
             printf '{"status":"skipped_missing_acquisition_manifest_or_date_list"}\\n' > "$OUT/floorsheet-status.json"
+          fi
+          if [ -f data/reference/security_master_snapshot.csv ] && [ -f data/reference/nepse_session_calendar.csv ] && compgen -G "data/normalized/ohlcv/*.csv" > /dev/null; then
+            args=()
+            for file in data/normalized/ohlcv/*.csv; do args+=(--input "$file"); done
+            python backend/build_security_coverage_report.py \
+              --universe data/reference/security_master_snapshot.csv \
+              --calendar data/reference/nepse_session_calendar.csv \
+              "${args[@]}" --start-date 2025-11-25 --end-date 2026-11-25 \
+              --output "$OUT/security-coverage.json" || true
+          else
+            printf '{"status":"skipped_missing_universe_calendar_or_ohlcv_inputs"}\\n' > "$OUT/security-coverage-status.json"
           fi
           if [ -f data/normalized/broker-party-observations.csv ]; then
             python backend/report_broker_identity_coverage.py \

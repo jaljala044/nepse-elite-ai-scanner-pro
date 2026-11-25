@@ -1,7 +1,20 @@
 """Assemble explicit project evidence for the fail-closed training gate."""
 from __future__ import annotations
 
+import math
+import re
 from app.training_readiness import REQUIRED_GATES, evaluate_training_readiness
+
+
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _coverage_passes(value, threshold: float = 0.98) -> bool:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return math.isfinite(number) and threshold <= number <= 1.0
 
 
 def assemble_training_evidence(*, universe_report: dict | None,
@@ -30,8 +43,9 @@ def assemble_training_evidence(*, universe_report: dict | None,
         for item in provenance
     )
     lineage_ok = bool(provenance) and all(
-        bool(item.get("capture", {}).get("payload_sha256"))
+        _SHA256.fullmatch(str(item.get("capture", {}).get("payload_sha256", ""))) is not None
         and bool(item.get("capture", {}).get("source_record_id"))
+        and bool(item.get("provenance_sha256"))
         for item in provenance
     )
     ohlcv_ok = bool(ohlcv_report) and (
@@ -47,7 +61,7 @@ def assemble_training_evidence(*, universe_report: dict | None,
         and point_in_time_report.get("future_input_count") == 0
         and point_in_time_report.get("premature_label_count") == 0
     )
-    coverage_ok = historical_coverage is not None and float(historical_coverage) >= 0.98
+    coverage_ok = _coverage_passes(historical_coverage)
     values = {
         "universe_verified": universe_ok,
         "session_calendar_verified": sessions_ok,

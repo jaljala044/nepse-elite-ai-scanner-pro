@@ -624,3 +624,16 @@ Next action: run the workflow manually from GitHub Actions or wait for its next 
 PR #10 was merged at `af3cbb50991fb690edd9ea34129f10bc7df86a55`. The capture now tries `https://nepalstock.com.np` first and `https://newweb.nepalstock.com` second, refreshing the client/token flow and matching Host/Referer headers for each host. It preserves both attempts' raw response bytes, response headers, status and SHA-256, then analyzes the first nonempty HTTP 200 response. The legacy route is documented in the archived NEPSE client source at https://github.com/CaffeineDuck/nepse-api/blob/master/nepse/market/core.py; the official page is https://nepalstock.com.np/market-summary-history.
 
 The host-fallback change passed both backend and backend-contract workflows on PR #10 head `9d4c846d83d9f2a58820a4eed25d7eb701f47970`: **547 tests passed in each run**. The live capture has still not run; the endpoint's current availability, schema and historical coverage remain unknown. The weekday 10:00 UTC scheduled run and manual dispatch remain enabled. No raw market-summary-history response is yet archived and no open-session dates are promoted.
+
+
+## P1 execution increment — primary OHLCV conflict capture path added (2026-11-25)
+
+PR #11 merged at `194c2e7beaab2929f7c0063b144628848ce0bfd2`:
+
+- Added `backend/capture_nepse_conflict_ohlcv.py`, using pinned `nepse-client==0.1.4` and the official `/api/nots/market/history/security/{securityId}` endpoint to request price/volume history for all seven affected symbols over the eight conflict dates.
+- Captures the current security-ID map and each symbol's raw response before parsing; stores URL, selected response headers, HTTP status, SHA-256, parsed JSON and a Decimal-safe comparison against both pinned OHLCV source tuples.
+- Reports whether each primary row matches source A, source B, neither, is absent, duplicated or has an unmapped schema. The original conflict ledger remains quarantined; no automated resolution or training promotion occurs, and corporate-action/price-basis review remains required.
+- Added four unit tests and manual workflow `.github/workflows/capture-nepse-conflict-ohlcv.yml` to preserve partial raw evidence and upload the run artifact.
+- Backend tests run `45630203118` and backend-contract tests run `45630203094` both passed: **551 tests in each**, including the four new conflict-capture tests.
+
+**Capture status:** the workflow is installed but has not yet been manually dispatched. No primary OHLCV response has been captured, and all eight conflicts remain `quarantined_unresolved`. Trigger it from https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/workflows/capture-nepse-conflict-ohlcv.yml to obtain the primary rows. Inspect the raw artifact and report before updating any conflict status.

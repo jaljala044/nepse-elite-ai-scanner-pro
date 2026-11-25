@@ -82,6 +82,41 @@ jobs:
           if [ "$captured" -eq 0 ]; then
             printf 'capture_failed_after_http11_retry_and_host_fallback\n' > evidence/nepse/CAPTURE_FAILED.txt
           fi
+      - name: Probe official NEPSE holiday API
+        shell: bash
+        run: |
+          mkdir -p evidence/nepse-api
+          url="https://nepalstock.com.np/api/nots/holiday/list?year=2026"
+          status="$(curl --silent --show-error --http1.1 --location --max-time 90 \
+            --dump-header evidence/nepse-api/response-headers.txt \
+            --output evidence/nepse-api/response-body.bin \
+            --write-out '%{http_code}' \
+            -H 'Accept: application/json, text/plain, */*' \
+            -H 'Referer: https://nepalstock.com.np/' \
+            -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36' \
+            "$url" || true)"
+          printf '%s\n' "$url" > evidence/nepse-api/source-url.txt
+          printf '%s\n' "$status" > evidence/nepse-api/http-status.txt
+          if [ "$status" = "200" ]; then
+            sha256sum evidence/nepse-api/response-body.bin > evidence/nepse-api/SHA256SUMS
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("evidence/nepse-api/response-body.bin")
+          body = p.read_bytes()
+          try:
+              parsed = json.loads(body)
+              Path("evidence/nepse-api/parsed-response.json").write_text(json.dumps(parsed, indent=2, ensure_ascii=False) + "\n")
+              shape = type(parsed).__name__
+          except Exception as exc:
+              shape = "not_json:" + type(exc).__name__
+          Path("evidence/nepse-api/response-analysis.txt").write_text(f"bytes={len(body)}\\njson_shape={shape}\\n")
+          print(f"NEPSE holiday API returned HTTP 200; {len(body)} bytes; {shape}")
+          PY
+          else
+            printf 'Unauthenticated endpoint probe did not return HTTP 200. Preserve status and headers; do not treat body as holiday evidence.\n' > evidence/nepse-api/PROBE_LIMITATION.txt
+            sha256sum evidence/nepse-api/response-body.bin > evidence/nepse-api/SHA256SUMS
+          fi
       - name: Commit captured primary source evidence
         shell: bash
         run: |
@@ -98,6 +133,10 @@ jobs:
           if [ -f evidence/nepse/holiday-listing.html ] || [ -f evidence/nepse/CAPTURE_FAILED.txt ]; then
             mkdir -p data/evidence/raw/nepse/holiday-listing/2026-11-25
             cp evidence/nepse/* data/evidence/raw/nepse/holiday-listing/2026-11-25/ || true
+          fi
+          if [ -d evidence/nepse-api ]; then
+            mkdir -p data/evidence/raw/nepse/holiday-api/2026-11-25
+            cp evidence/nepse-api/* data/evidence/raw/nepse/holiday-api/2026-11-25/ || true
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

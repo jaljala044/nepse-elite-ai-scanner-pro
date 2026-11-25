@@ -52,7 +52,7 @@ def _find_records(payload):
             }
         if isinstance(value, dict):
             rows, meta = _find_records(value)
-            if rows:
+            if meta.get("container") != "unrecognized_dict_shape":
                 return rows, {"container": key + "." + meta["container"], **meta}
     return [], {"container": "unrecognized_dict_shape", "top_level_keys": sorted(payload.keys())}
 
@@ -68,11 +68,30 @@ def analyze_history_payload(payload, conflicts):
         None,
     )
     if date_field is None:
+        # An explicitly recognized empty collection is valid evidence of an empty
+        # response, not an unknown schema. Record every requested date as missing.
+        if not rows and pagination.get("container") != "unrecognized_dict_shape":
+            comparisons = [
+                {"symbol": conflict["symbol"], "date": conflict["date"],
+                 "status": "no_primary_row", "primary_rows_found": 0}
+                for conflict in conflicts
+            ]
+            return {
+                "status": "empty_valid_response", "record_count": 0,
+                "pagination": pagination, "date_field": None,
+                "field_names": [], "conflict_comparisons": comparisons,
+                "decision_requires_review": True, "canonical_promotion_allowed": False,
+            }
         return {
             "status": "unmapped_schema", "record_count": len(rows),
             "pagination": pagination, "date_field": None,
             "field_names": sorted({key for row in rows for key in row}),
-            "conflict_comparisons": [], "decision_requires_review": True,
+            "conflict_comparisons": [
+                {"symbol": conflict["symbol"], "date": conflict["date"],
+                 "status": "unmapped_date_schema", "primary_rows_found": None}
+                for conflict in conflicts
+            ],
+            "decision_requires_review": True,
             "canonical_promotion_allowed": False,
         }
 
@@ -91,7 +110,14 @@ def analyze_history_payload(payload, conflicts):
         field_map = {field: _first_field(row, aliases) for field, aliases in OHLCV_FIELDS.items()}
         values = {field: _decimal(row.get(source_field)) if source_field else None for field, source_field in field_map.items()}
         if any(value is None for value in values.values()):
-            comparisons.append({"symbol": conflict["symbol"], "date": target_date, "status": "unmapped_ohlcv_fields", "field_map": field_map, "primary_row": row})
+            comparisons.append({
+                "symbol": conflict["symbol"], "date": target_date,
+                "status": "partial_primary_fields",
+                "field_map": field_map,
+                "missing_fields": [field for field, value in values.items() if value is None],
+                "available_primary_fields": {field: str(value) for field, value in values.items() if value is not None},
+                "primary_row": row,
+            })
             continue
 
         official_tuple = tuple(values[key] for key in ("open", "high", "low", "close", "volume"))

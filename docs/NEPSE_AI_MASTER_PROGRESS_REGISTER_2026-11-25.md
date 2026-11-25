@@ -612,3 +612,28 @@ When the project owner asks for all progress, retrieve this register and current
 - The OHLCV evidence pipeline remains review-only; canonical promotion and training remain blocked until official session/universe evidence, rights, source availability and full real-data integrity checks pass.
 
 - Test-fixture correction: the OHLCV parser-rejection regression fixture now uses actual newline delimiters (rather than literal backslash-n bytes), commit [2db8436](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/2db84363a3fa4136e2843083e7e974fa332406b2). This correction is committed; CI execution remains unverified.
+
+
+## 2026-11-25 continuation update — evidence and CI repair
+
+### Completed in this work session
+
+1. **Priority 1 calendar evidence advanced:** located and reviewed an official NEPSE-hosted market-session notice (NEPSE file API PDF: `https://www.nepalstock.com.np/api/nots/security/fetchFiles?fileLocation=santosh_thapa%2F2022-06-16%2Fmarket+session+notice_1655356331971.PDF`). It records the Board decision dated 2079/02/25 and the schedule effective Asar 1 (2022-06-16): Sunday–Thursday 11:00–15:00 and Friday 11:00–13:00. This supports the 2022 weekday candidate regime and Friday half-day sessions. It does not verify individual dates or holidays. Exact PDF bytes could not be downloaded into the working environment in this run; SHA-256 and immutable raw-copy capture remain outstanding. Research record updated in `docs/NEPSE_SESSION_CALENDAR_SOURCE_RESEARCH_2026-11-25.md`, commit `b4eb383ba7c249eac8df47bd0087f3008ad9ebc0`.
+2. **Backend unit-test regression fixed:** latest backend CI had 278 tests with one failure because the positive training-readiness fixture omitted the required `provenance_sha256` evidence field. Added a valid 64-character fixture hash in `backend/tests/test_data_readiness_evidence.py`, commit `b04b3a66419666898b14b855bb5d76c41f68b34f`. The backend-tests workflow on that commit passed.
+3. **Contract-test workflow dependency defect fixed:** the separate `.github/workflows/backend-contract-tests.yml` ran the full backend suite without installing `backend/requirements.txt`, causing import errors for `httpx` and `duckdb` (and related dependencies). Added the dependency-install step, commit `d287cd3fd36a726e292bc86dd198e1f6ed5e881d`. CI reruns `45538843851` and `45538843708` were in progress at the time of this entry; do not call them passed until results are checked.
+
+### Current evidence state / blockers
+
+- Calendar remains incomplete: the 2022 regime now has an official schedule notice; date-level closures and exceptional sessions still need evidence. The April 2026 Monday–Friday change is still supported by secondary reports in the captured research, not an original NEPSE circular.
+- Repeated-row candidates remain review-only; no verified session calendar exists yet to classify the 196,784 candidates.
+- 1,331 invalid OHLC rows and eight source conflicts remain quarantined; the 1,339-row JSON/CSV exception ledger remains local and not committed as data.
+- The 281-equity + 47-fund manifest remains unverified; historical coverage and source rights are not cleared.
+- No canonical/training data promotion and no production signals are authorized.
+
+### Next execution order (carry forward)
+
+1. Capture/hash official session notices and locate the primary NEPSE notice for the April 2026 Monday–Friday change.
+2. Build the date-level evidence calendar with explicit `confirmed_open`, `confirmed_closed`, `exceptional_session`, and `unverified` states.
+3. Validate and classify repeated-row candidates only where the calendar and source evidence support a disposition.
+4. Commit or reproducibly regenerate the immutable 1,339-row exception ledger; investigate conflicts without altering raw values.
+5. Continue official 281-equity + 47-fund registry acquisition and then rerun per-instrument coverage.

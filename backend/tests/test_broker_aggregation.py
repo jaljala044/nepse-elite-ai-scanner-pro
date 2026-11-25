@@ -41,6 +41,24 @@ class BrokerAggregationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "amount and quantity"):
             aggregate_broker_observations([row(amount="NaN")])
 
+    def test_invalid_source_payload_hash_rejected(self):
+        item = row(line=1)
+        item["source_payload_sha256"] = "not-a-sha"
+        with self.assertRaisesRegex(ValueError, "64-character hex digest"):
+            aggregate_broker_observations([item])
+
+    def test_verified_identity_requires_evidence_ids(self):
+        item = row(line=1)
+        item["identity_evidence_ids"] = []
+        with self.assertRaisesRegex(ValueError, "requires identity evidence IDs"):
+            aggregate_broker_observations([item])
+
+    def test_invalid_trade_date_rejected(self):
+        item = row(line=1)
+        item["trade_date"] = "not-a-date"
+        with self.assertRaisesRegex(ValueError, "trade_date must be ISO date"):
+            aggregate_broker_observations([item])
+
     def test_unverified_broker_does_not_merge_into_entity_bucket(self):
         result = aggregate_broker_observations([row(line=1), row(code=None, status="ambiguous", line=2)])
         self.assertEqual(len(result["aggregates"]), 2)

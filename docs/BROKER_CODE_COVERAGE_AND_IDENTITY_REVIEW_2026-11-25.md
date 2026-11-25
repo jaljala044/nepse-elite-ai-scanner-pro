@@ -28,14 +28,14 @@ This is a **code-directory coverage pass**, not a license to treat all 91 histor
 - A precise effective date for the rebrand was not established by the source material captured in this review.
 - Keep \`Ashutosh Brokerage & Securities\` as a historical/legacy alias candidate for code 8; do not infer an exact effective-from date.
 
-Sources: [CDSC directory](https://cdsc.com.np/listofclearingmember), [MeroLagani broker list](https://eng.merolagani.com/BrokerList.aspx), [Brilliant Securities company history](https://www.brilliantsecurities.com.np/about-us).
+Sources: [CDSC directory](https://cdsc.com.np/listofclearingmember), [MeroLagani broker list](https://eng.merolagani.com/BrokerList.aspx), [current broker-8 details](https://sharehubnepal.com/broker/broker-8-ashutosh-brokerage-securities-pvt-ltd).
 
 ### Broker code 91
 
 - The current CDSC directory calls code 91 **Citizens Share Broker Limited**.
 - MeroLagani's broker list and broker floorsheet pages still display **CBIL Securities Ltd.** in some indexed content.
 - The company's financial statement says its 2nd Special General Meeting resolved the name amendment on **2025-01-21**, and the Office of the Company Registrar recorded the change on **2025-04-01**.
-- The company is therefore the same code-91 broker with a documented name change, not two separate broker entities. For source observations, preserve the name actually shown by that source and map the alias only over a supported effective period.
+- Use **2025-04-01** as the recorded name-change boundary for the current-name candidate; retain **CBIL Securities Limited** as the preceding name observation. For any pre-change mapping, preserve the entity continuity evidence and keep the source's observed name.
 
 Sources: [CDSC directory](https://cdsc.com.np/listofclearingmember), [Citizens Share Broker audited financial statements](https://citizensbroker.com/public/assets/reports/68b435e995ac4.pdf), [MeroLagani broker floorsheet for code 91](https://eng.merolagani.com/BrokerFloorsheet.aspx?code=91).
 

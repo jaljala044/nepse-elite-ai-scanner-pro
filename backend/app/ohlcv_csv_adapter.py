@@ -47,7 +47,9 @@ def parse_ohlcv_csv(payload: bytes, *, source_id: str, mapping: OhlcvCsvMapping)
         raise ValueError(f"mapped OHLCV headers absent: {missing_headers}")
 
     output, exceptions = [], []
+    input_rows = 0
     for line, raw in enumerate(reader, start=2):
+        input_rows += 1
         if None in raw:
             exceptions.append({"source_row_number": line, "status": "rejected", "reason": "extra_unmapped_columns",
                                "raw_row": raw})
@@ -85,7 +87,7 @@ def parse_ohlcv_csv(payload: bytes, *, source_id: str, mapping: OhlcvCsvMapping)
                                "reason": str(exc), "raw_mapped_values": values})
     return {
         "source_id": source_id, "source_payload_sha256": digest,
-        "input_rows": len(output) + sum(1 for x in exceptions if x.get("status") == "rejected" and "raw_row" in x),
+        "input_rows": input_rows,
         "parsed_rows": len(output), "exception_rows": len(exceptions),
         "rows": output, "exceptions": exceptions,
         "source_specific_mapping_verified": False,

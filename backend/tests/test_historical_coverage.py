@@ -35,6 +35,13 @@ class HistoricalCoverageTests(unittest.TestCase):
         self.assertEqual(r["union_missing_keys"], 1)
         self.assertFalse(r["unverified_weekday_inference_used"])
 
+    def test_same_source_duplicate_difference_is_not_called_cross_source_conflict(self):
+        r = build_historical_coverage_report(
+            [row("A", "NABIL", "100"), row("A", "NABIL", "101")],
+            expected_sessions=["2026-11-24"], expected_symbols=["NABIL"])
+        self.assertEqual(r["cross_source_close_conflict_count"], 0)
+        self.assertEqual(len(r["source_reports"]["A"]["duplicate_keys"]), 1)
+
     def test_empty_expected_grid_rejected(self):
         with self.assertRaisesRegex(ValueError, "verified expected"):
             build_historical_coverage_report([], expected_sessions=[], expected_symbols=["NABIL"])

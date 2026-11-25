@@ -1,0 +1,1 @@
+Unauthenticated endpoint probe did not return HTTP 200. Preserve status and headers; do not treat body as holiday evidence.

@@ -1,0 +1,51 @@
+import unittest
+from app.broker_aggregation import aggregate_broker_observations
+
+
+def row(code="B11", status="verified", side="buy", amount="100.10", quantity="1.5", line=1):
+    return {
+        "trade_date": "2026-11-24", "symbol": "NABIL", "broker_entity_id": code,
+        "identity_status": status, "side": side, "amount": amount, "quantity": quantity,
+        "source_id": "src", "contract_id": f"C{line}", "source_payload_sha256": "a" * 64,
+        "source_row_number": line, "identity_evidence_ids": ["e1"] if status == "verified" else [],
+    }
+
+
+class BrokerAggregationTests(unittest.TestCase):
+    def test_exact_decimal_aggregation_and_side_separation(self):
+        result = aggregate_broker_observations([row(line=1), row(line=2, amount="0.20", quantity="2.5"),
+                                                row(side="sell", line=3)])
+        buy = next(x for x in result["aggregates"] if x["side"] == "buy")
+        self.assertEqual(buy["amount"], "100.30")
+        self.assertEqual(buy["quantity"], "4.0")
+        self.assertEqual(buy["contract_count"], 2)
+
+    def test_unresolved_amount_remains_in_coverage_denominator(self):
+        result = aggregate_broker_observations([row(line=1), row(code=None, status="unmapped",
+                                                                   amount="50", line=2)])
+        c = result["coverage"][0]
+        self.assertEqual(c["total_amount"], "150.10")
+        self.assertEqual(c["verified_amount"], "100.10")
+        self.assertEqual(c["unresolved_amount"], "50")
+        self.assertEqual(c["unresolved_observation_count"], 1)
+
+    def test_identity_status_and_entity_consistency(self):
+        with self.assertRaisesRegex(ValueError, "unresolved identity"):
+            aggregate_broker_observations([row(code="B11", status="unmapped")])
+
+    def test_duplicate_lineage_rejected(self):
+        with self.assertRaisesRegex(ValueError, "duplicate party observation"):
+            aggregate_broker_observations([row(line=1), row(line=1)])
+
+    def test_invalid_decimal_rejected(self):
+        with self.assertRaisesRegex(ValueError, "amount and quantity"):
+            aggregate_broker_observations([row(amount="NaN")])
+
+    def test_unverified_broker_does_not_merge_into_entity_bucket(self):
+        result = aggregate_broker_observations([row(line=1), row(code=None, status="ambiguous", line=2)])
+        self.assertEqual(len(result["aggregates"]), 2)
+        self.assertEqual(sum(x["contract_count"] for x in result["aggregates"]), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

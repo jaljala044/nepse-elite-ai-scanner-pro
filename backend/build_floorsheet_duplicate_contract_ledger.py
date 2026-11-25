@@ -62,11 +62,18 @@ def duplicate_ledger(manifest_path: str | Path) -> dict[str, Any]:
                 cid = (row.get("contract_no") if source_format == "samir" else row.get("transaction")) or ""
                 cid = cid.strip()
                 if cid in duplicate_ids:
-                    captured[cid].append({key: value for key, value in row.items() if key is not None})
+                    captured[cid].append({
+                        "physical_csv_line_number": reader.line_num,
+                        "raw_row": {key: value for key, value in row.items() if key is not None},
+                    })
             for cid in sorted(duplicate_ids):
                 rows = captured[cid]
-                variants = {json.dumps(row, sort_keys=True, separators=(",", ":")) for row in rows}
-                for occurrence, row in enumerate(rows, start=1):
+                variants = {
+                    json.dumps(item["raw_row"], sort_keys=True, separators=(",", ":"))
+                    for item in rows
+                }
+                for occurrence, item in enumerate(rows, start=1):
+                    row = item["raw_row"]
                     entries.append({
                         "trade_date": trade_date,
                         "source": source_name,
@@ -77,6 +84,7 @@ def duplicate_ledger(manifest_path: str | Path) -> dict[str, Any]:
                         "contract_id": cid,
                         "occurrence_index": occurrence,
                         "occurrence_count": len(rows),
+                        "physical_csv_line_number": item["physical_csv_line_number"],
                         "duplicate_rows_identical": len(variants) == 1,
                         "row_variant_count": len(variants),
                         "raw_row": row,
@@ -123,7 +131,7 @@ def write_csv(path: Path, report: dict[str, Any]) -> None:
     fields = (
         "trade_date", "source", "source_repository", "source_commit",
         "source_file", "source_sha256", "contract_id", "occurrence_index",
-        "occurrence_count", "duplicate_rows_identical", "row_variant_count",
+        "occurrence_count", "physical_csv_line_number", "duplicate_rows_identical", "row_variant_count",
         "raw_row", "disposition",
     )
     path.parent.mkdir(parents=True, exist_ok=True)

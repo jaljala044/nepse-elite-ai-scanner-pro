@@ -548,3 +548,29 @@ calendar. Scope, annual completeness, the 2020 repeated-date reasons, dated
 notice interpretation, verified open sessions and the exact 616-session list
 remain unresolved. The separately reviewed 2026 calendar remains at 41
 explicit closure dates (40 ordinary and one exceptional). P1 remains blocked.
+
+
+## P1 execution increment — reproducible historical holiday archive audit
+
+Added `backend/audit_nepse_holiday_api_archive.py` and four focused tests.
+The integrated audit now checks raw capture hashes/byte counts, parsed JSON
+equivalence, year/date consistency and duplicate dates for every archived
+year. It retains duplicate reasons and never promotes calendar rows.
+
+Verified on commit `476a245e494fc43ecb84d27d80996041abe472ac`:
+- Backend tests run `45624325569`: success.
+- Integrated evidence audit run `45624325512`: success.
+- Artifact `15027027115`, SHA-256
+  `b65600839488e7a01ba81298effe25ca7f97897c713a147deef0b27a1a3a7b39`.
+- Archive audit: 12/12 yearly payloads valid, 499 records, 498 unique
+  within-year dates, one repeated date row (2020-04-13), zero integrity
+  failures.
+- The integrated readiness report still blocks training on all 12 gates.
+  The 2015–2025 holiday payloads remain unpromoted; only the separate 2026
+  capture has the current 41 closure entries.
+
+This completes multi-year holiday API *acquisition and raw archive integrity
+verification*. It does not complete the session calendar: no verified open
+dates have been added, the exact 616-date input is still missing, and annual
+scope/completeness and the 2020 dual-reason date still require review. P1
+remains blocked.

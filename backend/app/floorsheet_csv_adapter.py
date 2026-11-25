@@ -46,7 +46,7 @@ class CsvFloorsheetMapping:
             raise ValueError("mapped source headers must be nonblank strings")
         if len(set(self.columns[k] for k in REQUIRED_FIELDS)) != len(REQUIRED_FIELDS):
             raise ValueError("each normalized field must map to a distinct source header")
-        if self.delimiter in {"\\r", "\\n"}:
+        if ord(self.delimiter) in (10, 13):
             raise ValueError("delimiter cannot be a newline")
 
 

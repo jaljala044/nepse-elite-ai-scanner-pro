@@ -104,6 +104,25 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   corporate-action and upstream-lineage checks remain open.
 - Full details: `docs/CROSS_REPOSITORY_OHLCV_AUDIT_2026-11-25.md`.
 
+## P1 source-lineage and corporate-action review — 2026-11-25
+
+- Reviewed the starter's pinned ShareSansar import record: it identifies the
+  ShareSansarScraper source commit, source XLSX SHA-256, published OHLC/volume
+  price basis, and per-symbol output SHA-256 inventory. It reports 303,438
+  source rows, 301,632 imported rows and 1,806 flagged rows across 525
+  symbols.
+- This supports treating the 500 byte-identical files as shared ShareSansar
+  content lineage, not independent corroboration. The source lineage and
+  price basis of the longer legacy portions of the 25 differing SMC files
+  remain unresolved.
+- The current corporate-action ledger documents only LBBL, DORDI and BNHC;
+  none is among the seven symbols with same-date OHLCV conflicts. This is
+  insufficient to rule out other actions or explain the conflicts.
+- See the provenance section of
+  `docs/CROSS_REPOSITORY_OHLCV_AUDIT_2026-11-25.md`. Canonical promotion
+  remains blocked pending legacy source tracing, issuer/exchange action
+  checks, and independent raw-price/tape evidence.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

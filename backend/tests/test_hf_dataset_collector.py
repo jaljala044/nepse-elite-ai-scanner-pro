@@ -2,9 +2,36 @@ import unittest
 from datetime import date
 from app.hf_dataset_collector import (
     _extract_date, _is_candidate, _item_path, _matches_date, _safe_relative_path,
+    _resolve_revision,
 )
 
 class HuggingFaceCollectorTests(unittest.TestCase):
+    def test_mutable_hub_ref_resolves_to_immutable_commit(self):
+        class Response:
+            def raise_for_status(self):
+                pass
+            def json(self):
+                return {"sha": "a" * 40}
+        class Client:
+            def get(self, url):
+                self.url = url
+                return Response()
+        client = Client()
+        self.assertEqual(_resolve_revision(client, "owner/dataset", "main"), "a" * 40)
+        self.assertIn("/revision/main", client.url)
+
+    def test_revision_resolution_rejects_non_commit_sha(self):
+        class Response:
+            def raise_for_status(self):
+                pass
+            def json(self):
+                return {"sha": "main"}
+        class Client:
+            def get(self, url):
+                return Response()
+        with self.assertRaisesRegex(ValueError, "immutable commit SHA"):
+            _resolve_revision(Client(), "owner/dataset", "main")
+
     def test_urekmazino_floorsheet_and_indices_paths(self):
         self.assertTrue(_is_candidate("floorsheet_indices_2024", "floorsheet/2024-01-02.csv"))
         self.assertTrue(_is_candidate("floorsheet_indices_2024", "indices/2024-01-02.csv"))

@@ -13,15 +13,37 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ALLOWED_HOSTS = {"nepalstock.com.np", "www.nepalstock.com.np", "sebon.gov.np", "www.sebon.gov.np"}
 
 
+def _is_approved_https_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        return (
+            parsed.scheme == "https"
+            and parsed.hostname in ALLOWED_HOSTS
+            and parsed.port in (None, 443)
+            and parsed.username is None
+            and parsed.password is None
+        )
+    except ValueError:
+        return False
+
+
+class ApprovedHostRedirectHandler(HTTPRedirectHandler):
+    """Reject off-domain, non-HTTPS and nonstandard-port redirects before following."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not _is_approved_https_url(newurl):
+            raise ValueError("registry redirect target is not an approved official HTTPS host")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def capture_registry(url: str, source_id: str, output_dir: str | Path, timeout: int = 30,
                      max_response_bytes: int = 50 * 1024 * 1024) -> dict:
-    parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in ALLOWED_HOSTS:
+    if not _is_approved_https_url(url):
         raise ValueError("registry URL must use HTTPS on an approved official NEPSE or SEBON host")
     if not isinstance(source_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", source_id):
         raise ValueError("source_id must be a 1-64 character filename-safe identifier")
@@ -30,7 +52,8 @@ def capture_registry(url: str, source_id: str, output_dir: str | Path, timeout: 
     if not isinstance(max_response_bytes, int) or max_response_bytes < 1 or max_response_bytes > 250 * 1024 * 1024:
         raise ValueError("max_response_bytes must be between 1 byte and 250 MiB")
     request = Request(url, headers={"User-Agent": "NEPSE-AI-Registry-Capture/1.0", "Accept": "application/json"})
-    with urlopen(request, timeout=timeout) as response:
+    opener = build_opener(ApprovedHostRedirectHandler())
+    with opener.open(request, timeout=timeout) as response:
         status = getattr(response, "status", 200)
         if status != 200:
             raise RuntimeError(f"official registry request returned HTTP {status}")
@@ -47,8 +70,7 @@ def capture_registry(url: str, source_id: str, output_dir: str | Path, timeout: 
         if len(raw) > max_response_bytes:
             raise ValueError("registry response exceeds max_response_bytes")
         final_url = response.geturl()
-    final = urlparse(final_url)
-    if final.scheme != "https" or final.hostname not in ALLOWED_HOSTS:
+    if not _is_approved_https_url(final_url):
         raise ValueError("registry redirect target is not an approved official HTTPS host")
     if not raw:
         raise ValueError("official registry response is empty")
@@ -95,8 +117,7 @@ def main() -> int:
     parser.add_argument("--max-response-bytes", type=int, default=50 * 1024 * 1024)
     args = parser.parse_args()
     print(json.dumps(capture_registry(args.url, args.source_id, args.output_dir, args.timeout,
-                                      args.max_response_bytes),
-                     indent=2, ensure_ascii=False))
+                                      args.max_response_bytes), indent=2, ensure_ascii=False))
     return 0
 
 

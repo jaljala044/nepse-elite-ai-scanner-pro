@@ -379,3 +379,41 @@ The new ShareSansar-scraped CSV makes Source B the strongest *secondary-board fi
 - Endpoint authentication: PASS, as previously verified.
 - Five 2025-07-28 records: secondary evidence expanded; all five ShareSansarScraper CSV OHLCV rows match Source B exactly. Conflicting ShareSansar-derived archive matches Source A. Primary NEPSE proof and close-field semantics remain NOT PASS.
 - All five remain quarantined. No canonical promotion, no training, no PR merge.
+
+
+### 2026-11-25 follow-up: MeroLagani date-filtered Price History retrieved
+
+A live browser inspection found that each MeroLagani CompanyDetail page has a public Price History tab with a Market Date filter. The filter accepts a single date (MM/DD/YYYY) and submits via ASP.NET WebForms postback. No sign-in was required.
+
+The date 07/28/2025 was queried for three symbols. Each query returned exactly one row, with pagination confirming 1 of 1 records:
+
+| Symbol | Market Date | MeroLagani LTP | % Change | High | Low | Open | Quantity | Turnover |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| BGWT | 2025/07/28 | 957.17 | 0.84 | 992.00 | 933.40 | 940.00 | 14,028 | 13,256,345.00 |
+| MEHL | 2025/07/28 | 475.63 | -1.05 | 480.50 | 460.00 | 471.10 | 29,753 | 14,008,898.10 |
+| RAWA | 2025/07/28 | 796.90 | -1.64 | 811.00 | 780.30 | 796.00 | 3,165 | 2,515,662.50 |
+
+These three MeroLagani rows match Source A's close values exactly and match Source A's open/high/low/volume values. They do not match the ShareSansarScraper CSV's Close values (Source B). MeroLagani explicitly labels the returned field "Last Trade Price (LTP)". Preserve the exact field label; do not silently relabel LTP as NEPSE's official closing price.
+
+The browser confirmed the MeroLagani Price History UI is publicly accessible and the dated result is directly queryable by stock/date:
+- BGWT: https://merolagani.com/CompanyDetail.aspx?symbol=BGWT#0
+- MEHL: https://merolagani.com/CompanyDetail.aspx?symbol=MEHL
+- RAWA: https://merolagani.com/CompanyDetail.aspx?symbol=RAWA
+
+The other two MeroLagani browser jobs (RHGCL and ULHC) were launched and remain pending at the time of this log update; do not treat them as queried or infer their result.
+
+#### Interpretation update
+
+This is a new independent publisher's dated stock-level historical result, and its LTP field supports Source A for BGWT, MEHL and RAWA. Combined with the previously recovered ShareSansar-sourced daily board whose Close/VWAP supports Source B, the evidence indicates a field-definition conflict, not simply random bad rows:
+- MeroLagani's LTP = Source A close for the three queried symbols.
+- ShareSansarScraper's Close/VWAP = Source B close for all five.
+- A different ShareSansar-derived archive matches Source A for all five.
+
+The three MeroLagani results do not by themselves certify NEPSE's official close methodology. MeroLagani is a secondary publisher and labels its field LTP. NEPSE's 2025 weighted-average closing rule remains relevant; a proper resolution requires confirmation of what the official EOD "close" represented during that period (final-15-minute weighted average versus last traded price), or an original exchange record with the field definition.
+
+#### Current gate
+
+- Secondary dated corroboration now includes MeroLagani LTP for BGWT/MEHL/RAWA (Source A close match).
+- MeroLagani RHGCL/ULHC still pending.
+- Source A is provisionally better supported if the dataset's intended close field is LTP; Source B is supported if the intended field is full-day VWAP. The schema must state which measure it stores.
+- All five remain quarantined until the canonical close-field definition and NEPSE method are confirmed. No training, no promotion, no merge.

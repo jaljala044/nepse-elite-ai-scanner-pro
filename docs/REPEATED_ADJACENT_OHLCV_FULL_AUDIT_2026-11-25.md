@@ -59,3 +59,18 @@ The apparent +122 / +120 discrepancy is explained by scope differences between t
 The broader extractor is intentionally retained because date-gap repeats and repeated signatures on invalid OHLC rows remain useful review evidence. The updated extractor now emits `calendar_day_gap`, `ohlc_bounds_valid`, `baseline_metric_eligible` and `review_reason`, so these populations are separated rather than silently discarded.
 
 This reconciliation does **not** verify NEPSE session dates. Consecutive calendar dates are not necessarily consecutive exchange sessions, especially across weekends, holidays and historical trading-week changes.
+
+
+## Enriched rerun — successful
+
+After adding explicit date-gap and OHLC-bound classifications, the full pinned-archive workflow ran again successfully:
+- [Run #8](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45533449785), head commit `136d376cafed8ca36a1fbf061befe2383a775f0b`.
+- Unit tests, both source checkouts, full extraction and artifact upload all succeeded.
+- Artifact ID `14985599288`; ZIP SHA-256 `4b8b7c27c642fee768eb3b031928e785a5ef296dc346b4d5c3b8212ba09def67`.
+
+The enriched artifact independently confirms:
+- SMC: 94,543 total = 94,421 baseline-comparable + 120 date-gap candidates + 2 repeated signatures with invalid OHLC bounds.
+- History Starter: 102,241 total = 102,121 baseline-comparable + 120 date-gap candidates + 0 invalid-bound candidates.
+- Combined: 196,784 total = 196,542 baseline-comparable + 240 date-gap candidates + 2 invalid-bound candidates.
+
+The JSON summary and CSV records agree. All 196,784 remain review-only; baseline eligibility means only consecutive calendar dates with OHLC bounds passing, **not** verified exchange sessions.

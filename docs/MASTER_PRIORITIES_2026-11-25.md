@@ -386,3 +386,20 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - P1 remains active: recover the exact 616-session list, verify historical
   open sessions and holiday scope/completeness, and reconcile all raw source
   and corporate-action evidence before P2.
+
+
+### P1 automated holiday archive audit — verified
+
+- Added a reusable raw-archive auditor and four focused tests. The integrated
+  evidence audit now validates every archived year’s raw hash, byte count,
+  JSON equivalence, year/date consistency and duplicate date handling.
+- Verified 12/12 annual captures (2015–2026): 499 records, 498 unique
+  within-year dates, one duplicate date row, zero integrity failures.
+- Backend tests run 45624325569 and integrated evidence audit run
+  45624325512 both succeeded on code commit
+  `476a245e494fc43ecb84d27d80996041abe472ac`.
+- Integrated artifact 15027027115, SHA-256
+  `b65600839488e7a01ba81298effe25ca7f97897c713a147deef0b27a1a3a7b39`.
+- Training readiness remains blocked on all 12 gates. Historical holiday
+  evidence acquisition is not a complete session calendar; no 2015–2025
+  dates are promoted and the 616-session source list is still missing.

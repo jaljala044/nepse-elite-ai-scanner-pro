@@ -28,7 +28,7 @@ jobs:
           repository: jaljala044/nepse-history-starter
           ref: b60728d39f34e0f9e428675d817fd52ed2784da6
           path: sources/nepse-history-starter
-      - name: Extract repeated adjacent-row candidates
+      - name: Run extractor unit tests\n        run: python -m unittest tests.test_repeated_adjacent_ohlcv\n      - name: Extract repeated adjacent-row candidates
         run: |
           python scripts/extract_repeated_adjacent_ohlcv.py \
             --source jaljala044/nepse-smc-data 937cfcf93d78dfcf28a9f09bb13291447988157b sources/nepse-smc-data/03_stock_charts_ohlcv \

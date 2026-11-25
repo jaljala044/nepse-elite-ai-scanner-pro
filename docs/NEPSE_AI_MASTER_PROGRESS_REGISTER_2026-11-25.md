@@ -445,3 +445,33 @@ When the project owner asks for all progress, retrieve this register and current
 2. Add parser adapters only after a real source sample and field-level provenance are available.
 3. Connect canonical floorsheet contract records to effective-dated broker identity resolution without dropping unknown parties.
 4. Add primary-source security master, exchange calendar, corporate-action and data-rights evidence before historical training.
+
+
+## 16. Work-session update — next ten priorities (2026-11-25)
+
+### Priority 1 — connect normalized contracts to effective-dated broker identity
+- Added `backend/app/floorsheet_broker_join.py` and `backend/tests/test_floorsheet_broker_join.py`.
+- Each normalized contract emits separate buyer/buy and seller/sell party observations. Broker resolution is evaluated on the contract trade date using the existing effective-dated identity links.
+- Source broker code, source payload SHA-256, source row number, contract ID, side and identity evidence IDs are retained. Unmapped and ambiguous parties remain explicit; no contract rows are dropped.
+- Commits: implementation [7ca572a](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/7ca572a97426aa3ba4c4960eceef13aaa2669b38), tests [b3a9cee](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/b3a9ceeeadac5b3784ac01c58426f28a6facd56c).
+
+### Priority 2 — add a real-source adapter boundary without guessing source columns
+- Added `backend/app/floorsheet_csv_adapter.py` and `backend/tests/test_floorsheet_csv_adapter.py`.
+- Adapter requires an explicit reviewed mapping from normalized fields to exact CSV headers; no column-name inference is performed. It preserves exact payload SHA-256 and physical source row numbers, reports malformed rows, and fails closed for missing/duplicate headers.
+- The mapping is deliberately marked `source_specific_mapping_verified=false`. No real NEPSE/Mero Lagani/SocrateAI/other publisher field mapping is claimed because a representative source export has not yet been supplied or verified.
+- Commits: implementation [9158124](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/9158124b25af03fd666b164a68c1bd95a00dec96), tests [8a97f10](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/8a97f102f4bcdad4bd7031d27d9e525cad664cbc).
+
+### Backend test execution gate
+- Added `.github/workflows/backend-contract-tests.yml`, running Python 3.12 `unittest` discovery over the complete `backend/tests` suite on backend changes: [23808b0](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/23808b0f2b9f1a79173580d9b6fae82d7188ccd8).
+- At register-update time, the GitHub combined-status endpoint returned no status entries for the new commits. Therefore these two slices are **committed, but CI execution is not yet independently confirmed**. Do not report them as passing until an Actions run is visible and successful.
+- Tests are synthetic fixtures. The CSV adapter is not a verified real-source parser, and no historical floorsheet archive was parsed by it in this session.
+
+### Remaining priorities in this ten-step sequence
+3. Add explicit broker aggregation from joined contract-party rows, with exact Decimal totals and coverage denominators.
+4. Define source provenance and rights metadata for every capture and normalized batch.
+5. Add a source-to-canonical OHLCV row adapter with explicit mappings and exception retention.
+6. Build a dated instrument-manifest import/validation gate for the required 281 equities and 47 mutual funds; do not manufacture membership.
+7. Add exchange-session evidence ingestion and a verified/unknown session-state gate.
+8. Add corporate-action source ingestion and evidence-backed adjustment policy, keeping raw prices immutable.
+9. Add cross-source coverage and reconciliation reports for the 120-day / one-year priority window.
+10. Add a real-data readiness gate that blocks model training until lineage, calendar, universe, broker identity, rights and quality thresholds are satisfied.

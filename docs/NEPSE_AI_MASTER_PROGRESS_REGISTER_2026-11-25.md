@@ -711,7 +711,7 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 - `reconcile_floorsheet_rows` now rejects negative or non-finite amount tolerances rather than silently marking every row as an amount exception.
 - Added tests for missing contract identifiers, invalid dates, NaN/infinite values and invalid tolerances. Parser errors retain the raw source row and physical CSV line.
 - Commits: `08a00211efa3bdd288059fac2cab0d5075f847bf`, `2d369e0aaf1e9345231a6d086a364b4f95749da6`, `5357ce24ece55d9bee2e137dff0d95f8191bf364`, `8bc236f40f87879b5a91e7a2ef79c1f62749bf26`.
-- CI: both backend and contract workflows passed for `08a0021` (runs `45541272760`, `45541272833`) and `2d369e0` (runs `45541281785`, `45541281784`). Contract workflow passed for `5357ce2` (`45541289472`) and `8bc236f` (`45541297432`); backend runs `45541289459` and `45541297422` were still in progress when this entry was prepared.
+- CI: both backend and contract workflows passed for `08a0021` (runs `45541272760`, `45541272833`), `2d369e0` (runs `45541281785`, `45541281784`), `5357ce2` (runs `45541289459`, `45541289472`) and `8bc236f` (runs `45541297422`, `45541297432`).
 
 ### Next five acceptance tasks
 1. Finish CI verification for the latest floorsheet validation commits; fix any failures before further ingestion changes.

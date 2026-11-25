@@ -279,11 +279,11 @@ def select_primary_comparison(date_specific_result, per_security_result):
 
 
 def request_date_specific_price_volume(client, endpoint, business_date):
-    """POST a historical EOD date with a date-bound NEPSE payload ID.
+    """POST a historical EOD filter using the current-session payload ID.
 
-    nepse-client 0.1.4's getPriceVolumeHistory passes the payload generator
-    without its business_date argument. Bind it here so the payload's
-    day-of-month component matches the requested historical session.
+    The exact nepse-client 0.1.4 implementation deliberately leaves the
+    payload generator unbound: its market-session ID and day-of-month are
+    current-session authentication inputs, while business_date filters data.
     """
     url = f"{endpoint}?size=500&businessDate={business_date}"
     # The payload ID is bound to the current NEPSE market session/day,

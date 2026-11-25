@@ -35,6 +35,9 @@ jobs:
           set -euo pipefail
           OUT=data/reports/integrated-evidence-audit
           mkdir -p "$OUT"
+          python backend/audit_nepse_holiday_api_archive.py \
+            --input-root data/evidence/raw/nepse/holiday-api-authenticated \
+            --output "$OUT/nepse-holiday-api-archive.json"
           python - <<'PY'
           import json
           from pathlib import Path

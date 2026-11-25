@@ -173,3 +173,20 @@ source values are preserved below; no winner is selected.
 complete for the 25 differing pairs. Source revision pinning, lineage,
 corporate-action checks, calendar reconciliation and canonical adjudication
 remain pending.
+
+
+## Repository revision references observed after the comparison
+
+The following default-branch heads were queried after the file comparison and
+are recorded as reproducibility anchors:
+
+- `jaljala044/nepse-smc-data` `main`: `a55a9097375782d0a982f1f94a881f0a4e036698`
+- `jaljala044/nepse-history-starter` `main`: `2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe`
+
+**Caveat:** the file fetches and directory listings in this audit used the
+default branch; the two head references were captured immediately after the
+comparison, not supplied as explicit refs on every individual file request.
+A strict reproducibility rerun must re-fetch the tree and every source file
+using these immutable commit SHAs (or update the anchors if the branches have
+moved). Do not treat this note as proof that all 1,050 file reads were
+revision-pinned.

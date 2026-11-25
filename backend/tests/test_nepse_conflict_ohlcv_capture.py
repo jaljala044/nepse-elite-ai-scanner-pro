@@ -13,7 +13,7 @@ def conflict():
 
 class NepseConflictOhlcvCaptureTests(unittest.TestCase):
 
-    def test_historical_price_volume_binds_date_into_payload_id(self):
+    def test_historical_filter_keeps_current_session_payload_id(self):
         class FakeClient:
             def __init__(self):
                 self.payload_date = None
@@ -32,7 +32,7 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
             client, "/api/nots/market/today-price", "2025-07-28"
         )
         self.assertEqual(client.request_url, "/api/nots/market/today-price?size=500&businessDate=2025-07-28")
-        self.assertEqual(client.payload_date, "2025-07-28")
+        self.assertIsNone(client.payload_date)
         self.assertEqual(result, {"payload_id": 123456})
 
     def test_official_row_matching_source_a_is_detected(self):

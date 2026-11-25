@@ -60,7 +60,7 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
             result = inspect_zip(path)
             codes = {issue["code"] for issue in result["issues"]}
             self.assertIn("path_traversal_or_empty_component", codes)
-            self.assertEqual(_member_path_issue("nul\\x00name.csv"), "nul_byte_in_member_name")
+            self.assertEqual(_member_path_issue("nul\x00name.csv"), "nul_byte_in_member_name")
             self.assertFalse(result["safe_to_extract"])
 
     def test_duplicate_member_names_are_flagged(self):

@@ -10,6 +10,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -73,7 +74,9 @@ def read_ohlcv(path: Path) -> tuple[dict[str, list[dict[str, str]]], list[dict[s
         for row_number, row in enumerate(reader, start=2):
             raw_date = str(row.get(columns["date"]) or "").strip()
             try:
-                # Strict ISO calendar date; no locale-dependent parsing.
+                # Require zero-padded ISO date; no locale-dependent parsing.
+                if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_date):
+                    raise ValueError("date is not zero-padded ISO")
                 day = datetime.strptime(raw_date, "%Y-%m-%d").date().isoformat()
             except ValueError:
                 errors.append({"row": row_number, "date": raw_date, "error": "invalid_or_non_iso_date"})

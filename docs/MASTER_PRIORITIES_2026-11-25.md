@@ -123,6 +123,20 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   remains blocked pending legacy source tracing, issuer/exchange action
   checks, and independent raw-price/tape evidence.
 
+## P1 external EOD corroboration — 2026-11-25
+
+- Cross-checked all eight same-date conflicts against pinned Srijan EOD and
+  SocrateAI unadjusted EOD files. The 2025-07-28 five-symbol cluster splits:
+  SMC agrees with Srijan, while starter OHLC agrees with SocrateAI. Some
+  volume counts differ between the EOD sources.
+- For API, HRL and RHGCL on 2026-11-19, starter Close agrees with both pinned
+  EOD datasets; SMC Close and volume differ materially. This is strong
+  corroboration, not primary exchange proof.
+- Detailed blob SHAs, source values and limitations are in
+  `docs/CROSS_REPOSITORY_OHLCV_AUDIT_2026-11-25.md`. Preserve all source
+  observations; do not automatically overwrite or promote disputed rows.
+  Primary exchange verification and upstream-feed independence remain open.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

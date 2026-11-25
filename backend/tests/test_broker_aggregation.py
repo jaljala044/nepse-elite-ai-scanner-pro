@@ -29,6 +29,25 @@ class BrokerAggregationTests(unittest.TestCase):
         self.assertEqual(c["unresolved_amount"], "50")
         self.assertEqual(c["unresolved_observation_count"], 1)
 
+    def test_different_unresolved_source_codes_do_not_collapse(self):
+        first = row(code=None, status="unmapped", line=1)
+        second = row(code=None, status="unmapped", line=2)
+        first["source_broker_code"] = "11"
+        second["source_broker_code"] = "12"
+        result = aggregate_broker_observations([first, second])
+        self.assertEqual(
+            {x["source_broker_code"] for x in result["aggregates"]},
+            {"11", "12"},
+        )
+        self.assertEqual(len(result["aggregates"]), 2)
+        self.assertTrue(all(x["broker_entity_id"] is None for x in result["aggregates"]))
+
+    def test_blank_source_broker_code_rejected(self):
+        item = row(line=1)
+        item["source_broker_code"] = "   "
+        with self.assertRaisesRegex(ValueError, "source_broker_code"):
+            aggregate_broker_observations([item])
+
     def test_identity_status_and_entity_consistency(self):
         with self.assertRaisesRegex(ValueError, "unresolved identity"):
             aggregate_broker_observations([row(code="B11", status="unmapped")])

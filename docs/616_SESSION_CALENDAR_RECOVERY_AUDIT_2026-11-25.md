@@ -92,3 +92,13 @@ that no other branch, fork, workflow artifact or local backup contains it.
   artifacts around the original backfill, pull-request attachments, forks and
   commit history around the 616-session extraction. Do not reconstruct the
   exact list from OHLCV file presence or weekdays.
+
+
+## Official NEPSE holiday listing retrieval attempt
+
+The official NEPSE Holiday Listing endpoint
+(`https://www.nepalstock.com/holiday-listing`) was queried again on
+2026-11-25. The page title was returned, but the page contained no readable
+holiday rows or downloadable notice bytes in the available retrieval. No
+holiday date was promoted and no raw evidence hash was created from this
+attempt. This confirms the page location, not the underlying holiday schedule.

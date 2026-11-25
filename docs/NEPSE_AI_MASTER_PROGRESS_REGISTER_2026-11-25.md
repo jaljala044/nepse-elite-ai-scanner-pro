@@ -275,3 +275,32 @@ When asked for “all progress”, retrieve this register plus latest GitHub com
 
 ### Reporting rule
 When the project owner asks for all progress, retrieve this register and current GitHub evidence. The report is a record of verified work, not a claim that work ran continuously between messages.
+
+
+## 9. Work-session update — additional source and artifact verification (2026-11-25)
+
+### Calendar schedule-transition evidence strengthened (still secondary)
+- Located [Ratopati, 2026-04-06](https://english.ratopati.com/story/57517/stock-trading-closed-on-saturday-and-sunday-open-on-friday) and [The Himalayan Times, 2026-04-08](https://thehimalayantimes.com/business/nepse-shifts-to-mondayfriday-trading-week). Both report a NEPSE Board decision to move to Monday-Friday effective 2026-04-06, with Friday replacing Sunday.
+- This corroborates the ShareSansar report from 2026-04-08. The original NEPSE signed notice/circular still has not been retrieved; the weekly regime is strongly secondarily corroborated, not primary-document verified.
+- Expanded calendar source record: [NEPSE_SESSION_CALENDAR_SOURCE_RESEARCH_2026-11-25.md](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/NEPSE_SESSION_CALENDAR_SOURCE_RESEARCH_2026-11-25.md), latest commit `3f01d932d392bfc9021930c44a48078e8e477d07`.
+
+### Enriched repeated-row artifact downloaded and independently revalidated
+- Artifact ID `14985599288`; downloaded ZIP SHA-256 `4b8b7c27c642fee768eb3b031928e785a5ef296dc346b4d5c3b8212ba09def67`, matching the GitHub artifact digest.
+- CSV row count: 196,784; unique (repository, path, current CSV line) identities: 196,784; required evidence fields present for all records.
+- Exact split: 196,542 baseline-metric eligible (calendar-day adjacency + valid OHLC bounds); 240 date-gap/unparseable; two repeated signatures with invalid OHLC bounds.
+- All 196,784 remain review-only; no session classifications were assigned.
+- This completes artifact integrity verification for Priority 2 input. The exchange-calendar join itself remains blocked by the missing primary date-level calendar.
+
+### Priority state
+1. Calendar: weekly schedule transition supported by three secondary reports; primary NEPSE circular and date-level holiday/open/closure archive still outstanding.
+2. Repeated rows: full enriched artifact independently verified; calendar classification remains pending.
+3. Exception ledger: still need to commit local 1,339-row JSON/CSV ledger or a reproducible artifact pipeline and resolve cases against authorized sources.
+4. Active universe: still need dated primary registry and exact 281 + 47 symbol/ID reconciliation.
+5. Coverage: still waiting for verified calendar and manifest before final coverage conclusions.
+
+### Following five priorities unchanged
+6. Production-safe immutable floorsheet ingestion.
+7. Broker identity/footprint reconciliation.
+8. Point-in-time feature store.
+9. Explainable footprint features and historical episode retrieval.
+10. Walk-forward scenario validation, leakage tests and calibration.

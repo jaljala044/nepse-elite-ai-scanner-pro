@@ -104,3 +104,17 @@ or quarantined. Never delete them merely because the values repeat.
    canonical ingestion.
 
 Predictive intelligence and scanner promotion remain blocked until these gates pass.
+
+
+## Exception ledger generation — 2026-11-25
+
+A machine-readable exception ledger was generated from the immutable Actions artifact for workflow run `45397942163` (artifact ID `14921283424`, SHA-256 `e1e5e8ac84e1d2ad273b605725c69614693a831117f96a6b8d7f5af2b4c81cb8`).
+
+- 1,331 invalid OHLC rows and eight cross-source conflicts; 1,339 unique exception IDs.
+- All 1,339 dispositions are `quarantined_unresolved`.
+- JSON and CSV row counts and exception-ID sets match.
+- Every invalid row retains its pinned source commit, ticker path, source-file SHA-256, CSV line and raw row.
+- Each of the eight conflicts retains both source repositories' pinned commit, path, file SHA-256 and source row. Original source CSV line numbers are unavailable in the audit artifact and remain null; they are not inferred.
+- Local validation passed against the generated JSON and CSV.
+
+The validator is committed at `scripts/validate_ohlcv_exception_ledger.py`, with regression tests at `tests/test_ohlcv_exception_ledger.py`. The full ledger files were generated as local deliverables but have **not** yet been committed to this repository. No source OHLCV file was modified, repaired, merged or promoted.

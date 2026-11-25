@@ -4,6 +4,7 @@
 - [x] Private repository and project documentation
 - [x] FastAPI health, CSV ingestion, history and scan endpoints
 - [x] Basic OHLCV validation and audit metadata
+- [x] Read-only V3 OHLCV coverage audit connected to DuckDB `ankit.eod_price`; authoritative symbol master and session calendar remain required for completeness certification
 - [ ] Persistent database and migrations
 - [x] Automated tests and CI (20 backend tests passed on 2026-11-23)
 

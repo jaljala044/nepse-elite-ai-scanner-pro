@@ -71,6 +71,36 @@ class BrokerAggregationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "trade_date must be ISO date"):
             aggregate_broker_observations([item])
 
+    def test_compact_date_format_rejected(self):
+        item = row(line=1)
+        item["trade_date"] = "20261124"
+        with self.assertRaisesRegex(ValueError, "trade_date must be ISO date"):
+            aggregate_broker_observations([item])
+
+    def test_non_string_grouping_fields_rejected(self):
+        item = row(line=1)
+        item["symbol"] = 123
+        with self.assertRaisesRegex(ValueError, "missing grouping or lineage"):
+            aggregate_broker_observations([item])
+
+    def test_fractional_control_count_rejected(self):
+        buyer = row(line=1)
+        seller = row(line=1)
+        seller["side"] = "sell"
+        controls = [{"source_id":"src","trade_date":"2026-11-24",
+                     "contract_count":1.5,"gross_amount":"100.10","party_observation_count":2}]
+        with self.assertRaisesRegex(ValueError, "non-negative integers"):
+            reconcile_source_control_totals([buyer, seller], controls)
+
+    def test_compact_control_date_rejected(self):
+        buyer = row(line=1)
+        seller = row(line=1)
+        seller["side"] = "sell"
+        controls = [{"source_id":"src","trade_date":"20261124",
+                     "contract_count":1,"gross_amount":"100.10","party_observation_count":2}]
+        with self.assertRaisesRegex(ValueError, "source/date control key"):
+            reconcile_source_control_totals([buyer, seller], controls)
+
     def test_aggregation_is_independent_of_input_order(self):
         rows = [row(line=1), row(line=2, amount="0.20", quantity="2.5"),
                 row(side="sell", line=3)]

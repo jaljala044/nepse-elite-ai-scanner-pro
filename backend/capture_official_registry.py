@@ -65,7 +65,7 @@ def capture_registry(url: str, source_id: str, output_dir: str | Path, timeout: 
         "json_root_type": "array" if isinstance(parsed_body, list) else "object",
         "schema_review_status": "unreviewed", "manifest_verified": False,
     }
-    encoded = json.dumps(metadata, indent=2, ensure_ascii=False) + "\\n"
+    encoded = json.dumps(metadata, indent=2, ensure_ascii=False) + "\n"
     if metadata_path.exists() and metadata_path.read_text(encoding="utf-8") != encoded:
         raise RuntimeError("content-addressed registry metadata conflicts with existing file")
     metadata_path.write_text(encoded, encoding="utf-8")

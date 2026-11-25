@@ -92,6 +92,20 @@ class SecurityCoverageReportTests(unittest.TestCase):
                          ["publisher-a", "publisher-b"])
         self.assertEqual(report["source_specific_reports"][1]["coverage_ratio"], 0.25)
 
+    def test_unknown_symbols_are_reported_not_silently_dropped(self):
+        self.write_inputs()
+        with self.data.open("a", encoding="utf-8") as stream:
+            stream.write("publisher-a,NOT_IN_UNIVERSE,2026-01-02\\n")
+            stream.write("publisher-a,NOT_IN_UNIVERSE,2026-01-02\\n")
+        report = build_security_coverage_report(
+            self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+        source = report["source_specific_reports"][0]
+        self.assertEqual(source["unknown_symbol_observation_count"], 2)
+        self.assertEqual(source["unknown_symbol_observations"], [{
+            "symbol":"NOT_IN_UNIVERSE","date":"2026-01-02","row_count":2,
+            "reason":"symbol_not_in_target_universe_snapshot"
+        }])
+
     def test_unknown_instrument_type_fails_closed(self):
         self.write_inputs()
         rows = list(csv.DictReader(self.universe.open(encoding="utf-8")))

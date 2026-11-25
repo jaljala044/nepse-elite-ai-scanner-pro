@@ -106,16 +106,35 @@ def reconcile_ohlcv_sources(paths: list[str | Path], control_path: str | Path | 
     if control_path:
         with Path(control_path).open(encoding="utf-8-sig", newline="") as stream:
             reader = csv.DictReader(stream)
+            headers = reader.fieldnames or []
+            if len(headers) != len(set(headers)):
+                raise ValueError("control file has duplicate CSV headers")
             required = {"source_id", "date", "row_count", "total_volume"}
-            missing = required - set(reader.fieldnames or [])
+            missing = required - set(headers)
             if missing:
                 raise ValueError("control file missing columns: " + ", ".join(sorted(missing)))
             controls = {}
             for line, row in enumerate(reader, 2):
-                key = (row["source_id"].strip(), row["date"].strip())
+                if None in row:
+                    raise ValueError(f"control line {line}: extra_unmapped_columns")
+                source_id, day = (row["source_id"] or "").strip(), (row["date"] or "").strip()
+                if not source_id or not day:
+                    raise ValueError(f"control line {line}: source_id and date are required")
+                try:
+                    from datetime import date
+                    date.fromisoformat(day)
+                    row_count = int(row["row_count"])
+                    total_volume = Decimal(row["total_volume"])
+                except (TypeError, ValueError, InvalidOperation) as exc:
+                    raise ValueError(f"control line {line}: invalid date or numeric control") from exc
+                if row_count < 0 or str(row_count) != str(row["row_count"]).strip():
+                    raise ValueError(f"control line {line}: row_count must be a non-negative integer")
+                if not total_volume.is_finite() or total_volume < 0:
+                    raise ValueError(f"control line {line}: total_volume must be finite and non-negative")
+                key = (source_id, day)
                 if key in controls:
                     raise ValueError(f"control line {line}: duplicate source/date")
-                controls[key] = (int(row["row_count"]), Decimal(row["total_volume"]))
+                controls[key] = (row_count, total_volume)
         daily_keys = set()
         for item in daily:
             key = (item["source_id"], item["date"])

@@ -1,7 +1,9 @@
 """Extract only explicitly selected CSV members from a reviewed ZIP inventory."""
 from __future__ import annotations
 
+import argparse
 import hashlib
+import json
 import os
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -141,3 +143,32 @@ def extract_reviewed_csv_members(
         "promotion_allowed": False,
         "policy": "explicit_csv_allowlist_hash_pinned_no_overwrite",
     }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("archive", type=Path)
+    parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--expected-archive-sha256", required=True)
+    parser.add_argument("--member", action="append", required=True,
+                        help="Exact CSV member path from the reviewed inventory; repeat for multiple members")
+    parser.add_argument("--max-total-extracted-bytes", type=int, default=512 * 1024 * 1024)
+    parser.add_argument("--max-member-bytes", type=int, default=128 * 1024 * 1024)
+    parser.add_argument("--manifest-output", type=Path)
+    args = parser.parse_args()
+    result = extract_reviewed_csv_members(
+        args.archive, args.output_dir, member_names=args.member,
+        expected_archive_sha256=args.expected_archive_sha256,
+        max_total_extracted_bytes=args.max_total_extracted_bytes,
+        max_member_bytes=args.max_member_bytes,
+    )
+    rendered = json.dumps(result, indent=2, ensure_ascii=False) + "\\n"
+    if args.manifest_output:
+        args.manifest_output.parent.mkdir(parents=True, exist_ok=True)
+        args.manifest_output.write_text(rendered, encoding="utf-8")
+    print(rendered, end="")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

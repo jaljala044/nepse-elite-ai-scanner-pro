@@ -22,12 +22,17 @@ def build_as_of_snapshot(records: list[dict], decision_time: str) -> dict:
     """Select only records knowable by decision_time; preserve excluded count."""
     cutoff = _aware(decision_time)
     selected = []
-    for record in records:
+    missing_available_indexes = []
+    future_excluded_count = 0
+    for index, record in enumerate(records):
         available = record.get("available_at")
         if not available:
+            missing_available_indexes.append(index)
             continue
         if _aware(available) <= cutoff:
             selected.append(record)
+        else:
+            future_excluded_count += 1
     selected.sort(key=lambda r: (r.get("available_at", ""), r.get("record_id", "")))
     max_available = max(
         (_aware(r["available_at"]) for r in selected), default=None
@@ -39,6 +44,9 @@ def build_as_of_snapshot(records: list[dict], decision_time: str) -> dict:
         "records": selected,
         "included_count": len(selected),
         "excluded_count": len(records) - len(selected),
+        "missing_available_at_count": len(missing_available_indexes),
+        "missing_available_at_record_indexes": missing_available_indexes,
+        "future_excluded_count": future_excluded_count,
         "max_input_available_at": (
             max_available.isoformat().replace("+00:00", "Z") if max_available else None
         ),

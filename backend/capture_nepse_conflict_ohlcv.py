@@ -244,6 +244,23 @@ def capture(ledger_path, output_dir):
             "response_sha256": hashlib.sha256(body).hexdigest(), "parsed": parsed,
         }
 
+    graph_reports = {}
+    for symbol in sorted(by_symbol):
+        graph = reports.get(symbol + ".daily-graph")
+        if graph is None:
+            graph_reports[symbol] = {"status": "not_captured"}
+            continue
+        parsed_graph = graph["parsed"]
+        graph_reports[symbol] = {
+            "status": "captured" if graph["http_status"] == 200 and parsed_graph is not None else "unavailable_or_unparseable",
+            "http_status": graph["http_status"],
+            "source_url": graph["source_url"],
+            "response_sha256": graph["response_sha256"],
+            "response_bytes": graph["response_bytes"],
+            "parsed_type": type(parsed_graph).__name__,
+            "top_level_keys": sorted(parsed_graph.keys()) if isinstance(parsed_graph, dict) else [],
+        }
+
     symbol_reports = {}
     comparison_results = []
     for symbol, symbol_conflicts in sorted(by_symbol.items()):
@@ -275,7 +292,8 @@ def capture(ledger_path, output_dir):
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
         "captured_response_count": len(reports),
         "security_list_captured": "security-list" in reports,
-        "symbol_reports": symbol_reports, "request_errors": request_errors,
+        "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,
+        "request_errors": request_errors,
         "conflict_comparisons": comparison_results,
         "all_conflicts_have_primary_match": all_matched,
         "decision_requires_review": True, "canonical_promotion_allowed": False,

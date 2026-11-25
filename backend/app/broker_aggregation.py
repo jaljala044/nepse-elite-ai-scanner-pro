@@ -11,7 +11,8 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
     """Aggregate date/security/broker/side while retaining unknown identity buckets.
 
     Coverage denominators are party observations, gross amount and quantity.
-    Unresolved rows remain in the totals under a null canonical broker ID.
+    Unresolved identities keep broker_entity_id=null, but preserve their original
+    source_broker_code so separate unmapped codes are never collapsed together.
     """
     groups = {}
     coverage = defaultdict(lambda: {
@@ -36,6 +37,13 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
             raise ValueError(f"row {index}: verified identity requires a nonblank broker_entity_id")
         if status != "verified" and broker_id is not None:
             raise ValueError(f"row {index}: unresolved identity cannot carry broker_entity_id")
+        source_broker_code = row.get("source_broker_code")
+        if source_broker_code is not None and (
+            not isinstance(source_broker_code, str) or not source_broker_code.strip()
+        ):
+            raise ValueError(f"row {index}: source_broker_code must be a nonblank string when supplied")
+        if isinstance(source_broker_code, str):
+            source_broker_code = source_broker_code.strip()
         try:
             amount, quantity = Decimal(str(row["amount"])), Decimal(str(row["quantity"]))
         except (KeyError, InvalidOperation) as exc:
@@ -58,19 +66,20 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
             raise ValueError(f"row {index}: source_payload_sha256 must be a 64-character hex digest")
         try:
             source_row_number = int(row["source_row_number"])
-        except (TypeError, ValueError) as exc:
+        except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"row {index}: source_row_number must be a positive integer") from exc
-        if source_row_number < 1 or str(source_row_number) != str(row["source_row_number"]):
+        if isinstance(row["source_row_number"], bool) or source_row_number < 1 or str(source_row_number) != str(row["source_row_number"]):
             raise ValueError(f"row {index}: source_row_number must be a positive integer")
         identity_evidence = row.get("identity_evidence_ids", [])
         if not isinstance(identity_evidence, list) or any(not isinstance(value, str) or not value.strip() for value in identity_evidence):
             raise ValueError(f"row {index}: identity_evidence_ids must be a list of nonblank IDs")
         if status == "verified" and not identity_evidence:
             raise ValueError(f"row {index}: verified identity requires identity evidence IDs")
-        group_key = (row["trade_date"], row["symbol"], broker_id, side, status)
+        group_key = (row["trade_date"], row["symbol"], broker_id, source_broker_code, side, status)
         item = groups.setdefault(group_key, {
             "trade_date": row["trade_date"], "symbol": row["symbol"],
-            "broker_entity_id": broker_id, "side": side, "identity_status": status,
+            "broker_entity_id": broker_id, "source_broker_code": source_broker_code,
+            "side": side, "identity_status": status,
             "contract_count": 0, "quantity": Decimal("0"), "amount": Decimal("0"),
             "source_ids": set(), "evidence_ids": set(),
         })

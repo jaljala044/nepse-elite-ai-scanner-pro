@@ -26,6 +26,19 @@ class CorporateActionPolicyTests(unittest.TestCase):
         self.assertEqual(len(r["actions"]), 1)
         self.assertEqual(r["evidence_ids"], ["DOC1"])
 
+    def test_visible_provisional_action_is_reported_as_unconfirmed(self):
+        provisional = action(action_id="A2", status="provisional",
+                             evidence_id="DOC2", available_at="2026-11-22T10:00:00Z")
+        report = corporate_action_as_known([action(), provisional], security_id="SEC1",
+                                            decision_time="2026-11-25T00:00:00Z")
+        self.assertEqual(report["visible_action_count"], 2)
+        self.assertEqual([item.action_id for item in report["actions"]], ["A1"])
+        self.assertFalse(report["all_visible_actions_confirmed"])
+        self.assertEqual(report["excluded_visible_actions"], [{
+            "action_id":"A2","status":"provisional","evidence_id":"DOC2"
+        }])
+        self.assertEqual(report["evidence_ids"], ["DOC1", "DOC2"])
+
     def test_adjustment_never_applied_by_eligibility_check(self):
         r = evaluate_adjustment_eligibility(action(), policy_version="raw_unadjusted_v1",
                                             decision_time="2026-11-25T00:00:00Z",

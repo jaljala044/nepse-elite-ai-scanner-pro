@@ -897,3 +897,30 @@ The current environment does not provide access to the user's Drive archive or t
 - Integrated evidence audit passed at the same commit: run `45545160687`.
 - Intermediate failures were not hidden: CI caught a literal-newline test fixture issue, an outdated error-message assertion, an unsupported-header test mismatch, and an expected-universe normalization ordering bug. These were corrected before the final passing run.
 - These changes improve fail-closed validation only. No new primary NEPSE registry, official date-level calendar, rights-cleared floorsheet sample or verified 281+47 manifest was acquired. No training or canonical promotion is authorized.
+
+
+## 2026-11-25 continuation — priorities 61–63
+
+61. **Official registry capture redirect security:** registry capture now validates the initial URL and every redirect target against the approved NEPSE/SEBON HTTPS host allowlist before following the redirect. Rejects HTTP, off-domain targets, nonstandard ports and URL credentials. Raw response capture remains bounded, SHA-256 pinned and explicitly unreviewed until schema review. Commits: `38c1006`, `45e2190`.
+
+62. **Large floorsheet ZIP preflight inventory:** added `backend/inspect_floorsheet_archive.py`. It streams the outer ZIP SHA-256 and reads central-directory metadata only; it does not extract or decompress members. It inventories file names, compressed/uncompressed sizes, CRC32, compression, timestamps, extensions and CSV count. It flags path traversal, absolute/backslash paths, duplicate and case-insensitive collisions, symlink/encrypted entries, suspicious compression ratios and configured size/count-limit violations. Commits: `6afc1ec`, `eb32d98`, `380eefe`, `0cd4ed4`.
+
+63. **Archive inventory regression coverage and operating guide:** added tests for hash pinning, no extraction, unsafe paths, duplicate/case-insensitive names, symlinks, entry/member/total-size bounds and non-finite ratio limits. Added `docs/FLOORSHEET_ARCHIVE_INVENTORY_GUIDE_2026-11-25.md` with command, defaults and interpretation. Test and guide commits: `331aa89`, `4c57236`, `a4a0d67`, `fa5d683`.
+
+### CI verification for priorities 61–63
+- Backend unit suite passed: **414 tests**, run [45546031228](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546031228), code commit `a4a0d6780940ec87fdaee91a123af5925af8d3b3`.
+- Backend contract tests passed: run [45546031175](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546031175).
+- Integrated evidence audit passed: run [45546031178](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546031178).
+- An early intermediate backend run failed because the test fixture still patched the removed `urlopen` symbol after the implementation moved to a guarded opener. The fixture was corrected; subsequent backend, contract and integrated runs passed.
+- The archive inventory is only a safe preflight. No user's >1 GB Drive ZIP was accessed or inspected in this run; no raw floorsheet sample, data rights, official registry manifest, verified calendar or 281+47 universe was acquired. No canonical/training promotion is authorized.
+
+## Next execution wave — priorities 64–70
+
+64. Validate the official NEPSE security-list and company-list payload schemas against a newly captured, dated primary response; keep source fields and unknown instrument types intact.
+65. Add a reviewed instrument-type/lifecycle mapping for equity and mutual fund membership, retaining suspended/delisted history without allowing them into the active target set.
+66. Build a small, user-supplied floorsheet CSV sample acceptance report: header mapping, encoding, date parsing, row counts, duplicate contracts, broker-code coverage and raw-row quarantine.
+67. Add a ZIP member-selection and controlled extraction stage that requires a reviewed inventory and records per-member SHA-256, archive hash, CRC outcome and physical source path.
+68. Inspect and reconcile the user's archive against the available Hugging Face/SocrateAI/Urek datasets without treating shared rows as independent provenance.
+69. Reconcile broker code/name histories and source date coverage from a real sample, preserving unknown identities and as-known dates.
+70. Re-run the 120-day and one-year coverage matrix against verified 281-equity + 47-mutual-fund membership and the date-level session evidence; keep unresolved dates/symbols visible.
+

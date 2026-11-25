@@ -36,6 +36,29 @@ class VersionedFeatureStoreTests(unittest.TestCase):
             saved = json.loads(Path(first["path"]).read_text())
             self.assertEqual(saved["snapshot_sha256"], snapshot["snapshot_sha256"])
 
+    def test_snapshot_reports_incomplete_input_lineage(self):
+        records = [{"record_id":"r1","record_type":"ohlcv","symbol":"AAA",
+                    "session_date":"2026-11-23","available_at":"2026-11-23T16:00:00Z",
+                    "close":11,"previous_close":10,"volume":100}]
+        securities = [SecurityMasterRecord("SEC-A","AAA","equity","active",
+                                           date(2020,1,1),None,"security-registry-v1")]
+        snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
+                                                     securities, [], ["AAA"])
+        self.assertEqual(snapshot["input_lineage_status"], "incomplete")
+        self.assertEqual(snapshot["input_lineage"][0]["record_id"], "r1")
+
+    def test_snapshot_reports_complete_input_lineage(self):
+        records = [{"record_id":"r1","source_id":"official-eod","source_payload_sha256":"a"*64,
+                    "source_row_number":2,"record_type":"ohlcv","symbol":"AAA",
+                    "session_date":"2026-11-23","available_at":"2026-11-23T16:00:00Z",
+                    "close":11,"previous_close":10,"volume":100}]
+        securities = [SecurityMasterRecord("SEC-A","AAA","equity","active",
+                                           date(2020,1,1),None,"security-registry-v1")]
+        snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
+                                                     securities, [], ["AAA"])
+        self.assertEqual(snapshot["input_lineage_status"], "complete")
+        self.assertEqual(snapshot["input_lineage"][0]["payload_sha256"], "a"*64)
+
     def test_ambiguous_security_does_not_join_actions(self):
         records = [{"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",
                     "available_at":"2026-11-23T16:00:00Z","close":11,

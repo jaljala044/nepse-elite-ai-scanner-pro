@@ -16,7 +16,7 @@ class FloorsheetOverlapAcquisitionTests(unittest.TestCase):
         payload = b"sample floorsheet bytes\n"
         self.assertEqual(
             git_blob_sha1(payload),
-            hashlib.sha1(f"blob {len(payload)}\\0".encode() + payload).hexdigest(),
+            hashlib.sha1(f"blob {len(payload)}\0".encode() + payload).hexdigest(),
         )
 
     @patch("acquire_floorsheet_overlap.fetch")

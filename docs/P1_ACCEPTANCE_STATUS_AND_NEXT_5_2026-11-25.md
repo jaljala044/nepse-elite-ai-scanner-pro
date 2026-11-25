@@ -461,3 +461,52 @@ The same workflow attempted the official NEPSE Holiday Listing page, but the
 runner received HTTP/2 stream protocol errors. A retry using HTTP/1.1 and the
 non-www host fallback has been added; do not treat the calendar evidence gate
 as satisfied until that retry yields readable primary notice bytes.
+
+
+
+## P1 execution increment — primary NEPSE holiday API and calendar promotion
+
+### Primary source acquired
+
+The official NEPSE holiday API was successfully accessed using the public
+NEPSE client flow after the unauthenticated request returned 401. The exact
+raw JSON response was captured before parsing and committed:
+
+- URL: `https://nepalstock.com.np/api/nots/holiday/list?year=2026`
+- HTTP 200; retrieved 2026-11-25 13:13:17.600880 UTC.
+- 4,932 bytes; SHA-256
+  `dd1777e3c61623048e00dc170d860659b14b8821ffabff8338002ccafdb2ea8f`.
+- 41 unique dates; all have `instrumentTypeId=null`.
+- 2026-09-21 is explicitly labelled `Emergengy Market Close`.
+- Raw body, headers, parsed JSON, SHA file, capture report and source-object
+  manifest entry are preserved at
+  `data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25/`.
+
+### Calendar claims validated and promoted
+
+Added `data/evidence/acquired/calendar-evidence-manifest-2026.json` with
+one raw capture and 41 explicit claims. The canonical
+`data/reference/nepse_session_calendar.csv` now contains:
+
+- 40 `verified_closed` dates.
+- One `verified_exceptional_closed` date: 2026-09-21.
+- Zero verified open dates from this capture.
+
+The dates were reconciled against the pinned floorsheet publisher manifest
+and the 198 market-summary candidates: zero `status=ok` manifest overlaps,
+zero market-summary candidate overlaps; 20 dates are marked missing in the
+publisher manifest and 21 have no publisher-manifest entry. Those publisher
+records are corroborative checks only. The 41 official API entries are the
+closure evidence. No unlisted date was inferred open.
+
+The manifest validator is covered by
+`backend/tests/test_official_nepse_holiday_capture.py`. The initial test
+run found a test-fixture header mismatch (`session_date`, not `date`) in
+the candidate CSV reader; the test was corrected and the rerun is pending.
+
+### Remaining calendar blockers
+
+This is a meaningful partial calendar acceptance, not completion of the
+historical calendar gate. The exact 616-session date list is still missing;
+there are no verified open-session dates yet; primary historical closure
+evidence before 2026 remains uncollected. P1 remains blocked.

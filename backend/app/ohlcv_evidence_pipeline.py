@@ -7,6 +7,8 @@ from app.session_evidence import resolve_session_state
 
 
 def _utc(value: str) -> datetime:
+    if not isinstance(value, str):
+        raise ValueError("availability timestamps must be ISO-8601 strings")
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError("availability timestamps must be timezone-aware")
@@ -37,14 +39,16 @@ def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
             try:
                 start = date.fromisoformat(instrument["valid_from"])
                 end = date.fromisoformat(instrument["valid_to"]) if instrument.get("valid_to") else None
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, TypeError):
                 continue
             if start <= session and (end is None or session <= end):
                 candidates.append(instrument)
         reasons = []
         if len(candidates) != 1:
             reasons.append("security_identity_missing_or_ambiguous")
-        elif candidates[0].get("status", "").casefold() not in {"active", "listed", "trading"}:
+        elif not str(candidates[0].get("security_id", "")).strip():
+            reasons.append("security_master_id_missing")
+        elif str(candidates[0].get("status", "")).casefold() not in {"active", "listed", "trading"}:
             reasons.append("security_not_active_on_session_date")
         session_state = resolve_session_state(session, session_evidence, decision_time)
         if not session_state["is_confirmed_trading_session"]:

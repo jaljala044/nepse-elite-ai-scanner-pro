@@ -138,3 +138,12 @@ The canonical calendar now contains 41 explicit closure rows: 40
 from the API response were inferred open. The 616-date historical session
 list is still unrecovered; this 2026 holiday API response does not replace
 that historical input or establish 2015-era session dates.
+
+
+## P1 616-date candidate recovery update — 2026-11-25
+
+A pinned ShareSansar-scraped EOD archive yielded 616 unique date-file candidates from 2024-03-04 through 2026-11-20, exactly matching the count and window asserted in the starter backfill manifest. See `docs/616_SESSION_CANDIDATE_RECOVERY_2026-11-25.md` and the 616-row candidate CSV.
+
+A separate SocrateAI index repository tree contains index-date files for 614 of the 616 candidates; the missing index files are 2025-04-03 and 2026-11-20. All seven candidate dates absent from the starter 2026 market-summary file have one inspected `NEPSE_index` row in the separate-repository index files. This is corroboration with source lineage not fully verified, not primary exchange evidence.
+
+The candidate list is preserved as `candidate_unverified`; no `verified_open` dates were promoted and the canonical calendar is unchanged. Exact identity with the original extraction input and primary date-by-date proof remain open. P1 remains blocked.

@@ -394,7 +394,7 @@ def fetch_official_company_floorsheet_clean(
             while first_page or page_num < total_pages:
                 page_path = base_path if page_num == 0 else f"{base_path}&page={page_num}"
                 authorization = client.getAuthorizationHeaders()["Authorization"]
-                payload_id = client.getPOSTPayloadIDForFloorSheet()
+                payload_id = client.getPOSTPayloadIDForFloorSheet(business_date=business_date)
                 headers = {
                     "Authorization": authorization,
                     "Content-Type": "application/json",
@@ -402,6 +402,11 @@ def fetch_official_company_floorsheet_clean(
                     "Accept-Language": "en-US,en;q=0.9",
                     "Cache-Control": "no-cache",
                     "Referer": client.base_url.rstrip("/") + "/",
+                    "Origin": client.base_url.rstrip("/"),
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Dest": "empty",
                     "User-Agent": (
                         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                         "AppleWebKit/537.36 (KHTML, like Gecko) "

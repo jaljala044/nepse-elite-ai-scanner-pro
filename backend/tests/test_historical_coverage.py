@@ -42,6 +42,26 @@ class HistoricalCoverageTests(unittest.TestCase):
         self.assertEqual(r["cross_source_close_conflict_count"], 0)
         self.assertEqual(len(r["source_reports"]["A"]["duplicate_keys"]), 1)
 
+    def test_rows_outside_verified_grid_are_reported(self):
+        r = build_historical_coverage_report(
+            [row("A", "OUTSIDE", "100"), row("A", "NABIL", "100", "2026-11-23")],
+            expected_sessions=["2026-11-24"], expected_symbols=["NABIL"])
+        self.assertEqual(r["source_reports"]["A"]["covered_keys"], 0)
+        self.assertEqual(r["source_reports"]["A"]["unexpected_rows"], [
+            {"session_date":"2026-11-23","symbol":"NABIL",
+             "reason":"session_not_in_verified_expected_grid"},
+            {"session_date":"2026-11-24","symbol":"OUTSIDE",
+             "reason":"symbol_not_in_expected_universe"},
+        ])
+
+    def test_non_finite_or_non_positive_close_rejected(self):
+        for value in ("NaN", "Infinity", "0", "-1"):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "finite positive"):
+                    build_historical_coverage_report(
+                        [row("A", "NABIL", value)],
+                        expected_sessions=["2026-11-24"], expected_symbols=["NABIL"])
+
     def test_empty_expected_grid_rejected(self):
         with self.assertRaisesRegex(ValueError, "verified expected"):
             build_historical_coverage_report([], expected_sessions=[], expected_symbols=["NABIL"])

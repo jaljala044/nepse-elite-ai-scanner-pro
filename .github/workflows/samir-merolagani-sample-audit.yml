@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify audit unit tests
-        run: python -m unittest tests.test_audit_samir_merolagani_capture -v
+        run: python -m unittest discover -s tests -p "test_audit_samir_merolagani_capture.py" -v
         working-directory: backend
       - name: Fetch pinned public source CSV
         run: |

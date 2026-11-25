@@ -41,6 +41,14 @@ class FloorsheetContract:
 
     @classmethod
     def from_mapping(cls, row: dict, *, source_id: str, payload_sha256: str, row_number: int):
+        text_fields = ("trade_date", "contract_id", "symbol", "buyer_broker_code", "seller_broker_code")
+        if any(row.get(field) is None or not str(row[field]).strip() for field in text_fields):
+            raise ValueError("trade date, contract, symbol and broker codes must be present")
+        try:
+            from datetime import date
+            date.fromisoformat(str(row["trade_date"]))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("trade_date must be a valid ISO date") from exc
         try:
             quantity = Decimal(str(row["quantity"]))
             rate = Decimal(str(row["rate"]))

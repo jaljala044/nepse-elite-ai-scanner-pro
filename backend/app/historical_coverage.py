@@ -17,17 +17,28 @@ def build_historical_coverage_report(records: list[dict], *,
     expected = {(d, s) for d in sessions for s in symbols}
     by_key_source = defaultdict(list)
     source_rows = defaultdict(int)
+    unexpected_rows = defaultdict(list)
     for index, row in enumerate(records):
         try:
-            key = (date.fromisoformat(row["session_date"]).isoformat(), row["symbol"].strip().upper())
-            source = row["source_id"]
-            if not source:
-                raise ValueError("blank source_id")
-            Decimal(str(row["close"]))
-        except (KeyError, ValueError, InvalidOperation) as exc:
+            session_date = date.fromisoformat(str(row["session_date"])).isoformat()
+            symbol = str(row["symbol"]).strip().upper()
+            source = str(row["source_id"]).strip()
+            close = Decimal(str(row["close"]))
+            if not source or not symbol:
+                raise ValueError("blank source_id or symbol")
+            if not close.is_finite() or close <= 0:
+                raise ValueError("close must be a finite positive decimal")
+            key = (session_date, symbol)
+        except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
             raise ValueError(f"invalid coverage input row {index}: {exc}") from exc
         by_key_source[(key, source)].append(row)
         source_rows[source] += 1
+        if key not in expected:
+            unexpected_rows[source].append({
+                "session_date": key[0], "symbol": key[1],
+                "reason": ("session_not_in_verified_expected_grid" if key[0] not in sessions
+                           else "symbol_not_in_expected_universe"),
+            })
 
     source_ids = sorted(source_rows)
     per_source = {}
@@ -45,6 +56,8 @@ def build_historical_coverage_report(records: list[dict], *,
             "input_rows": source_rows[source], "covered_keys": len(present),
             "expected_keys": len(expected), "missing_keys": missing,
             "duplicate_keys": duplicates,
+            "unexpected_rows": sorted(unexpected_rows[source],
+                                      key=lambda item: (item["session_date"], item["symbol"])),
             "coverage_ratio": str(Decimal(len(present)) / Decimal(len(expected))),
         }
 

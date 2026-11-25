@@ -345,3 +345,22 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - See `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md` for artifact IDs,
   exact hashes and remaining gates.
 
+
+
+
+### P1 major calendar evidence advance — official NEPSE API
+
+- Captured the official NEPSE 2026 holiday API response (HTTP 200) using the
+  public client flow; 4,932 raw bytes, 41 records, SHA-256
+  `dd1777e3c61623048e00dc170d860659b14b8821ffabff8338002ccafdb2ea8f`.
+- Added a source-object manifest entry, raw archive, calendar evidence
+  manifest and reconciliation report.
+- Canonical calendar now has 40 verified closures and one verified
+  exceptional closure (2026-09-21); zero verified open dates.
+- Cross-check: zero overlap with 198 market-summary candidates and zero
+  overlap with publisher-manifest status=ok dates. Missing/no-entry values
+  are not themselves closure evidence.
+- Exact 616-session list remains unrecovered; do not infer open sessions from
+  dates absent from the holiday API.
+- See `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md` and
+  `data/reports/nepse-holiday-calendar-reconciliation-2026.json`.

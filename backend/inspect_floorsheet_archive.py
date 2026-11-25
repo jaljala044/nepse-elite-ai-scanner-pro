@@ -36,8 +36,14 @@ def _member_path_issue(name: str) -> str | None:
         return "empty_member_name"
     if "\\" in name:
         return "backslash_in_member_name"
+    if "\\x00" in name:
+        return "nul_byte_in_member_name"
     if name.startswith("/") or name.startswith("//"):
         return "absolute_member_path"
+    raw_parts = name.split("/")
+    checked_parts = raw_parts[:-1] if name.endswith("/") else raw_parts
+    if any(part in ("", ".", "..") for part in checked_parts):
+        return "path_traversal_or_empty_component"
     path = PurePosixPath(name)
     if any(part in ("..", "") for part in path.parts):
         return "path_traversal_or_empty_component"

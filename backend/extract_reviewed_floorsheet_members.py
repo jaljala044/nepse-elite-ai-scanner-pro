@@ -167,7 +167,7 @@ def main() -> int:
     rendered = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
     if args.manifest_output:
         args.manifest_output.parent.mkdir(parents=True, exist_ok=True)
-        with args.manifest_output.open("x", encoding="utf-8", newline="\\n") as manifest_stream:
+        with args.manifest_output.open("x", encoding="utf-8") as manifest_stream:
             manifest_stream.write(rendered)
     print(rendered, end="")
     return 0

@@ -59,3 +59,30 @@ The file intentionally does **not** create \`BrokerIdentityLink(status="verified
 - Preserve raw numeric broker codes as strings and keep their original source-file lineage.
 
 **Decision:** 91/91 code-number coverage against the current CDSC clearing-member directory; broker-entity resolution remains candidate-only until effective-dated source and legal-name history is completed.
+
+
+## Additional pinned-date broker-code coverage check
+
+A separate cross-date check was completed against the current primary CDSC
+List of Clearing Members (rendered page retrieval 2026-11-25; 92 directory
+entries; page exposes CM name and CM number). The observed broker-code sets
+were extracted from three immutable floorsheet source blobs:
+
+| Floorsheet date | Contracts | Observed codes | Exact CM-number matches in current directory |
+|---|---:|---:|---:|
+| 2015-01-04 | 2,343 | 49 | 49 |
+| 2026-11-18 | 41,594 | 91 | 91 |
+| 2026-11-19 | 40,818 | 91 | 91 |
+
+No observed numeric code in these three samples is absent from the current
+92-entry CDSC directory. The 2015 sample includes code 55, while the two
+November 2026 samples do not. This is a useful cross-date numeric coverage
+check, but it does **not** establish that today's directory name was the
+correct legal name on 2015-01-04, or prove continuity, mergers, suspensions,
+reassignments, branches or beneficial ownership. The captured directory is a
+rendered web extraction; raw HTTP response bytes and a raw-response SHA-256
+were not archived. The complete code lists and limitation are preserved in
+`data/evidence/acquired/broker-current-directory-multidate-coverage.json`.
+
+All identity links therefore remain candidate/unmapped. No historical entity
+identity is promoted by this check.

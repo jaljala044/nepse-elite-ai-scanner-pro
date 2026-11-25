@@ -402,3 +402,46 @@ When the project owner asks for all progress, retrieve this register and current
 - Add full synthetic end-to-end capture → normalization → as-of registry → feature → fold evaluation test.
 - Add source lineage, raw fixture hashes, and documented field contracts for floorsheet and OHLCV.
 - Keep real-data activation blocked until primary session evidence, official dated 281-equity + 47-mutual-fund manifest, broker source identity, source rights and coverage are verified.
+
+
+## 15. Work-session update — next five priorities, step-by-step implementation (2026-11-25)
+
+### Step 1 — synthetic end-to-end capture → normalization → features
+- Added `backend/app/capture_pipeline.py`: persists exact response bytes and manifest before parsing; validates a deliberately narrow JSON-array fixture schema; overwrites any untrusted row-level `available_at` with the capture receipt timestamp; then applies the point-in-time feature pipeline.
+- Added `backend/tests/test_capture_pipeline.py`: verifies raw-byte preservation, normalized record counts, market breadth, unknown broker retention, post-decision receipt exclusion, untrusted availability override and unsupported record rejection.
+- Both implementation and test workflows passed: [45535181860](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535181860), [45535210716](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535210716).
+
+### Step 2 — floorsheet contract records and duplicate reconciliation
+- Added `backend/app/floorsheet_contract.py`: typed contract schema, Decimal monetary/quantity values, payload hash and source-row lineage, positive-value checks, gross amount reconciliation, and conservative classification of unique / exact duplicate / conflicting duplicate rows.
+- All duplicate rows are retained; no silent de-duplication occurs. Amount exceptions are separately flagged.
+- Both implementation and test workflows passed: [45535249235](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535249235), [45535268903](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535268903).
+
+### Step 3 — broker-name history and source-code reconciliation
+- Extended `backend/app/broker_identity.py` with dated source-name observations and effective-dated canonical broker-name records.
+- Exact normalized name matches return `candidate_requires_evidence`, never an automatically verified broker link. Multi-entity matches remain ambiguous; source name history is preserved chronologically.
+- Both implementation and test workflows passed: [45535313914](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535313914), [45535329707](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535329707).
+
+### Step 4 — versioned point-in-time feature snapshot with corporate-action joins
+- Added `backend/app/versioned_feature_store.py`: versioned content-addressed snapshot hash, effective-dated security-master join, corporate-action availability-time join, and immutable/idempotent snapshot persistence.
+- Corporate actions are attached as evidence context only; historical OHLCV is not adjusted. Ambiguous security identities block the join.
+- Both implementation and test workflows passed: [45535357162](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535357162), [45535376771](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535376771).
+
+### Step 5 — evaluation coverage, missingness and leakage diagnostics
+- Added `backend/app/evaluation_diagnostics.py`: expected-date coverage, missing decision dates, duplicate-date exclusion, missing-label reporting, future-input and premature-label leakage flags, and chronological fold metrics.
+- Training labels are included only when their `label_available_at` is earlier than the first test decision time. Duplicate forecast dates are not arbitrarily selected or averaged.
+- Commits: implementation [d84709c](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/d84709c9669b5f82b53dc69abcd0801101724170), tests [df5b55e](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/df5b55e62824de2088799b4b6ba3d10ee6b7c00a).
+- CI runs [45535424520](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535424520) and [45535439412](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45535439412) were still running at register update time; no pass claim until completed.
+
+### Overall boundaries
+- All new integration fixtures are synthetic. No live NEPSE fetch, Google Sheets write, or historical ZIP ingestion occurred.
+- The JSON capture parser is a narrow fixture contract, not yet a parser for actual NEPSE floorsheet CSV/XLS exports.
+- Floorsheet amount = quantity × rate is treated as a configurable-tolerance consistency check, not as a guarantee that every source's amount convention is identical.
+- Broker-name matching remains review-only; no official broker master has been reconciled.
+- Versioned feature snapshots do not yet prove the completeness or authority of security/corporate-action inputs.
+- No forecast model, predictive edge, or live signal has been validated on verified historical data.
+
+### Next acceptance gates
+1. Confirm Step 5 CI and address any failures.
+2. Add parser adapters only after a real source sample and field-level provenance are available.
+3. Connect canonical floorsheet contract records to effective-dated broker identity resolution without dropping unknown parties.
+4. Add primary-source security master, exchange calendar, corporate-action and data-rights evidence before historical training.

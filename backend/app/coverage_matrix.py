@@ -141,10 +141,12 @@ def build_coverage(calendar: dict[str, dict[str, str]], manifest_paths: list[Pat
                     "revision": revision,
                     "date": day,
                     "path": path,
-                    "file_sha_or_oid": item.get("sha") or item.get("oid"),
+                    "file_sha_or_oid": item.get("sha") or item.get("oid") or item.get("hub_oid"),
                     "lfs_sha256": (item.get("lfs") or {}).get("oid")
                         if isinstance(item.get("lfs"), dict) else None,
-                    "size_bytes": item.get("size"),
+                    "download_sha256": item.get("sha256"),
+                    "download_status": item.get("status"),
+                    "size_bytes": item.get("size") or item.get("bytes") or item.get("expected_size"),
                     "calendar_status": calendar_status,
                     "calendar_evidence_source": calendar_row.get("evidence_source")
                         if calendar_row else None,

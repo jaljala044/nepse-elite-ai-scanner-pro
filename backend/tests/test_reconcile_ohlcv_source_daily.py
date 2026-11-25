@@ -69,6 +69,15 @@ class OhlcvSourceDailyReconciliationTests(unittest.TestCase):
         result = reconcile_ohlcv_sources([self.a], self.controls)
         self.assertEqual(result["control_total_results"][0]["status"], "failed")
 
+    def test_control_date_without_source_rows_is_failed(self):
+        self.write_rows(self.a, [])
+        with self.controls.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=["source_id","date","row_count","total_volume"])
+            writer.writeheader()
+            writer.writerow({"source_id":"A","date":"2026-11-24","row_count":1,"total_volume":"100"})
+        result = reconcile_ohlcv_sources([self.a], self.controls)
+        self.assertEqual(result["control_total_results"][0]["differences"], ["missing_source_rows"])
+
     def test_invalid_ohlcv_numeric_rejected(self):
         self.write_rows(self.a, [self.row("A", volume="NaN")])
         with self.assertRaisesRegex(ValueError, "must be finite"):

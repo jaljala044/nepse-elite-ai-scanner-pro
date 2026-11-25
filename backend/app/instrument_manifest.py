@@ -1,29 +1,64 @@
 """Evidence-backed active-universe manifest validation for NEPSE instruments."""
 from __future__ import annotations
 
+import re
 from collections import Counter
 from datetime import date
 
 
 TARGET_COUNTS = {"equity": 281, "mutual_fund": 47}
 ACTIVE_STATUSES = {"active", "listed", "trading"}
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _parse_iso_date(value: object) -> date:
+    if not isinstance(value, str) or not ISO_DATE.fullmatch(value):
+        raise ValueError("date must use YYYY-MM-DD")
+    return date.fromisoformat(value)
 
 
 def validate_instrument_manifest(records: list[dict], *, as_of: str,
                                   require_primary_evidence: bool = True) -> dict:
     """Validate a supplied dated manifest; never synthesize missing instruments."""
-    effective_date = date.fromisoformat(as_of)
+    effective_date = _parse_iso_date(as_of)
+    if not isinstance(records, list):
+        raise ValueError("records must be a list")
     errors, active, lifecycle = [], [], []
+    required = (
+        "security_id", "symbol", "instrument_type", "status",
+        "valid_from", "evidence_id", "source_id",
+    )
     for index, row in enumerate(records):
-        required = ("security_id", "symbol", "instrument_type", "status",
-                    "valid_from", "evidence_id", "source_id")
-        missing = [key for key in required if not row.get(key)]
+        if not isinstance(row, dict):
+            errors.append({"row": index, "error": "record_must_be_object"})
+            continue
+        missing = [
+            key for key in required
+            if not isinstance(row.get(key), str) or not row[key].strip()
+        ]
         if missing:
-            errors.append({"row": index, "error": "missing_required_fields", "fields": missing})
+            errors.append({"row": index, "error": "missing_or_invalid_required_fields", "fields": missing})
+            continue
+        if row["security_id"] != row["security_id"].strip():
+            errors.append({"row": index, "error": "security_id_has_surrounding_whitespace"})
+            continue
+        if row["symbol"] != row["symbol"].strip() or row["symbol"] != row["symbol"].upper():
+            errors.append({"row": index, "error": "symbol_must_be_trimmed_uppercase"})
+            continue
+        if row["instrument_type"] not in {
+            "equity", "mutual_fund", "convertible_debenture",
+            "non_convertible_debenture", "preference_share", "other",
+        }:
+            errors.append({"row": index, "error": "unknown_instrument_type"})
+            continue
+        if row["status"].casefold() not in {
+            "active", "listed", "trading", "suspended", "delisted", "inactive", "pending",
+        }:
+            errors.append({"row": index, "error": "unknown_lifecycle_status"})
             continue
         try:
-            start = date.fromisoformat(row["valid_from"])
-            end = date.fromisoformat(row["valid_to"]) if row.get("valid_to") else None
+            start = _parse_iso_date(row["valid_from"])
+            end = _parse_iso_date(row["valid_to"]) if row.get("valid_to") is not None else None
         except ValueError:
             errors.append({"row": index, "error": "invalid_effective_date"})
             continue
@@ -36,7 +71,7 @@ def validate_instrument_manifest(records: list[dict], *, as_of: str,
                 active.append(row)
 
     ids = [r["security_id"] for r in active]
-    symbols = [r["symbol"].strip().upper() for r in active]
+    symbols = [r["symbol"] for r in active]
     duplicate_ids = sorted(x for x, n in Counter(ids).items() if n > 1)
     duplicate_symbols = sorted(x for x, n in Counter(symbols).items() if n > 1)
     counts = dict(Counter(r["instrument_type"] for r in active))
@@ -50,7 +85,8 @@ def validate_instrument_manifest(records: list[dict], *, as_of: str,
         errors.append({"error": "duplicate_active_symbols", "values": duplicate_symbols})
     if require_primary_evidence:
         non_primary = [r for r in active if r.get("source_tier") != "primary"]
-        missing_source = [r for r in active if not r.get("source_record_id")]
+        missing_source = [r for r in active if not isinstance(r.get("source_record_id"), str)
+                          or not r["source_record_id"].strip()]
         if non_primary:
             errors.append({"error": "active_rows_lack_primary_source_tier", "count": len(non_primary)})
         if missing_source:

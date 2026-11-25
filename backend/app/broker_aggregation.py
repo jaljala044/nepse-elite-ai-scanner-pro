@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation
+from datetime import date
+import re
 
 
 def aggregate_broker_observations(rows: list[dict]) -> dict:
@@ -41,6 +43,26 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         required = ("trade_date", "symbol", "source_id", "contract_id", "source_payload_sha256", "source_row_number")
         if any(row.get(k) in (None, "") for k in required):
             raise ValueError(f"row {index}: missing grouping or lineage field")
+        try:
+            date.fromisoformat(str(row["trade_date"]))
+        except ValueError as exc:
+            raise ValueError(f"row {index}: trade_date must be ISO date") from exc
+        if str(row["symbol"]) != str(row["symbol"]).strip().upper():
+            raise ValueError(f"row {index}: symbol must be uppercase")
+        payload_hash = str(row["source_payload_sha256"]).lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", payload_hash):
+            raise ValueError(f"row {index}: source_payload_sha256 must be a 64-character hex digest")
+        try:
+            source_row_number = int(row["source_row_number"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"row {index}: source_row_number must be a positive integer") from exc
+        if source_row_number < 1 or str(source_row_number) != str(row["source_row_number"]):
+            raise ValueError(f"row {index}: source_row_number must be a positive integer")
+        identity_evidence = row.get("identity_evidence_ids", [])
+        if not isinstance(identity_evidence, list) or any(not str(value).strip() for value in identity_evidence):
+            raise ValueError(f"row {index}: identity_evidence_ids must be a list of nonblank IDs")
+        if status == "verified" and not identity_evidence:
+            raise ValueError(f"row {index}: verified identity requires identity evidence IDs")
         group_key = (row["trade_date"], row["symbol"], broker_id, side, status)
         item = groups.setdefault(group_key, {
             "trade_date": row["trade_date"], "symbol": row["symbol"],
@@ -48,7 +70,7 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
             "contract_count": 0, "quantity": Decimal("0"), "amount": Decimal("0"),
             "source_ids": set(), "evidence_ids": set(),
         })
-        lineage = (row["source_payload_sha256"], row["source_row_number"], side)
+        lineage = (payload_hash, source_row_number, side)
         if lineage in seen_lineages:
             raise ValueError(f"duplicate party observation lineage: {lineage}")
         seen_lineages.add(lineage)
@@ -56,7 +78,7 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         item["quantity"] += quantity
         item["amount"] += amount
         item["source_ids"].add(row["source_id"])
-        item["evidence_ids"].update(row.get("identity_evidence_ids", []))
+        item["evidence_ids"].update(identity_evidence)
 
         c = coverage[(row["trade_date"], row["symbol"], side)]
         c["party_observation_count"] += 1

@@ -8,6 +8,13 @@ from app.floorsheet_source_profiles import (
     UREK_SOURCE_ONLY_HEADERS,
     review_urek_floorsheet_headers,
     urek_floorsheet_mapping,
+    SAMIR_CANONICAL_COLUMNS,
+    SAMIR_DECLARED_HEADERS,
+    SAMIR_PINNED_COMMIT,
+    SAMIR_RAW_SHA256,
+    SAMIR_SOURCE_ONLY_HEADERS,
+    review_samir_merolagani_headers,
+    samir_merolagani_capture_mapping,
 )
 from app.floorsheet_csv_adapter import parse_floorsheet_csv
 
@@ -74,6 +81,53 @@ class UrekFloorsheetSourceProfileTests(unittest.TestCase):
         self.assertEqual(row.buyer_broker_code, "12")
         self.assertEqual(row.seller_broker_code, "34")
         self.assertEqual(str(row.amount), "255")
+
+
+class SamirMerolaganiCaptureProfileTests(unittest.TestCase):
+    def test_exact_observed_header_and_capture_date_warning(self):
+        review = review_samir_merolagani_headers(SAMIR_DECLARED_HEADERS)
+        self.assertTrue(review.valid)
+        self.assertEqual(
+            review.evidence_status,
+            "raw_header_observed_capture_date_semantics_unverified",
+        )
+        self.assertEqual(SAMIR_PINNED_COMMIT, "e6160adc6bdf3d19562167388e3d9d4f645c455a")
+        self.assertEqual(
+            SAMIR_RAW_SHA256,
+            "2687b7ed6bc5ebd737fa459ca8dd620941bb3ec1da6613fbd620550495018f55",
+        )
+        self.assertEqual(set(SAMIR_SOURCE_ONLY_HEADERS), {"sn"})
+        self.assertEqual(SAMIR_CANONICAL_COLUMNS["contract_id"], "contract_no")
+
+    def test_header_mismatch_and_duplicate_fail_closed(self):
+        missing = review_samir_merolagani_headers(SAMIR_DECLARED_HEADERS[:-1])
+        self.assertFalse(missing.valid)
+        self.assertIn("amount", missing.missing_headers)
+        duplicate = review_samir_merolagani_headers(SAMIR_DECLARED_HEADERS + ("buyer",))
+        self.assertFalse(duplicate.valid)
+        self.assertEqual(duplicate.duplicate_headers, ("buyer",))
+
+    def test_contract_date_maps_from_capture_date_only_provisionally(self):
+        raw = (
+            "date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"
+            "2026-11-24,1,2026112405013267,BBC,58,11,10,3878.00,38780.00\n"
+        ).encode("utf-8")
+        parsed = parse_floorsheet_csv(
+            raw,
+            source_id="SamirWagle/Nepse-All-Scraper@"
+                      + SAMIR_PINNED_COMMIT + "/data/floorsheet/floorsheet_2026-11-24.csv",
+            mapping=samir_merolagani_capture_mapping(),
+        )
+        self.assertEqual(parsed["parsed_rows"], 1)
+        self.assertEqual(parsed["rejected_rows"], 0)
+        self.assertFalse(parsed["source_specific_mapping_verified"])
+        contract = parsed["rows"][0]
+        self.assertEqual(contract.trade_date, "2026-11-24")
+        self.assertEqual(contract.contract_id, "2026112405013267")
+        self.assertEqual(contract.symbol, "BBC")
+        self.assertEqual(contract.buyer_broker_code, "58")
+        self.assertEqual(str(contract.amount), "38780.00")
+
 
 
 if __name__ == "__main__":

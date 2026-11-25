@@ -37,11 +37,11 @@
           105340
         ]
       },
-      "independent_primary_evidence_uri": null,
-      "evidence_sha256": null,
+      "independent_primary_evidence_uri": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
+      "evidence_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "resolution_status": "quarantined_primary_verified_pending_corporate_action_and_price_basis",
+      "decision_reason": "NEPSE official EOD today-price response now confirms all five OHLCV fields and matches Source B. Source A differs. Keep quarantined until full corporate-action and price-basis review is complete; no canonical promotion or training yet.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -60,20 +60,29 @@
         "comparison_to_repository_sources": "matches_source_b",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
       },
-      "official_nepse_partial_corroboration": {
-        "source": "NEPSE per-security price-volume history",
-        "date": "2026-11-19",
+      "official_nepse_primary_evidence": {
+        "source": "NEPSE official today-price EOD board",
+        "endpoint": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+        "retrieved_at_utc": "2026-11-25T18:45:52.683284Z",
+        "response_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
+        "response_git_blob_oid": "f669d24e6e8d92fc951e1eb0603939f4b6102440",
+        "response_path": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
         "confirmed_fields": [
+          "open",
           "high",
           "low",
           "close",
           "volume"
         ],
-        "missing_fields": [
-          "open"
+        "observed_ohlcv": [
+          "331.0",
+          "334.2",
+          "330.0",
+          "331.8",
+          "105340"
         ],
-        "status": "partial_primary_fields",
-        "note": "Official history row agrees with the secondary archive on the four fields it returns; opening price is absent."
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "primary_exchange_eod_evidence"
       }
     },
     {
@@ -158,11 +167,11 @@
           49184
         ]
       },
-      "independent_primary_evidence_uri": null,
-      "evidence_sha256": null,
+      "independent_primary_evidence_uri": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
+      "evidence_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "resolution_status": "quarantined_primary_verified_pending_corporate_action_and_price_basis",
+      "decision_reason": "NEPSE official EOD today-price response now confirms all five OHLCV fields and matches Source B. Source A differs. Keep quarantined until full corporate-action and price-basis review is complete; no canonical promotion or training yet.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -181,20 +190,29 @@
         "comparison_to_repository_sources": "matches_source_b",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
       },
-      "official_nepse_partial_corroboration": {
-        "source": "NEPSE per-security price-volume history",
-        "date": "2026-11-19",
+      "official_nepse_primary_evidence": {
+        "source": "NEPSE official today-price EOD board",
+        "endpoint": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+        "retrieved_at_utc": "2026-11-25T18:45:52.683284Z",
+        "response_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
+        "response_git_blob_oid": "f669d24e6e8d92fc951e1eb0603939f4b6102440",
+        "response_path": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
         "confirmed_fields": [
+          "open",
           "high",
           "low",
           "close",
           "volume"
         ],
-        "missing_fields": [
-          "open"
+        "observed_ohlcv": [
+          "483.0",
+          "488.0",
+          "480.0",
+          "483.9",
+          "49184"
         ],
-        "status": "partial_primary_fields",
-        "note": "Official history row agrees with the secondary archive on the four fields it returns; opening price is absent."
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "primary_exchange_eod_evidence"
       }
     },
     {
@@ -385,11 +403,11 @@
           9054
         ]
       },
-      "independent_primary_evidence_uri": null,
-      "evidence_sha256": null,
+      "independent_primary_evidence_uri": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
+      "evidence_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "resolution_status": "quarantined_primary_verified_pending_corporate_action_and_price_basis",
+      "decision_reason": "NEPSE official EOD today-price response now confirms all five OHLCV fields and matches Source B. Source A differs. Keep quarantined until full corporate-action and price-basis review is complete; no canonical promotion or training yet.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -408,20 +426,29 @@
         "comparison_to_repository_sources": "matches_source_b",
         "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
       },
-      "official_nepse_partial_corroboration": {
-        "source": "NEPSE per-security price-volume history",
-        "date": "2026-11-19",
+      "official_nepse_primary_evidence": {
+        "source": "NEPSE official today-price EOD board",
+        "endpoint": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+        "retrieved_at_utc": "2026-11-25T18:45:52.683284Z",
+        "response_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
+        "response_git_blob_oid": "f669d24e6e8d92fc951e1eb0603939f4b6102440",
+        "response_path": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
         "confirmed_fields": [
+          "open",
           "high",
           "low",
           "close",
           "volume"
         ],
-        "missing_fields": [
-          "open"
+        "observed_ohlcv": [
+          "252.1",
+          "259.5",
+          "252.1",
+          "258.0",
+          "9054"
         ],
-        "status": "partial_primary_fields",
-        "note": "Official history row agrees with the secondary archive on the four fields it returns; opening price is absent."
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "primary_exchange_eod_evidence"
       }
     },
     {

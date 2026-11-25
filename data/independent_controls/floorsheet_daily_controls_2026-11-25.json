@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "controls": [
+    {
+      "trade_date": "2026-06-24",
+      "quantity": "10777582",
+      "gross_amount": "4418607486.62",
+      "transaction_count": 72917,
+      "source_evidence_grade": "cross-publisher published daily control; not raw NEPSE API export",
+      "source_evidence": [
+        {
+          "publisher": "MeroLagani",
+          "url": "https://eng.merolagani.com/NewsDetail.aspx?newsID=127826",
+          "published_at": "2026-06-24",
+          "fields": {
+            "quantity": "10777582",
+            "transaction_count": 72917,
+            "gross_amount_rounded_text": "NPR 4.41 billion"
+          }
+        },
+        {
+          "publisher": "ShareSansar",
+          "url": "https://www.sharesansar.com/newsdetail/nepse-index-loses-for-third-consecutive-day-to-close-at-266002-points-2026-06-24",
+          "published_at": "2026-06-24",
+          "fields": {
+            "quantity": "10777582",
+            "transaction_count": 72917,
+            "gross_amount_rounded_text": "NPR 4.41 Arba"
+          }
+        },
+        {
+          "publisher": "The Rising Nepal",
+          "url": "https://epaper.gorkhapatraonline.com/uploads/file/2026/6/risingnepal/2026-06-24-11-49-05-trn-25jun-1.pdf",
+          "published_at": "2026-06-25",
+          "page": 2,
+          "fields": {
+            "quantity": "10777582",
+            "gross_amount": "4418607486.62"
+          }
+        }
+      ],
+      "conflicting_secondary_evidence": [
+        {
+          "publisher": "HamroShare",
+          "url": "https://hamroshare.com.np/news/market-wrap/2026-06-24",
+          "fields": {
+            "quantity_text": "91.58 lakh",
+            "transaction_count": 72066,
+            "gross_amount_text": "NPR 4.32 billion"
+          },
+          "disposition": "unresolved_conflicting_secondary_summary_not_used_as_control"
+        }
+      ],
+      "notes": "Exact gross amount is taken from The Rising Nepal page 2. Quantity is corroborated by MeroLagani, ShareSansar and The Rising Nepal. Transaction count is corroborated by MeroLagani and ShareSansar. The control is a cross-publisher published summary, not a direct raw NEPSE API export."
+    }
+  ]
+}

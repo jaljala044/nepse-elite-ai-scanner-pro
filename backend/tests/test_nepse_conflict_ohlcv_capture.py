@@ -1,7 +1,10 @@
 from __future__ import annotations
 import unittest
 import httpx
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers
+import os
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone
 
 
 def conflict():
@@ -13,6 +16,15 @@ def conflict():
 
 
 class NepseConflictOhlcvCaptureTests(unittest.TestCase):
+
+
+    def test_nepse_timezone_uses_kathmandu_local_date(self):
+        configure_nepse_timezone()
+        self.assertEqual(os.environ.get("TZ"), "Asia/Kathmandu")
+        self.assertEqual(
+            date.today(),
+            datetime.now(ZoneInfo("Asia/Kathmandu")).date(),
+        )
 
     def test_historical_filter_keeps_current_session_payload_id(self):
         class FakeClient:

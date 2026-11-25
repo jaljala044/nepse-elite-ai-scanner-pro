@@ -2,9 +2,16 @@
 """Capture official NEPSE price/volume history for quarantined OHLCV conflicts."""
 from __future__ import annotations
 
+import argparse
+import csv
+import hashlib
+import json
 import os
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
+from pathlib import Path
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -18,11 +25,6 @@ def configure_nepse_timezone():
 
 
 configure_nepse_timezone()
-import argparse, csv, hashlib, json
-from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal, InvalidOperation
-from pathlib import Path
-from urllib.parse import urlparse
 
 DATE_FIELDS = ("businessDate", "business_date", "date", "businessdate")
 OHLCV_FIELDS = {

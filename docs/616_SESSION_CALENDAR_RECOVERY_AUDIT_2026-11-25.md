@@ -58,3 +58,37 @@ inventory, not proof of row-level coverage.
 - Confirmed sessions added by this investigation: 0.
 - Canonical calendar remains blocked; do not use inferred weekdays or file
   presence to fill the gap.
+
+
+## Expanded immutable-tree recovery search
+
+A second path-level search was performed against the exact repository base
+commit named by the backfill manifest:
+
+- Repository: `jaljala044/nepse-history-starter`
+- Base commit: `2ebbe980c635181291d32fc8a731203c17b76726`
+- Recursive tree entries: 573
+- No path matching calendar, session, 616, holiday or equivalent was present.
+- The pinned later starter revision
+  `2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe` has 621 tree entries and likewise
+  no calendar/session/616/holiday artifact path.
+- The pinned `nepse_history_import.py` and
+  `scanner_inputs/prepare_scanner_inputs.py` were inspected; neither contains
+  a calendar path, calendar loader, 616 constant or session-date generator.
+- The backfill manifest remains the only inspected artifact asserting 616
+  approved sessions; it names neither a calendar blob nor a generator input.
+
+This narrows the recovery path: the 616 list was likely an external/local
+preprocessing input or a transient extraction artifact not committed in either
+inspected tree. This is a finding about the inspected commits only, not proof
+that no other branch, fork, workflow artifact or local backup contains it.
+
+## Updated disposition
+
+- Exact 616-date list: still not recovered.
+- Calendar file/path in both inspected immutable trees: none found.
+- Confirmed sessions promoted: 0.
+- Next recovery targets: original operator's local workspace/backups, workflow
+  artifacts around the original backfill, pull-request attachments, forks and
+  commit history around the 616-session extraction. Do not reconstruct the
+  exact list from OHLCV file presence or weekdays.

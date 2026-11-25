@@ -45,6 +45,36 @@ class AnalyzeHistoryPayloadTests(unittest.TestCase):
         self.assertEqual(result["status"], "unmapped_schema")
         self.assertEqual(result["conflict_comparisons"][0]["status"], "unmapped_date_schema")
 
+    def test_date_specific_board_row_matches_source_b_by_symbol(self):
+        payload = {"content": [{
+            "symbol": "BGWT", "openPrice": 940, "highPrice": 992,
+            "lowPrice": 933.4, "closePrice": 945, "totalTradedQuantity": 14028,
+        }], "totalElements": 1}
+        result = MODULE.analyze_date_price_volume_payload(payload, [conflict()])
+        self.assertEqual(result[0]["status"], "matches_source_b")
+        self.assertEqual(result[0]["official_ohlcv"], ["940", "992", "933.4", "945", "14028"])
+
+    def test_date_specific_board_row_missing_open_stays_partial(self):
+        payload = {"content": [{
+            "symbol": "BGWT", "highPrice": 992, "lowPrice": 933.4,
+            "closePrice": 945, "totalTradedQuantity": 14028,
+        }]}
+        result = MODULE.analyze_date_price_volume_payload(payload, [conflict()])
+        self.assertEqual(result[0]["status"], "partial_primary_fields")
+        self.assertEqual(result[0]["missing_fields"], ["open"])
+
+    def test_date_specific_board_empty_response_is_not_a_match(self):
+        result = MODULE.analyze_date_price_volume_payload({"content": [], "totalElements": 0}, [conflict()])
+        self.assertEqual(result[0]["status"], "no_primary_row")
+
+    def test_date_specific_board_can_resolve_symbol_by_security_id(self):
+        payload = {"content": [{
+            "securityId": 9214, "openPrice": 940, "highPrice": 992,
+            "lowPrice": 933.4, "closePrice": 945, "totalTradedQuantity": 14028,
+        }]}
+        result = MODULE.analyze_date_price_volume_payload(payload, [conflict()], {"9214": "BGWT"})
+        self.assertEqual(result[0]["status"], "matches_source_b")
+
     def test_missing_open_is_reported_as_partial_primary_fields(self):
         row = {
             "businessDate": "2026-11-19",

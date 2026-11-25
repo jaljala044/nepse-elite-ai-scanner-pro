@@ -51,6 +51,18 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
             self.assertIn("absolute_member_path", codes)
             self.assertFalse(result["safe_to_extract"])
 
+    def test_empty_dot_and_nul_path_components_are_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._zip(tmp, [
+                ("a//b.csv", b"x"), ("./dot.csv", b"x"),
+                ("folder/../up.csv", b"x"), ("nul\\x00name.csv", b"x"),
+            ])
+            result = inspect_zip(path)
+            codes = {issue["code"] for issue in result["issues"]}
+            self.assertIn("path_traversal_or_empty_component", codes)
+            self.assertIn("nul_byte_in_member_name", codes)
+            self.assertFalse(result["safe_to_extract"])
+
     def test_duplicate_member_names_are_flagged(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "duplicate.zip"

@@ -40,11 +40,11 @@ jobs:
             --end-date 2026-11-25 \
             --days 365 \
             --output-dir /tmp/floorsheet-overlap-raw \
-            --manifest /tmp/floorsheet-overlap-manifest.json
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json
       - name: Compare contract sets, rows and dates
         run: |
           python backend/compare_floorsheet_manifest.py \
-            --manifest /tmp/floorsheet-overlap-manifest.json \
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \
             --output /tmp/floorsheet-overlap-report.json
       - name: Upload comparison metadata report
         uses: actions/upload-artifact@v4
@@ -52,6 +52,6 @@ jobs:
           name: floorsheet-multi-date-overlap-audit
           path: |
             /tmp/floorsheet-overlap-report.json
-            /tmp/floorsheet-overlap-manifest.json
+            /tmp/floorsheet-overlap-raw/manifest.json
           if-no-files-found: error
           retention-days: 30

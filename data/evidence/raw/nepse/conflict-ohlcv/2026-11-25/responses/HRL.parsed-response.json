@@ -1,0 +1,38 @@
+{
+  "content": [
+    {
+      "businessDate": "2026-11-19",
+      "totalTrades": 420,
+      "totalTradedQuantity": 49184,
+      "totalTradedValue": 23836472.4,
+      "highPrice": 488.0,
+      "lowPrice": 480.0,
+      "closePrice": 483.9
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "unsorted": true,
+      "sorted": false,
+      "empty": true
+    },
+    "offset": 0,
+    "pageNumber": 0,
+    "pageSize": 500,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalElements": 1,
+  "last": true,
+  "totalPages": 1,
+  "size": 500,
+  "number": 0,
+  "sort": {
+    "unsorted": true,
+    "sorted": false,
+    "empty": true
+  },
+  "first": true,
+  "numberOfElements": 1,
+  "empty": false
+}

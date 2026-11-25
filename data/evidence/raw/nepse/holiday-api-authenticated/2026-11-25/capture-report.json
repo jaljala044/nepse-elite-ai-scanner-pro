@@ -2,10 +2,10 @@
   "source_id": "NEPSE_OFFICIAL_HOLIDAY_API",
   "source_url": "https://nepalstock.com.np/api/nots/holiday/list?year=2026",
   "requested_year": 2026,
-  "retrieved_at_utc": "2026-11-25T13:13:17.600880Z",
+  "retrieved_at_utc": "2026-11-25T13:13:41.638238Z",
   "http_status": 200,
   "response_headers": {
-    "date": "Wed, 25 Nov 2026 13:13:17 GMT",
+    "date": "Wed, 25 Nov 2026 13:13:41 GMT",
     "content-type": "application/json",
     "server": "nepse-website"
   },

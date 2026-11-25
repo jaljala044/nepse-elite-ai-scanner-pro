@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "backend" / "capture_nepse_conflict_ohlcv.py"
+MODULE_PATH = Path(__file__).resolve().parents[1] / "capture_nepse_conflict_ohlcv.py"
 SPEC = importlib.util.spec_from_file_location("capture_nepse_conflict_ohlcv", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)

@@ -39,6 +39,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nepse-hf-inventory
-          path: backend/data/raw/huggingface/manifests/*.json
+          path: data/raw/huggingface/manifests/*.json
           if-no-files-found: error
           retention-days: 30

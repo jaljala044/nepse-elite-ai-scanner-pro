@@ -429,3 +429,49 @@ The RHGCL Price History query for 07/28/2025 completed and returned exactly one 
 This matches Source A's RHGCL close, open, high, low and volume exactly. MeroLagani still labels the close-like field LTP.
 
 At this point, MeroLagani date-filtered results for BGWT, MEHL, RAWA and RHGCL all support Source A's LTP field. ULHC query remains pending.
+
+
+### Final MeroLagani pass: all five 2025-07-28 records queried
+
+The remaining ULHC query completed. Its dated Price History row returned:
+- Market Date 2025/07/28
+- LTP 510.75; percentage change 0.49
+- High 515.00; Low 495.00; Open 509.00
+- Quantity 32,288; Turnover 16,273,342.10
+
+Together with the four prior MeroLagani date-filtered queries, all five now have one dated result each. All five LTP values match Source A's close exactly; all five open/high/low/volume values also match Source A exactly:
+
+| Symbol | MeroLagani LTP | Source A close | Source B Close/VWAP | Open | High | Low | Volume |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BGWT | 957.17 | 957.17 | 945.00 | 940.00 | 992.00 | 933.40 | 14,028 |
+| MEHL | 475.63 | 475.63 | 470.83 | 471.10 | 480.50 | 460.00 | 29,753 |
+| RAWA | 796.90 | 796.90 | 794.83 | 796.00 | 811.00 | 780.30 | 3,165 |
+| RHGCL | 357.05 | 357.05 | 350.07 | 346.70 | 362.00 | 341.40 | 296,715 |
+| ULHC | 510.75 | 510.75 | 504.00 | 509.00 | 515.00 | 495.00 | 32,288 |
+
+MeroLagani result details:
+- BGWT: LTP 957.17; % change 0.84; turnover 13,256,345.00.
+- MEHL: LTP 475.63; % change -1.05; turnover 14,008,898.10.
+- RAWA: LTP 796.90; % change -1.64; turnover 2,515,662.50.
+- RHGCL: LTP 357.05; % change 5.03; turnover 103,872,614.40.
+- ULHC: LTP 510.75; % change 0.49; turnover 16,273,342.10.
+
+Each browser query returned exactly one record for 2025/07/28. The five company pages:
+- https://merolagani.com/CompanyDetail.aspx?symbol=BGWT
+- https://merolagani.com/CompanyDetail.aspx?symbol=MEHL
+- https://merolagani.com/CompanyDetail.aspx?symbol=RAWA
+- https://merolagani.com/CompanyDetail.aspx?symbol=RHGCL
+- https://merolagani.com/CompanyDetail.aspx?symbol=ULHC
+
+#### Evidence conclusion and data-field decision
+
+The five disputed close values in Source A are independently corroborated by MeroLagani's dated LTP field. Source A also matches MeroLagani's dated open/high/low/quantity for all five. Source B's values match the ShareSansarScraper daily board's Close/VWAP field, which is distinct from MeroLagani's LTP. Thus the discrepancy is best understood as a close-field semantic mismatch: LTP/last-trade-style field versus full-day VWAP-style field.
+
+For the project's OHLCV schema, the close field should mean the exchange's designated session closing price, not full-day VWAP. On 2025-07-28 NEPSE's weighted-average closing-price rule was in force. MeroLagani's historical field is explicitly labelled LTP and exactly matches Source A, which strongly supports Source A as the practical close candidate, but does not by itself certify that MeroLagani's LTP column is NEPSE's officially designated weighted closing price. The source is a secondary publisher. The original NEPSE EOD export or a written confirmation of the historical field/method is still required to satisfy the project's primary-source provenance gate.
+
+Decision:
+- Secondary cross-check: PASS for all five (MeroLagani dated LTP and O/H/L/quantity exactly match Source A).
+- Competing full-day VWAP interpretation: documented as a separate measure; do not place it in the OHLCV close field.
+- Primary exchange certification / official close-method confirmation: NOT PASS.
+- Keep the five quarantined pending primary-source/official-method confirmation. Do not train or promote the rows yet.
+- No PR merge.

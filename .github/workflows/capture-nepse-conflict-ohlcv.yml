@@ -47,8 +47,9 @@ jobs:
             git add "$target"
             if ! git diff --cached --quiet; then
               git commit -m "data: archive primary NEPSE OHLCV conflict responses"
-              git pull --rebase origin main
-              git push
+              # workflow_dispatch runs on the selected branch; preserve that branch
+              # and never rebase captured evidence onto main (which can conflict).
+              git push origin "HEAD:${GITHUB_REF_NAME}"
             fi
           fi
       - name: Upload capture artifact

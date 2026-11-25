@@ -41,7 +41,40 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2026/2026-11-19.csv",
+        "source_file_blob_sha": "79fbb09935a1b704a3e247a06c1c2ed55220dcba",
+        "source_file_sha256": "98a12d21865c80cb96362fbb8a33631c55fc1ca49d61528b8255409f20bbb732",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2026/2026-11-19.csv",
+        "observed_ohlcv": [
+          "331",
+          "334.2",
+          "330",
+          "331.8",
+          "105340"
+        ],
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_nepse_partial_corroboration": {
+        "source": "NEPSE per-security price-volume history",
+        "date": "2026-11-19",
+        "confirmed_fields": [
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "missing_fields": [
+          "open"
+        ],
+        "status": "partial_primary_fields",
+        "note": "Official history row agrees with the secondary archive on the four fields it returns; opening price is absent."
+      }
     },
     {
       "symbol": "BGWT",
@@ -76,7 +109,25 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2025/2025-07-28.csv",
+        "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+        "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+        "observed_ohlcv": [
+          "940",
+          "992",
+          "933.4",
+          "957.17",
+          "14028"
+        ],
+        "comparison_to_repository_sources": "matches_source_a",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      }
     },
     {
       "symbol": "HRL",
@@ -111,7 +162,40 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2026/2026-11-19.csv",
+        "source_file_blob_sha": "79fbb09935a1b704a3e247a06c1c2ed55220dcba",
+        "source_file_sha256": "98a12d21865c80cb96362fbb8a33631c55fc1ca49d61528b8255409f20bbb732",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2026/2026-11-19.csv",
+        "observed_ohlcv": [
+          "483",
+          "488",
+          "480",
+          "483.9",
+          "49184"
+        ],
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_nepse_partial_corroboration": {
+        "source": "NEPSE per-security price-volume history",
+        "date": "2026-11-19",
+        "confirmed_fields": [
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "missing_fields": [
+          "open"
+        ],
+        "status": "partial_primary_fields",
+        "note": "Official history row agrees with the secondary archive on the four fields it returns; opening price is absent."
+      }
     },
     {
       "symbol": "MEHL",
@@ -146,7 +230,25 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2025/2025-07-28.csv",
+        "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+        "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+        "observed_ohlcv": [
+          "471.1",
+          "480.5",
+          "460",
+          "475.63",
+          "29753"
+        ],
+        "comparison_to_repository_sources": "matches_source_a",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      }
     },
     {
       "symbol": "RAWA",
@@ -181,7 +283,25 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2025/2025-07-28.csv",
+        "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+        "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+        "observed_ohlcv": [
+          "796",
+          "811",
+          "780.3",
+          "796.9",
+          "3165"
+        ],
+        "comparison_to_repository_sources": "matches_source_a",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      }
     },
     {
       "symbol": "RHGCL",
@@ -216,7 +336,25 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2025/2025-07-28.csv",
+        "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+        "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+        "observed_ohlcv": [
+          "346.7",
+          "362",
+          "341.4",
+          "357.05",
+          "296715"
+        ],
+        "comparison_to_repository_sources": "matches_source_a",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      }
     },
     {
       "symbol": "RHGCL",
@@ -251,7 +389,40 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2026/2026-11-19.csv",
+        "source_file_blob_sha": "79fbb09935a1b704a3e247a06c1c2ed55220dcba",
+        "source_file_sha256": "98a12d21865c80cb96362fbb8a33631c55fc1ca49d61528b8255409f20bbb732",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2026/2026-11-19.csv",
+        "observed_ohlcv": [
+          "252.1",
+          "259.5",
+          "252.1",
+          "258",
+          "9054"
+        ],
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      },
+      "official_nepse_partial_corroboration": {
+        "source": "NEPSE per-security price-volume history",
+        "date": "2026-11-19",
+        "confirmed_fields": [
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "missing_fields": [
+          "open"
+        ],
+        "status": "partial_primary_fields",
+        "note": "Official history row agrees with the secondary archive on the four fields it returns; opening price is absent."
+      }
     },
     {
       "symbol": "ULHC",
@@ -286,7 +457,25 @@
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
       "resolution_status": "quarantined_unresolved",
-      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved.",
+      "secondary_archive_evidence": {
+        "source": "ShareSansar-derived append-only archive",
+        "repository": "srijankarki07/nepse-data",
+        "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+        "path": "data/daily/2025/2025-07-28.csv",
+        "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+        "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+        "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+        "observed_ohlcv": [
+          "509",
+          "515",
+          "495",
+          "510.75",
+          "32288"
+        ],
+        "comparison_to_repository_sources": "matches_source_a",
+        "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+      }
     }
   ],
   "canonical_promotion_allowed": false

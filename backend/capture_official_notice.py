@@ -71,7 +71,7 @@ def capture_notice(url: str, source_id: str, output_dir: str | Path,
         "calendar_populated": False,
         "human_review_required": True,
     }
-    encoded = json.dumps(metadata, indent=2, ensure_ascii=False) + "\\n"
+    encoded = json.dumps(metadata, indent=2, ensure_ascii=False) + "\n"
     if metadata_path.exists() and metadata_path.read_text(encoding="utf-8") != encoded:
         raise RuntimeError("content-addressed notice metadata conflicts with existing file")
     metadata_path.write_text(encoded, encoding="utf-8")

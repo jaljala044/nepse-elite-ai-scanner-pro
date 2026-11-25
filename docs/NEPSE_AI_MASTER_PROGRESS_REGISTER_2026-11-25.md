@@ -685,3 +685,14 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 3. Investigate the failed latest-index coverage cross-check and distinguish missing dates from session-calendar uncertainty.
 4. Continue primary-source acquisition for the 281-equity + 47-fund universe and official session calendar.
 5. Obtain a real, authorized floorsheet sample and complete source-specific mapping plus cross-publisher reconciliation before broker history aggregation.
+
+### Artifact-level verification — OHLCV exception ledger and recent index dates
+
+- Downloaded workflow artifact `nepse-ohlcv-row-audit` (run `45539332700`, artifact `14987713978`) and independently inspected the ZIP. ZIP SHA-256: `c4a6da683f97d97011605ec38e1eeb462ee89be06d83b747a743e8f713bdb0d2`.
+- The generated JSON and CSV ledgers each contain 1,339 records: 1,331 invalid OHLC rows plus 8 cross-source conflict keys. All IDs are unique; every exception remains `quarantined_unresolved`.
+- Verified the ledger's `source_audit_report_sha256` against the included audit report. All 1,331 invalid rows have source commit, path, file SHA-256, physical CSV line and raw row. All eight conflicts preserve both source versions with pinned commit/path/file hash and row. JSON and CSV record counts match.
+- Ledger SHA-256 values: JSON `880b569bdd99bb6d37bd7b17a8646f36bb133815a9c12ff3d1d45b7e974b663c`; CSV `d3e2e0c8fc6dc0e003d68f6a7943081cdf643417dd9cd36548a942777d4bb3b8`.
+- Third-source SocrateAI cross-check gives a candidate match to `nepse-history-starter` for the 2025-07-28 closes on MEHL, RAWA, RHGCL and ULHC, and the 2026-11-19 RHGCL close; it also supports the history-starter close on API and HRL for 2026-11-19 but shows small volume/low differences. These are third-party mirror matches, not NEPSE-primary confirmation, so all eight conflicts stay quarantined.
+- Recent index cross-check is not a missing-file/transport failure: all 120 selected index files downloaded, 117 contain one valid row and 3 have anomalies (2026-06-01 exact duplicate rows; 2026-07-03 index high below OHLC; 2026-07-07 conflicting duplicate rows). The workflow step exits nonzero on those quality anomalies. No date-level exchange calendar is thereby verified.
+- YONEPSE comparison is also a third-party mirror comparison. Its 120 dates classify as 116 numeric-difference cases, 3 SocrateAI row anomalies and 1 provisional latest date; numeric precision/turnover differences require separate field-level review, not automatic source selection.
+

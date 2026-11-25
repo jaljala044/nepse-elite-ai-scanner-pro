@@ -42,6 +42,9 @@ def _read_rows(paths: list[str | Path]) -> list[dict]:
                         item[field] = value
                     if item["volume"] < 0 or any(item[field] <= 0 for field in ("open","high","low","close")):
                         raise ValueError("prices must be positive and volume non-negative")
+                    if (item["high"] < max(item["open"], item["close"], item["low"])
+                            or item["low"] > min(item["open"], item["close"], item["high"])):
+                        raise ValueError("invalid_ohlc_bounds")
                 except (InvalidOperation, ValueError) as exc:
                     raise ValueError(f"{source_path}:{line}: {exc}") from exc
                 rows.append(item)

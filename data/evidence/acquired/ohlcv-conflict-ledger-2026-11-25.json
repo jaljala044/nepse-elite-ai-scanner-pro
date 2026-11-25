@@ -995,7 +995,74 @@
         "RHGCL",
         "ULHC"
       ],
-      "result": "No dated historical rows or usable history/API route could be inspected. This is not evidence that Chukul lacks the data."
+      "result": "No dated historical rows or usable history/API route could be inspected. This is not evidence that Chukul lacks the data.",
+      "extended_browser_run_id": "c7614bb1-ac5c-4558-89ba-152d76dca20f",
+      "extended_duration_seconds": 792,
+      "public_navigation_explored": [
+        "Dashboard",
+        "Market",
+        "Broker",
+        "Bulk Transaction",
+        "Buy/Sell Vol",
+        "Fundamental",
+        "Technical",
+        "Scanner",
+        "Portfolio",
+        "Signals",
+        "Chart"
+      ],
+      "profile_route_attempt": "https://chukul.com/stock-profile?symbol=BGWT",
+      "profile_route_result": "30-second page-load timeout",
+      "chart_observed": {
+        "provider": "TradingView",
+        "dashboard_symbol": "NEPSE index",
+        "visible_timeframes": [
+          "5M",
+          "15M",
+          "30M",
+          "1H",
+          "2H"
+        ],
+        "daily_history_selector": false
+      },
+      "login_url": "https://chukul.com/login",
+      "pricing_url": "https://chukul.com/pricing",
+      "premium_tiers_visible": [
+        "Elite",
+        "Platinum",
+        "Diamond"
+      ],
+      "dashboard_ticker_only_not_historical": {
+        "BGWT": {
+          "displayed_price": 505,
+          "displayed_change": 5,
+          "volume": 8422
+        },
+        "MEHL": {
+          "displayed_price": 262,
+          "displayed_change": 6.2,
+          "volume": 87930
+        },
+        "RAWA": {
+          "displayed_price": 433,
+          "displayed_change": 7,
+          "volume": 52245
+        },
+        "RHGCL": {
+          "displayed_price": 260,
+          "displayed_change": 4.8,
+          "volume": 35907
+        },
+        "ULHC": {
+          "displayed_price": 345,
+          "displayed_change": 8,
+          "volume": 45475
+        }
+      },
+      "classification": "public_historical_data_not_verified_login_or_subscription_may_be_required",
+      "authenticated_or_paid_access_tested": false,
+      "no_historical_ohlcv_rows_acquired": true,
+      "note": "Dashboard ticker values are current/recent observations and must not be used as target-date evidence. This is not proof Chukul lacks the historical data."
     },
     "primary_evidence_gate": "not_pass",
     "canonical_promotion_allowed": false

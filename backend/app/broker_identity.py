@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 @dataclass(frozen=True)
 class BrokerNameObservation:
@@ -158,20 +159,35 @@ def aggregate_broker_side(records: list[dict]) -> list[dict]:
         side = row.get("side")
         if side not in {"buy", "sell"}:
             raise ValueError("side must be buy or sell")
-        quantity = int(row["quantity"])
-        amount = float(row["amount"])
-        if quantity < 0 or amount < 0:
-            raise ValueError("quantity and amount must be non-negative")
+        try:
+            quantity_decimal = Decimal(str(row["quantity"]))
+            amount = Decimal(str(row["amount"]))
+        except (KeyError, InvalidOperation, TypeError) as exc:
+            raise ValueError("quantity and amount must be valid decimals") from exc
+        if (not quantity_decimal.is_finite() or not amount.is_finite()
+                or quantity_decimal < 0 or amount < 0
+                or quantity_decimal != quantity_decimal.to_integral_value()):
+            raise ValueError("quantity must be a non-negative integer and amount a finite non-negative decimal")
+        quantity = int(quantity_decimal)
         status = row.get("identity_status", "unmapped")
+        if status not in {"verified", "ambiguous", "unmapped", "rejected"}:
+            raise ValueError("unsupported identity_status")
         entity = row.get("broker_entity_id") if status == "verified" else None
+        if status == "verified" and not entity:
+            raise ValueError("verified identity requires broker_entity_id")
+        if status != "verified" and row.get("broker_entity_id") is not None:
+            raise ValueError("unresolved identity cannot carry broker_entity_id")
         key = (row["session_date"], row["security_id"], entity, side, status)
         item = totals.setdefault(key, {
             "session_date": key[0], "security_id": key[1],
             "broker_entity_id": entity, "side": side,
-            "identity_status": status, "quantity": 0, "amount": 0.0,
+            "identity_status": status, "quantity": 0, "amount": Decimal("0"),
             "trade_count": 0,
         })
         item["quantity"] += quantity
         item["amount"] += amount
         item["trade_count"] += 1
-    return [totals[k] for k in sorted(totals, key=lambda x: tuple("" if v is None else str(v) for v in x))]
+    output = [totals[k] for k in sorted(totals, key=lambda x: tuple("" if v is None else str(v) for v in x))]
+    for item in output:
+        item["amount"] = str(item["amount"])
+    return output

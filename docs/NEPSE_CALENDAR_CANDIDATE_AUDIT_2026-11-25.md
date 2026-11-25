@@ -28,3 +28,27 @@ Each row is a dated market-summary record and therefore a useful candidate for c
 
 ## Output
 `data/reference/nepse-session-calendar-candidates-2026.csv` is an input to reconciliation, not a canonical session calendar.
+
+
+
+## Update — official NEPSE 2026 closure evidence acquired
+
+The official NEPSE holiday API response was captured on 2026-11-25 and
+contains 41 unique dates. The canonical calendar now records 40
+`verified_closed` dates and one `verified_exceptional_closed` date
+(2026-09-21, the API's emergency market closure entry). The raw response
+SHA-256 is
+`dd1777e3c61623048e00dc170d860659b14b8821ffabff8338002ccafdb2ea8f`.
+All raw bytes and date-level claims are archived in
+`data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25/` and
+`data/evidence/acquired/calendar-evidence-manifest-2026.json`.
+
+The 198 market-summary dates remain candidate records; none of those 198
+rows is automatically promoted. There are no overlaps between the 41
+official holiday dates and those market-summary candidates, and no
+`status=ok` overlap in the pinned floorsheet publisher manifest. This
+supports the closure claims but does not prove unlisted dates were open.
+
+Current calendar coverage from this capture: 41 verified closure dates,
+zero verified open dates. The exact 616-session historical list remains
+unrecovered.

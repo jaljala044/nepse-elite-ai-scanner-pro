@@ -114,3 +114,51 @@ Broker evidence artifact:
 - ZIP SHA-256: `dfd2d18a5266421e10394affe77619551da2afbaed79a20e385471c623214fc9`
 - Broker coverage JSON SHA-256: `65b38c84aa29ce7cb7451c8ae8e327f422c970d3e75a6ef313a559721063689e`
 - Broker activity CSV SHA-256: `64319f4ec844c3b25e741270d064907f43a379213cf79e11d88c7f01f32b4ab3`
+
+
+## Second overlap batch — preceding 30 shared dates (priority 100, partial)
+
+A second pinned batch selected the 30 common dates immediately preceding the latest ten-date pilot, without reusing those ten dates. Window: **2026-09-02 through 2026-10-27**.
+
+- Samir: **1,489,600** contracts.
+- SocrateAI: **1,490,803** contracts.
+- Shared contract IDs and exact shared-row matches: **1,489,600**.
+- SocrateAI-only contracts: **1,203**.
+- Samir-only contracts: **0**.
+- Shared-row conflicts: **0**.
+- Quantity surplus: **1,203,481 shares**.
+- Gross-turnover surplus: **NPR 75,484,775.62**.
+- Both sources: zero malformed rows, duplicate contract IDs and quantity × rate / amount exceptions across these 30 dates; all 30 row-date checks passed.
+- Broker-code union: 91 codes in each archive across the window, zero source-only codes, and identical per-date code sets on all 30 dates. Seven dates contained 90 codes; the other 23 contained 91.
+- The derived exception ledger contains **1,203** unresolved SocrateAI-only contract records.
+
+### Combined latest 40 shared dates
+
+Combining this batch with the 10-date pilot above:
+
+| Measure | Combined result |
+|---|---:|
+| Dates compared | 40 |
+| Samir contracts | 2,061,219 |
+| SocrateAI contracts | 2,062,684 |
+| Shared exact contract rows | 2,061,219 |
+| SocrateAI-only contracts | 1,465 |
+| Samir-only contracts | 0 |
+| Shared-row field conflicts | 0 |
+| Quantity surplus | 1,391,155 shares |
+| Gross-turnover surplus | NPR 95,442,892.48 |
+
+These 40 dates are the latest 40 common date-named files, not 40 exchange-verified sessions and not all 157 common dates in the one-year candidate window. No independent daily control totals were supplied for this 30-date batch. The persistent source asymmetry is a high-priority reconciliation lead, not proof that all 1,465 rows are valid missing trades.
+
+### Reproducibility
+
+- [30-date overlap workflow run 45597195384](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45597195384) — passed.
+- [Backend suite run 45597195251](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45597195251) — **513 tests passed**.
+- Artifact ID: `15014345535`
+- Artifact ZIP SHA-256: `70ca2ab0845f807403a046f38a61e06e69e9480b9e880137cccf13e1a477f561`
+- Report JSON SHA-256: `161f35f40dfd23903a3f55505771f35e8fc74990868e3ba41001eda7c3184ec4`
+- Manifest SHA-256: `0b44e5d35c69cfeecab556fb6101b94bcf5db475985805a1966f5349886bb54f`
+- Exception ledger JSON SHA-256: `035a3ce3b6e27ee6409dbbb26c70787436cb1c69f24cf88eca2f4ad2c9e4496e`
+- Broker coverage JSON SHA-256: `e277915e6bb111725acaa62fe31b007dfcad9a146ade3c7e736e7b327817b619`
+
+The artifact contains only derived reports, manifests and exception/activity ledgers. Raw CSVs remained in the temporary runner workspace.

@@ -50,6 +50,14 @@ class FloorsheetOverlapAcquisitionTests(unittest.TestCase):
             root = Path(temp)
             output_dir = root / "raw"
             manifest = root / "manifest.json"
+            controls_file = root / "controls.json"
+            controls_file.write_text(json.dumps({"controls": [{
+                "trade_date": "2026-11-24",
+                "quantity": "2",
+                "gross_amount": "200",
+                "transaction_count": 1,
+                "source_evidence": [{"publisher": "test"}],
+            }]}), encoding="utf-8")
             argv = [
                 "acquire_floorsheet_overlap.py",
                 "--limit", "1",
@@ -57,6 +65,7 @@ class FloorsheetOverlapAcquisitionTests(unittest.TestCase):
                 "--days", "10",
                 "--output-dir", str(output_dir),
                 "--manifest", str(manifest),
+                "--controls-file", str(controls_file),
             ]
             with patch("sys.argv", argv):
                 main()
@@ -65,6 +74,8 @@ class FloorsheetOverlapAcquisitionTests(unittest.TestCase):
             self.assertEqual(data["source_revisions"]["samir"]["commit"], SAMIR_COMMIT)
             self.assertEqual(data["source_revisions"]["socrateai"]["commit"], SOCRATE_COMMIT)
             self.assertEqual(len(data["pairs"][0]["left_sha256"]), 64)
+            self.assertEqual(data["pairs"][0]["independent_control"]["transaction_count"], 1)
+            self.assertEqual(data["pairs"][0]["independent_control"]["source_evidence"][0]["publisher"], "test")
             self.assertTrue((output_dir / "samir-2026-11-24.csv").exists())
             self.assertEqual(mocked_fetch.call_count, 4)
 

@@ -51,15 +51,23 @@ class CorporateActionEvidence:
 def corporate_action_as_known(actions: list[CorporateActionEvidence], *,
                               security_id: str, decision_time: str) -> dict:
     cutoff = _time(decision_time)
-    selected = [a for a in actions if a.security_id == security_id
-                and _time(a.available_at) <= cutoff and a.status == "confirmed"]
+    visible = [a for a in actions if a.security_id == security_id
+               and _time(a.available_at) <= cutoff]
+    selected = [a for a in visible if a.status == "confirmed"]
     selected.sort(key=lambda a: (a.ex_date, a.action_id))
+    excluded = sorted(
+        ({"action_id": a.action_id, "status": a.status, "evidence_id": a.evidence_id}
+         for a in visible if a.status != "confirmed"),
+        key=lambda row: row["action_id"],
+    )
     return {
         "security_id": security_id,
         "decision_time": cutoff.isoformat().replace("+00:00", "Z"),
         "actions": selected,
-        "evidence_ids": sorted({a.evidence_id for a in selected}),
-        "all_visible_actions_confirmed": all(a.status == "confirmed" for a in selected),
+        "visible_action_count": len(visible),
+        "excluded_visible_actions": excluded,
+        "evidence_ids": sorted({a.evidence_id for a in visible}),
+        "all_visible_actions_confirmed": all(a.status == "confirmed" for a in visible),
     }
 
 

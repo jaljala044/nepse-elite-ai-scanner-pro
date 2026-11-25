@@ -417,3 +417,15 @@ The three MeroLagani results do not by themselves certify NEPSE's official close
 - MeroLagani RHGCL/ULHC still pending.
 - Source A is provisionally better supported if the dataset's intended close field is LTP; Source B is supported if the intended field is full-day VWAP. The schema must state which measure it stores.
 - All five remain quarantined until the canonical close-field definition and NEPSE method are confirmed. No training, no promotion, no merge.
+
+
+#### RHGCL MeroLagani result (additional completed query)
+
+The RHGCL Price History query for 07/28/2025 completed and returned exactly one row:
+- LTP 357.05; % change 5.03
+- High 362.00; Low 341.40; Open 346.70
+- Quantity 296,715; Turnover 103,872,614.40
+
+This matches Source A's RHGCL close, open, high, low and volume exactly. MeroLagani still labels the close-like field LTP.
+
+At this point, MeroLagani date-filtered results for BGWT, MEHL, RAWA and RHGCL all support Source A's LTP field. ULHC query remains pending.

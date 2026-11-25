@@ -433,3 +433,31 @@ and rights gates. P1 remains blocked.
    record or publisher correction log.
 5. Continue recovery of primary NEPSE session notices and the exact 616-date
    calendar input; do not promote candidates based on broker or file coverage.
+
+
+## New primary-source capture success — CDSC current directory
+
+The new GitHub Actions evidence-capture workflow successfully downloaded and
+archived the official CDSC "Download All CSV" response:
+
+- URL: `https://cdsc.com.np/export-clearing-member-csv`
+- Retrieval: 2026-11-25 13:04:33 UTC; HTTP 200; text/csv;charset=UTF-8
+- Raw bytes: 10,893; 92 current clearing-member rows.
+- Raw file: `data/evidence/raw/cdsc/2026-11-25/clearing-members.csv`
+- SHA-256: `feb4597d66ad37dbc6f0ed2a9fd54c4fc7c04e67ce0b91c066bb9574c1c49de3`
+- Git blob OID: `e48b39abe706b84a336af8735e790286ca71b8f3`
+- Response headers, source URL, checksum and capture report are preserved in
+  the same directory. Source-object manifest entry is present.
+- Capture workflow run: `45619882786`; artifact ID `15024585251`; artifact
+  ZIP SHA-256 `5ed2bba64d4d6d45c85a6833ed64fdc855c8f22c887ab196a7481d7ff2b0289c`.
+- Raw evidence archive commit: `442439ec793ae7263521af767fd8d89996972c04`.
+
+The 92-code primary snapshot reproduces the 49/49, 91/91 and 91/91 numeric
+code matches across the three historical floorsheet samples. It does not
+supply historical broker-name effective dates or prove historical legal
+identity. Reuse terms are not independently reviewed.
+
+The same workflow attempted the official NEPSE Holiday Listing page, but the
+runner received HTTP/2 stream protocol errors. A retry using HTTP/1.1 and the
+non-www host fallback has been added; do not treat the calendar evidence gate
+as satisfied until that retry yields readable primary notice bytes.

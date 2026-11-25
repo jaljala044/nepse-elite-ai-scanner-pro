@@ -70,7 +70,7 @@ def main() -> int:
     args = parser.parse_args()
     report = audit_adjustment_basis(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({k:report[k] for k in (
         "input_row_count","source_symbol_basis_issue_count","cross_source_basis_conflict_count",
         "adjustments_applied","promotion_allowed")}, indent=2))

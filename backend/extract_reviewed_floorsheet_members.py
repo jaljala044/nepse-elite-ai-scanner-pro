@@ -162,7 +162,7 @@ def main() -> int:
         max_total_extracted_bytes=args.max_total_extracted_bytes,
         max_member_bytes=args.max_member_bytes,
     )
-    rendered = json.dumps(result, indent=2, ensure_ascii=False) + "\\n"
+    rendered = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
     if args.manifest_output:
         args.manifest_output.parent.mkdir(parents=True, exist_ok=True)
         args.manifest_output.write_text(rendered, encoding="utf-8")

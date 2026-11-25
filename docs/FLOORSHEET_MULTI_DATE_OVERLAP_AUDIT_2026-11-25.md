@@ -93,3 +93,24 @@ Ledger artifact:
 - Ledger CSV SHA-256: `78562993608eda4a75cf49b61ccf915dd1e2c07e05da01880ea6bb3dfd221a1e`
 
 The artifact contains the report, source manifest and derived exception ledger. It does not contain the raw CSV payloads.
+
+
+## Cross-date broker-code coverage — priority 98
+
+The ten-date audit now includes a separate raw broker-code activity report. Across the full sample:
+
+- **91 distinct broker codes** appear in each publisher archive.
+- The two sources have an identical 91-code union across the window.
+- There are no source-only broker codes in either direction.
+- Each of the 10 dates has identical buyer/seller broker-code presence across both sources.
+- Six dates have 91 codes; four dates (2026-11-02 through 2026-11-05) have 90 codes.
+- Code presence and buyer/seller observation counts are retained per date and per source in the CSV activity report.
+
+This is code coverage only. It does not verify that a code maps to the same legal entity across all historical dates, and it does not identify beneficial owners. Effective-dated legal identity remains unresolved.
+
+Broker evidence artifact:
+- [Multi-date overlap audit run 45596771362](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596771362) — passed.
+- Artifact ID: `15013881435`
+- ZIP SHA-256: `dfd2d18a5266421e10394affe77619551da2afbaed79a20e385471c623214fc9`
+- Broker coverage JSON SHA-256: `65b38c84aa29ce7cb7451c8ae8e327f422c970d3e75a6ef313a559721063689e`
+- Broker activity CSV SHA-256: `64319f4ec844c3b25e741270d064907f43a379213cf79e11d88c7f01f32b4ab3`

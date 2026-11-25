@@ -61,3 +61,13 @@ A second repository snapshot was inspected: `socrateai-official/nepse-open-data`
 The 614/616 match strengthens the candidate reconstruction, and the seven market-summary gaps now have a second date-file witness. The two missing index dates remain unresolved. File presence alone still does not prove the index rows are correct or that the exact original scanner calendar has been recovered.
 
 Machine-readable file: `data/evidence/candidates/nepse-616-session-index-crosscheck-2024-2026.csv`.
+
+
+## Secondary session-report check for the two index-date gaps — 2026-11-25
+
+The two dates absent from the pinned SocrateAI index tree both have contemporaneous secondary reports describing NEPSE trading sessions:
+
+- **2025-04-03:** Kathmandu Post reported NEPSE's index movement, traded shares and transaction count on Thursday 3 April 2025: https://kathmandupost.com/money/2025/04/03/nepse-index-increases-by-3-35-points-trading-volume-reaches-rs7-84-billion.
+- **2026-11-20:** NepseIQ reported the completed 20 November session: https://nepseiq.com/nepse-today/2026-11-20. ShareSansar also published a same-day close report: https://www.sharesansar.com/newsdetail/nepse-index-slides-down-by-738-points-only-two-sector-closes-at-green-2026-11-20. The latter shares lineage risk with the ShareSansar-scraped EOD candidate source.
+
+These reports strengthen the two dates as session candidates, but neither is primary NEPSE evidence. They remain `candidate_unverified`; no canonical `verified_open` rows are added. Machine-readable references: `data/evidence/candidates/nepse-session-secondary-report-crosscheck.csv`.

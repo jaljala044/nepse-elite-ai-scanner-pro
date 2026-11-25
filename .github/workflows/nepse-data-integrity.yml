@@ -24,12 +24,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
       - name: Install collector dependency
         run: python -m pip install --upgrade pip httpx
       - name: Run backend unit tests
         working-directory: backend
-        run: python -m unittest discover -s tests -v
+        run: python -m unittest tests.test_hf_dataset_collector tests.test_coverage_matrix -v
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000

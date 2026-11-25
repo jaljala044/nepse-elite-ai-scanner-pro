@@ -61,9 +61,9 @@ jobs:
             --csv-output /tmp/floorsheet-source-exception-ledger.csv
       - name: Analyze broker-code presence and activity
         run: |
-          python backend/analyze_floorsheet_broker_code_coverage.py \\
-            --manifest /tmp/floorsheet-overlap-raw/manifest.json \\
-            --json-output /tmp/floorsheet-broker-code-coverage.json \\
+          python backend/analyze_floorsheet_broker_code_coverage.py \
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \
+            --json-output /tmp/floorsheet-broker-code-coverage.json \
             --csv-output /tmp/floorsheet-broker-code-activity.csv
       - name: Upload comparison, exception and broker evidence
         uses: actions/upload-artifact@v4

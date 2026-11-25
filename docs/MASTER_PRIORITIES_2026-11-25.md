@@ -17,6 +17,17 @@ unit tests are committed. It intentionally does not infer missing sessions or
 row completeness. The real calendar and source manifests still need to be
 populated and independently verified.
 
+## P1 progress update — 2026-11-25
+- Added 198 dated market-summary records from the starter archive as calendar candidates, all explicitly `candidate_unverified`; none was promoted to a confirmed exchange session.
+- Recorded the source file blob SHA and candidate-audit report.
+- Updated the Hugging Face collector to resolve mutable refs such as `main` to immutable 40-character commit SHAs before inventory/download.
+- Added separate listing and inventory completeness flags so a max-files cap cannot masquerade as a complete inventory.
+- Updated the coverage matrix to preserve downloaded hashes, byte counts and per-file download statuses.
+- Added unit tests for immutable revision resolution and retained the existing calendar/coverage tests.
+- GitHub file contents have been re-fetched to verify commits. CI has not yet been observed for these latest commits.
+
+**Still blocked:** the exact date list behind the starter archive's reported 616 calendar-approved sessions has not been located in the inspected repository paths. The 198 market-summary dates are only candidates, not a substitute.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

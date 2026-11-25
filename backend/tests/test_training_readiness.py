@@ -26,6 +26,14 @@ class TrainingReadinessTests(unittest.TestCase):
         r = evaluate_training_readiness(e)
         self.assertIn("ohlcv_coverage_threshold", r["blockers"])
 
+    def test_non_finite_and_out_of_range_coverage_block_training(self):
+        for value in (float("nan"), float("inf"), -0.01, 1.01):
+            with self.subTest(value=value):
+                e = self.evidence()
+                e["ohlcv_coverage"] = value
+                r = evaluate_training_readiness(e)
+                self.assertIn("ohlcv_coverage_threshold", r["blockers"])
+
     def test_string_true_does_not_pass_boolean_evidence(self):
         e = self.evidence()
         e["source_rights_cleared"] = "true"

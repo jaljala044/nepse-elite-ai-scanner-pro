@@ -80,15 +80,15 @@ class OhlcvSourceDailyReconciliationTests(unittest.TestCase):
 
     def test_duplicate_csv_headers_rejected(self):
         self.a.write_text(
-            "source_id,symbol,date,open,high,low,close,volume,volume\\n",
+            "source_id,symbol,date,open,high,low,close,volume,volume\n",
             encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "duplicate CSV headers"):
             reconcile_ohlcv_sources([self.a])
 
     def test_extra_unmapped_csv_column_rejected(self):
         self.a.write_text(
-            "source_id,symbol,date,open,high,low,close,volume,extra\\n"
-            "A,AAA,2026-11-24,9,11,8,10,100,unmapped\\n",
+            "source_id,symbol,date,open,high,low,close,volume,extra\n"
+            "A,AAA,2026-11-24,9,11,8,10,100,unmapped\n",
             encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "extra_unmapped_columns"):
             reconcile_ohlcv_sources([self.a])

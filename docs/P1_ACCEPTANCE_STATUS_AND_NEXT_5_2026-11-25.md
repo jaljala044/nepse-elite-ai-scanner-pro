@@ -602,3 +602,18 @@ This recovers a date set that exactly matches the count and window, but the firs
 5. Continue the remaining P1 gates: rights-cleared raw source coverage, corporate-action review, eight OHLCV conflict resolutions, historical broker legal-entity identity and complete integrated readiness audit.
 
 P1 remains **active**. The calendar candidate-recovery subtask has materially advanced, but exact original identity and primary open-session evidence remain unaccepted; P2 stays blocked.
+
+
+## P1 execution increment — primary NEPSE market-summary-history capture path added (2026-11-25)
+
+Added and merged PR #8 (merge commit `592977ddb4c4ab4577f859a675073c46e8d33b0a`):
+
+- `backend/capture_nepse_market_summary_history.py` uses the same pinned public `nepse-client==0.1.4` flow already used for official holiday API captures, requests `/api/nots/market-summary-history`, and preserves raw response bytes, source URL, response headers, retrieval timestamp, SHA-256 and byte count before parsing.
+- If the response contains a recognized business-date field, the script compares its dates with the 616 candidate set, reports duplicates/missing/extra dates, and does not promote any calendar claims.
+- `backend/tests/test_nepse_market_summary_history_capture.py` covers date parsing, duplicate handling, invalid/missing dates and fail-closed behavior.
+- GitHub Actions workflow `.github/workflows/capture-nepse-market-summary-history.yml` supports manual dispatch and weekday post-close capture at 10:00 UTC. Successful raw responses are committed under a date-stamped evidence path and uploaded as an artifact; failures are retained as workflow artifacts for diagnosis.
+- Backend and backend-contract tests passed on the PR head: runs `45628944286` and `45628944850`; **547 tests passed in each**, including all three new tests.
+
+**Capture status:** the workflow has been installed, but its first live API request has not yet run. Endpoint availability, response schema, historical depth and overlap with the 616 candidates remain unverified until the first successful capture. No raw market-summary-history response has been committed yet. No `verified_open` rows are promoted; P1 and the P2 training gate remain active.
+
+Next action: run the workflow manually from GitHub Actions or wait for its next weekday 10:00 UTC schedule; inspect the raw response and SHA-256, validate the date field and full coverage, then compare every returned primary market-summary date with the 616 candidate dates and archived holiday closures.

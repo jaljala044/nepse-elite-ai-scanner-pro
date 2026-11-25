@@ -195,6 +195,13 @@ def compare_sources(
             date_type.fromisoformat(expected_trade_date)
             expected_quantity = Decimal(str(independent_control["quantity"]))
             expected_amount = Decimal(str(independent_control["gross_amount"]))
+            expected_transaction_count = independent_control.get("transaction_count")
+            if expected_transaction_count is not None and (
+                isinstance(expected_transaction_count, bool)
+                or not isinstance(expected_transaction_count, int)
+                or expected_transaction_count < 0
+            ):
+                raise ValueError("transaction_count must be a non-negative integer")
         except (KeyError, ValueError, InvalidOperation, TypeError) as exc:
             raise ValueError("independent_control requires valid trade_date, quantity and gross_amount") from exc
         if (
@@ -208,8 +215,13 @@ def compare_sources(
             adiff = source["gross_amount"] - expected_amount
             source_date_matches = set(source["date_counts"]) == {expected_trade_date}
             source_quality_passes = source["data_quality_status"] == "passed"
+            transaction_count_difference = (
+                source["row_count"] - expected_transaction_count
+                if expected_transaction_count is not None else None
+            )
             passed = (
                 qdiff == 0 and adiff == 0
+                and (transaction_count_difference is None or transaction_count_difference == 0)
                 and source_date_matches and source_quality_passes
             )
             reasons = []
@@ -217,6 +229,8 @@ def compare_sources(
                 reasons.append("quantity_mismatch")
             if adiff != 0:
                 reasons.append("gross_amount_mismatch")
+            if transaction_count_difference not in (None, 0):
+                reasons.append("transaction_count_mismatch")
             if not source_date_matches:
                 reasons.append("source_date_mismatch")
             if not source_quality_passes:
@@ -232,6 +246,9 @@ def compare_sources(
                 "expected_gross_amount": str(expected_amount),
                 "observed_gross_amount": str(source["gross_amount"]),
                 "gross_amount_difference": str(adiff),
+                "expected_transaction_count": expected_transaction_count,
+                "observed_transaction_count": source["row_count"],
+                "transaction_count_difference": transaction_count_difference,
                 "differences": reasons,
                 "status": "passed" if passed else "failed",
             }

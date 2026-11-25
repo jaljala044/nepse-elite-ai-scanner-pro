@@ -86,3 +86,21 @@ were not archived. The complete code lists and limitation are preserved in
 
 All identity links therefore remain candidate/unmapped. No historical entity
 identity is promoted by this check.
+
+
+### Raw primary CDSC export now archived
+
+The CDSC "Download All CSV" export was successfully captured from
+`https://cdsc.com.np/export-clearing-member-csv` by GitHub Actions on
+2026-11-25 at 13:04:33 UTC (HTTP 200, `text/csv;charset=UTF-8`). The exact
+10,893-byte raw file is committed at
+`data/evidence/raw/cdsc/2026-11-25/clearing-members.csv` with SHA-256
+`feb4597d66ad37dbc6f0ed2a9fd54c4fc7c04e67ce0b91c066bb9574c1c49de3`.
+The export contains 92 records and the same 92 CM numbers as the rendered
+page. Response headers, source URL, checksum and capture report are stored
+beside the raw CSV. The source-object record is in
+`data/evidence/acquired/source-object-manifest.jsonl`.
+
+This closes the raw-byte capture gap for the **current CDSC directory**. It
+does not provide historical effective dates or prove that a current name was
+valid on an older floorsheet date; the historical identity gate remains open.

@@ -67,6 +67,22 @@ class AnalyzeHistoryPayloadTests(unittest.TestCase):
         result = MODULE.analyze_date_price_volume_payload({"content": [], "totalElements": 0}, [conflict()])
         self.assertEqual(result[0]["status"], "no_primary_row")
 
+    def test_primary_endpoint_disagreement_is_not_silently_resolved(self):
+        date_result = {"symbol": "BGWT", "date": "2025-07-28",
+                       "status": "matches_source_a", "official_ohlcv": ["1", "2", "3", "4", "5"]}
+        history_result = {"symbol": "BGWT", "date": "2025-07-28",
+                          "status": "matches_source_b", "official_ohlcv": ["1", "2", "3", "4", "6"]}
+        result = MODULE.select_primary_comparison(date_result, history_result)
+        self.assertEqual(result["status"], "primary_endpoint_disagreement")
+
+    def test_primary_endpoint_agreement_keeps_complete_primary_result(self):
+        date_result = {"symbol": "BGWT", "date": "2025-07-28",
+                       "status": "matches_source_a", "official_ohlcv": ["1", "2", "3", "4", "5"]}
+        history_result = {"symbol": "BGWT", "date": "2025-07-28",
+                          "status": "matches_source_a", "official_ohlcv": ["1", "2", "3", "4", "5"]}
+        result = MODULE.select_primary_comparison(date_result, history_result)
+        self.assertEqual(result["status"], "matches_source_a")
+
     def test_date_specific_board_can_resolve_symbol_by_security_id(self):
         payload = {"content": [{
             "securityId": 9214, "openPrice": 940, "highPrice": 992,

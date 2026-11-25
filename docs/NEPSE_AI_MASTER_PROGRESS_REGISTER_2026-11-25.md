@@ -577,3 +577,36 @@ When the project owner asks for all progress, retrieve this register and current
 - All five additions currently have authored synthetic regression tests, but CI execution remains unverified.
 - No real floorsheet/market-data file was available to validate a publisher mapping or run these pipelines against the historical archive.
 - Canonical promotion and model training remain blocked pending real-source mappings, official instrument/session evidence, rights review, historical point-in-time availability, and verified quality reports.
+
+
+## 19. Next five priorities — pipeline hardening and row conservation (2026-11-25)
+
+### Priority 1 — source adapter profile validation
+- Hardened `backend/app/source_adapter_profile.py`: non-blank normalized/source-header mappings, distinct source headers, and exact reviewed-sample header presence are required before a mapping can be marked verified.
+- Added regression tests for missing mapped headers and duplicate mapping targets.
+- Commits: [673f476](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/673f47677d1b3637fbe073c4119e096b728c4dc1), [e0fdf2e](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/e0fdf2e207e9ce0d2145002bbe3eba7ff6981fdc).
+
+### Priority 2 — canonical audit serialization hardening
+- Hardened `backend/app/audit_bundle.py`: rejects dictionary-key collisions after string normalization and non-finite Decimal values; deterministically orders heterogeneous set members.
+- Added regression tests for ambiguous keys, Decimal NaN and deterministic mixed-type set serialization.
+- Commits: [fe7ef0a](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/fe7ef0a95dfa75b1c1756b54cdc7b75f499d6dc0), [e7a295b](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/e7a295bec8561ae61e6a6e1509fb929ba1f289b7).
+
+### Priority 3 — stricter OHLCV security and availability evidence
+- Hardened `backend/app/ohlcv_evidence_pipeline.py`: requires a nonblank stable security-master ID, rejects non-string availability timestamps and handles malformed lifecycle date types conservatively.
+- Added regression tests for missing security-master ID and parser-rejected date rows.
+- Commits: [a2a086a](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/a2a086a3325c7facffef8321817321bfbf7be7be), [31d599b](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/31d599b5425a3056cb3ded8af675604488ae5f58).
+
+### Priority 4 — preserve rejected OHLCV input rows and enforce row conservation
+- The OHLCV evidence pipeline now returns parser-rejected rows rather than silently omitting them and asserts `input_rows = parsed_rows + rejected_rows`.
+- Output explicitly reports parser rejection count and row-conservation status. This is an ingestion audit guarantee, not a claim that parsed rows are exchange-valid.
+- Commit: [0194593](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/01945936009c853617d58865ac2326a7cb2b0f14).
+
+### Priority 5 — training-evidence finite coverage and lineage checks
+- Hardened `backend/app/data_readiness_evidence.py`: historical coverage must be finite and within [0.98, 1.0]; source lineage requires a valid SHA-256 payload hash, source record ID and provenance hash.
+- Added tests that NaN, infinity, values above one and negative coverage fail closed.
+- Commits: [eb6c9ec](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/eb6c9ec400e0163ba6841dcac4912418a0ee6a01), [87853fc](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/87853fcdcf1df4c2f2e49e48cb29a59547a0b3ba).
+
+### Verification and limitations
+- The backend contract workflow remains configured to run on pushes affecting `backend/**`; the latest four test commits were queried for combined status and returned empty status arrays. No green CI result is claimed.
+- Tests are committed but have not been executed in this session. No real publisher CSV has been supplied, so source mappings and historical rows remain unverified.
+- The OHLCV evidence pipeline remains review-only; canonical promotion and training remain blocked until official session/universe evidence, rights, source availability and full real-data integrity checks pass.

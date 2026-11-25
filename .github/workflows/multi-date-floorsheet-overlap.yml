@@ -46,7 +46,7 @@ jobs:
         run: |
           python backend/acquire_floorsheet_overlap.py \
             --limit 30 \
-            --skip-latest 40 \
+            --skip-latest 70 \
             --end-date 2026-11-25 \
             --days 365 \
             --output-dir /tmp/floorsheet-overlap-raw \

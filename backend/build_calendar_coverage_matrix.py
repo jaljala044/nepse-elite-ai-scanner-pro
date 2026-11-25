@@ -73,7 +73,7 @@ def build_matrix(
         flags = []
         if not explicit:
             flags.append("calendar_evidence_missing")
-        if observed["file_count"] and explicit and explicit["status"] == "verified_closed":
+        if observed["file_count"] and explicit and explicit["status"] in {"verified_closed", "verified_exceptional_closed"}:
             flags.append("source_file_on_verified_closed_date")
         rows.append({
             "date": day.isoformat(),
@@ -88,7 +88,11 @@ def build_matrix(
             "calendar_evidence": ({
                 "source_id": explicit["source_id"],
                 "evidence_uri": explicit["evidence_uri"],
+                "raw_evidence_sha256": explicit["raw_evidence_sha256"],
+                "published_at": explicit["published_at"],
+                "retrieved_at_utc": explicit["retrieved_at_utc"],
                 "verified_at_utc": explicit["verified_at_utc"],
+                "scope": explicit["scope"],
                 "notes": explicit["notes"],
             } if explicit else None),
         })

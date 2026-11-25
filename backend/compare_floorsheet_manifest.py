@@ -86,6 +86,20 @@ def compare_manifest(manifest_path: str | Path) -> dict[str, Any]:
             right_format=right_format,
             independent_control=control,
         )
+        observed_dates = {
+            "left": comparison["left_source"]["date_counts"],
+            "right": comparison["right_source"]["date_counts"],
+        }
+        source_date_matches = {
+            side: dates == {trade_date: count} if len(dates) == 1 and trade_date in dates else False
+            for side, dates in observed_dates.items()
+        }
+        comparison["manifest_trade_date_check"] = {
+            "expected_trade_date": trade_date,
+            "observed_date_counts": observed_dates,
+            "source_date_matches": source_date_matches,
+            "status": "passed" if all(source_date_matches.values()) else "failed",
+        }
         results.append({
             "trade_date": trade_date,
             "left_file": left.name,
@@ -111,6 +125,10 @@ def compare_manifest(manifest_path: str | Path) -> dict[str, Any]:
             for side in result["comparison"]["independent_control"].values()
         )
     )
+    source_date_failures = sum(
+        result["comparison"]["manifest_trade_date_check"]["status"] != "passed"
+        for result in results
+    )
     return {
         "schema_version": "1.0",
         "manifest_file": manifest_file.name,
@@ -119,9 +137,10 @@ def compare_manifest(manifest_path: str | Path) -> dict[str, Any]:
         "dates_with_contract_set_or_row_differences": len(results) - exact_dates,
         "dates_with_shared_contract_conflicts": conflict_dates,
         "dates_with_independent_control_failures": control_failures,
+        "dates_with_source_trade_date_mismatches": source_date_failures,
         "readiness_status": (
             "review_required"
-            if exact_dates != len(results) or conflict_dates or control_failures
+            if exact_dates != len(results) or conflict_dates or control_failures or source_date_failures
             else "review_only_exact_comparison_no_canonical_promotion"
         ),
         "canonical_source_selected": False,

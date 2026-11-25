@@ -27,7 +27,10 @@ def extract(repo: str, commit: str, root: Path) -> list[dict]:
                 current = {k: (row.get(k) or "").strip() for k in FIELDS}
                 date = (row.get("Date") or row.get("date") or "").strip()
                 symbol = (row.get("Symbol") or row.get("symbol") or path.stem.replace("_OHLCV", "")).strip()
-                if previous is not None and current == previous["ohlcv"]:
+                # A malformed/incomplete row breaks adjacency; never treat two
+                # empty or partial signatures as a repeated valid candle.
+                complete = all(current.values())
+                if complete and previous is not None and current == previous["ohlcv"]:
                     out.append({
                         "repository": repo, "commit_sha": commit, "path": rel,
                         "file_sha256": digest, "symbol": symbol,
@@ -36,7 +39,8 @@ def extract(repo: str, commit: str, root: Path) -> list[dict]:
                         "ohlcv": current,
                         "classification": "calendar_status_unverified_review_flag",
                     })
-                previous, previous_line = {"date": date, "ohlcv": current}, line
+                previous = {"date": date, "ohlcv": current} if complete else None
+                previous_line = line
     return out
 
 def main() -> int:

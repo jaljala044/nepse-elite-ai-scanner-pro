@@ -1,6 +1,8 @@
 """Fail-closed real-data readiness gate before any model training."""
 from __future__ import annotations
 
+import math
+
 
 REQUIRED_GATES = (
     "universe_verified", "session_calendar_verified", "source_rights_cleared",
@@ -21,12 +23,15 @@ def evaluate_training_readiness(evidence: dict, *,
         checks[key] = evidence.get(key) is True
     ohlcv = evidence.get("ohlcv_coverage")
     broker = evidence.get("broker_identity_coverage")
-    try:
-        checks["ohlcv_coverage_threshold"] = ohlcv is not None and float(ohlcv) >= minimum_ohlcv_coverage
-        checks["broker_identity_coverage_threshold"] = broker is not None and float(broker) >= minimum_broker_identity_coverage
-    except (TypeError, ValueError):
-        checks["ohlcv_coverage_threshold"] = False
-        checks["broker_identity_coverage_threshold"] = False
+    def coverage_passes(value, threshold):
+        try:
+            number = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return math.isfinite(number) and threshold <= number <= 1.0
+
+    checks["ohlcv_coverage_threshold"] = coverage_passes(ohlcv, minimum_ohlcv_coverage)
+    checks["broker_identity_coverage_threshold"] = coverage_passes(broker, minimum_broker_identity_coverage)
     blockers = [key for key, passed in checks.items() if not passed]
     return {
         "training_ready": not blockers,

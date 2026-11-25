@@ -16,7 +16,7 @@ class DuplicateContractLedgerTests(unittest.TestCase):
         self.left.write_text(
             "date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"
             "2026-11-24,1,C1,NABIL,11,22,2,100,200\n"
-            "2026-11-24,2,C1,NABIL,11,22,2,100,200\n"
+            "2026-11-24,1,C1,NABIL,11,22,2,100,200\n"
             "2026-11-24,3,C2,NABIL,11,22,1,100,100\n",
             encoding="utf-8",
         )

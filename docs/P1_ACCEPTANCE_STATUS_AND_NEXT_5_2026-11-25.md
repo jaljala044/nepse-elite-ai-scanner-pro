@@ -343,3 +343,31 @@ reconciliation, and primary resolution of OHLCV conflicts.
 5. Obtain rights-cleared multi-year floorsheet samples and primary corporate-
    action/issuer evidence; then reconcile the 25 cross-repository OHLCV files
    and rerun the integrated P1 audit.
+
+
+### Broker derivation CI verification — completed
+
+The broker derivation implementation and full backend suite have now passed:
+
+- Backend tests run: `45617995122`, conclusion `success`, head commit
+  `16bffbfd4faa5a1093d72499ac76791ba1068dbb`; **535 tests passed**.
+- Historical data-integrity run: `45617821684`, conclusion `success`,
+  code/workflow commit `b77379fd542c98428a3b059e684280b2334eb62a`.
+- Artifact ID: `15023870425`, size 2,299,648 bytes, ZIP SHA-256
+  `074a627f3d7ee403e8bffcfba31a4a9cdbcd45822a9076189c5ce0b53a5bdcc6`.
+- Artifact URL:
+  https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45617821684/artifacts/15023870425
+- The artifact contains the 81,636-row party CSV and aggregate JSON. After
+  download, independent checks found 40,818 unique contracts, exactly 40,818
+  buy and 40,818 sell observations, zero contract-pair anomalies, 91 broker
+  codes, no non-empty canonical broker IDs, and 15,466 aggregate rows.
+- Party CSV: 13,192,868 bytes; SHA-256
+  `050139c4f6c4ecc65a49c762f2e7cce0b7d7ad2d75c193349a7d1b0e7fefe9d0`.
+- Aggregate JSON: 7,449,669 bytes; SHA-256
+  `9c4cec23837cba310a6202080f8e7ec6ac36d0397913cdee88073d80037725e0`.
+
+The full backend suite at the latest main commit also passed 535 tests. The
+integrity workflow passed its focused collector, coverage, OHLCV and broker
+party derivation steps and uploaded the artifact. This verifies the code and
+one sample run only; it does not prove historical completeness or canonical
+identity resolution.

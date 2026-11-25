@@ -1,5 +1,6 @@
 from __future__ import annotations
 import unittest
+import httpx
 from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers
 
 

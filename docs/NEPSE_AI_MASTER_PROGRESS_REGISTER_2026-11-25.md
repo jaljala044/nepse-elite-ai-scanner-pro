@@ -242,3 +242,36 @@ For each future work session, append a dated entry containing:
 7. Remaining blockers and next action.
 
 When asked for “all progress”, retrieve this register plus latest GitHub commits, issues, workflows and artifacts; report any differences between this document and live repository state. Never imply work continued between turns unless an automation run actually executed.
+
+
+## 8. Work-session update — 2026-11-25 (after master register creation)
+
+### Permanent reporting record created
+- Master register: [NEPSE_AI_MASTER_PROGRESS_REGISTER_2026-11-25.md](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/NEPSE_AI_MASTER_PROGRESS_REGISTER_2026-11-25.md)
+- Commit: `bca84ab9b2feb52319fbb931ceff32d9537f515a`.
+- It consolidates prior project scope, achievements, exact audit counts, pinned source commits, artifacts, hashes, issues, limitations, hard blockers, current five priorities and following five priorities.
+- Future sessions must append evidence-based dated entries and reconcile the report against live repository state when asked.
+
+### Priority 1 research advanced — primary calendar still not acquired
+- Created [NEPSE_SESSION_CALENDAR_SOURCE_RESEARCH_2026-11-25.md](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/NEPSE_SESSION_CALENDAR_SOURCE_RESEARCH_2026-11-25.md), commit `0a22328e340d6ed7b763bf4e56cea9fcfec7a816`.
+- Located official NEPSE catalogue and stock-list pages, but accessible snapshots are not a dated date-level session calendar.
+- Located a 2026-04-08 ShareSansar report that attributes Monday-Friday trading (including Friday) to a NEPSE Board meeting on 22 Chaitra 2082. This is secondary reporting of the exchange decision, not the original NEPSE circular.
+- Located official NRB 2083 holiday list effective 2026-04-14 through 2027-04-13. It explicitly describes NRB office hours as Sunday-Thursday and Friday half-day. This demonstrates why bank/NRB holidays cannot be substituted for NEPSE exchange sessions; the reported NEPSE weekday schedule differs.
+- Conclusion: historical weekday regimes remain candidate rules only. No complete primary-source NEPSE session calendar was obtained. Do not classify any repeated-row candidate as a non-session solely from these sources.
+
+### Current priorities — status refresh
+1. **Calendar evidence acquisition:** research/documentation advanced; original NEPSE circular and complete official session dates still missing.
+2. **196,784 candidate reconciliation:** extractor and enriched artifact complete; calendar join/classification blocked by Priority 1.
+3. **1,339 OHLCV exception ledger:** validator and local ledger exist; actual JSON/CSV still not committed; source adjudication unresolved.
+4. **281 + 47 instrument manifest:** source research documented; official dated registry still missing.
+5. **Coverage reruns:** blocked pending verified manifest and calendar; do not run final canonical coverage conclusions on guessed membership.
+
+### Following five priorities
+6. Production-safe floorsheet ingestion and immutable raw capture.
+7. Broker identity/footprint reconciliation and aggregation.
+8. Point-in-time feature store with strict as-of lineage.
+9. Explainable market-wide and stock-level footprint features and historical episode retrieval.
+10. Walk-forward/backtest/calibration/leakage and robustness validation.
+
+### Reporting rule
+When the project owner asks for all progress, retrieve this register and current GitHub evidence. The report is a record of verified work, not a claim that work ran continuously between messages.

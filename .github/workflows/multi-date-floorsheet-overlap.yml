@@ -10,6 +10,7 @@ on:
       - "backend/tests/test_acquire_floorsheet_overlap.py"
       - "backend/tests/test_compare_floorsheet_manifest.py"
       - "backend/tests/test_compare_floorsheet_source_csvs.py"
+      - "data/independent_controls/floorsheet_daily_controls_2026-11-25.json"
       - "backend/build_floorsheet_source_exception_ledger.py"
       - "backend/tests/test_build_floorsheet_source_exception_ledger.py"
       - "backend/analyze_floorsheet_broker_code_coverage.py"
@@ -50,7 +51,8 @@ jobs:
             --end-date 2026-11-25 \
             --days 365 \
             --output-dir /tmp/floorsheet-overlap-raw \
-            --manifest /tmp/floorsheet-overlap-raw/manifest.json
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \
+            --controls-file data/independent_controls/floorsheet_daily_controls_2026-11-25.json
       - name: Compare contract sets, rows and dates
         run: |
           python backend/compare_floorsheet_manifest.py \

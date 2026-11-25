@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "backend/audit_ohlcv_archives.py"
+      - "backend/build_ohlcv_exception_ledger.py"
+      - "backend/tests/test_build_ohlcv_exception_ledger.py"
       - "backend/app/session_calendar.py"
       - "backend/tests/test_session_calendar.py"
       - "backend/tests/test_audit_ohlcv_archives.py"
@@ -49,7 +51,7 @@ jobs:
         run: python -m pip install "httpx>=0.27,<1"
         working-directory: backend
       - name: Run parser tests
-        run: python -m unittest tests.test_audit_ohlcv_archives tests.test_crosscheck_ohlcv_socrateai tests.test_market_date_crosscheck tests.test_crosscheck_index_history_yonepse tests.test_export_session_candidate_register tests.test_probe_nepse_public_notices tests.test_acquire_hf_floorsheet_sample tests.test_audit_hf_floorsheet_sample tests.test_acquire_github_floorsheet_sample tests.test_compare_floorsheet_samples -v
+        run: python -m unittest tests.test_audit_ohlcv_archives tests.test_build_ohlcv_exception_ledger tests.test_crosscheck_ohlcv_socrateai tests.test_market_date_crosscheck tests.test_crosscheck_index_history_yonepse tests.test_export_session_candidate_register tests.test_probe_nepse_public_notices tests.test_acquire_hf_floorsheet_sample tests.test_audit_hf_floorsheet_sample tests.test_acquire_github_floorsheet_sample tests.test_compare_floorsheet_samples -v
         working-directory: backend
       - name: Audit pinned Jaljala OHLCV archives
         env:
@@ -60,6 +62,13 @@ jobs:
             --repo jaljala044/nepse-history-starter \
             --workers 8 \
             --output data/reports/ohlcv-archive-audit.json
+      - name: Build immutable OHLCV exception ledger
+        if: always() && hashFiles('data/reports/ohlcv-archive-audit.json') != ''
+        run: |
+          python backend/build_ohlcv_exception_ledger.py \
+            --input data/reports/ohlcv-archive-audit.json \
+            --json-output data/reports/ohlcv-exception-ledger.json \
+            --csv-output data/reports/ohlcv-exception-ledger.csv
       - name: Cross-check flagged rows against SocrateAI unadjusted EOD
         if: always()
         run: |
@@ -134,6 +143,8 @@ jobs:
           name: nepse-ohlcv-row-audit
           path: |
             data/reports/ohlcv-archive-audit.json
+            data/reports/ohlcv-exception-ledger.json
+            data/reports/ohlcv-exception-ledger.csv
             data/reports/ohlcv-socrateai-crosscheck.json
             data/reports/market-date-crosscheck.json
             data/reports/yonepse-index-crosscheck.json

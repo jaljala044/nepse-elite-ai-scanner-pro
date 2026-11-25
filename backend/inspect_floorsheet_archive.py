@@ -215,7 +215,8 @@ def main() -> int:
         max_compression_ratio=args.max_compression_ratio,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    with args.output.open("x", encoding="utf-8") as output_stream:
+        output_stream.write(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     print(json.dumps({key: value for key, value in report.items() if key != "entries"}, indent=2))
     return 0 if report["safe_to_extract"] else 2
 

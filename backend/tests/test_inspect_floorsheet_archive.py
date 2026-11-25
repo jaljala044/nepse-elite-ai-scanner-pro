@@ -45,6 +45,18 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
             result = inspect_zip(path)
             self.assertIn("duplicate_member_name", {x["code"] for x in result["issues"]})
 
+    def test_case_insensitive_name_collision_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._zip(tmp, [("Day.csv", b"a"), ("day.csv", b"b")])
+            result = inspect_zip(path)
+            self.assertIn("casefold_name_collision", {x["code"] for x in result["issues"]})
+
+    def test_backslash_member_path_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._zip(tmp, [("..\\\\escape.csv", b"x")])
+            result = inspect_zip(path)
+            self.assertIn("backslash_in_member_name", {x["code"] for x in result["issues"]})
+
     def test_symlink_member_is_flagged(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "link.zip"

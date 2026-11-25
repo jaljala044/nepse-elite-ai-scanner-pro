@@ -1020,3 +1020,45 @@ Commits for the new Urek source profile, tests and profile documentation:
 - \`e7b80947ee8cbc8616b27845e51962270eb12155\`
 
 The added unit-test commit has not yet exposed a GitHub status check through the current connector (combined status returned no check records). Do not claim CI passed until an actual workflow run is inspected.
+
+
+### Priority 84 — contract reconciliation and independent control totals (engineering path implemented)
+
+- Confirmed existing modules \`floorsheet_contract.reconcile_floorsheet_rows\`, \`floorsheet_sample_audit.build_floorsheet_sample_acceptance_report\`, and \`broker_aggregation.reconcile_source_control_totals\`.
+- Extended \`backend/app/floorsheet_pipeline.py\` with optional independently sourced daily control totals.
+- Controls are reconciled against **all parseable source contracts**, including duplicate and amount-exception contracts. This avoids comparing an independent daily total against the filtered subset used for broker-feature aggregation.
+- With no independent controls, pipeline output is explicitly \`not_run\`; it does not claim a pass. With controls, contract count, gross amount and party-observation count are checked. Differences are reported without source repair.
+- Integration tests added for an exact two-contract sample and a deliberate gross-amount control mismatch.
+
+### Priority 85 — broker-code coverage and identity aggregation (engineering path improved)
+
+- Confirmed existing \`floorsheet_broker_join.resolve_contract_brokers\` uses effective-dated identity links as of each contract's trade date, and existing \`broker_aggregation.aggregate_broker_observations\` retains unresolved observations.
+- Found a grouping defect: distinct unresolved broker codes could be merged into a single null-entity bucket. Corrected the group key to retain unresolved \`source_id\` + \`source_broker_code\` separately.
+- Verified canonical broker entities now aggregate across multiple source-specific broker codes, while their source codes remain listed in \`source_broker_codes\`. The source IDs and evidence IDs remain preserved.
+- Added regression coverage for separate unresolved broker codes, merged verified canonical identities, and a Urek-style 11-column CSV fixture through the existing end-to-end pipeline.
+- A separate duplicate adapter created during implementation was removed; the existing \`floorsheet_broker_join\` remains the single broker-party bridge.
+
+Commits:
+- Broker aggregation correction: \`b47d1bda71fa6a46f361eee13ad5485ce72156b3\`
+- Broker aggregation regression tests: \`a8c93ed9f2b8a16e79946fbe6ff1b3381c8d443c\`
+- Independent-control pipeline extension: \`444780b2e32d0aaf851791cf19531f77a04e8841\`
+- Urek-schema integration and control-total tests: \`0a3d8b4c31e3fc7a3209ef131fb387f9b7c48352\`
+
+### Updated priority state (work session 2026-11-25)
+
+| Priority | Status |
+|---|---|
+| 81. Acquire bounded sample | Prior 2024-01-02 sample smoke evidence exists; no new physical sample bytes/hash verified in this work session |
+| 82. Verify source/provenance | Source-level research recorded; independent upstream lineage and rights unresolved |
+| 83. Map source headers | Urek profile and synthetic tests added; physical raw header/hash verification pending |
+| 84. Reconcile contracts/control totals | Existing row reconciliation integrated with independent daily controls in the end-to-end pipeline; tests added; live sample control result still pending |
+| 85. Verify broker-code coverage | Source-specific unresolved broker codes retained distinctly; verified cross-code broker aggregation and tests added; actual sample identity coverage remains unmeasured |
+| 86. Compare overlapping dates/sources | Earlier 70-date comparison exists; new raw-sample comparison not rerun in this session |
+| 87. Identify missing trading dates | Still blocked by a date-level primary NEPSE session calendar |
+| 88. Verify active universe | Official dated 281-equity + 47-mutual-fund registry still missing |
+| 89. Assess one-year / six-month coverage | Still blocked by verified universe and session calendar |
+| 90. Produce source-backed readiness report | Engineering parts advanced; final coverage readiness report remains blocked by priorities 81, 86–89 evidence |
+
+### Verification caveat
+
+The repository connector returned no CI status records for the new test commits at the time of this update. The code and tests are committed to \`main\`, but **the new tests have not been confirmed as passing in GitHub Actions**. Do not count them as passed until an actual workflow run/job result is retrieved. No sample bytes, canonical data or model-training data were promoted by this work session.

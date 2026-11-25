@@ -12,6 +12,20 @@ class BrokerIdentityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_identity_link(BrokerIdentityLink("src", "42", "B42", "verified", None))
 
+    def test_malformed_link_collection_rejected(self):
+        with self.assertRaisesRegex(ValueError, "BrokerIdentityLink"):
+            resolve_broker_identity("src", "42", [None])
+
+    def test_non_iso_as_of_date_rejected(self):
+        link = BrokerIdentityLink("src", "42", "B42", "verified", "e1")
+        with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
+            resolve_broker_identity("src", "42", [link], "20261125")
+
+    def test_non_string_link_identifiers_rejected(self):
+        link = BrokerIdentityLink(None, "42", "B42", "verified", "e1")
+        with self.assertRaisesRegex(ValueError, "source_id"):
+            validate_identity_link(link)
+
     def test_unmapped_code_never_gets_entity(self):
         link = BrokerIdentityLink("src", "42", None, "unmapped", "registry-snapshot")
         self.assertEqual(resolve_broker_identity("src", "42", [link])["status"], "unmapped")
@@ -43,6 +57,11 @@ class BrokerIdentityTests(unittest.TestCase):
         result = aggregate_broker_side(rows)
         self.assertEqual(len(result), 2)
         self.assertEqual(sum(x["quantity"] for x in result), 15)
+
+    def test_missing_session_or_security_key_rejected(self):
+        row = {"side":"buy", "quantity":1, "amount":10}
+        with self.assertRaisesRegex(ValueError, "session_date and security_id"):
+            aggregate_broker_side([row])
 
     def test_negative_values_rejected(self):
         row = {"session_date":"2026-11-24","security_id":"SEC1","side":"buy",

@@ -574,3 +574,31 @@ verification*. It does not complete the session calendar: no verified open
 dates have been added, the exact 616-date input is still missing, and annual
 scope/completeness and the 2020 dual-reason date still require review. P1
 remains blocked.
+
+
+## P1 execution increment — 616-session candidate date reconstruction (2026-11-25)
+
+The original exact calendar input is still not proven, but a high-confidence candidate reconstruction has now been preserved and tested:
+
+- Pinned source: `srijankarki07/nepse-data` commit `e6e6fe77cd3378204c7938e66601cee2339a8b7a`, path `data/daily/{2024,2025,2026}/YYYY-MM-DD.csv`.
+- Recovered **616 unique candidate dates** in the exact backfill-manifest window 2024-03-04 through 2026-11-20: 189 (2024), 225 (2025), 202 (2026). This exactly matches the reported `calendar_approved_sessions=616` count and window.
+- A separate SocrateAI index archive at commit `f602a5b61e68582d28834d16f71151a4bae98d5b` has date files for 614/616 candidates. The two absent files are 2025-04-03 and 2026-11-20; contemporaneous secondary reports describe NEPSE sessions on both dates. Seven 2026 candidates missing from the starter market-summary file each have a fetched index file with exactly one NEPSE_index row.
+- The 616 dates have zero overlap with the 124 archived explicit NEPSE holiday API records for 2024–2026 and zero violations of the documented weekday schedule regimes. These are contradiction/sanity checks, not primary proof that each date was open.
+- Candidate rows, source blob IDs/byte counts, index cross-checks, secondary report references and the audit script are committed in merge commit `9b0977bc8a7d402f2ad9ddca2e2d50754a8d1a66` (PR #7).
+- Backend and backend-contract workflows both passed on the PR head: runs `45628271741` and `45628272119`; **544 tests passed in each**, including the two new candidate audit tests.
+
+### Interpretation and gate status
+
+This recovers a date set that exactly matches the count and window, but the first archive is ShareSansar-scraped and shares upstream lineage with the starter import. The separate index archive's underlying source lineage is not fully established. Secondary reports are not primary exchange evidence. There is still no surviving original calendar blob/generator input proving exact identity with the backfill's original list.
+
+**Do not change** `data/reference/nepse_session_calendar.csv`: zero `verified_open` rows are added by this increment. All 616 remain `candidate_unverified`; canonical calendar promotion remains false; training remains blocked.
+
+### Next P1 execution tasks
+
+1. Recover the original calendar file or generator input from the backfill producer's workflow artifacts, release assets, local operator backup or original extraction environment; compare the exact 616 dates and preserve its hash if found.
+2. Acquire primary NEPSE daily index/market-summary records or dated exchange notices for the candidate dates, starting with the 2025-04-03 and 2026-11-20 index-file gaps and the seven market-summary gaps.
+3. Verify the SocrateAI index archive's upstream source chain and independently validate the 614 file-present dates; do not equate repository separation with independent provenance.
+4. Capture primary historical holiday/suspension notices before 2024 and reconcile exceptional closures against candidate sessions.
+5. Continue the remaining P1 gates: rights-cleared raw source coverage, corporate-action review, eight OHLCV conflict resolutions, historical broker legal-entity identity and complete integrated readiness audit.
+
+P1 remains **active**. The calendar candidate-recovery subtask has materially advanced, but exact original identity and primary open-session evidence remain unaccepted; P2 stays blocked.

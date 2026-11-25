@@ -353,3 +353,28 @@ When the project owner asks for all progress, retrieve this register and current
 2. Add source/session/fetch metadata validation and captured-fixture integration tests around raw capture.
 3. Implement broker source-ID/name history and explicit ambiguous/unmapped identity states.
 4. Continue only with synthetic fixtures until primary session calendar, instrument registry, source lineage and rights gates are met.
+
+
+## 13. Work-session update — five implementation slices across priorities 6–10 (2026-11-25)
+
+### Implemented and committed
+1. **Priority 6 — raw capture foundation:** `backend/app/raw_capture.py` and seven tests. Exact bytes, SHA-256, timezone-aware UTC timestamps, evidence-gated session status, immutable content-addressed persistence and idempotency. Backend workflow run [45534399726](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534399726) completed **success** on commit `c62c6dd880d9617634e8e48437625557d691b4ef`.
+2. **Priority 7 — broker identity primitives:** `backend/app/broker_identity.py` and seven tests. Source-specific code mapping, verified/ambiguous/unmapped/rejected states, evidence requirement for verified links, and side-specific aggregation that keeps unknown identities separate. Workflow runs [45534500188](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534500188) and [45534504253](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534504253) completed **success**.
+3. **Priority 8 — point-in-time primitives:** `backend/app/point_in_time.py` and four tests. UTC-aware `available_at` cutoffs; missing availability timestamps excluded; future/late records excluded from historical snapshots. Workflow runs [45534531947](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534531947) and [45534537413](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534537413) completed **success**.
+4. **Priority 9 — explainable feature primitives:** `backend/app/footprint_features.py` and four tests. Market breadth with explicit denominator/coverage, prior-only volume baseline, and broker participation that uses only verified broker mappings while exposing unknown share. Workflow runs [45534568441](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534568441) and [45534571534](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534571534) completed **success**.
+5. **Priority 10 — scenario validation primitives:** `backend/app/scenario_validation.py` and five tests. Brier score, log loss, constant-prevalence baseline and expanding chronological walk-forward folds. Workflow runs [45534593982](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534593982) and [45534599502](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45534599502) were still **in progress** at the time of this update; do not report them as passed until completed.
+
+### Scope and interpretation limits
+- These are dependency-free research primitives, not a production data pipeline or a trained prediction system.
+- No live exchange API or Google Sheets were accessed. No production ingestion or trade execution was activated.
+- Broker IDs are not authoritatively mapped; only caller-supplied links marked verified with evidence are accepted by the helper. Effective-dated broker registry persistence and exchange broker master source still need implementation.
+- Point-in-time helper enforces availability cutoffs but does not yet provide a persistent versioned feature store, corporate-action engine, or as-of security master.
+- Footprint features are descriptive; they do not infer accumulation/distribution intent or produce trading recommendations. Their inputs must be verified and point-in-time filtered upstream.
+- Validation metrics are helper functions; no real forecast dataset, trained model, calibrated confidence, fees/slippage backtest or final holdout has been run.
+- Primary NEPSE session calendar, dated official 281-equity + 47-mutual-fund manifest, source lineage/rights and historical coverage gates remain unresolved. No feature or model output is approved for canonical training or live decisions.
+
+### Next implementation slice
+- Check completion of the two scenario-validation workflow runs.
+- Add integration-level tests linking raw capture to broker ingestion, point-in-time snapshots and feature generation using synthetic fixtures.
+- Add effective-date-aware broker identity mapping and corporate-action/security-master as-of joins.
+- Build a reproducible dataset/label contract and fold-level evaluation report before any model training.

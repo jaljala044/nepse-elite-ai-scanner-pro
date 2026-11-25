@@ -47,6 +47,17 @@ class SourceEvidenceInventoryTests(unittest.TestCase):
             report = audit_source_evidence_inventory([manifest], root)
             self.assertEqual(report["errors"][0]["status"], "sha256_mismatch")
 
+    def test_non_hex_sha256_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "manifest.jsonl"
+            manifest.write_text(json.dumps({
+                "source_id":"source-a","path":"missing.csv","sha256":"z"*64
+            }) + "\n", encoding="utf-8")
+            report = audit_source_evidence_inventory([manifest], root)
+            self.assertEqual(report["errors"][0]["status"], "invalid_manifest_row")
+            self.assertIn("hexadecimal sha256", report["errors"][0]["error"])
+
     def test_path_escape_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

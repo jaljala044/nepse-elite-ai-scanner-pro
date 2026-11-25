@@ -102,3 +102,74 @@ full value-by-value adjudication or session-calendar validation.
 - Independent-source provenance: pending.
 - Authoritative 616-session calendar: still unresolved.
 - Canonical promotion: blocked.
+
+
+## Full date-key and OHLCV value comparison of the 25 differing files
+
+The 25 pairs were fetched again and compared by exact `Date` key. Numeric
+formatting was normalized (for example, `331.0` and `331.00` are equal).
+The following counts are per-symbol date keys, not inferred exchange sessions.
+
+| Symbol | SMC-only dates | Starter-only dates | Same-date OHLCV mismatches |
+|---|---:|---:|---:|
+| AHPC | 3,167 | 323 | 0 |
+| API | 1,908 | 323 | 1 |
+| BGWT | 88 | 323 | 1 |
+| CHL | 1,455 | 322 | 0 |
+| HDHPC | 560 | 323 | 0 |
+| HIDCL | 1,758 | 323 | 0 |
+| HLI | 161 | 323 | 0 |
+| HRL | 41 | 323 | 1 |
+| KDBY | 372 | 322 | 0 |
+| KEF | 680 | 322 | 0 |
+| MEHL | 99 | 323 | 1 |
+| MEL | 153 | 320 | 0 |
+| MERO | 1,599 | 318 | 0 |
+| NIFRA | 724 | 322 | 0 |
+| NRIC | 879 | 322 | 0 |
+| RADHI | 1,359 | 322 | 0 |
+| RAWA | 155 | 323 | 1 |
+| RHGCL | 344 | 323 | 2 |
+| SKBBL | 2,314 | 323 | 0 |
+| SMJC | 208 | 323 | 0 |
+| SOHL | 1 | 36 | 0 |
+| SPDL | 1,540 | 322 | 0 |
+| UAIL | 147 | 321 | 0 |
+| ULHC | 99 | 322 | 1 |
+| UNHPL | 1,038 | 322 | 0 |
+
+There are **8 same-date OHLCV mismatches across 7 symbols**. Their exact
+source values are preserved below; no winner is selected.
+
+| Symbol | Date | SMC OHLCV (O,H,L,C,V) | Starter OHLCV (O,H,L,C,V) |
+|---|---|---|---|
+| API | 2026-11-19 | 331.0, 334.2, 330.2, 333.0, 26717 | 331.00, 334.20, 330.00, 331.80, 105340 |
+| BGWT | 2025-07-28 | 940.0, 992.0, 933.4, 957.17, 14028 | 940.00, 992.00, 933.40, 945.00, 14028 |
+| HRL | 2026-11-19 | 483.0, 488.0, 480.0, 486.0, 18817 | 483.00, 488.00, 480.00, 483.90, 49184 |
+| MEHL | 2025-07-28 | 471.1, 480.5, 460.0, 475.63, 29753 | 471.10, 480.50, 460.00, 470.83, 29753 |
+| RAWA | 2025-07-28 | 796.0, 811.0, 780.3, 796.9, 3165 | 796.00, 811.00, 780.30, 794.83, 3165 |
+| RHGCL | 2025-07-28 | 346.7, 362.0, 341.4, 357.05, 296715 | 346.70, 362.00, 341.40, 350.07, 296715 |
+| RHGCL | 2026-11-19 | 252.1, 259.5, 252.1, 256.0, 4216 | 252.10, 259.50, 252.10, 258.00, 9054 |
+| ULHC | 2025-07-28 | 509.0, 515.0, 495.0, 510.75, 32288 | 509.00, 515.00, 495.00, 504.00, 32288 |
+
+### Interpretation and quarantine
+
+- Four symbols (BGWT, MEHL, RAWA, RHGCL) disagree on 2025-07-28; this
+  clustering warrants investigation of common upstream provenance or a
+  historical correction, but does not identify which source is correct.
+- API, HRL and RHGCL also disagree on 2026-11-19. These rows should be
+  quarantined from canonical training/feature generation until independently
+  resolved.
+- SMC-only and starter-only date keys are reported as file differences only.
+  They are not called missing trading sessions; calendar approval is still
+  required before any session-level gap classification.
+- Numeric formatting alone was not treated as a mismatch. All eight reported
+  conflicts contain actual OHLCV value differences.
+- The source-level row inventory contains no duplicate date keys in these
+  25 pairs, but this does not validate the exchange calendar or source
+  authenticity.
+
+**Updated status:** filename/blob audit and per-date value comparison are
+complete for the 25 differing pairs. Source revision pinning, lineage,
+corporate-action checks, calendar reconciliation and canonical adjudication
+remain pending.

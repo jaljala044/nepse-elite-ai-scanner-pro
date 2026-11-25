@@ -1231,7 +1231,7 @@ Workflow and artifact:
 | 97 | Build a per-date exception ledger for the 262 source-only contracts | **Complete:** 262 hash-linked SocrateAI-only rows; all unresolved and no auto-resolution |
 | 98 | Compare broker-code distributions and code presence across the ten dates | **Complete:** same 91-code union across both archives; each date's code set matches; no legal-identity inference |
 | 99 | Compare observed symbols against a dated official target register | **Partial:** NEPSE stock-list and SEBON approved/pipeline evidence refreshed; dated 281 + 47 exchange register still unavailable |
-| 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | **Partial:** 70 of 157 shared date files compared in three batches; independent daily controls and remaining 87 dates open |
+| 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | **Partial:** 100 of 157 shared date files compared in four batches; one published daily control passes SocrateAI and fails Samir; 57 dates remain |
 
 **Readiness remains REVIEW_REQUIRED.** The multi-date result improves source-comparison evidence but does not resolve source rights/lineage, the primary NEPSE session calendar, the dated 281-equity + 47-mutual-fund registry, or independent daily control totals. No canonical data or model-training data was promoted.
 
@@ -1297,3 +1297,18 @@ The full one-year candidate overlap contains 157 common date files. **40/157 hav
 Cumulative latest 70 common dates: 3,709,442 shared exact contract rows, 3,500 SocrateAI-only contracts, zero Samir-only contracts, zero shared conflicts, and 1,000 Samir duplicate extra physical rows. Raw totals show 3,385,477-share and NPR 1,851,925,427.67 SocrateAI surplus, with the Samir duplicate rows still included.
 
 **87 of the 157 shared date files remain unprocessed.** The complete 157-date set is still not equivalent to verified exchange sessions, and independent daily control totals plus the official dated 281 + 47 security register remain blockers.
+
+
+### Priority 100 — fourth 30-date batch; 100/157 shared dates compared
+
+- Fourth batch: 2026-06-05 through 2026-07-16.
+- Samir 1,619,124 rows; SocrateAI 1,668,638 rows; 1,619,124 shared exact contracts; 49,514 SocrateAI-only contracts; zero Samir-only and zero shared conflicts.
+- 48,917 of the 49,514 source-only contracts occur on 2026-06-24, where Samir has exactly 24,000 rows and SocrateAI has 72,917.
+- Added a sourced independent control for 2026-06-24: quantity 10,777,582, transaction count 72,917, gross amount NPR 4,418,607,486.62. SocrateAI passes all three exact checks; Samir fails all three.
+- Source evidence is documented in `docs/INDEPENDENT_DAILY_CONTROL_CROSSCHECK_2026-06-24.md` and pinned in `data/independent_controls/floorsheet_daily_controls_2026-11-25.json`.
+- Overall readiness remains REVIEW_REQUIRED because one source fails the daily control, other dates lack controls, and source lineage/rights and official session/universe records remain open.
+- Workflow [45599320707](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45599320707) passed; backend suite [45599320697](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45599320697) passed with **517 tests**.
+
+Cumulative latest 100 shared dates: 5,328,566 shared exact contract rows, 53,014 SocrateAI-only contracts, zero Samir-only contracts, zero shared conflicts and 1,000 Samir duplicate extra physical rows. Raw totals show a SocrateAI surplus of 11,182,588 shares and NPR 7,159,881,183.48.
+
+**57 of 157 common date files remain.** Only one date has a published daily control attached; no canonical data or model-training data has been promoted.

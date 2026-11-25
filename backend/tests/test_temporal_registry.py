@@ -91,11 +91,10 @@ class TemporalRegistryTests(unittest.TestCase):
             CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
                 "2026-11-18T09:00:00","2026-11-18T09:00:00Z",1.1,"e1")
 
-    def test_naive_corporate_action_timestamp_rejected(self):
-        action = CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
-                                       "2026-11-18T09:00:00","2026-11-18T09:00:00",1.1,"e1")
-        with self.assertRaises(ValueError):
-            corporate_actions_as_of([action], "S1", "2026-11-22T12:00:00Z")
+    def test_naive_available_timestamp_rejected(self):
+        with self.assertRaisesRegex(ValueError, "available_at must be timezone-aware"):
+            CorporateActionRecord("A1","S1","bonus",date(2026,11,20),
+                                  "2026-11-18T09:00:00Z","2026-11-18T09:00:00",1.1,"e1")
 
 
 if __name__ == "__main__":

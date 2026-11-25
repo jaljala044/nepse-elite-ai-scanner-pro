@@ -28,6 +28,7 @@ def capture(year: int, output_dir: Path) -> dict:
         path = urlparse(str(response.url)).path
         if path != "/api/nots/holiday/list":
             return
+        response.read()
         captured["body"] = response.content
         captured["status"] = response.status_code
         captured["url"] = str(response.url)

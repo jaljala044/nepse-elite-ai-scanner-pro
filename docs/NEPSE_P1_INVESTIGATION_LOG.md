@@ -60,3 +60,43 @@ Public NEPSE-client documentation/source inspected on 2026-11-25 describes disti
 | ULHC | 2025-07-28 | 509, 515, 495, 510.75, 32288 | 509, 515, 495, 504, 32288 |
 
 OHLCV ordering above: open, high, low, close, volume.
+
+## 2026-11-25 follow-up: exact v0.1.4 authentication bug and historical archive findings
+
+### Confirmed client-library defect and patch
+
+Inspected the exact published nepse-client==0.1.4 source at tag v0.1.4 (release published 2025-11-12), not the newer v0.1.1 documentation:
+
+- NepseClient.getPriceVolumeHistory(business_date) adds businessDate to the URL.
+- It passes self.getPOSTPayloadIDForFloorSheet as a bare callback, without passing business_date.
+- In the same v0.1.4 implementation, getPOSTPayloadIDForFloorSheet(business_date=None) uses date.today().day when called without an argument; with a supplied date it derives the day from that requested session.
+- Therefore the historical request URL was date-specific, but its date-dependent authentication payload ID was generated using the capture run's current day-of-month. This is a concrete implementation defect and a plausible explanation for the route-specific 401; it is not yet proof that the endpoint will accept the corrected payload.
+
+Project changes on fix/p1-empty-nepse-responses:
+- a3dd34799e3c8ce40684ccbfd06c4e3575e0695e: isolated a helper that binds the requested historical date into getPOSTPayloadIDForFloorSheet.
+- 7c36cd57893a2d7fa841f2e576b4131db62e7d7d: added a regression test asserting both the businessDate URL parameter and the same date passed into the payload generator.
+- 510c670790c009bec7d83235c23a6f55c1d81e19: updated the capture workflow to run the focused unit tests and automatically run a capture when relevant files change on this feature branch, while retaining manual workflow_dispatch.
+
+Important: these are code-level and test-fixture changes only. A live NEPSE 2xx response has not yet verified the authentication fix. The capture workflow must complete and the preserved raw response must be inspected before calling the endpoint issue resolved.
+
+### Five older records: archive recovery versus primary proof
+
+Fetched srijankarki07/nepse-data at main, file data/daily/2025/2025-07-28.csv, Git blob SHA 329146bbdb0ef66722933f8aba0542c7e4ec78f8. The file contains all five disputed records and matches Source A exactly:
+
+| Symbol | 2025-07-28 OHLCV from archive | Match |
+|---|---|---|
+| BGWT | 940, 992, 933.4, 957.17, 14028 | Source A |
+| MEHL | 471.1, 480.5, 460, 475.63, 29753 | Source A |
+| RAWA | 796, 811, 780.3, 796.9, 3165 | Source A |
+| RHGCL | 346.7, 362, 341.4, 357.05, 296715 | Source A |
+| ULHC | 509, 515, 495, 510.75, 32288 | Source A |
+
+The archive README documents its backfill route as ShareSansar's POST /ajaxtodayshareprice; the public archive describes itself as scraped from ShareSansar. This is a durable secondary historical copy, not an original NEPSE export. It corroborates Source A but does not satisfy the requested primary-evidence gate. A second public ShareSansar archive was also identified, but it is the same upstream source family and is not independent primary corroboration.
+
+A contemporaneous ShareSansar market recap exists for 2025-07-28, but it reports market-wide totals/index context, not the five individual OHLCV rows. No original NEPSE-issued daily report, exchange CSV, or archived NEPSE response containing these five complete rows has been located in this pass.
+
+### Updated decision
+
+- Endpoint authentication: a specific v0.1.4 payload-date bug is identified and patched; live verification is pending.
+- Five 2025 records: historical secondary rows recovered and all match Source A; original NEPSE evidence remains unavailable.
+- All eight conflicts remain quarantined. No canonical promotion, no training, and no merge.

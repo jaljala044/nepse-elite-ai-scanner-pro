@@ -428,3 +428,48 @@ python build_security_coverage_report.py \
 ```
 
 The universe CSV must explicitly provide `security_id,symbol,instrument_type,valid_from,valid_to,target_in_scope`. Only explicit `equity` and `mutual_fund` classes are accepted in the in-scope rows. The expected-session denominator includes only verified normal or exceptional open dates that fall within the security's effective interval. Unknown dates are excluded and reported separately; this tool does not infer missing sessions or authorize canonical promotion.
+
+## Source-specific coverage and universe validation
+
+The per-security coverage input now requires `source_id,symbol,date`. Each source is reported independently in `source_specific_reports`; when more than one publisher is supplied, the top-level combined coverage ratio is null to prevent double-counting. The report is diagnostic only.
+
+A target universe snapshot can be validated with `app.universe_snapshot.validate_universe_snapshot`. It requires an official NEPSE/SEBON HTTPS URL, raw payload SHA-256, snapshot date, UTC retrieval timestamp, stable security IDs, explicit instrument type/status, effective dates and boolean target membership. The default target count is exactly 281 active equities and 47 active mutual funds; tests can pass smaller expected counts. The validator never infers instrument class and returns `promotion_allowed=false`.
+
+## Official notice capture utility
+
+Run from `backend/`:
+
+```bash
+python capture_official_notice.py \
+  --url 'https://www.nepalstock.com.np/api/nots/security/fetchFiles?fileLocation=...' \
+  --source-id nepse-notice-unique-id \
+  --published-at 2026-04-08T10:00:00+05:45 \
+  --output-dir ../data/evidence/notices
+```
+
+Only HTTPS NEPSE/SEBON hosts and approved redirect hosts are accepted. The utility saves raw response bytes content-addressed by SHA-256 and a metadata JSON with URL, retrieval time, response headers and byte count. It deliberately does not parse the notice or write a calendar row; human review is mandatory.
+
+## Broker control-total reconciliation
+
+`app.broker_aggregation.reconcile_source_control_totals` reconciles buyer/seller party observations against source-date control totals. It counts a contract's gross amount and quantity once only when exactly one buy and one sell observation agree; missing sides or conflicting amounts/quantities are reported as anomalies. Use source-provided control totals; do not substitute calculated totals as if they were independent source controls.
+
+## Read-only training readiness CLI
+
+Run from `backend/`:
+
+```bash
+python evaluate_training_readiness.py \
+  --universe-report ../data/reports/universe-validation.json \
+  --session-reports ../data/reports/session-evidence.json \
+  --provenance-reports ../data/reports/source-provenance.json \
+  --ohlcv-report ../data/reports/ohlcv-integrity.json \
+  --broker-report ../data/reports/broker-identity.json \
+  --point-in-time-report ../data/reports/point-in-time-audit.json \
+  --corporate-action-reviewed \
+  --holdout-protocol-id walk-forward-v1 \
+  --historical-coverage 0.99 \
+  --evidence-snapshot-id evidence-snapshot-2026-11-25 \
+  --output ../data/reports/training-readiness.json
+```
+
+The CLI is read-only. Missing evidence yields explicit blockers and a nonzero exit code; it never writes canonical tables or starts training. A passing software test suite is not a substitute for passing real-source evidence.

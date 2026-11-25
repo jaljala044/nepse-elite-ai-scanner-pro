@@ -46,3 +46,18 @@ The exact 616 count and exact window are consistent with the backfill manifest's
 **616-session count recovery: candidate set found; exact original identity not yet proven.**
 **Canonical open dates promoted: 0.**
 **P1: remains active; P2 training remains blocked.**
+
+
+## Separate-repository index-date cross-check — 2026-11-25
+
+A second repository snapshot was inspected: `socrateai-official/nepse-open-data`, immutable commit `f602a5b61e68582d28834d16f71151a4bae98d5b`, index tree `d5effd0801a112a611da6105122ee126ef7a9725`.
+
+- 614 of the 616 candidate dates have a corresponding `ohlc_index/adj_YYYY-MM-DD.csv` file in that pinned tree.
+- The two candidate dates without an index file are **2025-04-03** and **2026-11-20**.
+- There are zero index-only dates in the 2024-03-04 through 2026-11-20 window (the index date set is a strict subset of the 616 candidate set).
+- All seven 2026 candidate dates absent from the starter market-summary file do have an index file. Each of those seven files was fetched and contained exactly one `NEPSE_index` row; their file blob SHAs are recorded in the cross-check CSV.
+- The index archive's README identifies it as an open-source dataset but does not establish a primary NEPSE source chain in the inspected text. Treat this as separate-repository corroboration with lineage not fully verified, not primary exchange proof.
+
+The 614/616 match strengthens the candidate reconstruction, and the seven market-summary gaps now have a second date-file witness. The two missing index dates remain unresolved. File presence alone still does not prove the index rows are correct or that the exact original scanner calendar has been recovered.
+
+Machine-readable file: `data/evidence/candidates/nepse-616-session-index-crosscheck-2024-2026.csv`.

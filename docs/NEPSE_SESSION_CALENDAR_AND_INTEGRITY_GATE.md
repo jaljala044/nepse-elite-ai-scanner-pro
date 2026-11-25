@@ -6,7 +6,7 @@ OHLCV row. It provides the evidence-backed mechanism and a fail-closed row audit
 
 ## Calendar contract
 
-CSV columns: `date,status,source_id,evidence_uri,verified_at_utc,notes`.
+CSV columns: `date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes`. Raw evidence SHA-256, retrieval/verification UTC timestamps and affected scope are mandatory. Publication timestamp may be blank only when the source does not publish one; if present it must include a timezone.
 Accepted statuses are `verified_open`, `verified_closed`, `verified_exceptional_open`, and `verified_exceptional_closed`. Exceptional-open dates are accepted by the OHLCV gate only when the date-specific evidence row is present. Every explicit row must
 carry a source identifier, evidence URI and verification timestamp. Conflicting or
 duplicate date rows fail calendar loading. Keep the source notice/document and its

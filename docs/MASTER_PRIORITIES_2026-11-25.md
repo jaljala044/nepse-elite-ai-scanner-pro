@@ -329,3 +329,19 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   `data/evidence/acquired/floorsheet-2015-01-04-amount-exception.json` and
   `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
 
+
+### Primary-source evidence capture success
+
+- Official CDSC current clearing-member CSV captured as raw bytes, archived in
+  `data/evidence/raw/cdsc/2026-11-25/`, 92 rows, 10,893 bytes,
+  SHA-256 `feb4597d66ad37dbc6f0ed2a9fd54c4fc7c04e67ce0b91c066bb9574c1c49de3`.
+- Response headers, timestamp, source URL, checksum and source-object manifest
+  preserved. Current directory now provides a primary snapshot for the
+  cross-date broker numeric coverage check; historical name effective dates
+  and reuse terms remain open.
+- NEPSE Holiday Listing capture initially failed on HTTP/2 protocol errors;
+  retry over HTTP/1.1 and alternate host is in progress. Calendar gate remains
+  blocked until primary notice bytes and date-scoped claims are verified.
+- See `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md` for artifact IDs,
+  exact hashes and remaining gates.
+

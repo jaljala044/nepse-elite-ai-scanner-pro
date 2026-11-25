@@ -64,6 +64,16 @@ class SecurityCoverageReportTests(unittest.TestCase):
         self.assertEqual(report["source_specific_reports"][0]["unexpected_observations"][0]["reason"], "observation_on_verified_closed_date")
         self.assertFalse(report["promotion_allowed"])
 
+    def test_source_file_bytes_are_pinned_in_report(self):
+        self.write_inputs()
+        report = build_security_coverage_report(
+            self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+        evidence = report["source_file_evidence"][0]
+        import hashlib
+        self.assertEqual(evidence["sha256"], hashlib.sha256(self.data.read_bytes()).hexdigest())
+        self.assertEqual(evidence["byte_count"], self.data.stat().st_size)
+        self.assertEqual(report["source_file_count"], 1)
+
     def test_unknown_calendar_date_is_not_added_to_denominator(self):
         self.write_inputs()
         with self.data.open("a", encoding="utf-8") as stream:

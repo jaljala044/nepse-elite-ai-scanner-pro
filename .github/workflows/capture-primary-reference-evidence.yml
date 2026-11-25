@@ -16,7 +16,7 @@ concurrency:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -122,9 +122,21 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
           echo "Capturing the authenticated official holiday API response body."
-          python backend/capture_nepse_holiday_evidence.py \
-            --year 2026 \
-            --output-dir evidence/nepse-api-authenticated || true
+          set +e
+          failures=0
+          for year in $(seq 2015 2025); do
+            echo "Capturing official NEPSE holiday records for $year"
+            python backend/capture_nepse_holiday_evidence.py \
+              --year "$year" \
+              --output-dir "evidence/nepse-api-authenticated/$year"
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              failures=$((failures + 1))
+            fi
+          done
+          echo "Historical holiday API captures with nonzero status: $failures"
+          printf '%s\n' "$failures" > evidence/nepse-api-authenticated/failure-count.txt
+          exit 0
       - name: Commit captured primary source evidence
         shell: bash
         run: |
@@ -147,8 +159,13 @@ jobs:
             cp evidence/nepse-api/* data/evidence/raw/nepse/holiday-api/2026-11-25/ || true
           fi
           if [ -d evidence/nepse-api-authenticated ]; then
-            mkdir -p data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25
-            cp evidence/nepse-api-authenticated/* data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25/ || true
+            for year_dir in evidence/nepse-api-authenticated/[0-9][0-9][0-9][0-9]; do
+              [ -d "$year_dir" ] || continue
+              year="$(basename "$year_dir")"
+              target="data/evidence/raw/nepse/holiday-api-authenticated/$year-11-25"
+              mkdir -p "$target"
+              cp "$year_dir"/* "$target"/
+            done
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -68,7 +68,7 @@ def inspect_zip(
     entries = []
     issues = []
     seen_names = set()
-    seen_casefold = set()
+    seen_casefold = {}
     total_uncompressed = 0
 
     try:
@@ -89,9 +89,11 @@ def inspect_zip(
                     member_issues.append("duplicate_member_name")
                 seen_names.add(name)
                 folded = name.casefold()
-                if folded in seen_casefold and name not in seen_names:
+                prior_casefold = seen_casefold.get(folded)
+                if prior_casefold is not None and prior_casefold != name:
                     member_issues.append("casefold_name_collision")
-                seen_casefold.add(folded)
+                else:
+                    seen_casefold[folded] = name
 
                 unix_mode = (info.external_attr >> 16) & 0xFFFF
                 if stat.S_ISLNK(unix_mode):

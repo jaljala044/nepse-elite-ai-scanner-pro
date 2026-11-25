@@ -32,10 +32,11 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
         result = analyze_history_payload(payload, [conflict()])
         self.assertEqual(result["conflict_comparisons"][0]["status"], "matches_source_b")
 
-    def test_unknown_schema_does_not_infer_ohlcv(self):
+    def test_partial_primary_row_reports_missing_ohlcv_fields(self):
         payload = {"content": [{"date": "2025-07-28", "close": 945}]}
         result = analyze_history_payload(payload, [conflict()])
-        self.assertEqual(result["conflict_comparisons"][0]["status"], "unmapped_ohlcv_fields")
+        self.assertEqual(result["conflict_comparisons"][0]["status"], "partial_primary_fields")
+        self.assertEqual(result["conflict_comparisons"][0]["missing_fields"], ["open", "high", "low", "volume"])
         self.assertTrue(result["decision_requires_review"])
 
     def test_missing_primary_date_is_not_imputed(self):

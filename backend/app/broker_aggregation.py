@@ -206,15 +206,13 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
         def parse_count(value):
             if isinstance(value, bool):
                 raise ValueError("control counts must be non-negative integers")
-            if isinstance(value, int):
-                parsed_count = value
-            elif isinstance(value, str) and re.fullmatch(r"\d+", value):
-                parsed_count = int(value)
-            else:
+            try:
+                numeric = Decimal(str(value))
+            except (InvalidOperation, TypeError, ValueError) as exc:
+                raise ValueError("control counts must be non-negative integers") from exc
+            if not numeric.is_finite() or numeric < 0 or numeric != numeric.to_integral_value():
                 raise ValueError("control counts must be non-negative integers")
-            if parsed_count < 0:
-                raise ValueError("control counts must be non-negative integers")
-            return parsed_count
+            return int(numeric)
 
         try:
             contract_count = parse_count(control["contract_count"])

@@ -124,3 +124,107 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         "coverage": coverage_rows,
         "policy": "exact_decimal_totals_and_explicit_unresolved_denominators",
     }
+
+
+def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> dict:
+    """Compare party rows to source controls without double-counting buyer/seller sides.
+
+    A contract contributes its gross amount and quantity once only when exactly
+    one buy-side and one sell-side observation agree on both values.
+    """
+    from collections import defaultdict
+
+    contracts = defaultdict(list)
+    for index, row in enumerate(rows):
+        required = ("source_id", "trade_date", "contract_id", "side", "amount", "quantity")
+        if any(row.get(key) in (None, "") for key in required):
+            raise ValueError(f"row {index}: missing source control reconciliation field")
+        if row["side"] not in {"buy", "sell"}:
+            raise ValueError(f"row {index}: side must be buy or sell")
+        try:
+            amount = Decimal(str(row["amount"]))
+            quantity = Decimal(str(row["quantity"]))
+        except InvalidOperation as exc:
+            raise ValueError(f"row {index}: invalid amount or quantity") from exc
+        if not amount.is_finite() or not quantity.is_finite() or amount < 0 or quantity < 0:
+            raise ValueError(f"row {index}: amount and quantity must be finite and non-negative")
+        contracts[(row["source_id"], row["trade_date"], row["contract_id"])].append(
+            {"side": row["side"], "amount": amount, "quantity": quantity}
+        )
+
+    actual = defaultdict(lambda: {
+        "party_observation_count": 0, "contract_count": 0,
+        "gross_amount": Decimal("0"), "quantity": Decimal("0"),
+        "contract_anomalies": [],
+    })
+    for (source_id, trade_date, contract_id), parties in sorted(contracts.items()):
+        summary = actual[(source_id, trade_date)]
+        summary["party_observation_count"] += len(parties)
+        sides = [party["side"] for party in parties]
+        amounts = {party["amount"] for party in parties}
+        quantities = {party["quantity"] for party in parties}
+        if len(parties) != 2 or sorted(sides) != ["buy", "sell"] or len(amounts) != 1 or len(quantities) != 1:
+            summary["contract_anomalies"].append({
+                "contract_id": contract_id,
+                "party_count": len(parties),
+                "sides": sorted(sides),
+                "amount_values": sorted(str(value) for value in amounts),
+                "quantity_values": sorted(str(value) for value in quantities),
+            })
+            continue
+        summary["contract_count"] += 1
+        summary["gross_amount"] += next(iter(amounts))
+        summary["quantity"] += next(iter(quantities))
+
+    expected = {}
+    for index, control in enumerate(controls):
+        key = (control.get("source_id"), control.get("trade_date"))
+        if not all(key) or key in expected:
+            raise ValueError(f"control {index}: missing or duplicate source/date control key")
+        try:
+            expected[key] = {
+                "contract_count": int(control["contract_count"]),
+                "gross_amount": Decimal(str(control["gross_amount"])),
+                "party_observation_count": int(control["party_observation_count"]),
+            }
+        except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
+            raise ValueError(f"control {index}: invalid source control totals") from exc
+        if not expected[key]["gross_amount"].is_finite() or expected[key]["gross_amount"] < 0:
+            raise ValueError(f"control {index}: gross_amount must be finite and non-negative")
+
+    results = []
+    for key in sorted(set(actual) | set(expected)):
+        observed = actual.get(key, {
+            "party_observation_count": 0, "contract_count": 0,
+            "gross_amount": Decimal("0"), "quantity": Decimal("0"),
+            "contract_anomalies": [],
+        })
+        target = expected.get(key)
+        differences = []
+        if target is None:
+            differences.append("missing_source_control")
+        else:
+            for field in ("contract_count", "gross_amount", "party_observation_count"):
+                actual_value = observed[field]
+                expected_value = target[field]
+                if actual_value != expected_value:
+                    differences.append(field)
+        if observed["contract_anomalies"]:
+            differences.append("contract_party_anomalies")
+        results.append({
+            "source_id": key[0], "trade_date": key[1],
+            "observed_contract_count": observed["contract_count"],
+            "observed_party_observation_count": observed["party_observation_count"],
+            "observed_gross_amount": str(observed["gross_amount"]),
+            "observed_quantity": str(observed["quantity"]),
+            "contract_anomalies": observed["contract_anomalies"],
+            "differences": differences,
+            "status": "passed" if not differences else "failed",
+        })
+    return {
+        "source_date_count": len(results),
+        "passed_source_dates": sum(row["status"] == "passed" for row in results),
+        "failed_source_dates": sum(row["status"] == "failed" for row in results),
+        "results": results,
+        "policy": "count_each_contract_once_only_when_buyer_and_seller_party_rows_agree",
+    }

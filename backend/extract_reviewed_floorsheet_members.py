@@ -103,14 +103,14 @@ def extract_reviewed_csv_members(
                             raise ValueError(f"extracted byte count differs from ZIP metadata: {member_name}")
                         if target.exists():
                             raise FileExistsError(f"refusing to overwrite existing extracted file: {target}")
-                        temporary.replace(target)
+                        os.link(temporary, target)
+                        temporary.unlink()
                         created_paths.remove(temporary)
                         created_paths.append(target)
                     except Exception:
-                        if temporary.exists():
+                        if temporary in created_paths and temporary.exists():
                             temporary.unlink()
-                            if temporary in created_paths:
-                                created_paths.remove(temporary)
+                            created_paths.remove(temporary)
                         raise
                     extracted.append({
                         "member_name": member_name,

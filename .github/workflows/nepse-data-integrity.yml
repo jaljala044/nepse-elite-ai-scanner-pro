@@ -32,6 +32,9 @@ jobs:
       - name: Test coverage matrix
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_coverage_matrix.py' -v
+      - name: Test row-level OHLCV reconciliation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_ohlcv_reconciliation.py' -v
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000

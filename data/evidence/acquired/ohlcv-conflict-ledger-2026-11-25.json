@@ -117,8 +117,8 @@
       "independent_primary_evidence_uri": null,
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
+      "resolution_status": "quarantined_secondary_ltp_matches_source_a_primary_close_method_pending",
+      "decision_reason": "MeroLagani dated Price History returned one 2025-07-28 row. Its LTP and O/H/L/quantity exactly match Source A; separate ShareSansarScraper daily-board Close/VWAP matches Source B. This is a close-field semantic conflict (LTP/last-trade-style field vs full-day VWAP), not a random row discrepancy. MeroLagani is secondary and labels the field LTP; NEPSE primary EOD/official close-method confirmation remains missing. Keep quarantined; no canonical promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -192,6 +192,24 @@
         "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
         "verified": false,
         "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
+      },
+      "merolagani_historical_price_history": {
+        "source": "MeroLagani CompanyDetail Price History tab",
+        "source_url": "https://merolagani.com/CompanyDetail.aspx?symbol=BGWT",
+        "query_date": "2025/07/28",
+        "records_returned": 1,
+        "fields": {
+          "market_date": "2025/07/28",
+          "ltp": 957.17,
+          "percentage_change": 0.84,
+          "open": 940,
+          "high": 992,
+          "low": 933.4,
+          "quantity": 14028,
+          "turnover": 13256345
+        },
+        "observed_match": "LTP, open, high, low and quantity exactly match Source A; LTP does not match Source B Close/VWAP",
+        "classification": "secondary_publisher_dated_history_not_primary_exchange_certification"
       }
     },
     {
@@ -303,8 +321,8 @@
       "independent_primary_evidence_uri": null,
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
+      "resolution_status": "quarantined_secondary_ltp_matches_source_a_primary_close_method_pending",
+      "decision_reason": "MeroLagani dated Price History returned one 2025-07-28 row. Its LTP and O/H/L/quantity exactly match Source A; separate ShareSansarScraper daily-board Close/VWAP matches Source B. This is a close-field semantic conflict (LTP/last-trade-style field vs full-day VWAP), not a random row discrepancy. MeroLagani is secondary and labels the field LTP; NEPSE primary EOD/official close-method confirmation remains missing. Keep quarantined; no canonical promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -378,6 +396,24 @@
         "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
         "verified": false,
         "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
+      },
+      "merolagani_historical_price_history": {
+        "source": "MeroLagani CompanyDetail Price History tab",
+        "source_url": "https://merolagani.com/CompanyDetail.aspx?symbol=MEHL",
+        "query_date": "2025/07/28",
+        "records_returned": 1,
+        "fields": {
+          "market_date": "2025/07/28",
+          "ltp": 475.63,
+          "percentage_change": -1.05,
+          "open": 471.1,
+          "high": 480.5,
+          "low": 460,
+          "quantity": 29753,
+          "turnover": 14008898.1
+        },
+        "observed_match": "LTP, open, high, low and quantity exactly match Source A; LTP does not match Source B Close/VWAP",
+        "classification": "secondary_publisher_dated_history_not_primary_exchange_certification"
       }
     },
     {
@@ -412,8 +448,8 @@
       "independent_primary_evidence_uri": null,
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
+      "resolution_status": "quarantined_secondary_ltp_matches_source_a_primary_close_method_pending",
+      "decision_reason": "MeroLagani dated Price History returned one 2025-07-28 row. Its LTP and O/H/L/quantity exactly match Source A; separate ShareSansarScraper daily-board Close/VWAP matches Source B. This is a close-field semantic conflict (LTP/last-trade-style field vs full-day VWAP), not a random row discrepancy. MeroLagani is secondary and labels the field LTP; NEPSE primary EOD/official close-method confirmation remains missing. Keep quarantined; no canonical promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -487,6 +523,24 @@
         "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
         "verified": false,
         "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
+      },
+      "merolagani_historical_price_history": {
+        "source": "MeroLagani CompanyDetail Price History tab",
+        "source_url": "https://merolagani.com/CompanyDetail.aspx?symbol=RAWA",
+        "query_date": "2025/07/28",
+        "records_returned": 1,
+        "fields": {
+          "market_date": "2025/07/28",
+          "ltp": 796.9,
+          "percentage_change": -1.64,
+          "open": 796,
+          "high": 811,
+          "low": 780.3,
+          "quantity": 3165,
+          "turnover": 2515662.5
+        },
+        "observed_match": "LTP, open, high, low and quantity exactly match Source A; LTP does not match Source B Close/VWAP",
+        "classification": "secondary_publisher_dated_history_not_primary_exchange_certification"
       }
     },
     {
@@ -521,8 +575,8 @@
       "independent_primary_evidence_uri": null,
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
+      "resolution_status": "quarantined_secondary_ltp_matches_source_a_primary_close_method_pending",
+      "decision_reason": "MeroLagani dated Price History returned one 2025-07-28 row. Its LTP and O/H/L/quantity exactly match Source A; separate ShareSansarScraper daily-board Close/VWAP matches Source B. This is a close-field semantic conflict (LTP/last-trade-style field vs full-day VWAP), not a random row discrepancy. MeroLagani is secondary and labels the field LTP; NEPSE primary EOD/official close-method confirmation remains missing. Keep quarantined; no canonical promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -596,6 +650,24 @@
         "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
         "verified": false,
         "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
+      },
+      "merolagani_historical_price_history": {
+        "source": "MeroLagani CompanyDetail Price History tab",
+        "source_url": "https://merolagani.com/CompanyDetail.aspx?symbol=RHGCL",
+        "query_date": "2025/07/28",
+        "records_returned": 1,
+        "fields": {
+          "market_date": "2025/07/28",
+          "ltp": 357.05,
+          "percentage_change": 5.03,
+          "open": 346.7,
+          "high": 362,
+          "low": 341.4,
+          "quantity": 296715,
+          "turnover": 103872614.4
+        },
+        "observed_match": "LTP, open, high, low and quantity exactly match Source A; LTP does not match Source B Close/VWAP",
+        "classification": "secondary_publisher_dated_history_not_primary_exchange_certification"
       }
     },
     {
@@ -707,8 +779,8 @@
       "independent_primary_evidence_uri": null,
       "evidence_sha256": null,
       "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
-      "resolution_status": "quarantined_unresolved",
-      "decision_reason": "The official EOD endpoint rejects 2025-07-28 outside its observed retention window; company-specific historical floorsheet route returns Nginx 403 on both official hosts; legacy PHP routes are retired. Secondary ShareSansar/SocrateAI archives provide corroboration only, with SocrateAI upstream provenance unverified and closing-price basis unresolved. Keep quarantined; no promotion or training.",
+      "resolution_status": "quarantined_secondary_ltp_matches_source_a_primary_close_method_pending",
+      "decision_reason": "MeroLagani dated Price History returned one 2025-07-28 row. Its LTP and O/H/L/quantity exactly match Source A; separate ShareSansarScraper daily-board Close/VWAP matches Source B. This is a close-field semantic conflict (LTP/last-trade-style field vs full-day VWAP), not a random row discrepancy. MeroLagani is secondary and labels the field LTP; NEPSE primary EOD/official close-method confirmation remains missing. Keep quarantined; no canonical promotion or training.",
       "secondary_archive_evidence": {
         "source": "ShareSansar-derived append-only archive",
         "repository": "srijankarki07/nepse-data",
@@ -782,8 +854,42 @@
         "hypothesis": "Source A may reflect the NEPSE final-15-minute weighted-average close; Source B's close aligns with full-day VWAP from the archived floorsheet",
         "verified": false,
         "limitation": "Archived floorsheet has no trade timestamps, so the final-15-minute weighted average cannot be independently recomputed."
+      },
+      "merolagani_historical_price_history": {
+        "source": "MeroLagani CompanyDetail Price History tab",
+        "source_url": "https://merolagani.com/CompanyDetail.aspx?symbol=ULHC",
+        "query_date": "2025/07/28",
+        "records_returned": 1,
+        "fields": {
+          "market_date": "2025/07/28",
+          "ltp": 510.75,
+          "percentage_change": 0.49,
+          "open": 509,
+          "high": 515,
+          "low": 495,
+          "quantity": 32288,
+          "turnover": 16273342.1
+        },
+        "observed_match": "LTP, open, high, low and quantity exactly match Source A; LTP does not match Source B Close/VWAP",
+        "classification": "secondary_publisher_dated_history_not_primary_exchange_certification"
       }
     }
   ],
-  "canonical_promotion_allowed": false
+  "canonical_promotion_allowed": false,
+  "secondary_cross_check_summary": {
+    "source": "MeroLagani dated Price History",
+    "date": "2025-07-28",
+    "symbols_checked": [
+      "BGWT",
+      "MEHL",
+      "RAWA",
+      "RHGCL",
+      "ULHC"
+    ],
+    "records_returned_per_symbol": 1,
+    "result": "All five MeroLagani LTP values and open/high/low/quantity fields exactly match Source A. ShareSansarScraper's separate Close/VWAP values match Source B.",
+    "interpretation": "Store full-day VWAP as a separate measure, not as OHLCV close. Source A is the stronger provisional close candidate if the target field is the exchange session close, but MeroLagani's LTP label is not NEPSE primary certification.",
+    "primary_evidence_gate": "not_pass",
+    "canonical_promotion_allowed": false
+  }
 }

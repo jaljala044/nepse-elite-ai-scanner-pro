@@ -69,3 +69,23 @@ An official NEPSE-hosted PDF was located through the exchange's own file endpoin
 ### Calendar research update
 
 The previous gap statement that no original NEPSE session-regime notice had been retrieved is now narrowed: a primary NEPSE notice for the June 2022 regime transition has been found. The April 2026 Monday–Friday change remains supported only by secondary reports in the evidence currently captured; an original NEPSE notice is still outstanding. A complete date-level calendar remains unverified.
+
+
+## Visual reinspection and date correction — 2026-11-25
+
+The one-page NEPSE-hosted PDF was opened and its page image visually inspected. The Nepali text records:
+- Government decision dated 2079/02/23 to revoke the two-day public-holiday arrangement.
+- NEPSE Board decision dated **2079/02/24** (not 2079/02/25 as stated in the earlier note).
+- Effective date Asar 1, 2079 (2022-06-16).
+- Sunday–Thursday 11:00–15:00 and Friday 11:00–13:00.
+
+This corrects the Board-decision date in the prior entry. The PDF is a one-page official NEPSE-hosted document and the image is legible enough to verify the date and hours. The web-rendered PDF could be inspected, but the exact original PDF bytes could not be downloaded into the repository/container during this run; therefore no raw-byte SHA-256 or immutable evidence file is claimed.
+
+## April 2026 weekday transition — refreshed source check
+
+A fresh search found additional reporting:
+- [ShareSansar, 2026-04-08](https://www.sharesansar.com/newsdetail/nepal-stock-exchange-opens-monday-to-friday-under-new-government-timings-2026-04-08) says NEPSE issued a public notice and attributes the Monday–Friday schedule to the Board decision on 22 Chaitra 2082.
+- [Khabarhub, 2026-04-08](https://english.khabarhub.com/2026/08/543190/) likewise reports that NEPSE issued a notice on Wednesday.
+- [Ratopati, 2026-04-08](https://english.ratopati.com/story/57946/stock-market-now-trades-from-monday-to-friday) reports that a notice was issued and Saturday/Sunday were excluded.
+
+These sources improve corroboration and provide a narrower retrieval target (NEPSE notice issued 2026-04-08, Board decision 22 Chaitra 2082). They are still secondary reports: the primary notice PDF or NEPSE-hosted notice record has not yet been captured. Do not upgrade the April 2026 weekday schedule to primary-source verified solely on these articles.

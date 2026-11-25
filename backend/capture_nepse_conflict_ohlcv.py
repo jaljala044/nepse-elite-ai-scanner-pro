@@ -197,9 +197,18 @@ def analyze_date_price_volume_payload(payload, conflicts, security_id_to_symbol=
             for item in conflicts
         ]
 
+    row_symbols = [_row_symbol(row, security_id_to_symbol) for row in rows]
+    if not any(row_symbols):
+        return [
+            {"symbol": item["symbol"], "date": item["date"],
+             "status": "unmapped_symbol_schema", "primary_rows_found": None,
+             "field_names": sorted({field for row in rows for field in row})}
+            for item in conflicts
+        ]
+
     comparisons = []
     for conflict in conflicts:
-        matches = [row for row in rows if _row_symbol(row, security_id_to_symbol) == conflict["symbol"].upper()]
+        matches = [row for row, symbol in zip(rows, row_symbols) if symbol == conflict["symbol"].upper()]
         if not matches:
             comparisons.append({
                 "symbol": conflict["symbol"], "date": conflict["date"],

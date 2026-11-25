@@ -232,19 +232,29 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
                 raise ValueError("control counts must be non-negative integers")
             return int(numeric)
 
+        if not isinstance(control, dict):
+            raise ValueError(f"control {index}: expected object")
+        expected_values = {}
         try:
-            contract_count = parse_count(control["contract_count"])
-            party_count = parse_count(control["party_observation_count"])
-            gross_amount = Decimal(str(control["gross_amount"]))
+            if "contract_count" in control:
+                expected_values["contract_count"] = parse_count(control["contract_count"])
+            if "party_observation_count" in control:
+                expected_values["party_observation_count"] = parse_count(
+                    control["party_observation_count"]
+                )
+            for field in ("gross_amount", "quantity"):
+                if field in control:
+                    value = Decimal(str(control[field]))
+                    if not value.is_finite() or value < 0:
+                        raise ValueError(f"{field} must be finite and non-negative")
+                    expected_values[field] = value
         except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
             raise ValueError(f"control {index}: invalid source control totals: {exc}") from exc
-        expected[key] = {
-            "contract_count": contract_count,
-            "gross_amount": gross_amount,
-            "party_observation_count": party_count,
-        }
-        if not expected[key]["gross_amount"].is_finite() or expected[key]["gross_amount"] < 0:
-            raise ValueError(f"control {index}: gross_amount must be finite and non-negative")
+        if not expected_values:
+            raise ValueError(
+                f"control {index}: at least one independent total is required"
+            )
+        expected[key] = expected_values
 
     results = []
     for key in sorted(set(actual) | set(expected)):
@@ -258,9 +268,8 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
         if target is None:
             differences.append("missing_source_control")
         else:
-            for field in ("contract_count", "gross_amount", "party_observation_count"):
+            for field, expected_value in target.items():
                 actual_value = observed[field]
-                expected_value = target[field]
                 if actual_value != expected_value:
                     differences.append(field)
         if observed["contract_anomalies"]:

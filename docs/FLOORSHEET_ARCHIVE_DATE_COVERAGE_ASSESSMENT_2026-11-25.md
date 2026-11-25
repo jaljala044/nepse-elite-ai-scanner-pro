@@ -20,19 +20,15 @@ This is a **date-file manifest count**, not a count of verified NEPSE trading se
 
 ### One-year candidate window
 
-| Measure | SocrateAI | SamirWagle |
-|---|---:|---:|
-| Date-named files | **228** | **179** |
-| Shared date files | \multicolumn{2}{c}{**157**} |
-| Files only in this archive | 71 | 22 |
+| Window | SocrateAI files | SamirWagle files | Shared | SocrateAI only | SamirWagle only |
+|---|---:|---:|---:|---:|---:|
+| One year | **228** | **179** | **157** | 71 | 22 |
 
 ### Six-month candidate window
 
-| Measure | SocrateAI | SamirWagle |
-|---|---:|---:|
-| Date-named files | **115** | **119** |
-| Shared date files | \multicolumn{2}{c}{**107**} |
-| Files only in this archive | 8 | 12 |
+| Window | SocrateAI files | SamirWagle files | Shared | SocrateAI only | SamirWagle only |
+|---|---:|---:|---:|---:|---:|
+| Six months | **115** | **119** | **107** | 8 | 12 |
 
 Neither archive's six-month date list is a superset of the other. The one-year file lists also have substantial date-set differences. The two repositories are therefore not interchangeable as a single "complete daily" source.
 

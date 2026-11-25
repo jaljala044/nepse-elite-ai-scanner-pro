@@ -504,3 +504,31 @@ Attempted https://chukul.com/ with browser navigation both with and without trai
 - Original NEPSE primary EOD response for 2025-07-28 remains outside the observed rolling retention window; the official today-price endpoint returned HTTP 500 "Searched Date is not valid." The historical close-method question therefore remains unresolved.
 - Next actionable route is official NEPSE confirmation / licensed historical EOD export, including the definition of the 2025-07-28 closing-price field during the weighted-average closing-price period.
 - All five 2025-07-28 records remain quarantined; no canonical promotion, no training, and no PR merge.
+
+
+## Extended Chukul investigation (browser run c7614bb1-ac5c-4558-89ba-152d76dca20f)
+
+A longer live browser investigation ran for 792 seconds on https://chukul.com/ and examined the public dashboard, navigation, stock search, profile routing, chart controls, login and pricing affordances for the 2025-07-28 conflicts (BGWT, MEHL, RAWA, RHGCL, ULHC).
+
+### Observations
+- Chukul is a Quasar single-page application. Public dashboard displayed all five symbols in its live ticker. These were current/recent dashboard figures, not the target historical session and must not be used as 2025-07-28 evidence:
+  - BGWT 505, displayed change 5, volume 8,422
+  - MEHL 262, displayed change 6.2, volume 87,930
+  - RAWA 433, displayed change 7, volume 52,245
+  - RHGCL 260, displayed change 4.8, volume 35,907
+  - ULHC 345, displayed change 8, volume 45,475
+- Public navigation observed: Dashboard, Market, Broker, Bulk Transaction, Buy/Sell Vol, Fundamental, Technical, Scanner, Portfolio, Signals, Chart.
+- Individual profile attempt: https://chukul.com/stock-profile?symbol=BGWT; page load timed out after 30 seconds. Generic /stock-profile route was also explored.
+- Dashboard TradingView widget displayed NEPSE index only. No individual-stock daily historical chart was available in the unauthenticated dashboard view.
+- Visible chart timeframes were 5M, 15M, 30M, 1H and 2H (intraday). No daily date-range selector or Historical Data tab was found in the public view.
+- Login link visible at https://chukul.com/login. Premium tiers Elite, Platinum, Diamond shown; some feature areas marked Closed.
+- Additional public links observed: /nepse-market-summary, /stock-profile, /broker-desk/details, /fundamental-desk/details, /technical-desk/details, /custom-signal-pro-v2, /relative-rotation/details, /point-and-figure/details, /gann-wheel/details, /strategy-desk/details, /signal-desk/details, /portfolio-intelligence/details, /bulk-transaction-desk/details, /buy-sell-volume-desk/details, /ipo-auction, /training, /contact-us, /pricing, /login.
+- No historical 2025-07-28 OHLCV row or publicly usable historical-data API route was obtained for any of the five symbols.
+
+### Evidence classification and limits
+Classify Chukul as `public_historical_data_not_verified_login_or_subscription_may_be_required`. Do not classify as confirmed no-data. The investigation did not authenticate or test subscription entitlements, so it cannot establish whether paid Chukul access exposes the requested daily history. Dashboard ticker figures are not historical evidence and must not be ingested for the target date.
+
+### Next Chukul-specific action
+If the project owner has an authorized Chukul account, use its normal login and available subscription permissions to inspect individual-stock history and daily chart date controls for all five symbols. Do not request credentials in chat or bypass access controls. If the service requires a higher tier, ask Chukul support whether its historical daily OHLCV includes 2025-07-28 and which close field it reports.
+
+The five conflicts remain quarantined; this Chukul attempt does not change the Source A/Source B comparison or the primary NEPSE evidence gate.

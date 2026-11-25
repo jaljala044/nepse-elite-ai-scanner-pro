@@ -62,15 +62,21 @@ jobs:
       - name: Capture official NEPSE holiday listing response
         shell: bash
         run: |
-          url="https://www.nepalstock.com/holiday-listing"
-          if curl --location --retry 2 --retry-all-errors --max-time 90 \
-            --dump-header evidence/nepse/holiday-response-headers.txt \
-            --output evidence/nepse/holiday-listing.html "$url"; then
-            printf '%s\n' "$url" > evidence/nepse/source-url.txt
-            sha256sum evidence/nepse/holiday-listing.html > evidence/nepse/SHA256SUMS
-            wc -c evidence/nepse/holiday-listing.html > evidence/nepse/byte-count.txt
-          else
-            printf 'capture_failed\n' > evidence/nepse/CAPTURE_FAILED.txt
+          urls=("https://www.nepalstock.com/holiday-listing" "https://nepalstock.com/holiday-listing")
+          captured=0
+          for url in "${urls[@]}"; do
+            if curl --http1.1 --location --retry 3 --retry-all-errors --max-time 90 \
+              --dump-header evidence/nepse/holiday-response-headers.txt \
+              --output evidence/nepse/holiday-listing.html "$url"; then
+              printf '%s\n' "$url" > evidence/nepse/source-url.txt
+              sha256sum evidence/nepse/holiday-listing.html > evidence/nepse/SHA256SUMS
+              wc -c evidence/nepse/holiday-listing.html > evidence/nepse/byte-count.txt
+              captured=1
+              break
+            fi
+          done
+          if [ "$captured" -eq 0 ]; then
+            printf 'capture_failed_after_http11_retry_and_host_fallback\n' > evidence/nepse/CAPTURE_FAILED.txt
           fi
       - name: Commit captured primary source evidence
         shell: bash
@@ -85,7 +91,7 @@ jobs:
             sha256sum "$target/clearing-members.csv" > "$target/SHA256SUMS"
             cp evidence/cdsc/capture-report.json "$target/capture-report.json"
           fi
-          if [ -f evidence/nepse/holiday-listing.html ]; then
+          if [ -f evidence/nepse/holiday-listing.html ] || [ -f evidence/nepse/CAPTURE_FAILED.txt ]; then
             mkdir -p data/evidence/raw/nepse/holiday-listing/2026-11-25
             cp evidence/nepse/* data/evidence/raw/nepse/holiday-listing/2026-11-25/ || true
           fi

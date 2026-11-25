@@ -720,3 +720,28 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 4. Capture primary NEPSE session notices and build a date-level `confirmed_open` / `confirmed_closed` / `exceptional_session` / `unverified` register.
 5. Use the verified calendar and universe to classify the 196,784 repeated-row candidates and calculate per-instrument coverage; preserve all unresolved rows.
 
+
+## 2026-11-25 continuation — next five acceptance tasks and additional pipeline hardening
+
+### Five acceptance tasks: disposition
+1. **CI verification:** passed for exceptional-session calendar changes at `da139aa3d1` (backend `45541490011`, contract `45541489993`) and `5cc262cf78` (backend `45541499282`, contract `45541499204`). Documentation-only follow-up commits `1c5f37a82e` and `4a876f682c` also passed backend tests (`45541523995`, `45541538847`).
+2. **Authorized real floorsheet sample:** not completed. Existing acquisition tools require explicit rights confirmation; source MIT declarations do not independently verify original upstream rights. The user's Drive ZIP is not connected in this execution. No real sample is claimed acquired or audited.
+3. **Primary instrument registry:** partially advanced. Official NEPSE stock-list and asset-list pages were located and the dated stock-list snapshot (2026-10-15) was documented. It is not a lifecycle registry and does not establish the exact 281 + 47 membership. No manifest is promoted.
+4. **Session calendar:** implementation now supports `verified_exceptional_open` and `verified_exceptional_closed`; exceptional open rows can pass OHLCV calendar gating only with source ID, URI and timezone-aware UTC verification timestamp. Tests reject unsupported statuses and timestamps without UTC timezone. The official 2022 NEPSE schedule notice remains captured as a source lead; exact PDF byte hash and a complete date-level primary calendar remain outstanding. April 2026 Monday-Friday notice is still only secondary-source corroborated.
+5. **Repeated-row and per-instrument coverage reconciliation:** blocked on the complete date-level session calendar and verified 281 + 47 instrument registry. All 196,784 repeat candidates remain review-only; no deletion or promotion.
+
+### Additional engineering work beyond the five acceptance tasks
+- Hardened `aggregate_broker_side` to use exact Decimal arithmetic, require integer non-negative quantities, reject non-finite/negative amounts, validate identity statuses, require entity IDs for verified rows and prohibit entity IDs on unresolved rows. Amounts serialize as exact decimal strings.
+- Added tests for 0.1 + 0.2 exact aggregation, NaN rejection and unresolved identity/entity inconsistency. Commit `d113dd8454f0258f6773a0177b52877117f9afdc`; backend and contract CI were running when this entry was written.
+- Calendar exceptional-session implementation and tests: `da139aa3d1f3886e871b044091bd8f63f9d01fca`, `5cc262cf786bc40d4752064a4b0422686a7b6db5`.
+- Documentation commits: calendar status semantics `1c5f37a82efaa5f4e8b03d637aade2d259421094`; official stock-list evidence limitations `4a876f682c0768d4f44113cdc2f5ba5ffdcf33e9`.
+
+### Next five engineering priorities (11–15)
+11. Make broker aggregation fully source-lineage preserving at contract/party observation grain, with stable input-order-independent output and exact decimal totals.
+12. Add security-master snapshot validation for stable IDs, duplicate symbols, instrument classes and lifecycle intervals; fail closed on unknown classes.
+13. Add date-level session evidence ingestion that stores raw notice hash, publication time, retrieval time, scope and exceptional-session state; do not infer closure from missing files.
+14. Build a reproducible coverage report that joins the approved universe, verified sessions and source manifests, reporting per-security expected/observed dates and explicit unknowns.
+15. Add an end-to-end readiness gate that prevents canonical/training promotion unless source rights, registry, calendar, raw-file hashes, row reconciliation and point-in-time provenance all pass.
+
+### Outstanding blocker
+The project can continue engineering, but data acquisition and production-readiness cannot be marked complete until an authorized floorsheet sample and primary instrument/session evidence are actually captured and verified. The latest OHLCV archive audit still fails on known source anomalies; its failed status is not replaced by the passing unit tests.

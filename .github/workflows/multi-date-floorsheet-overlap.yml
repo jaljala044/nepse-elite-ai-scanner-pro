@@ -8,6 +8,8 @@ on:
       - "backend/compare_floorsheet_manifest.py"
       - "backend/compare_floorsheet_source_csvs.py"
       - "backend/tests/test_acquire_floorsheet_overlap.py"
+      - "backend/tests/test_compare_floorsheet_manifest.py"
+      - "backend/tests/test_compare_floorsheet_source_csvs.py"
       - ".github/workflows/multi-date-floorsheet-overlap.yml"
   workflow_dispatch:
 

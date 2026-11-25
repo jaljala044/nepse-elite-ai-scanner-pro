@@ -1,89 +1,31 @@
 {
   "schema_version": 1,
   "source_id": "NEPSE_OFFICIAL_PRICE_VOLUME_HISTORY",
-  "retrieved_at_utc": "2026-11-25T17:36:20.338642Z",
+  "retrieved_at_utc": "2026-11-25T18:20:52.557574Z",
   "endpoint_path": "/api/nots/market/history/security/{securityId}",
   "client_version": "nepse-client==0.1.4",
   "conflict_count": 8,
   "symbol_count": 7,
-  "captured_response_count": 8,
+  "captured_response_count": 17,
   "security_list_captured": true,
   "symbol_reports": {
     "API": {
       "status": "review_required",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/697?size=500&startDate=2026-11-19&endDate=2026-11-19",
-      "response_sha256": "d5583e50ce0efe0d17ee73251babc8cfd104ab2c8a6a3777e5836381648cd7a5",
-      "record_count": 1,
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/697?size=500&startDate=2026-10-20&endDate=2026-12-19",
+      "response_sha256": "3494bfadee5995415ff412a5c8e5824a21790cc7016a99e2be7c4cc3223496b4",
+      "record_count": 18,
       "pagination": {
         "container": "content",
         "total_pages": 1,
-        "total_elements": 1
+        "total_elements": 18
       },
-      "date_field": "businessDate"
+      "date_field": "businessDate",
+      "query_start_date": "2026-10-20",
+      "query_end_date": "2026-12-19"
     },
     "BGWT": {
-      "status": "unmapped_schema",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9214?size=500&startDate=2025-07-28&endDate=2025-07-28",
-      "response_sha256": "974a54263974a1ffaca8b85a5368c4d6b02deec2180ab189dedf8cee254fb64b",
-      "record_count": 0,
-      "pagination": {
-        "container": "content",
-        "total_pages": 0,
-        "total_elements": 0
-      },
-      "date_field": null
-    },
-    "HRL": {
-      "status": "review_required",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9234?size=500&startDate=2026-11-19&endDate=2026-11-19",
-      "response_sha256": "dc3c1784776bf6554b04d5b3ae786ee8b2f0b3513ca096ed12bf1ca7cfa0b6c5",
-      "record_count": 1,
-      "pagination": {
-        "container": "content",
-        "total_pages": 1,
-        "total_elements": 1
-      },
-      "date_field": "businessDate"
-    },
-    "MEHL": {
-      "status": "unmapped_schema",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9203?size=500&startDate=2025-07-28&endDate=2025-07-28",
-      "response_sha256": "974a54263974a1ffaca8b85a5368c4d6b02deec2180ab189dedf8cee254fb64b",
-      "record_count": 0,
-      "pagination": {
-        "container": "content",
-        "total_pages": 0,
-        "total_elements": 0
-      },
-      "date_field": null
-    },
-    "RAWA": {
-      "status": "unmapped_schema",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9181?size=500&startDate=2025-07-28&endDate=2025-07-28",
-      "response_sha256": "974a54263974a1ffaca8b85a5368c4d6b02deec2180ab189dedf8cee254fb64b",
-      "record_count": 0,
-      "pagination": {
-        "container": "content",
-        "total_pages": 0,
-        "total_elements": 0
-      },
-      "date_field": null
-    },
-    "RHGCL": {
-      "status": "review_required",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/8108?size=500&startDate=2025-07-28&endDate=2026-11-19",
-      "response_sha256": "d073bd5bb29b562c1bf629f3b170c2e209e12ce94330ffdf4049016b20c853c8",
-      "record_count": 225,
-      "pagination": {
-        "container": "content",
-        "total_pages": 1,
-        "total_elements": 225
-      },
-      "date_field": "businessDate"
-    },
-    "ULHC": {
-      "status": "unmapped_schema",
-      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9208?size=500&startDate=2025-07-28&endDate=2025-07-28",
+      "status": "empty_valid_response",
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9214?size=500&startDate=2025-06-28&endDate=2025-08-27",
       "response_sha256": "57cefeb41dec8aa13112d057ada6899485d7a1ec34f816f7455a8953bb85ee66",
       "record_count": 0,
       "pagination": {
@@ -91,21 +33,354 @@
         "total_pages": 0,
         "total_elements": 0
       },
-      "date_field": null
+      "date_field": null,
+      "query_start_date": "2025-06-28",
+      "query_end_date": "2025-08-27"
+    },
+    "HRL": {
+      "status": "review_required",
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9234?size=500&startDate=2026-10-20&endDate=2026-12-19",
+      "response_sha256": "bb6d312125e487452783f474dd83e7c487d39e26f08aaac5dc910442a9ca07b8",
+      "record_count": 18,
+      "pagination": {
+        "container": "content",
+        "total_pages": 1,
+        "total_elements": 18
+      },
+      "date_field": "businessDate",
+      "query_start_date": "2026-10-20",
+      "query_end_date": "2026-12-19"
+    },
+    "MEHL": {
+      "status": "empty_valid_response",
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9203?size=500&startDate=2025-06-28&endDate=2025-08-27",
+      "response_sha256": "974a54263974a1ffaca8b85a5368c4d6b02deec2180ab189dedf8cee254fb64b",
+      "record_count": 0,
+      "pagination": {
+        "container": "content",
+        "total_pages": 0,
+        "total_elements": 0
+      },
+      "date_field": null,
+      "query_start_date": "2025-06-28",
+      "query_end_date": "2025-08-27"
+    },
+    "RAWA": {
+      "status": "empty_valid_response",
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9181?size=500&startDate=2025-06-28&endDate=2025-08-27",
+      "response_sha256": "57cefeb41dec8aa13112d057ada6899485d7a1ec34f816f7455a8953bb85ee66",
+      "record_count": 0,
+      "pagination": {
+        "container": "content",
+        "total_pages": 0,
+        "total_elements": 0
+      },
+      "date_field": null,
+      "query_start_date": "2025-06-28",
+      "query_end_date": "2025-08-27"
+    },
+    "RHGCL": {
+      "status": "review_required",
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/8108?size=500&startDate=2025-06-28&endDate=2026-12-19",
+      "response_sha256": "ff9cd54f22918acbe745da7514d6ee9ab605b889b0fbbd3594bb61a3bb79a95b",
+      "record_count": 228,
+      "pagination": {
+        "container": "content",
+        "total_pages": 1,
+        "total_elements": 228
+      },
+      "date_field": "businessDate",
+      "query_start_date": "2025-06-28",
+      "query_end_date": "2026-12-19"
+    },
+    "ULHC": {
+      "status": "empty_valid_response",
+      "source_url": "https://nepalstock.com.np/api/nots/market/history/security/9208?size=500&startDate=2025-06-28&endDate=2025-08-27",
+      "response_sha256": "974a54263974a1ffaca8b85a5368c4d6b02deec2180ab189dedf8cee254fb64b",
+      "record_count": 0,
+      "pagination": {
+        "container": "content",
+        "total_pages": 0,
+        "total_elements": 0
+      },
+      "date_field": null,
+      "query_start_date": "2025-06-28",
+      "query_end_date": "2025-08-27"
     }
   },
-  "request_errors": {},
+  "daily_graph_reports": {
+    "API": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/697",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    },
+    "BGWT": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/9214",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    },
+    "HRL": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/9234",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    },
+    "MEHL": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/9203",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    },
+    "RAWA": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/9181",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    },
+    "RHGCL": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/8108",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    },
+    "ULHC": {
+      "status": "captured",
+      "http_status": 200,
+      "source_url": "https://nepalstock.com.np/api/nots/market/graphdata/daily/9208",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "parsed_type": "list",
+      "top_level_keys": []
+    }
+  },
+  "date_specific_market_price_volume": {
+    "2025-07-28": {
+      "status": "unavailable_or_unparseable",
+      "http_status": 401,
+      "source_url": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2025-07-28",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "record_count": 0,
+      "pagination": {
+        "container": "root_list"
+      },
+      "field_names": [],
+      "records": []
+    },
+    "2026-11-19": {
+      "status": "unavailable_or_unparseable",
+      "http_status": 401,
+      "source_url": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response_bytes": 2,
+      "record_count": 0,
+      "pagination": {
+        "container": "root_list"
+      },
+      "field_names": [],
+      "records": []
+    }
+  },
+  "date_specific_conflict_comparisons": [
+    {
+      "symbol": "BGWT",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "MEHL",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "ULHC",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "API",
+      "date": "2026-11-19",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-11-19",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2026-11-19",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    }
+  ],
+  "resolved_conflict_comparisons": [
+    {
+      "symbol": "API",
+      "date": "2026-11-19",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-11-19",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "MEHL",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2026-11-19",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    },
+    {
+      "symbol": "ULHC",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0,
+      "pagination": {
+        "container": "root_list"
+      }
+    }
+  ],
+  "request_errors": {
+    "market-price-volume": {
+      "2025-07-28": {
+        "type": "NepseAuthenticationError",
+        "message": "[401] Unauthorized (401): []"
+      },
+      "2026-11-19": {
+        "type": "NepseAuthenticationError",
+        "message": "[401] Unauthorized (401): []"
+      }
+    }
+  },
   "conflict_comparisons": [
     {
       "symbol": "API",
       "date": "2026-11-19",
-      "status": "unmapped_ohlcv_fields",
+      "status": "partial_primary_fields",
       "field_map": {
         "open": null,
         "high": "highPrice",
         "low": "lowPrice",
         "close": "closePrice",
         "volume": "totalTradedQuantity"
+      },
+      "missing_fields": [
+        "open"
+      ],
+      "available_primary_fields": {
+        "high": "334.2",
+        "low": "330.0",
+        "close": "331.8",
+        "volume": "105340"
       },
       "primary_row": {
         "businessDate": "2026-11-19",
@@ -118,15 +393,30 @@
       }
     },
     {
+      "symbol": "BGWT",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0
+    },
+    {
       "symbol": "HRL",
       "date": "2026-11-19",
-      "status": "unmapped_ohlcv_fields",
+      "status": "partial_primary_fields",
       "field_map": {
         "open": null,
         "high": "highPrice",
         "low": "lowPrice",
         "close": "closePrice",
         "volume": "totalTradedQuantity"
+      },
+      "missing_fields": [
+        "open"
+      ],
+      "available_primary_fields": {
+        "high": "488.0",
+        "low": "480.0",
+        "close": "483.9",
+        "volume": "49184"
       },
       "primary_row": {
         "businessDate": "2026-11-19",
@@ -139,6 +429,18 @@
       }
     },
     {
+      "symbol": "MEHL",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0
+    },
+    {
       "symbol": "RHGCL",
       "date": "2025-07-28",
       "status": "no_primary_row",
@@ -147,13 +449,22 @@
     {
       "symbol": "RHGCL",
       "date": "2026-11-19",
-      "status": "unmapped_ohlcv_fields",
+      "status": "partial_primary_fields",
       "field_map": {
         "open": null,
         "high": "highPrice",
         "low": "lowPrice",
         "close": "closePrice",
         "volume": "totalTradedQuantity"
+      },
+      "missing_fields": [
+        "open"
+      ],
+      "available_primary_fields": {
+        "high": "259.5",
+        "low": "252.1",
+        "close": "258.0",
+        "volume": "9054"
       },
       "primary_row": {
         "businessDate": "2026-11-19",
@@ -164,6 +475,12 @@
         "lowPrice": 252.1,
         "closePrice": 258.0
       }
+    },
+    {
+      "symbol": "ULHC",
+      "date": "2025-07-28",
+      "status": "no_primary_row",
+      "primary_rows_found": 0
     }
   ],
   "all_conflicts_have_primary_match": false,

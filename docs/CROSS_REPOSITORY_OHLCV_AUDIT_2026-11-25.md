@@ -190,3 +190,28 @@ A strict reproducibility rerun must re-fetch the tree and every source file
 using these immutable commit SHAs (or update the anchors if the branches have
 moved). Do not treat this note as proof that all 1,050 file reads were
 revision-pinned.
+
+
+## Immutable-revision rerun — completed
+
+The previous audit caveat is now addressed. The directory inventories and all
+50 CSV reads for the 25 differing symbols were repeated with explicit immutable
+refs:
+
+- `nepse-smc-data`: `a55a9097375782d0a982f1f94a881f0a4e036698`
+- `nepse-history-starter`: `2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe`
+
+At those exact refs, both directories contain 525 files with 525 matching
+relative filenames; 500 file blob SHAs match and 25 differ. All 50 fetched
+differing-pair CSV blob SHAs match the previously recorded blob SHAs, and the
+row-level rerun reproduces the same row counts, date-only differences and
+eight OHLCV conflict dates. All 25 pairs have zero duplicate date keys.
+Therefore the earlier comparison results are reproducible at these pinned
+revisions; the default branches may move later without changing this audit's
+source anchors.
+
+This pins repository versions and file content, **not** the independent
+provenance or correctness of the data. The 500 identical files remain one
+shared content lineage until upstream origins are established. The eight
+conflicting rows remain quarantined. Calendar and corporate-action review
+remain open.

@@ -63,7 +63,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     result = evaluate_from_paths(args)
-    encoded = json.dumps(result, indent=2, ensure_ascii=False) + "\\n"
+    encoded = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(encoded, encoding="utf-8")

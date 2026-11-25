@@ -71,3 +71,10 @@ The two dates absent from the pinned SocrateAI index tree both have contemporane
 - **2026-11-20:** NepseIQ reported the completed 20 November session: https://nepseiq.com/nepse-today/2026-11-20. ShareSansar also published a same-day close report: https://www.sharesansar.com/newsdetail/nepse-index-slides-down-by-738-points-only-two-sector-closes-at-green-2026-11-20. The latter shares lineage risk with the ShareSansar-scraped EOD candidate source.
 
 These reports strengthen the two dates as session candidates, but neither is primary NEPSE evidence. They remain `candidate_unverified`; no canonical `verified_open` rows are added. Machine-readable references: `data/evidence/candidates/nepse-session-secondary-report-crosscheck.csv`.
+
+
+## Weekday-regime consistency check — 2026-11-25
+
+All 616 candidate dates were checked against the documented NEPSE schedule-regime weekday candidates. Result: **zero weekday-regime violations** and zero Saturday dates. The weekday distribution is Sunday 96, Monday 118, Tuesday 128, Wednesday 127, Thursday 120, Friday 27, Saturday 0. The 27 Friday dates are in the Monday-Friday regime after 2026-04-06; no Friday candidate falls in the earlier Sunday-Thursday regime.
+
+This check detects impossible weekday assignments under the documented schedule but does not establish that every candidate date was actually open; holidays and exceptional suspensions still require date-specific evidence.

@@ -51,10 +51,10 @@ jobs:
             --output /tmp/floorsheet-overlap-report.json
       - name: Build unresolved source-exception ledger
         run: |
-          python backend/build_floorsheet_source_exception_ledger.py \\
-            --report /tmp/floorsheet-overlap-report.json \\
-            --manifest /tmp/floorsheet-overlap-raw/manifest.json \\
-            --json-output /tmp/floorsheet-source-exception-ledger.json \\
+          python backend/build_floorsheet_source_exception_ledger.py \
+            --report /tmp/floorsheet-overlap-report.json \
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \
+            --json-output /tmp/floorsheet-source-exception-ledger.json \
             --csv-output /tmp/floorsheet-source-exception-ledger.csv
       - name: Upload comparison and exception evidence
         uses: actions/upload-artifact@v4

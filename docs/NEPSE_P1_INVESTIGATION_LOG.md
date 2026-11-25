@@ -164,3 +164,73 @@ The current capture workflow adds two controls:
 2. Repeat against https://www.nepalstock.com (the other official host) with a fresh client/token on that same host and no explicit Host header.
 
 This follows the independently documented current NEPSE pipeline behavior: both .com and .com.np are separate API hosts; the pipeline strips the library's explicit Host header; its today-price call uses the current-session floor-sheet payload ID. Results are pending in workflow run #16.
+
+## 2026-11-25/26 follow-up: authentication passed; three November rows now have full primary evidence
+
+### Root cause of the today-price 401
+
+The capture was launched at 2025-11-25 18:46 UTC, which was already 2026-11-26 in Nepal (UTC+05:45). The GitHub runner defaults to UTC. nepse-client 0.1.4 derives the current-session floor-sheet payload ID using date.today(). Before the timezone fix, the payload used the UTC calendar day rather than NEPSE's local day.
+
+The capture now sets TZ=Asia/Kathmandu and calls time.tzset() before importing/initializing the NEPSE client. Run #23 recorded:
+- UTC timestamp: 2026-11-25T18:46:12.334761Z
+- system date after timezone setup: 2026-11-26
+- Nepal date: 2026-11-26
+- NEPSE market-status asOf: 2026-11-25T15:00:00
+- market-status ID: 80
+
+With the Nepal-local day, the today-price route returned HTTP 200 and 347 records. Four controlled requests also returned HTTP 200: package default on nepalstock.com.np, no explicit Host on nepalstock.com.np, fresh session on www.nepalstock.com, and clean browser-style headers on www.nepalstock.com. The clean-header response was 180,192 bytes. This confirms the authentication issue was the runner timezone mismatch; no token, salt, or secret was changed.
+
+### Full primary EOD evidence recovered for the three 2026-11-19 conflicts
+
+The date-specific NEPSE official today-price response for 2026-11-19 returned 347 records and all five required fields. Raw response SHA-256: 0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05. Git blob: f669d24e6e8d92fc951e1eb0603939f4b6102440. Preserved at:
+data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin
+
+| Symbol | Official NEPSE OHLCV | Result |
+|---|---|---|
+| API | 331, 334.2, 330, 331.8, 105340 | exact Source B match |
+| HRL | 483, 488, 480, 483.9, 49184 | exact Source B match |
+| RHGCL | 252.1, 259.5, 252.1, 258, 9054 | exact Source B match |
+
+The evidence ledger was updated in commit 67fecaf3a940160cbd3ed5d79b16caa38e88fdd7. These three are now classified as primary-verified but remain quarantined pending full corporate-action and price-basis review. No training or canonical promotion.
+
+### The five 2025-07-28 records: original EOD endpoint is outside retention
+
+With authentication fixed, the same official today-price route was tested for 2025-07-28. It returned HTTP 500, 27-byte body: "Searched Date is not valid." The per-security history route also returns valid empty collections for dates outside the observed 365-day window. This is consistent with the independently documented rolling-365-day retention limit. The official endpoint cannot now supply the five complete historical EOD rows.
+
+### New trade-level archive candidate: SocrateAI
+
+Inspected socrateai-official/nepse-open-data commit 7648ec7ce9988e032975d6cf8bcc876ba7da7ae5, committed 2025-07-28T11:22:16Z. Its raw daily floorsheet blob 9c5533626b354d5fefca06d6762d51e0b9beaac6 contains 170,727 transaction rows (10,026,040 bytes), schema transaction,symbol,buyer,seller,quantity,rate,amount,date.
+
+Aggregating the five symbols gives:
+
+| Symbol | Trades | Volume | Full-day VWAP | Source B close |
+|---|---:|---:|---:|---:|
+| BGWT | 194 | 14028 | 944.9918 | 945 |
+| MEHL | 333 | 29753 | 470.8399 | 470.83 |
+| RAWA | 74 | 3165 | 794.8381 | 794.83 |
+| RHGCL | 1030 | 296715 | 350.0754 | 350.07 |
+| ULHC | 300 | 32288 | 504.0059 | 504 |
+
+This is strong trade-level corroboration that Source B's close values are full-day VWAP-like values. The raw floor sheet also reproduces most daily open/high/low/volume values, but BGWT has a one-share 925 transaction below the published 933.4 low, so the raw file must not be treated as a clean EOD OHLC board without trade-type/validity filtering.
+
+Important provenance limitation: the SocrateAI README does not state the upstream source. Its open issue #2 asks the maintainer whether OHLCV comes from NEPSE, Nepalytix or another provider; it has zero comments. The raw file is therefore a third-party archived floor sheet with unverified upstream provenance, not yet acceptable as original NEPSE evidence.
+
+### Closing-price methodology explains why the close fields may differ
+
+NEPSE introduced a weighted-average closing-price rule effective 2025-03-20, using trades in the final 15 minutes (14:45–15:00), then reverted to last-traded-price closing from 2025-09-23. 2025-07-28 falls inside the weighted-average period. Source A's closes may therefore represent the official final-15-minute weighted average, while Source B's closes align with the full-day VWAP computed from the archived floor sheet. This is a plausible explanation, not yet proven: the SocrateAI floor sheet has no trade timestamps, so the final-15-minute VWAP cannot be independently recomputed from it.
+
+References:
+- NEPSE weighted-average close implementation: https://www.sharesansar.com/newsdetail/nepse-to-implement-15-minute-weighted-average-closing-price-rule-from-chaitra-07-2025-03-19
+- NEPSE reintroduced last-traded-price close: https://www.sharesansar.com/newsdetail/nepse-to-reintroduce-last-traded-price-as-closing-price-from-tuesday-2025-09-21
+- SocrateAI provenance question: https://github.com/socrateai-official/nepse-open-data/issues/2
+
+### Evidence commit race correction
+
+Run #23's capture artifact uploaded successfully, but the same-day evidence commit conflicted with run #21 because both wrote identical date-based filenames. The workflow now stores each capture immutably under data/evidence/raw/nepse/conflict-ohlcv/run-GITHUB_RUN_ID/ and copies the updated ledger into that run directory. This preserves every run and prevents same-day overwrite/rebase conflicts. Next run will verify the new layout.
+
+### Current P1 decision
+
+- Endpoint authentication: PASS (Nepal-local timezone fix verified against live NEPSE HTTP 200 responses).
+- 2026-11-19 API/HRL/RHGCL: full primary OHLCV confirmed; quarantined pending corporate-action/price-basis review.
+- 2025-07-28 BGWT/MEHL/RAWA/RHGCL/ULHC: original NEPSE EOD response unavailable outside the 365-day retention window. ShareSansar archive plus unverified SocrateAI trade-level archive corroborate values/methodology but do not satisfy primary-provenance gate.
+- All five older records remain quarantined. No canonical promotion, no training, no PR merge.

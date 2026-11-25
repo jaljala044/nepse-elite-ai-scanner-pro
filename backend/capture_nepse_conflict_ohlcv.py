@@ -295,6 +295,26 @@ def request_date_specific_price_volume(client, endpoint, business_date):
     )
 
 
+
+def request_today_price_without_host_header(client, endpoint):
+    """Retry today's-price with the package auth token but no explicit Host header.
+
+    The independently inspected NEPSE pipeline strips the library-supplied
+    Host header because explicit Host routing has caused NEPSE API failures.
+    Keep the package's Authorization, payload ID, and remaining headers intact.
+    """
+    url = f"{endpoint}?size=500"
+    headers = {
+        key: value for key, value in client.getAuthorizationHeaders().items()
+        if key.lower() != "host"
+    }
+    return client.client.post(
+        client.get_full_url(url),
+        headers=headers,
+        json={"id": client.getPOSTPayloadIDForFloorSheet()},
+    )
+
+
 def capture(ledger_path, output_dir):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     conflicts = ledger["conflicts"]
@@ -367,6 +387,16 @@ def capture(ledger_path, output_dir):
             )
         except Exception as exc:
             request_errors["market-price-volume-current-session"] = {
+                "type": type(exc).__name__, "message": str(exc)[:300]
+            }
+
+        # Same current-session today-price request, but omit the explicit
+        # Host header. Compare this against the package-default request above.
+        active_business_date = "current-session-no-host"
+        try:
+            request_today_price_without_host_header(client, market_price_volume_path)
+        except Exception as exc:
+            request_errors["market-price-volume-current-session-no-host"] = {
                 "type": type(exc).__name__, "message": str(exc)[:300]
             }
 
@@ -473,6 +503,20 @@ def capture(ledger_path, output_dir):
         "request_error": request_errors.get("market-price-volume-current-session"),
     }
 
+    no_host_price = reports.get("market-price-volume.current-session-no-host")
+    no_host_market_price_volume_report = {
+        "status": "not_captured" if no_host_price is None else (
+            "captured" if no_host_price["http_status"] == 200
+            and no_host_price["parsed"] is not None else "non_200_or_unparseable"
+        ),
+        "http_status": no_host_price["http_status"] if no_host_price else None,
+        "source_url": no_host_price["source_url"] if no_host_price else None,
+        "response_sha256": no_host_price["response_sha256"] if no_host_price else None,
+        "response_bytes": no_host_price["response_bytes"] if no_host_price else None,
+        "parsed_type": type(no_host_price["parsed"]).__name__ if no_host_price else None,
+        "request_error": request_errors.get("market-price-volume-current-session-no-host"),
+    }
+
     floor_control = reports.get("floor-sheet-control")
     floor_sheet_control_report = {
         "status": "not_captured" if floor_control is None else (
@@ -552,6 +596,7 @@ def capture(ledger_path, output_dir):
         "symbol_reports": symbol_reports, "daily_graph_reports": graph_reports,
         "floor_sheet_control": floor_sheet_control_report,
         "current_session_market_price_volume": current_market_price_volume_report,
+        "current_session_market_price_volume_no_host": no_host_market_price_volume_report,
         "date_specific_market_price_volume": market_price_volume_reports,
         "date_specific_conflict_comparisons": date_specific_comparisons,
         "resolved_conflict_comparisons": resolved_comparisons,

@@ -117,6 +117,13 @@ jobs:
             printf 'Unauthenticated endpoint probe did not return HTTP 200. Preserve status and headers; do not treat body as holiday evidence.\n' > evidence/nepse-api/PROBE_LIMITATION.txt
             sha256sum evidence/nepse-api/response-body.bin > evidence/nepse-api/SHA256SUMS
           fi
+      - name: Capture NEPSE holidays through the public client flow
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+          python backend/capture_nepse_holiday_evidence.py \
+            --year 2026 \
+            --output-dir evidence/nepse-api-authenticated || true
       - name: Commit captured primary source evidence
         shell: bash
         run: |
@@ -137,6 +144,10 @@ jobs:
           if [ -d evidence/nepse-api ]; then
             mkdir -p data/evidence/raw/nepse/holiday-api/2026-11-25
             cp evidence/nepse-api/* data/evidence/raw/nepse/holiday-api/2026-11-25/ || true
+          fi
+          if [ -d evidence/nepse-api-authenticated ]; then
+            mkdir -p data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25
+            cp evidence/nepse-api-authenticated/* data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25/ || true
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

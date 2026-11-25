@@ -21,6 +21,8 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      TZ: Asia/Kathmandu
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -49,14 +51,18 @@ jobs:
         run: |
           set -euo pipefail
           if [ -d evidence/nepse-conflict-ohlcv ]; then
-            target="data/evidence/raw/nepse/conflict-ohlcv/$(date -u +%Y-%m-%d)"
+            # Keep every run immutable and avoid same-day capture races.
+            target="data/evidence/raw/nepse/conflict-ohlcv/run-${GITHUB_RUN_ID}"
             mkdir -p "$target"
             cp -R evidence/nepse-conflict-ohlcv/. "$target/"
+            if [ -f data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json ]; then
+              cp data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json "$target/ledger.json"
+            fi
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add "$target"
             if ! git diff --cached --quiet; then
-              git commit -m "data: archive primary NEPSE OHLCV conflict responses"
+              git commit -m "data: archive NEPSE evidence run ${GITHUB_RUN_ID}"
               # The branch may advance while capture is running (for example,
               # investigation-log updates). Rebase only onto the same feature
               # branch; never rebase evidence onto main.

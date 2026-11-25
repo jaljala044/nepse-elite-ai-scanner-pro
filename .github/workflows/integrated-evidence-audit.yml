@@ -1,0 +1,106 @@
+name: Integrated evidence audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/integrated-evidence-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements.txt
+      - name: Run backend regression suite
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python -m unittest discover -s tests -v
+      - name: Run available evidence audits without promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=data/reports/integrated-evidence-audit
+          mkdir -p "$OUT"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("data/reports/integrated-evidence-audit")
+          expected = {
+              "registry": "data/evidence/security-registry-snapshot.json",
+              "calendar_manifest": "data/evidence/calendar-evidence-manifest.json",
+              "ohlcv_inputs": "data/normalized/ohlcv",
+              "floorsheet_audit": "data/reports/floorsheet-window-audit.json",
+              "broker_observations": "data/normalized/broker-party-observations.csv",
+          }
+          states = {}
+          for name, value in expected.items():
+              path = Path(value)
+              present = path.exists() and (any(path.glob("*.csv")) if path.is_dir() else True)
+              states[name] = {"input": value, "status": "available" if present else "skipped_missing_input"}
+          (out / "input-availability.json").write_text(json.dumps(states, indent=2) + "\n")
+          PY
+          if [ -f data/evidence/security-registry-snapshot.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          from app.universe_snapshot import validate_universe_snapshot
+          raw=json.loads(Path("data/evidence/security-registry-snapshot.json").read_text())
+          result=validate_universe_snapshot(raw)
+          Path("data/reports/integrated-evidence-audit/registry-validation.json").write_text(json.dumps(result,indent=2)+"\n")
+          PY
+          fi
+          if [ -f data/evidence/calendar-evidence-manifest.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          from app.calendar_evidence_manifest import validate_calendar_evidence_manifest
+          raw=json.loads(Path("data/evidence/calendar-evidence-manifest.json").read_text())
+          result=validate_calendar_evidence_manifest(raw["claims"],raw["captures"])
+          Path("data/reports/integrated-evidence-audit/calendar-validation.json").write_text(json.dumps(result,indent=2)+"\n")
+          PY
+          fi
+          if compgen -G "data/normalized/ohlcv/*.csv" > /dev/null; then
+            args=()
+            for file in data/normalized/ohlcv/*.csv; do args+=(--input "$file"); done
+            python backend/reconcile_ohlcv_source_daily.py "${args[@]}" \
+              --output "$OUT/ohlcv-daily-reconciliation.json"
+          fi
+          if [ -f data/reports/floorsheet-window-audit.json ]; then
+            cp data/reports/floorsheet-window-audit.json "$OUT/floorsheet-audit-input.json"
+          fi
+          if [ -f data/normalized/broker-party-observations.csv ]; then
+            python backend/report_broker_identity_coverage.py \
+              --input data/normalized/broker-party-observations.csv \
+              --output "$OUT/broker-identity-coverage.json"
+          fi
+          set +e
+          python backend/evaluate_training_readiness.py \
+            --evidence-snapshot-id "integrated-${GITHUB_SHA}" \
+            --output "$OUT/training-readiness.json"
+          readiness_status=$?
+          set -e
+          if [ "$readiness_status" -ne 0 ] && [ "$readiness_status" -ne 2 ]; then
+            exit "$readiness_status"
+          fi
+          printf '{"readiness_exit_code":%s,"training_allowed":false,"canonical_promotion_allowed":false}\n' "$readiness_status" > "$OUT/integration-status.json"
+      - name: Upload integrated evidence audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-integrated-evidence-audit
+          path: data/reports/integrated-evidence-audit/
+          if-no-files-found: error

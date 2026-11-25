@@ -61,6 +61,11 @@ def _first_field(row, aliases):
     return next((name for name in aliases if name in row and row[name] is not None), None)
 
 
+def _query_window(conflicts, padding_days=30):
+    dates = [date.fromisoformat(item["date"]) for item in conflicts]
+    return min(dates) - timedelta(days=padding_days), max(dates) + timedelta(days=padding_days)
+
+
 def analyze_history_payload(payload, conflicts):
     rows, pagination = _find_records(payload)
     date_field = next(
@@ -192,10 +197,7 @@ def capture(ledger_path, output_dir):
             # Query a surrounding window, not only the exact disputed date.
             # This verifies that the symbol ID and history endpoint return records
             # in the relevant period and makes an isolated missing session visible.
-            conflict_start = date.fromisoformat(min(item["date"] for item in symbol_conflicts))
-            conflict_end = date.fromisoformat(max(item["date"] for item in symbol_conflicts))
-            query_start = conflict_start - timedelta(days=30)
-            query_end = conflict_end + timedelta(days=30)
+            query_start, query_end = _query_window(symbol_conflicts)
             try:
                 client.getCompanyPriceVolumeHistory(
                     symbol, start_date=query_start, end_date=query_end
@@ -235,8 +237,8 @@ def capture(ledger_path, output_dir):
             "response_sha256": response["response_sha256"],
             "record_count": analysis["record_count"], "pagination": analysis["pagination"],
             "date_field": analysis["date_field"],
-            "query_start_date": (date.fromisoformat(min(item["date"] for item in symbol_conflicts)) - timedelta(days=30)).isoformat(),
-            "query_end_date": (date.fromisoformat(max(item["date"] for item in symbol_conflicts)) + timedelta(days=30)).isoformat(),
+            "query_start_date": _query_window(symbol_conflicts)[0].isoformat(),
+            "query_end_date": _query_window(symbol_conflicts)[1].isoformat(),
         }
         comparison_results.extend(analysis["conflict_comparisons"])
 

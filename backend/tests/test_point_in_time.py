@@ -30,6 +30,27 @@ class PointInTimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             eligible_as_of({"available_at":"2026-11-24T09:00:00"}, "2026-11-24T12:00:00Z")
 
+    def test_invalid_timestamp_type_and_format_rejected(self):
+        for value in (123, "not-a-date", "   "):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                eligible_as_of({"available_at": value}, "2026-11-24T12:00:00Z")
+
+    def test_non_object_records_rejected(self):
+        with self.assertRaisesRegex(ValueError, "records must contain objects"):
+            build_as_of_snapshot([None], "2026-11-24T12:00:00Z")
+
+    def test_non_string_record_id_rejected(self):
+        with self.assertRaisesRegex(ValueError, "record_id"):
+            build_as_of_snapshot([{"record_id": 7, "available_at":"2026-11-24T10:00:00Z"}],
+                                 "2026-11-24T12:00:00Z")
+
+    def test_offset_timestamps_sort_by_actual_utc_time(self):
+        result = build_as_of_snapshot([
+            {"record_id":"later","available_at":"2026-11-24T12:00:00+02:00"},
+            {"record_id":"earlier","available_at":"2026-11-24T09:30:00Z"},
+        ], "2026-11-24T12:00:00Z")
+        self.assertEqual([row["record_id"] for row in result["records"]], ["earlier", "later"])
+
     def test_future_input_never_in_snapshot(self):
         result = build_as_of_snapshot([{"available_at":"2026-11-25T00:00:00Z"}], "2026-11-24T23:59:59Z")
         self.assertEqual(result["included_count"], 0)

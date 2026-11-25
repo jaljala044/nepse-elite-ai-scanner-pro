@@ -40,6 +40,22 @@ class FloorsheetContractTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.row(amount=value)
 
+    def test_missing_required_text_fields_are_rejected(self):
+        row = {"trade_date":"2026-11-24","contract_id":None,"symbol":"NABIL",
+               "buyer_broker_code":"11","seller_broker_code":"42",
+               "quantity":"10","rate":"100","amount":"1000"}
+        with self.assertRaisesRegex(ValueError, "must be present"):
+            FloorsheetContract.from_mapping(row, source_id="fixture",
+                payload_sha256=self.digest, row_number=1)
+
+    def test_invalid_iso_trade_date_is_rejected(self):
+        row = {"trade_date":"not-a-date","contract_id":"C1","symbol":"NABIL",
+               "buyer_broker_code":"11","seller_broker_code":"42",
+               "quantity":"10","rate":"100","amount":"1000"}
+        with self.assertRaisesRegex(ValueError, "valid ISO date"):
+            FloorsheetContract.from_mapping(row, source_id="fixture",
+                payload_sha256=self.digest, row_number=1)
+
     def test_invalid_values_and_lineage_rejected(self):
         with self.assertRaises(ValueError):
             self.row(amount="-1")

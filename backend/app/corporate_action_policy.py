@@ -33,8 +33,8 @@ class CorporateActionEvidence:
 
     def __post_init__(self):
         if not all((self.action_id.strip(), self.security_id.strip(), self.source_id.strip(),
-                    self.evidence_id.strip())):
-            raise ValueError("corporate action identifiers and evidence are required")
+                    self.source_tier.strip(), self.evidence_id.strip())):
+            raise ValueError("corporate action identifiers, source tier and evidence are required")
         if self.action_type not in ACTION_TYPES:
             raise ValueError("unsupported corporate action type")
         if self.status not in {"confirmed", "provisional", "cancelled", "disputed"}:

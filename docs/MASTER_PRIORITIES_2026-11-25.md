@@ -35,6 +35,12 @@ independently reproducible. See
 `docs/616_SESSION_CALENDAR_RECOVERY_AUDIT_2026-11-25.md`. The 198 market-summary
 dates remain candidates only; confirmed sessions added by this investigation: 0.
 
+## P1 automation increment — 2026-11-25
+- Added `backend/run_hf_inventory.py`, a read-only CLI that inventories the configured public Hugging Face datasets after resolving requested refs to immutable commit SHAs.
+- Added `.github/workflows/nepse-data-integrity.yml` to run the focused collector and coverage-matrix unit-test suites, generate the inventory manifest, build a source-separated file/date coverage report against the candidate calendar, and upload both reports as an artifact.
+- The report deliberately labels all 2026 candidate dates as unverified; it does not infer confirmed sessions or missing sessions.
+- Workflow YAML, script, and paths were re-fetched from GitHub after commit. The GitHub status endpoint returned no status checks and the available workflow-run lookup returned no runs; execution and inventory output are therefore **not yet verified**. Do not claim the tests passed or that live dataset inventories have been generated until the Actions run and artifact are inspected.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

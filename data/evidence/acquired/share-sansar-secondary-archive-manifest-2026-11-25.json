@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "evidence_type": "secondary_archive_snapshot",
+  "source_repository": "srijankarki07/nepse-data",
+  "source_revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+  "source_provenance": "The source repository README states its daily CSVs are scraped from ShareSansar EOD tables; this is an unofficial secondary archive, not NEPSE-origin primary evidence.",
+  "files": [
+    {
+      "path": "2025-07-28.csv",
+      "source_path": "data/daily/2025/2025-07-28.csv",
+      "blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+      "sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+      "bytes": 17819,
+      "extracted_rows": [
+        "date,symbol,open,high,low,close,volume,turnover",
+        "2025-07-28,BGWT,940,992,933.4,957.17,14028,13256345",
+        "2025-07-28,MEHL,471.1,480.5,460,475.63,29753,14008898.1",
+        "2025-07-28,RAWA,796,811,780.3,796.9,3165,2515662.5",
+        "2025-07-28,RHGCL,346.7,362,341.4,357.05,296715,103872614.4",
+        "2025-07-28,ULHC,509,515,495,510.75,32288,16273342.1"
+      ]
+    },
+    {
+      "path": "2026-11-19.csv",
+      "source_path": "data/daily/2026/2026-11-19.csv",
+      "blob_sha": "79fbb09935a1b704a3e247a06c1c2ed55220dcba",
+      "sha256": "98a12d21865c80cb96362fbb8a33631c55fc1ca49d61528b8255409f20bbb732",
+      "bytes": 17912,
+      "extracted_rows": [
+        "date,symbol,open,high,low,close,volume,turnover",
+        "2026-11-19,API,331,334.2,330,331.8,105340,34929701.3",
+        "2026-11-19,HRL,483,488,480,483.9,49184,23836472.4",
+        "2026-11-19,RHGCL,252.1,259.5,252.1,258,9054,2332952.5"
+      ]
+    }
+  ],
+  "interpretation": {
+    "july_2025": "All five archive rows match source A exactly, including OHLCV and volume; source B differs only in close. This corroborates source A via a separate append-only archive but is not primary exchange proof.",
+    "november_2026": "All three archive rows match source B exactly. Existing NEPSE history evidence independently agrees on high, low, close and volume but omits open; this is strong triangulation, not full primary OHLCV confirmation.",
+    "promotion_allowed": false,
+    "training_allowed": false
+  }
+}

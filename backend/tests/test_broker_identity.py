@@ -1,4 +1,5 @@
 import unittest
+from datetime import date
 from app.broker_identity import (
     BrokerIdentityLink, aggregate_broker_side, resolve_broker_identity,
     validate_identity_link,
@@ -47,6 +48,37 @@ class BrokerIdentityTests(unittest.TestCase):
                "quantity":-1,"amount":100}
         with self.assertRaises(ValueError):
             aggregate_broker_side([row])
+
+
+    def test_effective_dated_mapping_resolves_historical_identity(self):
+        links = [
+            BrokerIdentityLink("src", "42", "B42", "verified", "e1",
+                               valid_from=date(2020,1,1), valid_to=date(2023,12,31)),
+            BrokerIdentityLink("src", "42", "B99", "verified", "e2",
+                               valid_from=date(2024,1,1)),
+        ]
+        self.assertEqual(resolve_broker_identity("src", "42", links, "2022-06-01")["broker_entity_id"], "B42")
+        self.assertEqual(resolve_broker_identity("src", "42", links, "2025-01-01")["broker_entity_id"], "B99")
+
+    def test_dated_mapping_is_not_assumed_current_without_as_of(self):
+        link = BrokerIdentityLink("src", "42", "B42", "verified", "e1",
+                                  valid_from=date(2020,1,1))
+        self.assertEqual(resolve_broker_identity("src", "42", [link])["status"], "unmapped")
+
+    def test_overlapping_effective_mappings_are_ambiguous(self):
+        links = [
+            BrokerIdentityLink("src", "42", "B42", "verified", "e1",
+                               valid_from=date(2020,1,1)),
+            BrokerIdentityLink("src", "42", "B99", "verified", "e2",
+                               valid_from=date(2022,1,1)),
+        ]
+        self.assertEqual(resolve_broker_identity("src", "42", links, date(2023,1,1))["status"], "ambiguous")
+
+    def test_invalid_effective_date_range_rejected(self):
+        link = BrokerIdentityLink("src", "42", "B42", "verified", "e1",
+                                   valid_from=date(2024,1,2), valid_to=date(2024,1,1))
+        with self.assertRaises(ValueError):
+            validate_identity_link(link)
 
 
 if __name__ == "__main__":

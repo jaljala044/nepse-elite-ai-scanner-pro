@@ -102,3 +102,39 @@ The official NEPSE Holiday Listing endpoint
 holiday rows or downloadable notice bytes in the available retrieval. No
 holiday date was promoted and no raw evidence hash was created from this
 attempt. This confirms the page location, not the underlying holiday schedule.
+
+
+
+## Primary NEPSE holiday API capture — 2026-11-25
+
+The official NEPSE API was successfully reached through its public client
+authentication flow after the unauthenticated endpoint probe returned HTTP
+401. The raw API response was captured before parsing:
+
+- Endpoint: `https://nepalstock.com.np/api/nots/holiday/list?year=2026`
+- Retrieval: 2026-11-25 13:13:17.600880 UTC; HTTP 200; JSON.
+- 4,932 raw bytes; SHA-256
+  `dd1777e3c61623048e00dc170d860659b14b8821ffabff8338002ccafdb2ea8f`.
+- 41 unique holiday dates; `instrumentTypeId=null` on all records.
+- 40 normal closure entries and one exceptional closure:
+  2026-09-21, described by NEPSE as `Emergengy Market Close`.
+- The raw response, response headers, parsed JSON, checksum, capture report
+  and source-object manifest entry are archived under
+  `data/evidence/raw/nepse/holiday-api-authenticated/2026-11-25/`.
+- Evidence claims are in
+  `data/evidence/acquired/calendar-evidence-manifest-2026.json`.
+- Reconciliation report:
+  `data/reports/nepse-holiday-calendar-reconciliation-2026.json`.
+
+The 41 dates were compared against the pinned floorsheet publisher manifest
+and the 198-date market-summary candidate list. There are zero publisher
+manifest `status=ok` overlaps and zero market-summary candidate overlaps.
+Twenty dates have publisher-manifest status `missing`; 21 dates have no
+entry in that manifest. These publisher values are corroborative checks only,
+not the basis for closure claims.
+
+The canonical calendar now contains 41 explicit closure rows: 40
+`verified_closed` and one `verified_exceptional_closed`. No dates absent
+from the API response were inferred open. The 616-date historical session
+list is still unrecovered; this 2026 holiday API response does not replace
+that historical input or establish 2015-era session dates.

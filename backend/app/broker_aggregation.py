@@ -206,8 +206,12 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
         summary["gross_amount"] += next(iter(amounts))
         summary["quantity"] += next(iter(quantities))
 
+    if not isinstance(controls, list):
+        raise ValueError("controls must be a list")
     expected = {}
     for index, control in enumerate(controls):
+        if not isinstance(control, dict):
+            raise ValueError(f"control {index}: expected object")
         key = (control.get("source_id"), control.get("trade_date"))
         if (
             not isinstance(control.get("source_id"), str) or not control["source_id"].strip()
@@ -232,8 +236,6 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
                 raise ValueError("control counts must be non-negative integers")
             return int(numeric)
 
-        if not isinstance(control, dict):
-            raise ValueError(f"control {index}: expected object")
         expected_values = {}
         try:
             if "contract_count" in control:

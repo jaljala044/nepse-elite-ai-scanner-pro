@@ -4,7 +4,7 @@ import httpx
 import os
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, parse_legacy_todaysprice_html
 
 
 def conflict():
@@ -17,6 +17,17 @@ def conflict():
 
 class NepseConflictOhlcvCaptureTests(unittest.TestCase):
 
+
+
+    def test_legacy_nepse_table_parser_extracts_official_daily_fields(self):
+        cells = ["x"] * 13 + ["145", "992.0", "933.4", "957.17", "14028", "12345678", "940.0"]
+        html = "<table><tr>" + "".join(f"<td>{value}</td>" for value in cells) + "</tr></table>"
+        result = parse_legacy_todaysprice_html(html)
+        self.assertEqual(result["status"], "parsed")
+        self.assertEqual(result["fields"]["max_price"], 992.0)
+        self.assertEqual(result["fields"]["min_price"], 933.4)
+        self.assertEqual(result["fields"]["closing_price"], 957.17)
+        self.assertEqual(result["fields"]["traded_shares"], 14028.0)
 
     def test_nepse_timezone_uses_kathmandu_local_date(self):
         configure_nepse_timezone()

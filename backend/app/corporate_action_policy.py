@@ -32,18 +32,26 @@ class CorporateActionEvidence:
     status: str = "confirmed"
 
     def __post_init__(self):
-        if not all((self.action_id.strip(), self.security_id.strip(), self.source_id.strip(),
-                    self.source_tier.strip(), self.evidence_id.strip())):
+        identifiers = (self.action_id, self.security_id, self.source_id,
+                       self.source_tier, self.evidence_id)
+        if any(not isinstance(value, str) or not value.strip() for value in identifiers):
             raise ValueError("corporate action identifiers, source tier and evidence are required")
         if self.action_type not in ACTION_TYPES:
             raise ValueError("unsupported corporate action type")
         if self.status not in {"confirmed", "provisional", "cancelled", "disputed"}:
             raise ValueError("unsupported corporate action status")
+        if not isinstance(self.ex_date, date):
+            raise ValueError("ex_date must be a date")
+        if not isinstance(self.announced_at, str) or not isinstance(self.available_at, str):
+            raise ValueError("corporate-action timestamps must be ISO-8601 strings")
         announced, available = _time(self.announced_at), _time(self.available_at)
         if available < announced:
             raise ValueError("available_at cannot precede announced_at")
         if self.factor is not None:
-            value = Decimal(self.factor)
+            try:
+                value = Decimal(self.factor)
+            except (TypeError, ValueError, ArithmeticError) as exc:
+                raise ValueError("factor must be a finite positive decimal") from exc
             if not value.is_finite() or value <= 0:
                 raise ValueError("factor must be a finite positive decimal")
 

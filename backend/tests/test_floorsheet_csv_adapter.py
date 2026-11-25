@@ -53,6 +53,18 @@ class FloorsheetCsvAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "mapping missing"):
             CsvFloorsheetMapping({"symbol": "Symbol"})
 
+    def test_unsupported_normalized_mapping_field_rejected(self):
+        mapping = dict(MAPPING.columns)
+        mapping["unknown_field"] = "Unknown"
+        with self.assertRaisesRegex(ValueError, "unsupported normalized fields"):
+            CsvFloorsheetMapping(mapping)
+
+    def test_non_string_source_header_rejected(self):
+        mapping = dict(MAPPING.columns)
+        mapping["symbol"] = 123
+        with self.assertRaisesRegex(ValueError, "nonblank strings"):
+            CsvFloorsheetMapping(mapping)
+
     def test_extra_unmapped_cells_are_reported(self):
         payload = (
             "Trade Date,S.N.,Symbol,Buyer,Seller,Qty.,Rate,Amount\n"

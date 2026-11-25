@@ -1,0 +1,233 @@
+[
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-12-30",
+    "holidayDescription": "Tamu Lohshar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-12-25",
+    "holidayDescription": "Christmas Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-12-13",
+    "holidayDescription": "Yomari Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-11-06",
+    "holidayDescription": "Chath",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-11-02",
+    "holidayDescription": "Public holiday (Indain Presidents visit)",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-11-01",
+    "holidayDescription": "Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-31",
+    "holidayDescription": "Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-30",
+    "holidayDescription": "Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-13",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-12",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-11",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-10",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-10-09",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-09-19",
+    "holidayDescription": "Constitution Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-09-15",
+    "holidayDescription": "Indra Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-09-13",
+    "holidayDescription": "Bakar Eid",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-08-25",
+    "holidayDescription": "Krishnaastami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-08-19",
+    "holidayDescription": "Gai Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-08-18",
+    "holidayDescription": "Janai Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-07-29",
+    "holidayDescription": "Bhoto jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-07-07",
+    "holidayDescription": "Eid-Ul Fitra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-05-01",
+    "holidayDescription": "May Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-04-15",
+    "holidayDescription": "Ram Navami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-04-13",
+    "holidayDescription": "New Year",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-04-07",
+    "holidayDescription": "Ghode Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-03-22",
+    "holidayDescription": "Fagu Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-03-09",
+    "holidayDescription": "Ghyalpo Lhosar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-03-08",
+    "holidayDescription": "International Woman's Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-03-07",
+    "holidayDescription": "Maha Shivaratri",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-02-19",
+    "holidayDescription": "Democracy Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-02-10",
+    "holidayDescription": "Sushil Koirala-Shok Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-02-09",
+    "holidayDescription": "Sonam Lohsar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2016-01-15",
+    "holidayDescription": "Maghe Sankranti",
+    "activeStatus": null
+  }
+]

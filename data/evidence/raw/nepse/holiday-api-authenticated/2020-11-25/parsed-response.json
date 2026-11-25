@@ -1,0 +1,709 @@
+[
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-11-17",
+    "holidayDescription": "Kija Puja",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-11-16",
+    "holidayDescription": "Bhai Tika",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-11-15",
+    "holidayDescription": "Maa Puja",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-10-27",
+    "holidayDescription": "Dashai Ekadasi",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-10-26",
+    "holidayDescription": "Bijaya Dashami ",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-10-25",
+    "holidayDescription": "Mahanawami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-10-23",
+    "holidayDescription": "Fulpati",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-09-01",
+    "holidayDescription": "Indra Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-08-04",
+    "holidayDescription": "Gai Jatra ",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-28",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-27",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-26",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-25",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-24",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-23",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-22",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-21",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-20",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-19",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-18",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-17",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-16",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-15",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-14",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-13",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-12",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-11",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-10",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-09",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-08",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-07",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-06",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-05",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-04",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-03",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-02",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-06-01",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-31",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-29",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-28",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-27",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-26",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-25",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-24",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-22",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-21",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-20",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-19",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-18",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-17",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-16",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-15",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-11",
+    "holidayDescription": "As Per NEPSE",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-10",
+    "holidayDescription": "As Per Nepse",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-07",
+    "holidayDescription": "Buddha Jayanti ",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-06",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-05",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-04",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-03",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-05-01",
+    "holidayDescription": "As Per NEPSE Board and May Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-30",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-29",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-28",
+    "holidayDescription": "As Per NEPSE Board",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-27",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-26",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-25",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-24",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-23",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-22",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-21",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-20",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-19",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-18",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-17",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-16",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-15",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-14",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-13",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-13",
+    "holidayDescription": "New Year Holiday",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-11",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-10",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-09",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-08",
+    "holidayDescription": "As Per Order by SEBON Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-07",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-06",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-05",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-04",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-03",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-02",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-04-01",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-31",
+    "holidayDescription": "As Per Order by SEBON, Lockdown",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-30",
+    "holidayDescription": "As Per Order by SEBON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-29",
+    "holidayDescription": "As Per Order by SEBON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-27",
+    "holidayDescription": "As Per Order by SEBON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-26",
+    "holidayDescription": "As Per Order by SEBON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-25",
+    "holidayDescription": "As Per Order by SEBON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-24",
+    "holidayDescription": "Ghode Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-23",
+    "holidayDescription": "As Per Order by SEBON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-09",
+    "holidayDescription": "Holi Festival",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-03-08",
+    "holidayDescription": "International Woman Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2020-02-21",
+    "holidayDescription": "Maha Sivaratri",
+    "activeStatus": null
+  }
+]

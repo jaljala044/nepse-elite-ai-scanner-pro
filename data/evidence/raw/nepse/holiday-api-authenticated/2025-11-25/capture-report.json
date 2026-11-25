@@ -1,0 +1,20 @@
+{
+  "source_id": "NEPSE_OFFICIAL_HOLIDAY_API",
+  "source_url": "https://nepalstock.com.np/api/nots/holiday/list?year=2025",
+  "requested_year": 2025,
+  "retrieved_at_utc": "2026-11-25T13:24:19.319361Z",
+  "http_status": 200,
+  "response_headers": {
+    "date": "Wed, 25 Nov 2026 13:24:19 GMT",
+    "content-type": "application/json",
+    "server": "nepse-website"
+  },
+  "response_bytes": 5543,
+  "response_sha256": "9a830365d29f4789a8a929f27fcf64e52d1beec9910a118a598074401c04c685",
+  "response_preserved": true,
+  "parsed_record_count": 46,
+  "request_error": null,
+  "calendar_claims_promoted": false,
+  "policy": "raw_source_capture_only_no_calendar_promotion",
+  "json_shape": "list"
+}

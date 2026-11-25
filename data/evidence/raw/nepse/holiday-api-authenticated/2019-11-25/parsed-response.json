@@ -1,0 +1,156 @@
+[
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-30",
+    "holidayDescription": "Kija Puja",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-29",
+    "holidayDescription": "Bhai Tika Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-28",
+    "holidayDescription": "Tihar second day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-27",
+    "holidayDescription": "Laxmi Puja Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-13",
+    "holidayDescription": "As Declared By Nepal Goverment",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-09",
+    "holidayDescription": "Ekadashi",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-08",
+    "holidayDescription": "Dashami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-07",
+    "holidayDescription": "Nawami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-06",
+    "holidayDescription": "Maha Astami",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-10-05",
+    "holidayDescription": "Fulpati",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-09-20",
+    "holidayDescription": "Constitution Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-09-13",
+    "holidayDescription": "Indra Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-08-16",
+    "holidayDescription": "Gai Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-06-09",
+    "holidayDescription": "Bhoto Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-06-05",
+    "holidayDescription": "Eid ul Fitr",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-05-01",
+    "holidayDescription": "May Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-04-14",
+    "holidayDescription": "New Years Holiday",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-04-05",
+    "holidayDescription": "Ghode Jatra Kathmandu Valley Holiday",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-03-20",
+    "holidayDescription": "Holi Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-03-08",
+    "holidayDescription": "International Woman Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-03-04",
+    "holidayDescription": "Maha Sivaratri",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2019-02-28",
+    "holidayDescription": "Public Holiday",
+    "activeStatus": null
+  }
+]

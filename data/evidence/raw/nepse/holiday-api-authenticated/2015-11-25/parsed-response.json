@@ -1,0 +1,380 @@
+[
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-12-30",
+    "holidayDescription": "Tamu lohsar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-12-25",
+    "holidayDescription": "Christmas Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-11-17",
+    "holidayDescription": "Chhath",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-11-13",
+    "holidayDescription": "Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-11-12",
+    "holidayDescription": "Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-11-11",
+    "holidayDescription": "Tihar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-26",
+    "holidayDescription": "Kojagrat Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-23",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-22",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-21",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-20",
+    "holidayDescription": "Dashain Bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-13",
+    "holidayDescription": "Ghatasthapana",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-10-12",
+    "holidayDescription": "Bhoto Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-09-27",
+    "holidayDescription": "Indra Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-09-25",
+    "holidayDescription": "Bakr Eid ",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-09-21",
+    "holidayDescription": "Constitution issue celebration",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-09-20",
+    "holidayDescription": "Constitution issue day ",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-08-30",
+    "holidayDescription": "Gai jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-07-21",
+    "holidayDescription": "Public Holiday by GON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-07-20",
+    "holidayDescription": "Public Holiday by GON",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-07-19",
+    "holidayDescription": "Eid 2015",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-29",
+    "holidayDescription": "Ganatantra Diwas",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-22",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-21",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-20",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-19",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-18",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-17",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-15",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-14",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-13",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-12",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-11",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-10",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-08",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-07",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-06",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-05",
+    "holidayDescription": "market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-04",
+    "holidayDescription": "Buddha Jayanti",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-03",
+    "holidayDescription": "Market closed until next decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-05-01",
+    "holidayDescription": "May Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-04-30",
+    "holidayDescription": "market closed until next  decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-04-29",
+    "holidayDescription": "market closed until next  decision",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-04-24",
+    "holidayDescription": "Loktantra Diwas",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-04-17",
+    "holidayDescription": "shok bida",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-04-14",
+    "holidayDescription": "New Year",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-03-20",
+    "holidayDescription": "Ghode Jatra",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-03-08",
+    "holidayDescription": "Woman's Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-03-05",
+    "holidayDescription": "Fagu Purnima",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-02-19",
+    "holidayDescription": "Democracy Day",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-02-17",
+    "holidayDescription": "Shiva Ratri",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-01-30",
+    "holidayDescription": "Sahid Diwas",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-01-21",
+    "holidayDescription": "Sonam Lhosar",
+    "activeStatus": null
+  },
+  {
+    "id": null,
+    "instrumentTypeId": null,
+    "holidayDate": "2015-01-15",
+    "holidayDescription": "Maghe Sankranti",
+    "activeStatus": null
+  }
+]

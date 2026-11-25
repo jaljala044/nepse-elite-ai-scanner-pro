@@ -75,3 +75,26 @@ The official SEBON site exposes separate catalogues for [MFS Approved](https://s
 - A current prospectus list contains offers and new fund names, but a prospectus is not proof that the resulting unit is already listed and trading on NEPSE.
 
 Therefore these SEBON primary sources improve the regulator-side scheme and registration evidence, but they do **not** yet validate a current 47-fund NEPSE trading list. The 281-equity + 47-fund scope remains an explicit project target, not an independently verified registry count. The next step is to capture exact dated PDFs/registrar records and crosswalk scheme names to NEPSE security IDs, ticker symbols and actual first/last trading dates.
+
+
+## 2026-11-25 official-source cross-check
+
+### NEPSE official stock-list snapshot
+
+The NEPSE [official stock-list page](https://www.nepalstock.com.np/stocklist) is indexed with a market snapshot dated **2026-10-15 15:00**. Its page summary reports **349 total scrips traded** for that session, alongside daily transaction and turnover totals. That is a traded-scrip count across the exchange's mixed instrument population, not a count of 281 ordinary equities plus 47 mutual funds. The page is not a complete dated instrument-type/lifecycle export. The same indexed snapshot carries a 2026-10-15 BHDC security suspension/revocation notice, illustrating why page display presence must not be treated as definitive trading status without effective-dated status evidence.
+
+### SEBON primary mutual-fund records
+
+The latest directly opened SEBON [MFS Approved PDF](https://www.sebon.gov.np/uploads/2026/10/28/InwxdsnP05pazi2Y3vSl4HeeBikPKO89pJ3BSG97.pdf), dated 2026-10-28 and stated as of 2083/07/11, records six scheme/registration rows: NIBL Sabhagita Fund (open-end), Muktinath Mutual Fund 2 (close-end), NIC Asia Equity Opportunity Fund (close-end), Citizens Super 50 (close-end), Shubha Laxmi Kosh (open-end), and Nabil Growth Fund (close-end). Some rows are additional unit registrations for existing schemes. This is a regulator approval/registration history, not a complete NEPSE trading list.
+
+The SEBON [Mutual Fund Scheme Pipeline Status PDF](https://www.sebon.gov.np/uploads/2026/10/30/4TXSEQWU4MveZ7z1ZQHWwbiEnhHHwrYolGKonX8h.pdf), as of 2083/07/13 (2026-10-30), lists six schemes under preliminary review and two in the "Reviewed and Comment Sent" section. Pipeline/approval status must not be interpreted as exchange listing or trading commencement.
+
+### Secondary discrepancy evidence
+
+A 2026-11-08 secondary industry overview reports 47 closed-end schemes, with 45 trading on NEPSE and two newly issued but not yet trading. A separate secondary directory dated 2026-11-24 reports 43 listed schemes. These may use different definitions or update cutoffs; neither can replace an official exchange registry.
+
+### Priority 99 outcome
+
+Primary-source discovery improved, but **the exact dated 281-equity + 47-mutual-fund active trading register remains unverified**. The 2026-11-24 floorsheet sample contains 347 distinct symbols in one source file, which is 19 more than the arithmetic target of 328. Those 19 symbols are not automatically errors or excluded classes. They must be mapped to official security IDs, instrument types and effective lifecycle dates.
+
+Do not promote any symbol-only list into the canonical target universe. The next required source is a raw NEPSE security-list response or official dated export that can be preserved with retrieval time, source hash, security IDs, instrument types, and status effective dates. SEBON approvals and pipeline rows should be cross-references, not substitutes for exchange listing/trading status.

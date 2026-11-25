@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "generated_date": "2026-11-25",
+  "method": "exact relative-path comparison at immutable repository revisions; numerical OHLCV values retained as reported",
+  "conflict_count": 8,
+  "symbol_count": 7,
+  "source_a_revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+  "source_b_revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+  "source_git_blob_oids_are_not_sha256": true,
+  "conflicts": [
+    {
+      "symbol": "API",
+      "date": "2026-11-19",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/API_OHLCV.csv",
+        "git_blob_oid": "0e6a37baea92f4f0032980a46773d50b5f41c56c",
+        "ohlcv": [
+          331,
+          334.2,
+          330.2,
+          333,
+          26717
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/API_OHLCV.csv",
+        "git_blob_oid": "65ebab9f040ff03d42898ae8d80952683b124ad7",
+        "ohlcv": [
+          331,
+          334.2,
+          330,
+          331.8,
+          105340
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2025-07-28",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/BGWT_OHLCV.csv",
+        "git_blob_oid": "e4f11109f611e126e188291e1c73600f4fb936cb",
+        "ohlcv": [
+          940,
+          992,
+          933.4,
+          957.17,
+          14028
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/BGWT_OHLCV.csv",
+        "git_blob_oid": "ef024895eaed75d91c2de5fdfc05da4f25c9c9a0",
+        "ohlcv": [
+          940,
+          992,
+          933.4,
+          945,
+          14028
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-11-19",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/HRL_OHLCV.csv",
+        "git_blob_oid": "e5f3981f1a7dbcfb1518b2dac22afbde4ddc20de",
+        "ohlcv": [
+          483,
+          488,
+          480,
+          486,
+          18817
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/HRL_OHLCV.csv",
+        "git_blob_oid": "2c7318c47591d193d5f0fb83301cd26b28b984a0",
+        "ohlcv": [
+          483,
+          488,
+          480,
+          483.9,
+          49184
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "MEHL",
+      "date": "2025-07-28",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/MEHL_OHLCV.csv",
+        "git_blob_oid": "df48e9d3dcf0a19693973807168b3fe9f99ba8a7",
+        "ohlcv": [
+          471.1,
+          480.5,
+          460,
+          475.63,
+          29753
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/MEHL_OHLCV.csv",
+        "git_blob_oid": "9de45b091c5111af919f1acd9928b63db979b120",
+        "ohlcv": [
+          471.1,
+          480.5,
+          460,
+          470.83,
+          29753
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2025-07-28",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/RAWA_OHLCV.csv",
+        "git_blob_oid": "ccd80a6639a0720981c6c54509adec63ec456053",
+        "ohlcv": [
+          796,
+          811,
+          780.3,
+          796.9,
+          3165
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/RAWA_OHLCV.csv",
+        "git_blob_oid": "91287e46895f6a3ec2fb14b8d80d9381776b3e04",
+        "ohlcv": [
+          796,
+          811,
+          780.3,
+          794.83,
+          3165
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2025-07-28",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/RHGCL_OHLCV.csv",
+        "git_blob_oid": "69456917ff60399f21f3ddfd374d84bb31e2f1f5",
+        "ohlcv": [
+          346.7,
+          362,
+          341.4,
+          357.05,
+          296715
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/RHGCL_OHLCV.csv",
+        "git_blob_oid": "c9c3173c3f97d114a172b16467c547a9d65bdd45",
+        "ohlcv": [
+          346.7,
+          362,
+          341.4,
+          350.07,
+          296715
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2026-11-19",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/RHGCL_OHLCV.csv",
+        "git_blob_oid": "69456917ff60399f21f3ddfd374d84bb31e2f1f5",
+        "ohlcv": [
+          252.1,
+          259.5,
+          252.1,
+          256,
+          4216
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/RHGCL_OHLCV.csv",
+        "git_blob_oid": "c9c3173c3f97d114a172b16467c547a9d65bdd45",
+        "ohlcv": [
+          252.1,
+          259.5,
+          252.1,
+          258,
+          9054
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    },
+    {
+      "symbol": "ULHC",
+      "date": "2025-07-28",
+      "source_a": {
+        "repository": "jaljala044/nepse-smc-data",
+        "revision": "a55a9097375782d0a982f1f94a881f0a4e036698",
+        "path": "03_stock_charts_ohlcv/ULHC_OHLCV.csv",
+        "git_blob_oid": "9830adce5fb24f8970c4d7470a4284a5cde3ac44",
+        "ohlcv": [
+          509,
+          515,
+          495,
+          510.75,
+          32288
+        ]
+      },
+      "source_b": {
+        "repository": "jaljala044/nepse-history-starter",
+        "revision": "2bd6976cbbb0d40cf60f77c0f712e0b708dc4dbe",
+        "path": "03_stock_charts_ohlcv/ULHC_OHLCV.csv",
+        "git_blob_oid": "15b90a3b841a84f0bbbff7cbf602a03e490dbd70",
+        "ohlcv": [
+          509,
+          515,
+          495,
+          504,
+          32288
+        ]
+      },
+      "independent_primary_evidence_uri": null,
+      "evidence_sha256": null,
+      "corporate_action_review": "No matching action for this symbol/date was found in the three-event ledger reviewed; full issuer/exchange lifecycle search remains open.",
+      "resolution_status": "quarantined_unresolved",
+      "decision_reason": "Same-date OHLCV values differ across pinned repository files. Neither repository is primary exchange proof; preserve both values and exclude from canonical training until primary tape/EOD evidence, corporate-action review and price-basis provenance are resolved."
+    }
+  ],
+  "canonical_promotion_allowed": false
+}

@@ -494,3 +494,14 @@ The CLI is read-only. Missing evidence yields explicit blockers and a nonzero ex
 - `backend/reconcile_broker_control_totals.py` persists immutable input-hashed party/control comparisons; contract gross totals are counted once only when buyer/seller observations agree.
 
 The integrated workflow runs available registry, calendar, source inventory, calendar matrix, OHLCV daily totals, adjustment-basis, per-security coverage, floorsheet-window, broker identity and readiness audits. If required inputs are absent, it writes explicit `skipped_missing_input` status files. A successful workflow means the orchestration and tests completed; it does not mean missing datasets have been verified.
+
+## Additional validation gates added in priorities 41–60
+
+- Per-security OHLCV coverage reports source files by SHA-256 and byte count, exposes unknown symbols, and explicitly checks the required 281-equity / 47-mutual-fund target count. Excluded instrument classes can remain in the reference universe but cannot be target members.
+- Calendar evidence timestamps must be chronologically consistent: publication <= retrieval <= verification. Calendar claims must have nonblank scope and unique nonblank captured source IDs.
+- Point-in-time snapshots report missing `available_at` records separately from future records excluded after the decision cutoff.
+- Floorsheet column mappings accept exactly the supported normalized fields and distinct, nonblank source-header names. OHLCV reconciliation rejects duplicate/unsupported headers, extra row cells, impossible OHLC ranges and malformed daily control totals.
+- Corporate-action records require source tier, typed ex-date and ISO timestamp strings, and finite positive decimal factors. As-known reports preserve visible provisional/disputed/cancelled records as exclusions rather than reporting a misleading all-confirmed state.
+- Walk-forward evaluation validates ISO dates, exact binary outcomes and finite [0,1] probabilities before fold construction. Footprint features reject invalid prices/volumes and duplicate security sessions; market breadth excludes and separately reports symbols outside the supplied target universe.
+
+All outputs remain descriptive/audit-only. These guards do not establish exchange calendar completeness, source rights, universe membership or predictive performance.

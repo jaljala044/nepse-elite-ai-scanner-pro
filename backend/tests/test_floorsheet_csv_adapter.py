@@ -65,6 +65,19 @@ class FloorsheetCsvAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "nonblank strings"):
             CsvFloorsheetMapping(mapping)
 
+    def test_non_bytes_payload_and_invalid_mapping_rejected(self):
+        with self.assertRaisesRegex(ValueError, "payload must be bytes"):
+            parse_floorsheet_csv("text", source_id="sample", mapping=MAPPING)
+        with self.assertRaisesRegex(ValueError, "mapping must be"):
+            parse_floorsheet_csv(b"a", source_id="sample", mapping=None)
+
+    def test_newline_delimiter_and_blank_headers_rejected(self):
+        with self.assertRaisesRegex(ValueError, "cannot be a newline"):
+            CsvFloorsheetMapping(dict(MAPPING.columns), delimiter="\\n")
+        payload = b"Trade Date,S.N.,Symbol,Buyer,Seller,Qty.,Rate,Amount,\\n"
+        with self.assertRaisesRegex(ValueError, "nonblank strings"):
+            parse_floorsheet_csv(payload, source_id="sample", mapping=MAPPING)
+
     def test_extra_unmapped_cells_are_reported(self):
         payload = (
             "Trade Date,S.N.,Symbol,Buyer,Seller,Qty.,Rate,Amount\n"

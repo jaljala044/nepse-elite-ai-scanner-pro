@@ -532,3 +532,9 @@ When the project owner asks for all progress, retrieve this register and current
 - The GitHub status endpoint did not expose check/status entries for the commits at this update. Therefore the eight priorities above are **committed implementations with synthetic tests authored, but test execution is not yet independently verified**. Do not mark them CI-passing until an actual successful Actions run is confirmed.
 - No real floorsheet or OHLCV publisher export was parsed. No official 281+47 instrument manifest or complete primary NEPSE session calendar has been ingested. Rights clearance and corporate-action completeness remain unverified. Historical archive coverage has not been re-run using verified session dates.
 - Training readiness remains blocked; the gate is implemented but not passed with real evidence.
+
+
+### Follow-up correctness refinements after Priority 10
+- OHLCV adapter now permits zero traded volume while requiring positive OHLC prices; a zero-volume row may occur on a valid session and must not be rejected solely for that reason. Commits: [45da0e0](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/45da0e0b9859d2204c2cdb831e0d4c7defe69d3b), regression test [c4f2aef](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/c4f2aef3f0f0d5d991efdb27af9ec5401c49ca01).
+- Historical reconciliation now labels a close-price difference as a cross-source conflict only when multiple distinct sources disagree; same-source duplicate rows remain in the duplicate review ledger. Commits: [727beca](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/727beca084f1b7711b245e6ba0200e8ef9c3f947), regression test [58f9424](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/58f94245225e06640171be38a699c4277553e16c).
+- GitHub combined-status queries returned empty status lists for the latest test commits. CI is still **unconfirmed**, not passed. No local test execution is represented as having occurred.

@@ -617,3 +617,10 @@ Added and merged PR #8 (merge commit `592977ddb4c4ab4577f859a675073c46e8d33b0a`)
 **Capture status:** the workflow has been installed, but its first live API request has not yet run. Endpoint availability, response schema, historical depth and overlap with the 616 candidates remain unverified until the first successful capture. No raw market-summary-history response has been committed yet. No `verified_open` rows are promoted; P1 and the P2 training gate remain active.
 
 Next action: run the workflow manually from GitHub Actions or wait for its next weekday 10:00 UTC schedule; inspect the raw response and SHA-256, validate the date field and full coverage, then compare every returned primary market-summary date with the 616 candidate dates and archived holiday closures.
+
+
+### Primary market-summary capture host fallback — 2026-11-25 follow-up
+
+PR #10 was merged at `af3cbb50991fb690edd9ea34129f10bc7df86a55`. The capture now tries `https://nepalstock.com.np` first and `https://newweb.nepalstock.com` second, refreshing the client/token flow and matching Host/Referer headers for each host. It preserves both attempts' raw response bytes, response headers, status and SHA-256, then analyzes the first nonempty HTTP 200 response. The legacy route is documented in the archived NEPSE client source at https://github.com/CaffeineDuck/nepse-api/blob/master/nepse/market/core.py; the official page is https://nepalstock.com.np/market-summary-history.
+
+The host-fallback change passed both backend and backend-contract workflows on PR #10 head `9d4c846d83d9f2a58820a4eed25d7eb701f47970`: **547 tests passed in each run**. The live capture has still not run; the endpoint's current availability, schema and historical coverage remain unknown. The weekday 10:00 UTC scheduled run and manual dispatch remain enabled. No raw market-summary-history response is yet archived and no open-session dates are promoted.

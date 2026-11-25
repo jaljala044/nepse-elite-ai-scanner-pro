@@ -44,10 +44,21 @@ def load_calendar(path: str | Path) -> dict[date, dict[str, str]]:
         for line, raw in enumerate(reader, 2):
             day = date.fromisoformat(raw["date"].strip())
             status = raw["status"].strip()
-            if status not in {"verified_open", "verified_closed"}:
-                raise ValueError(f"line {line}: status must be verified_open or verified_closed")
+            allowed_statuses = {
+                "verified_open", "verified_closed",
+                "verified_exceptional_open", "verified_exceptional_closed",
+            }
+            if status not in allowed_statuses:
+                raise ValueError(f"line {line}: unsupported evidence-backed calendar status {status!r}")
             if not raw["source_id"].strip() or not raw["evidence_uri"].strip() or not raw["verified_at_utc"].strip():
                 raise ValueError(f"line {line}: verified calendar rows require source_id, evidence_uri and verified_at_utc")
+            from datetime import datetime, timezone
+            try:
+                verified_at = datetime.fromisoformat(raw["verified_at_utc"].strip().replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ValueError(f"line {line}: verified_at_utc must be an ISO-8601 timestamp") from exc
+            if verified_at.tzinfo is None or verified_at.utcoffset() != timezone.utc.utcoffset(verified_at):
+                raise ValueError(f"line {line}: verified_at_utc must include UTC timezone")
             if day in entries:
                 raise ValueError(f"line {line}: duplicate calendar date {day}")
             entries[day] = {k: (v or "").strip() for k, v in raw.items()}
@@ -103,7 +114,7 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
                     if nums["high"] < max(nums["open"], nums["close"], nums["low"]) or nums["low"] > min(nums["open"], nums["close"], nums["high"]):
                         raise ValueError("invalid_ohlc_bounds")
                     cls = classify_date(day, evidence)
-                    if cls["classification"] != "verified_open":
+                    if cls["classification"] not in {"verified_open", "verified_exceptional_open"}:
                         raise ValueError("date_not_verified_open:" + cls["classification"])
                     key = (symbol, day.isoformat())
                     comparable = {k: row[k] for k in OHLCV_FIELDS if k != "symbol"}

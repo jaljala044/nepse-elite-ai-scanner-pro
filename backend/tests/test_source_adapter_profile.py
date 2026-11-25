@@ -49,5 +49,17 @@ class SourceAdapterProfileTests(unittest.TestCase):
             self.profile(sample_payload_sha256="not-a-hash")
 
 
+
+    def test_mapping_must_reference_headers_in_reviewed_sample(self):
+        bad = self.profile(mapping={"session_date": "Date", "symbol": "Ticker"})
+        result = verify_adapter_profile(bad, self.payload)
+        self.assertFalse(result["mapping_headers_present"])
+        self.assertFalse(result["mapping_verified_for_exact_sample"])
+
+    def test_duplicate_source_header_mapping_rejected(self):
+        with self.assertRaisesRegex(ValueError, "distinct source header"):
+            self.profile(mapping={"symbol": "Date", "session_date": "Date"})
+
+
 if __name__ == "__main__":
     unittest.main()

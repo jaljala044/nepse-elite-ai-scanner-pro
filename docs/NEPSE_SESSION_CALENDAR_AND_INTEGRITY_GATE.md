@@ -411,3 +411,20 @@ The evidence lead file now contains NEPSE-specific secondary reports for Janai
 Purnima (2026-08-28) and Krishna Janmashtami (2026-09-04), in addition to the
 government holiday list. This improves corroboration but does not replace the
 original NEPSE notices.
+
+## Per-security OHLCV coverage report
+
+`backend/build_security_coverage_report.py` calculates expected and observed rows per in-scope security using an explicit security-universe CSV, the evidence-backed session calendar, and normalized OHLCV symbol/date CSVs. It reports equity and mutual-fund counts separately, per-security expected sessions, missing sessions, duplicate rows, observations on verified closures, and observations on dates without calendar evidence.
+
+Example (run from `backend/`):
+
+```bash
+python build_security_coverage_report.py \
+  --universe ../data/reference/security_master_snapshot.csv \
+  --calendar ../data/reference/nepse_session_calendar.csv \
+  --input ../data/normalized/ohlcv-source-a.csv \
+  --start-date 2025-11-25 --end-date 2026-11-25 \
+  --output ../data/reports/security-coverage.json
+```
+
+The universe CSV must explicitly provide `security_id,symbol,instrument_type,valid_from,valid_to,target_in_scope`. Only explicit `equity` and `mutual_fund` classes are accepted in the in-scope rows. The expected-session denominator includes only verified normal or exceptional open dates that fall within the security's effective interval. Unknown dates are excluded and reported separately; this tool does not infer missing sessions or authorize canonical promotion.

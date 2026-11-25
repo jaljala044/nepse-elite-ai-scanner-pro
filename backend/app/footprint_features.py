@@ -5,7 +5,7 @@ or issue buy/sell signals. Inputs must already be point-in-time filtered.
 """
 from __future__ import annotations
 
-from math import sqrt
+from decimal import Decimal, InvalidOperation
 
 
 def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) -> dict:
@@ -58,18 +58,45 @@ def security_footprint(rows: list[dict], minimum_history: int = 5) -> dict:
 
 
 def broker_participation_summary(rows: list[dict]) -> dict:
-    """Summarize only verified broker entities; expose unmapped share separately."""
-    mapped = [r for r in rows if r.get("identity_status") == "verified" and r.get("broker_entity_id")]
-    unknown = [r for r in rows if r not in mapped]
-    buy = sum(float(r.get("amount", 0)) for r in mapped if r.get("side") == "buy")
-    sell = sum(float(r.get("amount", 0)) for r in mapped if r.get("side") == "sell")
+    """Summarize verified broker flow with exact decimal amounts and explicit unknowns."""
+    mapped = []
+    unresolved = []
+    buy = Decimal("0")
+    sell = Decimal("0")
+    for index, row in enumerate(rows):
+        status = row.get("identity_status")
+        broker_id = row.get("broker_entity_id")
+        if status == "verified":
+            if not broker_id:
+                raise ValueError(f"row {index}: verified identity requires broker_entity_id")
+            mapped.append(row)
+        else:
+            if broker_id is not None:
+                raise ValueError(f"row {index}: unresolved identity cannot carry broker_entity_id")
+            if status not in {"unmapped", "ambiguous", "rejected"}:
+                raise ValueError(f"row {index}: unsupported identity_status")
+            unresolved.append(row)
+        if row.get("side") not in {"buy", "sell"}:
+            raise ValueError(f"row {index}: side must be buy or sell")
+        try:
+            amount = Decimal(str(row.get("amount")))
+        except (InvalidOperation, TypeError):
+            raise ValueError(f"row {index}: amount must be a decimal")
+        if not amount.is_finite() or amount < 0:
+            raise ValueError(f"row {index}: amount must be finite and non-negative")
+        if status == "verified":
+            if row["side"] == "buy":
+                buy += amount
+            else:
+                sell += amount
     total = buy + sell
     return {
         "verified_broker_rows": len(mapped),
-        "unmapped_or_unverified_rows": len(unknown),
-        "unverified_row_share": len(unknown) / len(rows) if rows else None,
-        "verified_buy_amount": buy,
-        "verified_sell_amount": sell,
-        "verified_net_amount": buy - sell,
-        "status": "insufficient_evidence" if not mapped else "partial_identity_coverage" if unknown else "observed",
+        "unmapped_or_unverified_rows": len(unresolved),
+        "unverified_row_share": len(unresolved) / len(rows) if rows else None,
+        "verified_buy_amount": str(buy),
+        "verified_sell_amount": str(sell),
+        "verified_net_amount": str(buy - sell),
+        "verified_amount_total": str(total),
+        "status": "insufficient_evidence" if not mapped else "partial_identity_coverage" if unresolved else "observed",
     }

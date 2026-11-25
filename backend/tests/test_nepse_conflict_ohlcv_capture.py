@@ -1,6 +1,6 @@
 from __future__ import annotations
 import unittest
-from capture_nepse_conflict_ohlcv import analyze_history_payload
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume
 
 
 def conflict():
@@ -12,6 +12,29 @@ def conflict():
 
 
 class NepseConflictOhlcvCaptureTests(unittest.TestCase):
+
+    def test_historical_price_volume_binds_date_into_payload_id(self):
+        class FakeClient:
+            def __init__(self):
+                self.payload_date = None
+                self.request_url = None
+
+            def getPOSTPayloadIDForFloorSheet(self, business_date=None):
+                self.payload_date = business_date
+                return 123456
+
+            def requestPOSTAPI(self, url, payload_generator):
+                self.request_url = url
+                return {"payload_id": payload_generator()}
+
+        client = FakeClient()
+        result = request_date_specific_price_volume(
+            client, "/api/nots/market/today-price", "2025-07-28"
+        )
+        self.assertEqual(client.request_url, "/api/nots/market/today-price?size=500&businessDate=2025-07-28")
+        self.assertEqual(client.payload_date, "2025-07-28")
+        self.assertEqual(result, {"payload_id": 123456})
+
     def test_official_row_matching_source_a_is_detected(self):
         payload = {"content": [{
             "businessDate": "2025-07-28T00:00:00", "openPrice": 940,

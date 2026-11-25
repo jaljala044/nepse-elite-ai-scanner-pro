@@ -5,8 +5,8 @@ from app.calendar_evidence_manifest import validate_calendar_evidence_manifest
 class CalendarEvidenceManifestTests(unittest.TestCase):
     def captures(self):
         return [
-            {"source_id":"n1","url":"https://www.nepalstock.com.np/notice/1","raw_evidence_sha256":"a"*64},
-            {"source_id":"n2","url":"https://www.nepalstock.com.np/notice/2","raw_evidence_sha256":"b"*64},
+            {"source_id":"n1","url":"https://www.nepalstock.com.np/notice/1","raw_evidence_sha256":"a"*64,"raw_evidence_path":"n1.bin","retrieved_at_utc":"2026-11-25T00:00:00Z"},
+            {"source_id":"n2","url":"https://www.nepalstock.com.np/notice/2","raw_evidence_sha256":"b"*64,"raw_evidence_path":"n2.bin","retrieved_at_utc":"2026-11-25T00:00:00Z"},
         ]
 
     def test_multiple_notice_sources_validate_for_same_claim(self):

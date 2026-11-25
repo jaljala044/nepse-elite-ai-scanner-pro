@@ -89,6 +89,8 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
                 inspect_zip(path, max_entries=0)
             with self.assertRaisesRegex(ValueError, "max_compression_ratio"):
                 inspect_zip(path, max_compression_ratio=0)
+            with self.assertRaisesRegex(ValueError, "finite and positive"):
+                inspect_zip(path, max_compression_ratio=float("nan"))
 
 
 if __name__ == "__main__":

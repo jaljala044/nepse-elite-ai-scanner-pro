@@ -74,6 +74,21 @@ class FloorsheetManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "real YYYY-MM-DD"):
             compare_manifest(self.manifest)
 
+    def test_source_row_dates_must_match_manifest_date(self):
+        (self.base / "right.csv").write_text(
+            "transaction,symbol,buyer,seller,quantity,rate,amount,date\\n"
+            "C1,NABIL,11,22,2,100,200,2026-11-23\\n",
+            encoding="utf-8",
+        )
+        self.write_manifest([self.pair()])
+        result = compare_manifest(self.manifest)
+        self.assertEqual(result["dates_with_source_trade_date_mismatches"], 1)
+        self.assertEqual(result["readiness_status"], "review_required")
+        self.assertEqual(
+            result["results"][0]["comparison"]["manifest_trade_date_check"]["status"],
+            "failed",
+        )
+
     def test_control_date_must_match_pair(self):
         pair = self.pair()
         pair["independent_control"] = {

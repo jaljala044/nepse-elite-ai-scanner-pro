@@ -55,8 +55,11 @@ def build_historical_coverage_report(records: list[dict], *,
             rows = by_key_source.get((key, source), [])
             for row in rows:
                 observed.append((source, str(Decimal(str(row["close"])))))
-        distinct = sorted({value for _, value in observed})
-        if len(distinct) > 1:
+        by_source_values = defaultdict(set)
+        for source, value in observed:
+            by_source_values[source].add(value)
+        source_distinct = {value for values in by_source_values.values() for value in values}
+        if len(by_source_values) > 1 and len(source_distinct) > 1:
             conflicts.append({"session_date": key[0], "symbol": key[1],
                               "source_values": [{"source_id": s, "close": v} for s, v in observed]})
     union_covered = sum(1 for key in expected if any(by_key_source.get((key, src)) for src in source_ids))

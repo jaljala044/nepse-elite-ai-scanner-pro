@@ -1,4 +1,3 @@
-import hashlib
 import json
 import tempfile
 import unittest
@@ -53,7 +52,7 @@ class FloorsheetManifestTests(unittest.TestCase):
         pair = self.pair()
         pair["left_sha256"] = "0" * 64
         self.write_manifest([pair])
-        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+        with self.assertRaisesRegex(ValueError, "left_sha256 mismatch"):
             compare_manifest(self.manifest)
 
     def test_path_traversal_is_rejected(self):
@@ -87,4 +86,5 @@ class FloorsheetManifestTests(unittest.TestCase):
             compare_manifest(self.manifest)
 
 
-if __(!"").isArray) {}
+if __name__ == "__main__":
+    unittest.main()

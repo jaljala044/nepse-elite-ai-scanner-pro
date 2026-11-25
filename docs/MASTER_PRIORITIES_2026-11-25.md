@@ -403,3 +403,12 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - Training readiness remains blocked on all 12 gates. Historical holiday
   evidence acquisition is not a complete session calendar; no 2015–2025
   dates are promoted and the 616-session source list is still missing.
+
+
+### P1 616-session date-candidate recovery — 2026-11-25
+
+- Recovered a pinned candidate date set from `srijankarki07/nepse-data` commit `e6e6fe77cd3378204c7938e66601cee2339a8b7a`: 616 unique date files from 2024-03-04 through 2026-11-20 (189 / 225 / 202 by year), exactly matching the starter backfill manifest's reported count and date window.
+- The source archive is ShareSansar-scraped and shares upstream lineage with the starter import; it is not primary NEPSE evidence. The dates remain `candidate_unverified`; canonical calendar unchanged and zero open dates promoted.
+- Cross-check against the pinned SocrateAI index tree `f602a5b61e68582d28834d16f71151a4bae98d5b`: 614/616 date files present; missing index files are 2025-04-03 and 2026-11-20. Seven candidate dates absent from the 2026 market-summary file each have one `NEPSE_index` row in the SocrateAI file; this is separate-repository corroboration with source lineage not fully verified.
+- 616-date candidate CSV, 616-row index cross-check CSV and detailed limitations are in PR #7: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/7.
+- Exact identity with the original extraction calendar and primary date-by-date open-session evidence remain unresolved. P1 remains active; P2 stays gated.

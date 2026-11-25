@@ -154,6 +154,36 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   yet been archived and hashed. Full review:
   `docs/NEPSE_SESSION_CALENDAR_AND_INTEGRITY_GATE.md`.
 
+
+
+## P1 CI repair and real-data acceptance status — 2026-11-25
+
+- Diagnosed the prior `backend-tests` failure: two OHLCV reconciliation test
+  fixtures encoded literal backslash-n text, producing malformed CSV headers.
+  Corrected the fixtures; production parser behavior was unchanged.
+- At commit `5c6269d90b2f94c0dc4bcb34b35a3556d460f077`, GitHub Actions
+  completed successfully: backend tests (532), backend contract tests (532),
+  and integrated evidence audit (532). The historical data-integrity workflow
+  also passed its focused collector, coverage-matrix and OHLCV reconciliation
+  tests and uploaded the pinned inventory/coverage artifact.
+- Inspected the inventory artifact: the pinned Urekmazino repository lists
+  7,032 files (603 floorsheets and 6,429 index files); the AnkitSanjyal
+  repository lists 312 configured records. These are complete repository
+  listings, not downloaded or validated raw data.
+- The 198 dates in the coverage report remain `candidate_unverified`; confirmed
+  sessions remain 0. The canonical `data/reference/nepse_session_calendar.csv`
+  contains only its header.
+- Inspected the integrated audit artifact. It completed but skipped source
+  inventory, calendar reconciliation, OHLCV, universe, security coverage and
+  floorsheet checks because required source manifests/raw files/normalized
+  inputs are absent. Training readiness is false; canonical promotion is false.
+- Located the official NEPSE Holiday Listing page, but the page returned no
+  readable date records in this review. No primary notice bytes were captured
+  or hashed, so no calendar rows were promoted.
+- P1 remains **active and blocked on real-source evidence**. Detailed status,
+  artifact digests and the next five P1 tasks are in
+  `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

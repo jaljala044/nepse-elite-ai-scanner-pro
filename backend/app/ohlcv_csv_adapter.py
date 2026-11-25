@@ -63,8 +63,10 @@ def parse_ohlcv_csv(payload: bytes, *, source_id: str, mapping: OhlcvCsvMapping)
             numbers = {key: Decimal(values[key].strip()) for key in ("open", "high", "low", "close", "volume")}
             if any(not x.is_finite() for x in numbers.values()):
                 raise ValueError("non_finite_numeric_value")
-            if any(x <= 0 for x in numbers.values()):
-                raise ValueError("non_positive_ohlcv_value")
+            if any(numbers[key] <= 0 for key in ("open", "high", "low", "close")):
+                raise ValueError("non_positive_price_value")
+            if numbers["volume"] < 0:
+                raise ValueError("negative_volume_value")
             flags = []
             if numbers["high"] < max(numbers["open"], numbers["low"], numbers["close"]):
                 flags.append("high_bound_violation")

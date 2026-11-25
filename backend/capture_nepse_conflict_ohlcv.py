@@ -369,9 +369,9 @@ def capture(ledger_path, output_dir):
         date_specific_comparisons.extend(date_comparisons)
         market_price_volume_reports[business_date] = {
             "status": "captured" if item["http_status"] == 200 and parsed is not None else "unavailable_or_unparseable",
-            "http_status": item["status"], "source_url": item["url"],
-            "response_sha256": hashlib.sha256(item["body"]).hexdigest(),
-            "response_bytes": len(item["body"]),
+            "http_status": item["http_status"], "source_url": item["source_url"],
+            "response_sha256": item["response_sha256"],
+            "response_bytes": item["response_bytes"],
             "record_count": len(rows), "pagination": pagination,
             "field_names": sorted({field for row in rows for field in row}),
             "records": rows,

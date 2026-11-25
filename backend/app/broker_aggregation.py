@@ -200,19 +200,33 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
             raise ValueError(f"control {index}: missing or duplicate source/date control key")
         try:
             date.fromisoformat(control["trade_date"])
-            contract_count = control["contract_count"]
-            party_count = control["party_observation_count"]
-            if (isinstance(contract_count, bool) or not isinstance(contract_count, int)
-                    or contract_count < 0 or isinstance(party_count, bool)
-                    or not isinstance(party_count, int) or party_count < 0):
+        except ValueError as exc:
+            raise ValueError(f"control {index}: trade_date must be a valid ISO date") from exc
+
+        def parse_count(value):
+            if isinstance(value, bool):
                 raise ValueError("control counts must be non-negative integers")
-            expected[key] = {
-                "contract_count": contract_count,
-                "gross_amount": Decimal(str(control["gross_amount"])),
-                "party_observation_count": party_count,
-            }
+            if isinstance(value, int):
+                parsed_count = value
+            elif isinstance(value, str) and re.fullmatch(r"\\d+", value):
+                parsed_count = int(value)
+            else:
+                raise ValueError("control counts must be non-negative integers")
+            if parsed_count < 0:
+                raise ValueError("control counts must be non-negative integers")
+            return parsed_count
+
+        try:
+            contract_count = parse_count(control["contract_count"])
+            party_count = parse_count(control["party_observation_count"])
+            gross_amount = Decimal(str(control["gross_amount"]))
         except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
-            raise ValueError(f"control {index}: invalid source control totals") from exc
+            raise ValueError(f"control {index}: invalid source control totals: {exc}") from exc
+        expected[key] = {
+            "contract_count": contract_count,
+            "gross_amount": gross_amount,
+            "party_observation_count": party_count,
+        }
         if not expected[key]["gross_amount"].is_finite() or expected[key]["gross_amount"] < 0:
             raise ValueError(f"control {index}: gross_amount must be finite and non-negative")
 

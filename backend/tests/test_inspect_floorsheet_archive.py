@@ -3,9 +3,10 @@ import stat
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 from pathlib import Path
 
-from inspect_floorsheet_archive import inspect_zip
+from inspect_floorsheet_archive import inspect_zip, main
 
 
 class FloorsheetArchiveInventoryTests(unittest.TestCase):
@@ -95,6 +96,24 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
             path = self._zip(tmp, [("a.csv", b"a"), ("b.csv", b"b")])
             result = inspect_zip(path, max_entries=1)
             self.assertIn("entry_count_limit_exceeded", {x["code"] for x in result["issues"]})
+
+    def test_archive_hash_change_during_inventory_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._zip(tmp, [("a.csv", b"a")])
+            with patch("inspect_floorsheet_archive.sha256_file",
+                       side_effect=["a" * 64, "b" * 64]):
+                with self.assertRaisesRegex(ValueError, "archive changed during inventory"):
+                    inspect_zip(path)
+
+    def test_cli_refuses_to_overwrite_inventory_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._zip(tmp, [("a.csv", b"a")])
+            output = Path(tmp) / "inventory.json"
+            output.write_text("preserve")
+            with patch("sys.argv", ["inspect_floorsheet_archive.py", str(path), "--output", str(output)]):
+                with self.assertRaises(FileExistsError):
+                    main()
+            self.assertEqual(output.read_text(), "preserve")
 
     def test_invalid_limits_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -512,6 +512,59 @@ def parse_legacy_floor_html(html, expected_date):
     }
 
 
+def fetch_legacy_nepse_full_market_page(business_date, output_dir):
+    """Probe the historical full-market PHP page used by older NEPSE scrapers."""
+    url = "http://www.nepalstock.com/datanepse/previous.php"
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36"
+        ),
+        "Referer": "http://www.nepalstock.com/",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    try:
+        with httpx.Client(
+            http2=False, verify=True, timeout=45.0, follow_redirects=True
+        ) as session:
+            response = session.post(
+                url, data={"Date": business_date}, headers=headers
+            )
+        body = response.content
+        body_path = Path(output_dir) / "legacy-full-market.response-body.html"
+        body_path.write_bytes(body)
+        parser = _LegacyFloorTableParser()
+        parser.feed(response.text)
+        target_terms = ("BGWT", "MEHL", "RAWA", "RHGCL", "ULHC")
+        target_rows = [
+            row for row in parser.rows
+            if any(term in " ".join(row).upper() for term in target_terms)
+        ]
+        return {
+            "business_date": business_date,
+            "requested_url": url,
+            "final_url": str(response.url),
+            "http_status": response.status_code,
+            "content_type": response.headers.get("content-type"),
+            "response_bytes": len(body),
+            "response_sha256": hashlib.sha256(body).hexdigest(),
+            "response_path": str(body_path),
+            "html_table_row_count": len(parser.rows),
+            "target_rows": target_rows,
+            "row_preview": parser.rows[:5],
+        }
+    except Exception as exc:
+        return {
+            "business_date": business_date,
+            "requested_url": url,
+            "status": "request_error",
+            "error_type": type(exc).__name__,
+            "error": str(exc)[:300],
+        }
+
+
+
 def fetch_legacy_nepse_floor_rows(symbol, business_date, output_dir):
     """Fetch the historical trade ledger from NEPSE's legacy company page."""
     url = f"http://www.nepalstock.com.np/company/transactions/{symbol}"
@@ -772,6 +825,9 @@ def capture(ledger_path, output_dir):
 
     # Probe the legacy NEPSE date/symbol EOD endpoint. It predates the
     # rolling-365-day JSON API and may preserve historical records.
+    legacy_full_market_report = fetch_legacy_nepse_full_market_page(
+        "2025-07-28", output_dir
+    )
     legacy_todays_price_reports = []
     legacy_floor_sheet_reports = []
     for conflict in conflicts:
@@ -973,6 +1029,7 @@ def capture(ledger_path, output_dir):
         "client_version": "nepse-client==0.1.4",
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
         "runtime_clock": runtime_clock,
+        "legacy_full_market": legacy_full_market_report,
         "legacy_todays_price": legacy_todays_price_reports,
         "legacy_floor_sheet": legacy_floor_sheet_reports,
         "captured_response_count": len(reports),

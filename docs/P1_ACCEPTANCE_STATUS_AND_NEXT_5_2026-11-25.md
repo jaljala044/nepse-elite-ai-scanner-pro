@@ -510,3 +510,41 @@ This is a meaningful partial calendar acceptance, not completion of the
 historical calendar gate. The exact 616-session date list is still missing;
 there are no verified open-session dates yet; primary historical closure
 evidence before 2026 remains uncollected. P1 remains blocked.
+
+
+## P1 execution increment — multi-year primary holiday API capture
+
+The primary NEPSE holiday API capture workflow was extended to retrieve years
+2015–2025 using the same public client flow that successfully captured 2026.
+The workflow completed successfully:
+
+- Run: `45623107909`
+- Artifact: `15027700386`
+- Artifact ZIP SHA-256:
+  `ce8959b0f185d92c936a0c5e137cb2645b33c5d6d23b1ff38c15e2e1d68b7eec`
+- Evidence archive commit:
+  `39747bd2ade2bdb59ef7665f454bcbc04b3060df`
+- All 11 requested years (2015–2025) returned HTTP 200 and were preserved;
+  the already captured 2026 response is also retained.
+- Across 2015–2026: 499 records, 498 unique dates when counted within each
+  year's response, and one repeated date row.
+- All records have `instrumentTypeId=null` and `activeStatus=null`.
+- The 2020 response has two records for 2020-04-13 with different descriptions
+  ("As Per Order by SEBON Lockdown" and "New Year Holiday"). Both are preserved.
+- The 2018 and 2019 responses end on November 9 and October 30 respectively;
+  annual completeness is not established.
+
+Raw payloads, parsed responses, headers, source URLs, checksums and capture
+reports are archived under
+`data/evidence/raw/nepse/holiday-api-authenticated/{YYYY}-11-25/`.
+The year-by-year audit is
+`data/evidence/acquired/nepse-holiday-api-multiyear-audit-2015-2026.json`;
+the human-readable report is
+`docs/NEPSE_OFFICIAL_HOLIDAY_API_MULTYEAR_AUDIT_2015-2026.md`.
+
+**Decision:** historical primary-source acquisition for the holiday API is
+complete for 2015–2025, but the records are not promoted into the canonical
+calendar. Scope, annual completeness, the 2020 repeated-date reasons, dated
+notice interpretation, verified open sessions and the exact 616-session list
+remain unresolved. The separately reviewed 2026 calendar remains at 41
+explicit closure dates (40 ordinary and one exceptional). P1 remains blocked.

@@ -23,6 +23,27 @@ class FootprintFeatureTests(unittest.TestCase):
         self.assertEqual(result["volume_ratio"], 3)
         self.assertEqual(result["status"], "observed")
 
+    def test_market_breadth_rejects_non_finite_prices(self):
+        with self.assertRaisesRegex(ValueError, "finite and positive"):
+            market_breadth([{"symbol":"AAA","close":float("nan"),"previous_close":10}])
+
+    def test_market_breadth_rejects_duplicate_expected_symbols(self):
+        with self.assertRaisesRegex(ValueError, "must be unique"):
+            market_breadth([], ["AAA", "AAA"])
+
+    def test_security_footprint_rejects_duplicate_sessions(self):
+        rows = [
+            {"session_date":"2026-11-23","close":10,"previous_close":9,"volume":100},
+            {"session_date":"2026-11-23","close":11,"previous_close":10,"volume":120},
+        ]
+        with self.assertRaisesRegex(ValueError, "duplicate session dates"):
+            security_footprint(rows)
+
+    def test_security_footprint_rejects_non_finite_volume(self):
+        rows = [{"session_date":"2026-11-23","close":10,"previous_close":9,"volume":float("inf")}]
+        with self.assertRaisesRegex(ValueError, "finite non-negative"):
+            security_footprint(rows)
+
     def test_broker_summary_does_not_assign_unverified_flow(self):
         rows = [
             {"identity_status":"verified","broker_entity_id":"B1","side":"buy","amount":100},

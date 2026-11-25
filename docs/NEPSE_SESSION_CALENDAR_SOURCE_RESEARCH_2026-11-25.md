@@ -37,3 +37,22 @@ Do not infer holidays from a missing OHLCV/floorsheet date, nor infer exchange c
 ## Current conclusion
 
 The research establishes that the April 2026 weekly schedule changed and that NRB's 2083 banking calendar is not a valid substitute for NEPSE's trading calendar. It does **not** establish a complete primary-source session calendar. Calendar verification remains the blocker for classifying the 196,784 repeated-row review candidates.
+
+
+## Additional cross-publisher corroboration located — 2026-11-25
+
+Two further reports support the 2026 weekly schedule transition:
+- [Ratopati, 2026-04-06](https://english.ratopati.com/story/57517/stock-trading-closed-on-saturday-and-sunday-open-on-friday) reports a NEPSE Board decision to trade Monday-Friday, effective that week, with Friday replacing Sunday.
+- [The Himalayan Times, 2026-04-08](https://thehimalayantimes.com/business/nepse-shifts-to-mondayfriday-trading-week) reports the Monday-Friday schedule effective 2026-04-06 and attributes it to a NEPSE Board decision on the same date.
+
+These independently corroborate the date and weekly schedule change reported by ShareSansar. They remain secondary publisher reports; no original NEPSE circular or official signed notice has been retrieved. Accordingly, the post-2026-04-06 Monday-Friday weekday regime has stronger corroboration but the official primary artifact is still an acquisition gap.
+
+The NRB holiday document's Sunday-Thursday office hours remain a separate NRB calendar, not a contradiction of the reported NEPSE schedule and not a substitute for NEPSE dates.
+
+## Latest artifact verification
+
+The enriched repeated-row artifact `14985599288` was downloaded and rechecked locally:
+- ZIP SHA-256 matches GitHub artifact digest: `4b8b7c27c642fee768eb3b031928e785a5ef296dc346b4d5c3b8212ba09def67`.
+- CSV has 196,784 records and 196,784 unique (repository, path, current CSV line) identities.
+- Breakdown matches summary exactly: 196,542 consecutive-calendar-date + OHLC-valid candidates; 240 date-gap/unparseable candidates; 2 invalid-OHLC-bound repeated signatures.
+- All records remain review-only with calendar status unverified.

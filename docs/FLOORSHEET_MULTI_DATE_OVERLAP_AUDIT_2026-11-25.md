@@ -221,3 +221,64 @@ The 70 dates are the latest 70 common date-named files out of 157 common files i
 - Manifest SHA-256: `5c86a735d7c85a43fb9e0ddbed4062ae7471503655503eb59f166d929b8c397e`
 
 The artifact contains derived reports and row-level exception ledgers, not the raw CSV payloads.
+
+
+## Fourth overlap batch — 30 dates and first exact published daily control (priority 100, partial)
+
+The fourth batch covers **2026-06-05 through 2026-07-16**, the next 30 common date-named files.
+
+- Samir: 1,619,124 physical rows.
+- SocrateAI: 1,668,638 physical rows.
+- Shared contracts with exact row matches: 1,619,124.
+- SocrateAI-only contracts: 49,514; Samir-only: 0; shared field conflicts: 0.
+- Quantity surplus: 7,797,111 shares.
+- Gross-turnover surplus: NPR 5,307,955,755.81.
+- Both sources passed row syntax/math checks on all 30 dates; no duplicate contract IDs in this batch.
+- Broker-code union: 91 codes in each archive. Per-date code sets matched on 29/30 dates; on 2026-06-24 code 73 appears only in SocrateAI.
+- **48,917 of the 49,514 SocrateAI-only contracts are concentrated on 2026-06-24.** The other 29 dates account for 597 source-only contracts.
+
+### 2026-06-24: first exact published daily control
+
+The cross-publisher control is recorded in `data/independent_controls/floorsheet_daily_controls_2026-11-25.json` and detailed in `docs/INDEPENDENT_DAILY_CONTROL_CROSSCHECK_2026-06-24.md`.
+
+The control is based on MeroLagani and ShareSansar reports of 10,777,582 shares and 72,917 transactions, plus The Rising Nepal page 2 reporting exact turnover of NPR 4,418,607,486.62. One conflicting secondary summary (HamroShare) is retained in the control file as unresolved evidence and is not used for acceptance.
+
+Automated comparison against this control:
+
+| Measure | Samir | SocrateAI | Published control |
+|---|---:|---:|---:|
+| Transaction rows | 24,000 | 72,917 | 72,917 |
+| Quantity | 5,564,078 | 10,777,582 | 10,777,582 |
+| Gross amount | NPR 1,874,967,415.91 | NPR 4,418,607,486.62 | NPR 4,418,607,486.62 |
+| Control status | **failed** | **passed** | — |
+
+The Samir file has exactly 24,000 rows, all 24,000 contract IDs are present in SocrateAI, and SocrateAI has 48,917 additional contracts across 237 symbols. This is strong evidence of an incomplete Samir capture on this date. The precise cause (pagination limit, source capture cutoff or another issue) is not yet established.
+
+### Combined latest 100 shared dates
+
+| Measure | Combined result |
+|---|---:|
+| Dates compared | 100 of 157 common date files |
+| Samir physical rows | 5,329,566 |
+| Samir unique contracts | 5,328,566 |
+| SocrateAI rows / unique contracts | 5,381,580 |
+| Shared exact contract rows | 5,328,566 |
+| SocrateAI-only contracts | 53,014 |
+| Samir-only contracts | 0 |
+| Shared-row field conflicts | 0 |
+| Samir duplicate extra physical rows | 1,000 |
+| Raw quantity surplus | 11,182,588 shares |
+| Raw gross-turnover surplus | NPR 7,159,881,183.48 |
+
+The raw totals include the 1,000 duplicate Samir physical rows identified on 2026-07-17. Those rows remain preserved and unresolved; no corrected total is promoted. Only one of the 100 dates currently has a published daily control attached, and that control fails Samir but passes SocrateAI. The overall readiness status remains `review_required`.
+
+### Reproducibility
+
+- [Fourth 30-date audit with published control run 45599320707](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45599320707) — passed.
+- [Backend suite run 45599320697](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45599320697) — **517 tests passed**.
+- Artifact ID: `15014378224`
+- ZIP SHA-256: `88bdf8da1f6830b51b945e10036ee73cb49c3f052ede78415008eef8871514b9`
+- Report JSON SHA-256: `398c5172e870ead4de923541f8ce4235cffd80d3ac2ae84553bf3663014a1cfb`
+- Manifest SHA-256: `513229359f641af126710dd7a48b3e36e5739d1db3f468d240306c5f32b3448a`
+
+**57 of 157 common date-named files remain.** The 100-file overlap is not an authoritative session calendar and does not resolve source lineage/rights or the dated 281-equity + 47-mutual-fund register.

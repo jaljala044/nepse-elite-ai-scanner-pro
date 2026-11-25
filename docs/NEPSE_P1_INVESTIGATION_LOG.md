@@ -475,3 +475,32 @@ Decision:
 - Primary exchange certification / official close-method confirmation: NOT PASS.
 - Keep the five quarantined pending primary-source/official-method confirmation. Do not train or promote the rows yet.
 - No PR merge.
+
+
+## 2026-11-25/26: repeat MeroLagani verification and Chukul access attempt
+
+### MeroLagani date-filtered recheck (2025-07-28)
+
+A fresh browser pass opened each company's Price History tab, set Market Date to 07/28/2025, and submitted the query.
+
+Freshly completed rows (one row returned for each):
+- BGWT: LTP 957.17; % Change 0.84; High 992.00; Low 933.40; Open 940.00; Qty. 14,028; Turnover 13,256,345.00.
+- MEHL: LTP 475.63; % Change -1.05; High 480.50; Low 460.00; Open 471.10; Qty. 29,753; Turnover 14,008,898.10.
+- RAWA: LTP 796.90; % Change -1.64; High 811.00; Low 780.30; Open 796.00; Qty. 3,165; Turnover 2,515,662.50.
+- RHGCL: LTP 357.05; % Change 5.03; High 362.00; Low 341.40; Open 346.70; Qty. 296,715; Turnover 103,872,614.40.
+
+ULHC's separate repeat browser run failed with a provider-side task error after opening the Price History query. Do not count that failed retry as a fresh result. The previously completed date-filtered MeroLagani verification remains recorded in the evidence ledger: LTP 510.75; % Change 0.49; High 515.00; Low 495.00; Open 509.00; Qty. 32,288; Turnover 16,273,342.10.
+
+All four fresh rows match Source A on LTP, open, high, low, and quantity. The earlier ULHC row also matches Source A. MeroLagani labels its close-like field "LTP"; it is secondary-publisher evidence, not NEPSE primary certification. Keep the five records quarantined.
+
+### Chukul access attempt
+
+Attempted https://chukul.com/ with browser navigation both with and without trailing slash. Both navigations timed out after 30 seconds waiting for page load; screenshot timed out after 45 seconds. The rendered page exposed no DOM, links, or images. A separate public-content fetch returned empty_content for the homepage and /stocks; /stock returned a 404 page. No historical date filter, stock history rows, or API route could be verified for BGWT, MEHL, RAWA, RHGCL, or ULHC. Classification: access_blocked_unverified, not evidence of data absence.
+
+### Decision and next step
+
+- MeroLagani secondary date-filter check: four fresh passes plus the earlier recorded ULHC pass (5/5 total evidence on file).
+- Chukul: inaccessible in this pass; no rows acquired.
+- Original NEPSE primary EOD response for 2025-07-28 remains outside the observed rolling retention window; the official today-price endpoint returned HTTP 500 "Searched Date is not valid." The historical close-method question therefore remains unresolved.
+- Next actionable route is official NEPSE confirmation / licensed historical EOD export, including the definition of the 2025-07-28 closing-price field during the weighted-average closing-price period.
+- All five 2025-07-28 records remain quarantined; no canonical promotion, no training, and no PR merge.

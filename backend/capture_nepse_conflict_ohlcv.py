@@ -277,6 +277,21 @@ def select_primary_comparison(date_specific_result, per_security_result):
     return date_specific_result or per_security_result
 
 
+
+def request_date_specific_price_volume(client, endpoint, business_date):
+    """POST a historical EOD date with a date-bound NEPSE payload ID.
+
+    nepse-client 0.1.4's getPriceVolumeHistory passes the payload generator
+    without its business_date argument. Bind it here so the payload's
+    day-of-month component matches the requested historical session.
+    """
+    url = f"{endpoint}?size=500&businessDate={business_date}"
+    return client.requestPOSTAPI(
+        url=url,
+        payload_generator=lambda: client.getPOSTPayloadIDForFloorSheet(business_date),
+    )
+
+
 def capture(ledger_path, output_dir):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     conflicts = ledger["conflicts"]
@@ -327,19 +342,8 @@ def capture(ledger_path, output_dir):
         for business_date in sorted({item["date"] for item in conflicts}):
             active_business_date = business_date
             try:
-                # nepse-client==0.1.4 accepts business_date for the URL, but its
-                # getPriceVolumeHistory implementation passes the unbound
-                # getPOSTPayloadIDForFloorSheet method. That means the payload
-                # generator silently uses today's day-of-month for historical
-                # requests. Bind the requested session into the payload ID too.
-                date_url = (
-                    f"{market_price_volume_path}?size=500&businessDate={business_date}"
-                )
-                client.requestPOSTAPI(
-                    url=date_url,
-                    payload_generator=lambda d=business_date: (
-                        client.getPOSTPayloadIDForFloorSheet(d)
-                    ),
+                request_date_specific_price_volume(
+                    client, market_price_volume_path, business_date
                 )
             except Exception as exc:
                 request_errors.setdefault("market-price-volume", {})[business_date] = {

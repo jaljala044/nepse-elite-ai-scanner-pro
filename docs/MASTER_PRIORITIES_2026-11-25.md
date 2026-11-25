@@ -415,3 +415,6 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 
 
 - Follow-up to the 616-date candidate recovery: the two dates absent from the SocrateAI index tree (2025-04-03 and 2026-11-20) each have contemporaneous secondary reports describing a completed NEPSE session. These are corroborating leads only; canonical open-date promotion remains zero. See `data/evidence/candidates/nepse-session-secondary-report-crosscheck.csv` in PR #7.
+
+
+- The 616-date candidate set also passes the documented weekday-regime consistency check: zero weekday violations and zero Saturday dates (27 Fridays occur only after the 2026-04-06 Monday-Friday transition). This is a sanity check, not proof of actual open sessions. See the recovery report in PR #7.

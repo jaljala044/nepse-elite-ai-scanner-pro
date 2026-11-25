@@ -6,8 +6,8 @@
     "url": "https://cdsc.com.np/listofclearingmember",
     "source_type": "primary_current_directory",
     "retrieval_mode": "rendered_web_extraction",
-    "raw_response_bytes_captured": false,
-    "raw_response_sha256": null,
+    "raw_response_bytes_captured": true,
+    "raw_response_sha256": "feb4597d66ad37dbc6f0ed2a9fd54c4fc7c04e67ce0b91c066bb9574c1c49de3",
     "directory_entry_count": 92,
     "current_cm_numbers": [
       "1",
@@ -103,7 +103,14 @@
       "100",
       "101"
     ],
-    "limitation": "Current clearing-member directory only; not a historical effective-dated NEPSE broker-number register. Rendered extraction is not archived raw response evidence."
+    "limitation": "Current clearing-member directory only; not a historical effective-dated NEPSE broker-number/name register. Reuse terms are not independently reviewed.",
+    "raw_response_path": "data/evidence/raw/cdsc/2026-11-25/clearing-members.csv",
+    "raw_response_bytes": 10893,
+    "http_status": 200,
+    "content_type": "text/csv;charset=UTF-8",
+    "retrieved_at_utc": "2026-11-25T13:04:33Z",
+    "artifact_id": 15024585251,
+    "workflow_run_id": 45619882786
   },
   "floorsheet_samples": [
     {

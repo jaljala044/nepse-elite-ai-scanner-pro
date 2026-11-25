@@ -39,7 +39,7 @@ class FloorsheetContract:
             raise ValueError("source_payload_sha256 must be a 64-character hex digest")
         if isinstance(self.source_row_number, bool) or not isinstance(self.source_row_number, int) or self.source_row_number < 1:
             raise ValueError("source_row_number must be a positive integer")
-        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", self.trade_date):
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", self.trade_date):
             raise ValueError("trade_date must use YYYY-MM-DD")
         try:
             date.fromisoformat(self.trade_date)

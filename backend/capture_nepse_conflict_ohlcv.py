@@ -619,7 +619,7 @@ def fetch_legacy_nepse_floor_rows(symbol, business_date, output_dir):
 
 
 
-def fetch_official_company_floorsheet(client, symbol, business_date, output_dir):
+def fetch_official_company_floorsheet(client, symbol, business_date, output_dir, host_label="nepalstock-com-np"):
     """Fetch a historical symbol-specific floorsheet through NEPSE's API."""
     try:
         records = client.getFloorSheetOf(symbol, business_date=business_date, size=500)
@@ -654,11 +654,12 @@ def fetch_official_company_floorsheet(client, symbol, business_date, output_dir)
             "last_contract_id": normalized[-1]["contract_id"] if normalized else None,
         }
         safe_symbol = "".join(ch for ch in symbol if ch.isalnum())
-        path = Path(output_dir) / f"official-company-floor.{safe_symbol}.json"
+        path = Path(output_dir) / f"official-company-floor.{safe_symbol}.{host_label}.json"
         payload = {
             "source": "NEPSE official company_floorsheet API",
             "symbol": symbol,
             "business_date": business_date,
+            "base_url": client.base_url,
             "summary": summary,
             "records": records,
         }
@@ -792,6 +793,7 @@ def capture(ledger_path, output_dir):
     client.client.event_hooks["response"].append(preserve_response)
     request_errors = {}
     official_company_floorsheet_reports = []
+    official_company_floorsheet_com_reports = []
     try:
         # Capture NEPSE's date-specific market price-volume endpoint once per
         # disputed session. Preserve raw responses for independent field review.
@@ -839,6 +841,17 @@ def capture(ledger_path, output_dir):
             client_com._update_dynamic_headers()
             client_com.getDummyID()
             client_com.client.event_hooks["response"].append(preserve_response)
+            for conflict in conflicts:
+                if conflict["date"] != "2025-07-28":
+                    continue
+                active_business_date = f"{conflict['symbol']}.{conflict['date']}.com"
+                official_company_floorsheet_com_reports.append(
+                    fetch_official_company_floorsheet(
+                        client_com, conflict["symbol"], conflict["date"],
+                        output_dir, host_label="com"
+                    )
+                )
+                time.sleep(0.5)
             active_business_date = "current-session-com-host"
             request_today_price_without_host_header(client_com, market_price_volume_path)
             active_business_date = "current-session-com-clean"
@@ -1108,6 +1121,7 @@ def capture(ledger_path, output_dir):
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
         "runtime_clock": runtime_clock,
         "official_company_floorsheet": official_company_floorsheet_reports,
+        "official_company_floorsheet_com": official_company_floorsheet_com_reports,
         "legacy_full_market": legacy_full_market_report,
         "legacy_todays_price": legacy_todays_price_reports,
         "legacy_floor_sheet": legacy_floor_sheet_reports,

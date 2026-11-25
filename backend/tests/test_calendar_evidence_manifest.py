@@ -38,6 +38,22 @@ class CalendarEvidenceManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing captured evidence"):
             validate_calendar_evidence_manifest(rows, self.captures())
 
+    def test_duplicate_source_ids_rejected(self):
+        rows = [{"date":"2026-11-24","status":"verified_open","scope":"all_securities",
+                 "source_ids":["n1","n1"]}]
+        with self.assertRaisesRegex(ValueError, "duplicate source_ids"):
+            validate_calendar_evidence_manifest(rows, self.captures())
+
+    def test_blank_source_id_and_scope_rejected(self):
+        rows = [{"date":"2026-11-24","status":"verified_open","scope":" ",
+                 "source_ids":["n1"]}]
+        with self.assertRaisesRegex(ValueError, "scope is required"):
+            validate_calendar_evidence_manifest(rows, self.captures())
+        rows[0]["scope"] = "all_securities"
+        rows[0]["source_ids"] = [" "]
+        with self.assertRaisesRegex(ValueError, "nonblank strings"):
+            validate_calendar_evidence_manifest(rows, self.captures())
+
     def test_non_official_capture_url_rejected(self):
         captures = self.captures()
         captures[0]["url"] = "https://example.com/notice"

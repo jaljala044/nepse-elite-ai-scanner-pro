@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -20,7 +20,7 @@ def _nonblank(value: object) -> bool:
 def _parse_as_of(value: date | str | None) -> date | None:
     if value is None:
         return None
-    if isinstance(value, date):
+    if isinstance(value, date) and not isinstance(value, datetime):
         return value
     if not isinstance(value, str) or not ISO_DATE.fullmatch(value):
         raise ValueError("as_of must be a date or YYYY-MM-DD string")
@@ -43,7 +43,7 @@ class BrokerNameObservation:
             self.source_id, self.source_broker_code, self.observed_name, self.evidence_id
         )):
             raise ValueError("broker name observations require source, code, name and evidence")
-        if not isinstance(self.observed_at, date):
+        if not isinstance(self.observed_at, date) or isinstance(self.observed_at, datetime):
             raise ValueError("observed_at must be a date")
 
 
@@ -58,9 +58,9 @@ class BrokerEntityName:
     def __post_init__(self):
         if not all(_nonblank(value) for value in (self.broker_entity_id, self.name, self.evidence_id)):
             raise ValueError("broker entity names require ID, name and evidence")
-        if self.valid_from is not None and not isinstance(self.valid_from, date):
+        if self.valid_from is not None and (not isinstance(self.valid_from, date) or isinstance(self.valid_from, datetime)):
             raise ValueError("valid_from must be a date or None")
-        if self.valid_to is not None and not isinstance(self.valid_to, date):
+        if self.valid_to is not None and (not isinstance(self.valid_to, date) or isinstance(self.valid_to, datetime)):
             raise ValueError("valid_to must be a date or None")
         if self.valid_from and self.valid_to and self.valid_to < self.valid_from:
             raise ValueError("valid_to must be on or after valid_from")
@@ -145,9 +145,9 @@ def validate_identity_link(link: BrokerIdentityLink) -> None:
             raise ValueError("verified links require broker_entity_id and evidence_id")
     elif link.broker_entity_id is not None:
         raise ValueError("non-verified links must not assign broker_entity_id")
-    if link.valid_from is not None and not isinstance(link.valid_from, date):
+    if link.valid_from is not None and (not isinstance(link.valid_from, date) or isinstance(link.valid_from, datetime)):
         raise ValueError("valid_from must be a date or None")
-    if link.valid_to is not None and not isinstance(link.valid_to, date):
+    if link.valid_to is not None and (not isinstance(link.valid_to, date) or isinstance(link.valid_to, datetime)):
         raise ValueError("valid_to must be a date or None")
     if link.valid_from and link.valid_to and link.valid_to < link.valid_from:
         raise ValueError("valid_to must be on or after valid_from")
@@ -162,20 +162,13 @@ def resolve_broker_identity(
     """Resolve one explicit verified link valid on as_of; never fuzzy-match."""
     if not _nonblank(source_id) or not _nonblank(source_broker_code):
         raise ValueError("source_id and source_broker_code are required")
-    if not isinstance(links, list):
-        raise ValueError("links must be a list")
+    if not isinstance(links, list) or any(not isinstance(link, BrokerIdentityLink) for link in links):
+        raise ValueError("links must be a list of BrokerIdentityLink records")
     as_of = _parse_as_of(as_of)
     matches = [
         link for link in links
-        if isinstance(link, BrokerIdentityLink)
-        and link.source_id == source_id and link.source_broker_code == source_broker_code
+        if link.source_id == source_id and link.source_broker_code == source_broker_code
     ]
-    if len(matches) != sum(
-        1 for link in links
-        if isinstance(link, BrokerIdentityLink)
-        and link.source_id == source_id and link.source_broker_code == source_broker_code
-    ):
-        raise ValueError("links must contain BrokerIdentityLink records")
     for link in matches:
         validate_identity_link(link)
     if as_of is None:
@@ -211,7 +204,7 @@ def aggregate_broker_side(records: list[dict]) -> list[dict]:
         if not isinstance(row, dict):
             raise ValueError(f"row {index}: expected object")
         side = row.get("side")
-        if side not in {"buy", "sell"}:
+        if not isinstance(side, str) or side not in {"buy", "sell"}:
             raise ValueError("side must be buy or sell")
         try:
             quantity_decimal = Decimal(str(row["quantity"]))
@@ -224,7 +217,7 @@ def aggregate_broker_side(records: list[dict]) -> list[dict]:
             raise ValueError("quantity must be a non-negative integer and amount a finite non-negative decimal")
         quantity = int(quantity_decimal)
         status = row.get("identity_status", "unmapped")
-        if status not in VALID_LINK_STATUSES:
+        if not isinstance(status, str) or status not in VALID_LINK_STATUSES:
             raise ValueError("unsupported identity_status")
         entity = row.get("broker_entity_id") if status == "verified" else None
         if status == "verified" and not _nonblank(entity):

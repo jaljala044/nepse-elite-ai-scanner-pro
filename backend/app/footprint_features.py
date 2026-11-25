@@ -6,6 +6,8 @@ or issue buy/sell signals. Inputs must already be point-in-time filtered.
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+from datetime import date
+import math
 
 
 def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) -> dict:
@@ -15,15 +17,28 @@ def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) 
         if symbol and row.get("close") is not None and row.get("previous_close") is not None:
             latest[symbol] = row
     advancing = declining = unchanged = 0
-    for row in latest.values():
-        close, previous = float(row["close"]), float(row["previous_close"])
+    for symbol, row in latest.items():
+        try:
+            close, previous = float(row["close"]), float(row["previous_close"])
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{symbol}: close and previous_close must be numeric") from exc
+        if not math.isfinite(close) or not math.isfinite(previous) or close <= 0 or previous <= 0:
+            raise ValueError(f"{symbol}: close and previous_close must be finite and positive")
         if close > previous:
             advancing += 1
         elif close < previous:
             declining += 1
         else:
             unchanged += 1
-    eligible = len(expected_symbols) if expected_symbols is not None else len(latest)
+    if expected_symbols is not None:
+        normalized_expected = [str(symbol).strip().upper() for symbol in expected_symbols]
+        if any(not symbol for symbol in normalized_expected):
+            raise ValueError("expected_symbols cannot contain blank values")
+        if len(normalized_expected) != len(set(normalized_expected)):
+            raise ValueError("expected_symbols must be unique")
+        eligible = len(normalized_expected)
+    else:
+        eligible = len(latest)
     observed = len(latest)
     return {
         "advancing": advancing, "declining": declining, "unchanged": unchanged,
@@ -35,9 +50,26 @@ def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) 
 
 
 def security_footprint(rows: list[dict], minimum_history: int = 5) -> dict:
+    if not isinstance(minimum_history, int) or minimum_history < 1:
+        raise ValueError("minimum_history must be a positive integer")
     ordered = sorted(rows, key=lambda r: r["session_date"])
     if not ordered:
         return {"status": "insufficient_evidence", "reason": "no_rows"}
+    session_dates = []
+    for index, row in enumerate(ordered):
+        try:
+            session_dates.append(date.fromisoformat(str(row["session_date"])).isoformat())
+            close_value = float(row["close"])
+            volume_value = float(row["volume"])
+            previous_value = float(row["previous_close"]) if row.get("previous_close") is not None else None
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"security footprint row {index}: invalid date or numeric field") from exc
+        if (not math.isfinite(close_value) or close_value <= 0
+                or not math.isfinite(volume_value) or volume_value < 0
+                or (previous_value is not None and (not math.isfinite(previous_value) or previous_value <= 0))):
+            raise ValueError(f"security footprint row {index}: prices must be finite positive and volume finite non-negative")
+    if len(session_dates) != len(set(session_dates)):
+        raise ValueError("security footprint contains duplicate session dates")
     current = ordered[-1]
     close = float(current["close"])
     previous = float(current["previous_close"]) if current.get("previous_close") is not None else None

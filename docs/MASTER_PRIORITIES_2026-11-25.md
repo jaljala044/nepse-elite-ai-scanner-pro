@@ -412,3 +412,6 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - Cross-check against the pinned SocrateAI index tree `f602a5b61e68582d28834d16f71151a4bae98d5b`: 614/616 date files present; missing index files are 2025-04-03 and 2026-11-20. Seven candidate dates absent from the 2026 market-summary file each have one `NEPSE_index` row in the SocrateAI file; this is separate-repository corroboration with source lineage not fully verified.
 - 616-date candidate CSV, 616-row index cross-check CSV and detailed limitations are in PR #7: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/7.
 - Exact identity with the original extraction calendar and primary date-by-date open-session evidence remain unresolved. P1 remains active; P2 stays gated.
+
+
+- Follow-up to the 616-date candidate recovery: the two dates absent from the SocrateAI index tree (2025-04-03 and 2026-11-20) each have contemporaneous secondary reports describing a completed NEPSE session. These are corroborating leads only; canonical open-date promotion remains zero. See `data/evidence/candidates/nepse-session-secondary-report-crosscheck.csv` in PR #7.

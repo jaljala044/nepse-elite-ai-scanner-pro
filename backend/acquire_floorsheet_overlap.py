@@ -45,7 +45,7 @@ def tree_files(repository: str, commit: str, pattern: re.Pattern[str]) -> dict[s
 
 
 def git_blob_sha1(payload: bytes) -> str:
-    header = f"blob {len(payload)}\\0".encode("ascii")
+    header = f"blob {len(payload)}\0".encode("ascii")
     return hashlib.sha1(header + payload).hexdigest()
 
 
@@ -118,7 +118,7 @@ def main() -> None:
         "pairs": pairs,
     }
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
-    args.manifest.write_text(json.dumps(manifest, indent=2) + "\\n", encoding="utf-8")
+    args.manifest.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "selected_date_count": len(overlap),
         "first_selected_date": overlap[0],

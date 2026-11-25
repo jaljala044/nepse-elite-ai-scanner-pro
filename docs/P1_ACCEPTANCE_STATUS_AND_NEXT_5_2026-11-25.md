@@ -202,3 +202,32 @@ conflicts and broad floorsheet coverage remain unresolved. P1 remains blocked.
 5. Expand pinned source acquisition across a stratified historical sample,
    populate corporate-action and OHLCV conflict evidence, then rerun the full
    integrated acceptance audit.
+
+
+### Same-date source manifest and derived EOD cross-check
+
+The pinned source's `manifest.json` and `data/discrepancies.csv` were also
+preserved at the same revision and registered with raw SHA-256 values. For
+2026-11-19, the source manifest reports `source=merolagani`, `status=ok`,
+`row_count=40,818`, `retries=0`, and notes that NEPSE did not return the date
+and that the source-reported grid shortfall was 19. The discrepancy log records
+40,837 reported rows versus 40,818 written rows (shortfall 19). This means the
+acquired file is structurally sound but known incomplete against the
+publisher's own reported total.
+
+Also preserved the same repository's derived EOD file
+`data/ohlcv/2026/2026-11-19.csv` (346 symbol rows, 20,376 bytes) and registered
+its source blob OID and raw SHA-256. This OHLCV is derived from the same
+floorsheet pipeline, so it is useful for internal reconciliation but is not
+an independent witness. Its API, HRL and RHGCL Close values are 331.8, 483.9
+and 258.0 respectively, matching the previously reviewed starter/Srijan
+values rather than the conflicting SMC values. This adds same-lineage
+corroboration only; it does not resolve the conflicts with primary exchange
+proof.
+
+Additional preserved objects:
+- `data/raw/acquired/rajeevpaudel-nepse-history/manifest.json`
+- `data/raw/acquired/rajeevpaudel-nepse-history/data/discrepancies.csv`
+- `data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-derived-ohlcv.csv`
+
+Updated source object and date manifests are under `data/evidence/acquired/`.

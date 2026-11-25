@@ -619,6 +619,134 @@ def fetch_legacy_nepse_floor_rows(symbol, business_date, output_dir):
 
 
 
+def fetch_official_company_floorsheet_clean(
+    client, symbol, business_date, output_dir, response_hook, host_label
+):
+    """Call company_floorsheet with clean browser headers and no explicit Host."""
+    try:
+        company_id = client.getSecurityIDKeyMap()[symbol.upper()]
+        parsed_date = date.fromisoformat(business_date)
+        query = client._build_query_params(businessDate=parsed_date, size=500)
+        base_path = (
+            f"{client.api_end_points['company_floorsheet']}{company_id}"
+            f"?{query}&sort=contractid,desc"
+        )
+        all_records = []
+        page_hashes = []
+        with httpx.Client(
+            http2=False,
+            verify=False,
+            timeout=90.0,
+            follow_redirects=True,
+            event_hooks={"response": [response_hook]},
+        ) as session:
+            first_page = True
+            page_num = 0
+            total_pages = 1
+            while first_page or page_num < total_pages:
+                page_path = base_path if page_num == 0 else f"{base_path}&page={page_num}"
+                authorization = client.getAuthorizationHeaders()["Authorization"]
+                payload_id = client.getPOSTPayloadIDForFloorSheet()
+                headers = {
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Cache-Control": "no-cache",
+                    "Referer": client.base_url.rstrip("/") + "/",
+                    "User-Agent": (
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/126.0.0.0 Safari/537.36"
+                    ),
+                }
+                response = session.post(
+                    client.get_full_url(page_path),
+                    headers=headers,
+                    json={"id": payload_id},
+                )
+                if response.status_code != 200:
+                    return {
+                        "status": "http_error",
+                        "symbol": symbol,
+                        "business_date": business_date,
+                        "base_url": client.base_url,
+                        "http_status": response.status_code,
+                        "response_preview": response.text[:500],
+                        "pages_captured": page_num + 1,
+                    }
+                data = response.json()
+                floor_data = data.get("floorsheets", {})
+                content = floor_data.get("content", [])
+                all_records.extend(content)
+                total_pages = int(floor_data.get("totalPages", 1) or 1)
+                first_page = False
+                page_num += 1
+                if page_num >= 50:
+                    return {
+                        "status": "page_limit_exceeded",
+                        "symbol": symbol,
+                        "business_date": business_date,
+                        "pages_captured": page_num,
+                    }
+        normalized = []
+        for row in all_records:
+            contract_id = str(row.get("contractId") or row.get("contractID") or "")
+            quantity = row.get("contractQuantity", row.get("quantity"))
+            rate = row.get("contractRate", row.get("rate"))
+            amount = row.get("contractAmount", row.get("amount"))
+            try:
+                normalized.append({
+                    "contract_id": contract_id,
+                    "quantity": int(quantity),
+                    "rate": float(rate),
+                    "amount": float(amount),
+                })
+            except (TypeError, ValueError):
+                continue
+        normalized.sort(key=lambda item: item["contract_id"])
+        total_quantity = sum(item["quantity"] for item in normalized)
+        total_amount = sum(item["amount"] for item in normalized)
+        summary = {
+            "status": "captured" if normalized else "empty",
+            "record_count": len(normalized),
+            "open_from_first_contract": normalized[0]["rate"] if normalized else None,
+            "high": max((item["rate"] for item in normalized), default=None),
+            "low": min((item["rate"] for item in normalized), default=None),
+            "last_contract_rate": normalized[-1]["rate"] if normalized else None,
+            "volume": total_quantity,
+            "full_day_vwap": total_amount / total_quantity if total_quantity else None,
+            "first_contract_id": normalized[0]["contract_id"] if normalized else None,
+            "last_contract_id": normalized[-1]["contract_id"] if normalized else None,
+            "pages_captured": page_num,
+            "base_url": client.base_url,
+        }
+        safe_symbol = "".join(ch for ch in symbol if ch.isalnum())
+        path = Path(output_dir) / f"official-company-floor-clean.{safe_symbol}.{host_label}.json"
+        payload = {
+            "source": "NEPSE official company_floorsheet API (clean browser headers)",
+            "symbol": symbol,
+            "business_date": business_date,
+            "summary": summary,
+            "records": all_records,
+        }
+        raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        path.write_bytes(raw)
+        summary["response_path"] = str(path)
+        summary["response_sha256"] = hashlib.sha256(raw).hexdigest()
+        return summary
+    except Exception as exc:
+        return {
+            "status": "request_error",
+            "symbol": symbol,
+            "business_date": business_date,
+            "base_url": getattr(client, "base_url", None),
+            "error_type": type(exc).__name__,
+            "error": str(exc)[:500],
+        }
+
+
+
 def fetch_official_company_floorsheet(client, symbol, business_date, output_dir, host_label="nepalstock-com-np"):
     """Fetch a historical symbol-specific floorsheet through NEPSE's API."""
     try:
@@ -846,9 +974,9 @@ def capture(ledger_path, output_dir):
                     continue
                 active_business_date = f"{conflict['symbol']}.{conflict['date']}.com"
                 official_company_floorsheet_com_reports.append(
-                    fetch_official_company_floorsheet(
+                    fetch_official_company_floorsheet_clean(
                         client_com, conflict["symbol"], conflict["date"],
-                        output_dir, host_label="com"
+                        output_dir, preserve_response, "com"
                     )
                 )
                 time.sleep(0.5)
@@ -900,14 +1028,17 @@ def capture(ledger_path, output_dir):
                     "type": type(exc).__name__, "message": str(exc)[:300]
                 }
         # Historical symbol-specific floor sheet endpoint may retain
-        # transaction rows beyond the rolling EOD window.
+        # transaction rows beyond the rolling EOD window. Test package
+        # defaults and the clean browser-header contract on .com.np.
+        official_company_floorsheet_clean_reports = []
         for conflict in conflicts:
             if conflict["date"] != "2025-07-28":
                 continue
-            active_business_date = f"{conflict['symbol']}.{conflict['date']}"
-            official_company_floorsheet_reports.append(
-                fetch_official_company_floorsheet(
-                    client, conflict["symbol"], conflict["date"], output_dir
+            active_business_date = f"{conflict['symbol']}.{conflict['date']}.clean-np"
+            official_company_floorsheet_clean_reports.append(
+                fetch_official_company_floorsheet_clean(
+                    client, conflict["symbol"], conflict["date"], output_dir,
+                    preserve_response, "com-np"
                 )
             )
             time.sleep(0.5)
@@ -1122,6 +1253,7 @@ def capture(ledger_path, output_dir):
         "runtime_clock": runtime_clock,
         "official_company_floorsheet": official_company_floorsheet_reports,
         "official_company_floorsheet_com": official_company_floorsheet_com_reports,
+        "official_company_floorsheet_clean": official_company_floorsheet_clean_reports,
         "legacy_full_market": legacy_full_market_report,
         "legacy_todays_price": legacy_todays_price_reports,
         "legacy_floor_sheet": legacy_floor_sheet_reports,

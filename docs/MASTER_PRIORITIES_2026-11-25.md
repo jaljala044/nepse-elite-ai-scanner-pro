@@ -71,6 +71,23 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   revisions, upstream lineage verification, and session/corporate-action
   reconciliation remain pending. Canonical promotion remains blocked.
 
+## P1 row-by-row cross-repository reconciliation — 2026-11-25
+
+- Compared date keys and normalized OHLCV values for all 25 files whose Git
+  blob SHAs differ. Found 8 same-date value conflicts across 7 symbols:
+  API, BGWT, HRL, MEHL, RAWA, RHGCL (2 dates), and ULHC.
+- Four symbols (BGWT, MEHL, RAWA, RHGCL) conflict on 2025-07-28; three
+  symbols (API, HRL, RHGCL) conflict on 2026-11-19. These clusters warrant
+  common-provenance/correction investigation, not an automatic winner choice.
+- Date-key-only differences were counted separately from same-date value
+  conflicts. They are not labelled missing trading sessions because the
+  authoritative session calendar remains unresolved.
+- Detailed per-symbol counts and exact conflicting OHLCV values are recorded
+  in `docs/CROSS_REPOSITORY_OHLCV_AUDIT_2026-11-25.md`.
+- The eight conflicting rows are quarantined from canonical promotion pending
+  independent source evidence, revision pinning, corporate-action review and
+  session-calendar reconciliation. No rows were merged or overwritten.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

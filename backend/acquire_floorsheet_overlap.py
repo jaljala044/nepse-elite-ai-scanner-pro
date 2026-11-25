@@ -77,6 +77,7 @@ def main() -> None:
     parser.add_argument("--days", type=int, default=365)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--controls-file", type=Path)
     args = parser.parse_args()
     if args.limit < 1 or args.limit > 30:
         parser.error("--limit must be between 1 and 30")
@@ -88,6 +89,19 @@ def main() -> None:
         end_date = date.fromisoformat(args.end_date)
     except ValueError:
         parser.error("--end-date must be a real YYYY-MM-DD date")
+
+    controls_by_date = {}
+    if args.controls_file is not None:
+        controls_payload = json.loads(args.controls_file.read_text(encoding="utf-8"))
+        controls = controls_payload.get("controls")
+        if not isinstance(controls, list):
+            raise ValueError("controls file must contain a controls array")
+        for control in controls:
+            if not isinstance(control, dict) or not isinstance(control.get("trade_date"), str):
+                raise ValueError("each daily control must have a trade_date")
+            if control["trade_date"] in controls_by_date:
+                raise ValueError(f"duplicate daily control date: {control['trade_date']}")
+            controls_by_date[control["trade_date"]] = control
 
     samir = tree_files(SAMIR_REPO, SAMIR_COMMIT, SAMIR_PATTERN)
     socrate = tree_files(SOCRATE_REPO, SOCRATE_COMMIT, SOCRATE_PATTERN)
@@ -121,7 +135,7 @@ def main() -> None:
         right_name = f"socrate-{trade_date}.csv"
         (args.output_dir / left_name).write_bytes(left_bytes)
         (args.output_dir / right_name).write_bytes(right_bytes)
-        pairs.append({
+        pair = {
             "trade_date": trade_date,
             "left_path": left_name,
             "left_format": "samir",
@@ -129,7 +143,10 @@ def main() -> None:
             "right_path": right_name,
             "right_format": "socrate",
             "right_sha256": hashlib.sha256(right_bytes).hexdigest(),
-        })
+        }
+        if trade_date in controls_by_date:
+            pair["independent_control"] = controls_by_date[trade_date]
+        pairs.append(pair)
 
     manifest = {
         "schema_version": "1.0",

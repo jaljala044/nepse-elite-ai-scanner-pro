@@ -14,6 +14,18 @@ class FootprintFeatureTests(unittest.TestCase):
         self.assertAlmostEqual(result["coverage_ratio"], 2/3)
         self.assertEqual(result["status"], "insufficient_coverage")
 
+    def test_out_of_universe_symbols_do_not_inflate_market_breadth(self):
+        rows = [
+            {"symbol":"AAA","close":11,"previous_close":10},
+            {"symbol":"DEBT1","close":20,"previous_close":10},
+        ]
+        result = market_breadth(rows, ["AAA"])
+        self.assertEqual(result["observed_symbols"], 1)
+        self.assertEqual(result["eligible_symbols"], 1)
+        self.assertEqual(result["coverage_ratio"], 1.0)
+        self.assertEqual(result["advancing"], 1)
+        self.assertEqual(result["unexpected_symbols"], ["DEBT1"])
+
     def test_security_footprint_uses_prior_only_volume_baseline(self):
         rows = [{"session_date":f"2026-11-{i:02d}","close":100+i,"previous_close":99+i,"volume":100}
                 for i in range(1,7)]

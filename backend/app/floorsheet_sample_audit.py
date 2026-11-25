@@ -18,6 +18,7 @@ def build_floorsheet_sample_acceptance_report(
     *,
     mapping_reviewed: bool = False,
     verified_session_dates: list[str] | None = None,
+    verified_session_date_evidence: list[dict] | None = None,
 ) -> dict:
     """Summarize a sample without granting source rights or canonical promotion."""
     if not isinstance(parsed, dict) or not isinstance(reconciled, dict):
@@ -87,6 +88,30 @@ def build_floorsheet_sample_acceptance_report(
         if value in session_set:
             raise ValueError("verified session dates must be unique")
         session_set.add(value)
+    evidence_records = [] if verified_session_date_evidence is None else verified_session_date_evidence
+    if not isinstance(evidence_records, list):
+        raise ValueError("verified_session_date_evidence must be a list")
+    evidence_dates = set()
+    for index, evidence in enumerate(evidence_records):
+        if not isinstance(evidence, dict):
+            raise ValueError(f"session date evidence {index} must be an object")
+        evidence_date = evidence.get("date")
+        if not isinstance(evidence_date, str) or not ISO_DATE.fullmatch(evidence_date):
+            raise ValueError(f"session date evidence {index} must contain a YYYY-MM-DD date")
+        try:
+            date.fromisoformat(evidence_date)
+        except ValueError as exc:
+            raise ValueError(f"session date evidence {index} has an invalid date") from exc
+        if evidence_date in evidence_dates:
+            raise ValueError("session date evidence dates must be unique")
+        if any(not isinstance(evidence.get(field), str) or not evidence[field].strip()
+               for field in ("evidence_id", "source_id", "source_payload_sha256")):
+            raise ValueError(f"session date evidence {index} requires source and evidence identifiers")
+        if not HEX_SHA256.fullmatch(evidence["source_payload_sha256"].lower()):
+            raise ValueError(f"session date evidence {index} requires a SHA-256 digest")
+        if evidence.get("evidence_tier") != "primary_exchange" or evidence.get("reviewed") is not True:
+            raise ValueError(f"session date evidence {index} must be reviewed primary-exchange evidence")
+        evidence_dates.add(evidence_date)
     for row in rows:
         if row.source_id != source_id or row.source_payload_sha256.lower() != digest.lower():
             raise ValueError("parsed contract source lineage does not match sample payload")
@@ -127,7 +152,7 @@ def build_floorsheet_sample_acceptance_report(
         and disposition_counts.get("conflicting_duplicate", 0) == 0
         and amount_exception_count == 0
         and mapping_reviewed
-        and all(value in session_set for value in dates)
+        and all(value in evidence_dates for value in dates)
     )
     return {
         "source_id": source_id,
@@ -140,7 +165,9 @@ def build_floorsheet_sample_acceptance_report(
         "first_trade_date": dates[0] if dates else None,
         "last_trade_date": dates[-1] if dates else None,
         "trade_dates": dates,
-        "calendar_unverified_dates": [value for value in dates if value not in session_set],
+        "calendar_unverified_dates": [value for value in dates if value not in evidence_dates],
+        "weekday_or_date_candidates_without_primary_evidence": [value for value in dates if value not in evidence_dates],
+        "verified_session_date_evidence_count": len(evidence_records),
         "unique_symbols": symbols,
         "unique_symbol_count": len(symbols),
         "unique_buyer_broker_codes": buyer_codes,

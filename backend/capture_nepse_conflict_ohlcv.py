@@ -53,7 +53,10 @@ def _find_records(payload):
         if isinstance(value, dict):
             rows, meta = _find_records(value)
             if meta.get("container") != "unrecognized_dict_shape":
-                return rows, {"container": key + "." + meta["container"], **meta}
+                return rows, {
+                    **{name: value for name, value in meta.items() if name != "container"},
+                    "container": key + "." + meta["container"],
+                }
     return [], {"container": "unrecognized_dict_shape", "top_level_keys": sorted(payload.keys())}
 
 

@@ -14,6 +14,8 @@ on:
       - "backend/tests/test_build_floorsheet_source_exception_ledger.py"
       - "backend/analyze_floorsheet_broker_code_coverage.py"
       - "backend/tests/test_analyze_floorsheet_broker_code_coverage.py"
+      - "backend/build_floorsheet_duplicate_contract_ledger.py"
+      - "backend/tests/test_build_floorsheet_duplicate_contract_ledger.py"
       - ".github/workflows/multi-date-floorsheet-overlap.yml"
   workflow_dispatch:
 
@@ -39,6 +41,7 @@ jobs:
           python -m unittest discover -s tests -p "test_compare_floorsheet_source_csvs.py" -v
           python -m unittest discover -s tests -p "test_build_floorsheet_source_exception_ledger.py" -v
           python -m unittest discover -s tests -p "test_analyze_floorsheet_broker_code_coverage.py" -v
+          python -m unittest discover -s tests -p "test_build_floorsheet_duplicate_contract_ledger.py" -v
       - name: Acquire next older 30 pinned overlapping dates
         run: |
           python backend/acquire_floorsheet_overlap.py \
@@ -66,7 +69,13 @@ jobs:
             --manifest /tmp/floorsheet-overlap-raw/manifest.json \
             --json-output /tmp/floorsheet-broker-code-coverage.json \
             --csv-output /tmp/floorsheet-broker-code-activity.csv
-      - name: Upload comparison, exception and broker evidence
+      - name: Extract duplicate contract physical-row evidence
+        run: |
+          python backend/build_floorsheet_duplicate_contract_ledger.py \
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \
+            --json-output /tmp/floorsheet-duplicate-contract-ledger.json \
+            --csv-output /tmp/floorsheet-duplicate-contract-ledger.csv
+      - name: Upload comparison, exception, broker and duplicate evidence
         uses: actions/upload-artifact@v4
         with:
           name: floorsheet-multi-date-overlap-audit
@@ -77,5 +86,7 @@ jobs:
             /tmp/floorsheet-source-exception-ledger.csv
             /tmp/floorsheet-broker-code-coverage.json
             /tmp/floorsheet-broker-code-activity.csv
+            /tmp/floorsheet-duplicate-contract-ledger.json
+            /tmp/floorsheet-duplicate-contract-ledger.csv
           if-no-files-found: error
           retention-days: 30

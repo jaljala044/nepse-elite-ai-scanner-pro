@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from decimal import Decimal, InvalidOperation
+from datetime import date
+from decimal import Decimal
 
 from app.floorsheet_contract import FloorsheetContract
 
@@ -47,14 +48,27 @@ def build_floorsheet_sample_acceptance_report(
     if reconciled.get("input_rows") != len(rows) or reconciled.get("output_rows") != len(audit_rows):
         raise ValueError("reconciliation control totals do not match parsed rows")
 
-    supplied_sessions = verified_session_dates or []
+    supplied_sessions = [] if verified_session_dates is None else verified_session_dates
     if not isinstance(supplied_sessions, list):
         raise ValueError("verified_session_dates must be a list")
     session_set = set()
     for value in supplied_sessions:
         if not isinstance(value, str) or not ISO_DATE.fullmatch(value):
             raise ValueError("verified session dates must use YYYY-MM-DD")
+        try:
+            date.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError("verified session dates must be valid calendar dates") from exc
         session_set.add(value)
+    for row in rows:
+        if row.source_id != source_id or row.source_payload_sha256.lower() != digest.lower():
+            raise ValueError("parsed contract source lineage does not match sample payload")
+        if not isinstance(row.trade_date, str) or not ISO_DATE.fullmatch(row.trade_date):
+            raise ValueError("contract trade_date must use YYYY-MM-DD")
+        try:
+            date.fromisoformat(row.trade_date)
+        except ValueError as exc:
+            raise ValueError("contract trade_date must be a valid calendar date") from exc
 
     dates = sorted({row.trade_date for row in rows})
     symbols = sorted({row.symbol for row in rows})

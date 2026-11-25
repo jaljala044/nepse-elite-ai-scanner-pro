@@ -1,6 +1,6 @@
 from __future__ import annotations
 import unittest
-from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers
 
 
 def conflict():
@@ -68,6 +68,60 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
         self.assertNotIn("Host", client.client.kwargs["headers"])
         self.assertEqual(client.client.kwargs["headers"]["Authorization"], "Salter test-token")
         self.assertEqual(client.client.kwargs["json"], {"id": 123456})
+
+
+    def test_clean_browser_probe_uses_token_payload_without_host_header(self):
+        class FakeResponse:
+            status_code = 200
+
+        class FakeClient:
+            base_url = "https://www.nepalstock.com"
+
+            def getAuthorizationHeaders(self):
+                return {"Authorization": "Salter test-token", "Host": "www.nepalstock.com"}
+
+            def getPOSTPayloadIDForFloorSheet(self):
+                return 123456
+
+            def get_full_url(self, url):
+                return self.base_url + url
+
+        seen = {}
+
+        class FakeHTTP:
+            def __init__(self, **kwargs):
+                seen["http2"] = kwargs["http2"]
+                seen["verify"] = kwargs["verify"]
+                seen["hook"] = kwargs["event_hooks"]["response"][0]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def post(self, url, **kwargs):
+                seen["url"] = url
+                seen["headers"] = kwargs["headers"]
+                seen["json"] = kwargs["json"]
+                return FakeResponse()
+
+        original = httpx.Client
+        try:
+            httpx.Client = FakeHTTP
+            hook = lambda response: None
+            result = request_today_price_with_browser_headers(
+                FakeClient(), "/api/nots/nepse-data/today-price", hook
+            )
+        finally:
+            httpx.Client = original
+
+        self.assertEqual(result.status_code, 200)
+        self.assertFalse(seen["http2"])
+        self.assertNotIn("Host", seen["headers"])
+        self.assertEqual(seen["headers"]["Authorization"], "Salter test-token")
+        self.assertEqual(seen["json"], {"id": 123456})
+        self.assertEqual(seen["hook"], hook)
 
     def test_official_row_matching_source_a_is_detected(self):
         payload = {"content": [{

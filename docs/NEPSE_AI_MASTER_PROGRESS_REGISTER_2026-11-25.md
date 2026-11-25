@@ -1062,3 +1062,110 @@ Commits:
 ### Verification caveat
 
 The repository connector returned no CI status records for the new test commits at the time of this update. The code and tests are committed to \`main\`, but **the new tests have not been confirmed as passing in GitHub Actions**. Do not count them as passed until an actual workflow run/job result is retrieved. No sample bytes, canonical data or model-training data were promoted by this work session.
+
+
+## 11. Data acquisition and reconciliation pipeline — priorities 81–90 (2026-11-25)
+
+### Priority 81 — bounded floorsheet sample acquisition
+
+Acquired and fully inspected two pinned, same-date source CSVs for **2026-11-24**.
+
+**SamirWagle / MeroLagani-derived file**
+- Repository commit: \`e6160adc6bdf3d19562167388e3d9d4f645c455a\`
+- Path: \`data/floorsheet/floorsheet_2026-11-24.csv\`
+- Git blob SHA-1: \`22eaa891b30aac2fe4cf197053efa014953351c0\`
+- Size: 3,538,179 bytes; SHA-256: \`2687b7ed6bc5ebd737fa459ca8dd620941bb3ec1da6613fbd620550495018f55\`
+- 52,369 unique contracts; 347 symbols; quantity 14,662,346; gross amount NPR 5,551,668,556.66.
+- 0 malformed rows, duplicate contract IDs, blank cells or quantity × rate vs amount exceptions. The scraper writes \`date.today()\` to the \`date\` field; the field is therefore capture-date evidence, not an exchange-supplied trade timestamp.
+
+**SocrateAI same-date file**
+- Repository commit: \`cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3\`
+- Path: \`floorsheet/floorsheet_2026-11-24.csv\`
+- Git blob SHA-1: \`e7150873219d66a21345df2dfbd78f6c5a4b1152\`
+- Size: 3,058,892 bytes; 52,387 unique contracts; quantity 14,670,177; gross amount NPR 5,553,019,249.46.
+- The complete raw CSV payloads were retrieved and analyzed in memory; neither raw source was copied into the project repository because upstream lineage and rights remain unresolved.
+
+Acceptance: **one-day sample acquired and pinned**. Historical completeness and licensing still require separate acceptance.
+
+### Priority 82 — source provenance and rights
+
+- Added \`docs/FLOORSHEET_SOURCE_PROVENANCE_REVIEW_2026-11-25.md\`.
+- The pinned Samir scraper requests \`https://merolagani.com/Floorsheet.aspx\`, paginates the rendered source table and stamps \`date.today()\`. Its source route is traceable to MeroLagani, but its own README uses an “Educational” label and the pinned tree has no explicit LICENSE/COPYING file.
+- SocrateAI's same-day copy is row-consistent with Samir plus 18 additional contracts; its original acquisition route has not yet been proven independent or primary.
+- Neither repository's public licence label alone proves rights to every upstream record.
+- Acceptance: **publisher and code provenance substantially traced; upstream independence and intended-use rights open**.
+
+### Priority 83 — source header mapping
+
+- Added the Urek 11-column profile and Samir 9-column observed profile in \`backend/app/floorsheet_source_profiles.py\`.
+- Added profile tests and profile-specific documents. The raw \`time\`, \`sector\`, \`id\` and \`sn\` fields remain source-only and are not fabricated into canonical fields.
+- Contract IDs are preserved as strings. The Samir \`date\` field remains provisional because it is scraper-generated. Urek mapping remains publisher-schema-declared until its physical sample header is checked.
+- Acceptance: **mapping code added; Samir header observed; Urek physical header review open**.
+
+### Priority 84 — independent daily contract/control reconciliation
+
+- Extended \`backend/app/floorsheet_pipeline.py\` and \`backend/app/broker_aggregation.py\` to accept independent daily controls for contract count, party observations, quantity and gross amount.
+- A control result is \`not_run\` when controls are absent. It does not silently pass. Available controls are compared exactly with Decimal values; mismatches are reported, not repaired.
+- The one-day source comparison shows SocrateAI's quantity and gross amount match MeroLagani's indexed daily summary exactly. Samir's file does not.
+- Acceptance: **single-day source-control comparison performed; repeated historical per-date controls still open**.
+
+### Priority 85 — broker-code coverage and identity history
+
+- The two 2026-11-24 files contain 91 distinct numeric broker codes across buyer and seller columns. All 91 match a number in the current CDSC List of Clearing Members (the CDSC directory also contains code 55, not used in this sample).
+- Added \`data/reference/broker_code_crosswalk_candidates_2026-11-25.csv\` with 91 unique code rows, current CDSC names and explicit candidate-only identity status.
+- Added \`docs/BROKER_CODE_COVERAGE_AND_IDENTITY_REVIEW_2026-11-25.md\` and artifact tests.
+- Code 91 is Citizens Share Broker Limited, formerly CBIL Securities. Company financial statements record the name-change resolution on 2025-01-21 and registrar recording on 2025-04-01.
+- Code 8 is listed as Brilliant Securities in the current directory; MeroLagani also shows a separate \`8_RWS\` Ashutosh branch listing. The records are not collapsed without effective-dated branch/legal-identity proof.
+- The aggregation grouping defect fixed earlier in this batch keeps distinct unresolved source codes apart; evidence-backed canonical IDs can still combine multiple source codes.
+- Acceptance: **91/91 number coverage for this date; no code is auto-promoted to a verified historical legal-entity link**.
+
+### Priority 86 — contract-level overlapping-source comparison
+
+For 2026-11-24:
+- Samir: 52,369 contract IDs.
+- SocrateAI: 52,387 contract IDs.
+- Shared contracts: 52,369; exact shared-row matches: 52,369; shared field conflicts: 0.
+- Samir-only contracts: 0; SocrateAI-only contracts: 18.
+- The 18 extra SocrateAI contracts contribute exactly 7,831 shares and NPR 1,350,692.80, closing the difference to the MeroLagani page's published quantity and amount.
+- Added a reusable contract-level comparator: \`backend/compare_floorsheet_source_csvs.py\`, its tests and a pinned-source workflow.
+- Full evidence: \`docs/MEROLAGANI_FLOORSHEET_CAPTURE_AUDIT_2026-11-24.md\`.
+- Acceptance: **one-day contract comparison complete; the same comparison has not yet been run over every shared date**.
+
+### Priority 87 — missing trading dates and session calendar
+
+- Added further primary/secondary source notes in \`docs/NEPSE_SESSION_CALENDAR_SOURCE_RESEARCH_2026-11-25.md\`.
+- The 2022 NEPSE notice supports a weekly session regime, and secondary sources report an April 2026 weekday change, but a primary date-level exchange calendar with each open/closed date was not obtained.
+- A missing archive file is not assumed to be a holiday; a present date file is not assumed to be a complete session.
+- Acceptance: **blocked on primary NEPSE date-level calendar evidence**.
+
+### Priority 88 — target security universe
+
+- Added regulator-side catalogue evidence and limitations in \`docs/ACTIVE_UNIVERSE_SOURCE_RESEARCH_2026-11-25.md\`.
+- SEBON MFS Approved, MFS Pipeline and Securities Registered catalogues were reviewed. These do not provide a single dated NEPSE trading list crosswalked to security ID, instrument type and lifecycle status.
+- Project target remains 281 equities + 47 mutual funds, but is not independently verified as a dated exchange universe.
+- Acceptance: **blocked on official dated NEPSE instrument/lifecycle register**.
+
+### Priority 89 — one-year and six-month archive date-file assessment
+
+Pinned repository tree counts:
+| Date-file window | SocrateAI | SamirWagle | Shared | SocrateAI only | Samir only |
+|---|---:|---:|---:|---:|---:|
+| 2025-11-25 to 2026-11-25 | 228 | 179 | 157 | 71 | 22 |
+| 2026-05-25 to 2026-11-25 | 115 | 119 | 107 | 8 | 12 |
+
+These are file-date manifest counts, not verified trading-session counts and not per-security coverage. Neither date set is a superset of the other. The 2026-11-24 completeness difference demonstrates why filename/date inventory alone is insufficient.
+
+- Assessment: \`docs/FLOORSHEET_ARCHIVE_DATE_COVERAGE_ASSESSMENT_2026-11-25.md\`.
+- Acceptance: **date-file availability established; one-year/six-month session and security completeness not established**.
+
+### Priority 90 — source-backed data readiness report
+
+Created \`docs/NEPSE_DATA_PIPELINE_READINESS_2026-11-25.md\`.
+
+**Readiness decision: REVIEW_REQUIRED.** The 2026-11-24 SocrateAI copy is the best current completeness candidate for that single date, and broker-code-number coverage is 91/91. Do not promote it to canonical or model-training data until upstream lineage/rights, official session calendar, dated target universe and repeated per-session/per-security controls are accepted.
+
+### Verification caveat
+
+New unit tests and workflows were added for the source profiles, independent controls, source comparison and 91-code crosswalk. The GitHub connector did not expose workflow run/status records for the new commits during this session. **The new tests are not claimed as passing** until an actual GitHub Actions run or a local reproducible test run is recorded. Earlier backend suite result of 464 passed tests predates this batch.
+
+No raw floorsheet file was committed to the project repository, no source was selected as a canonical dataset for all dates, and no training data was promoted.

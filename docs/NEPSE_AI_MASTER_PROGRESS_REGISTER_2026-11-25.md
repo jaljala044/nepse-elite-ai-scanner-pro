@@ -1312,3 +1312,16 @@ Cumulative latest 70 common dates: 3,709,442 shared exact contract rows, 3,500 S
 Cumulative latest 100 shared dates: 5,328,566 shared exact contract rows, 53,014 SocrateAI-only contracts, zero Samir-only contracts, zero shared conflicts and 1,000 Samir duplicate extra physical rows. Raw totals show a SocrateAI surplus of 11,182,588 shares and NPR 7,159,881,183.48.
 
 **57 of 157 common date files remain.** Only one date has a published daily control attached; no canonical data or model-training data has been promoted.
+
+
+### H. Priority 92 follow-up — Yonepse 2026-11-24 payload retrieved; independence unresolved
+
+- Retrieved and parsed `Shubhamnpk/yonepse/data/floor_sheet/daily/2026-11-24.json` through GitHub Contents API.
+- 52,387 unique contracts; recomputed quantity 14,670,177 and turnover NPR 5,553,019,249.459984 match the payload summary.
+- Exact comparison against SocrateAI pinned commit `cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3`: 52,387/52,387 contract IDs and buyer/seller/quantity/rate/amount fields match; no row conflicts.
+- Comparison against Samir pinned commit `e6160adc6bdf3d19562167388e3d9d4f645c455a`: all 52,369 Samir contracts match; Yonepse has 18 additional contracts; no shared-field conflicts.
+- This is not independent confirmation because the exact Yonepse–SocrateAI match may reflect shared upstream data or copying/derivation. Stock-ID-to-symbol mapping was not validated.
+- Payload content was retrieved in-session but not stored as a pinned raw artifact and no independent SHA-256 was computed. Google Drive remains disabled by workspace admin; Hugging Face candidate remains metadata-only.
+- Updated report: [Priority 92 acquisition status](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/PRIORITY_92_THIRD_SOURCE_ACQUISITION_STATUS_2026-11-25.md), commit `1ed3f610255da3bff9dd72b63b4cad8c2f277bd6`.
+
+**Priority 92 state: partially complete for one-day retrieval and reconciliation; not complete for durable byte pinning, independent source lineage, historical coverage or rights. No canonical promotion.**

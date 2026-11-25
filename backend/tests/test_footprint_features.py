@@ -1,4 +1,5 @@
 import unittest
+from decimal import Decimal
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary
 
 
@@ -28,9 +29,28 @@ class FootprintFeatureTests(unittest.TestCase):
             {"identity_status":"ambiguous","broker_entity_id":None,"side":"buy","amount":900},
         ]
         result = broker_participation_summary(rows)
-        self.assertEqual(result["verified_net_amount"], 100)
+        self.assertEqual(Decimal(result["verified_net_amount"]), Decimal("100"))
         self.assertEqual(result["unmapped_or_unverified_rows"], 1)
         self.assertEqual(result["status"], "partial_identity_coverage")
+
+    def test_broker_summary_uses_exact_decimal_amounts(self):
+        rows = [
+            {"identity_status":"verified","broker_entity_id":"B1","side":"buy","amount":"0.1"},
+            {"identity_status":"verified","broker_entity_id":"B2","side":"buy","amount":"0.2"},
+        ]
+        result = broker_participation_summary(rows)
+        self.assertEqual(result["verified_buy_amount"], "0.3")
+        self.assertEqual(result["verified_net_amount"], "0.3")
+
+    def test_broker_summary_rejects_unresolved_identity_with_entity_id(self):
+        rows = [{"identity_status":"ambiguous","broker_entity_id":"B1","side":"buy","amount":"10"}]
+        with self.assertRaisesRegex(ValueError, "unresolved identity"):
+            broker_participation_summary(rows)
+
+    def test_broker_summary_rejects_non_finite_amount(self):
+        rows = [{"identity_status":"verified","broker_entity_id":"B1","side":"buy","amount":"NaN"}]
+        with self.assertRaisesRegex(ValueError, "finite and non-negative"):
+            broker_participation_summary(rows)
 
     def test_empty_broker_summary_is_insufficient(self):
         self.assertEqual(broker_participation_summary([])["status"], "insufficient_evidence")

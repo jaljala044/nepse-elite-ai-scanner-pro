@@ -224,3 +224,20 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - No adjustment of historical prices without a documented corporate-action ledger.
 - No automated order execution in this project scope.
 - A successful unit test is not proof of complete historical data or production readiness.
+
+
+## P1 evidence acquisition contracts — 2026-11-25
+
+- Added empty templates for immutable source objects, source-file dates,
+  calendar evidence captures/claims, corporate-action review, OHLCV conflicts,
+  and normalized broker party observations.
+- Added `docs/P1_EVIDENCE_MANIFEST_CONTRACTS_2026-11-25.md` with required
+  schemas, raw-byte SHA-256 and immutable revision rules, primary calendar
+  evidence requirements, scope-conflict handling, OHLCV quarantine and broker
+  execution-channel identity policy.
+- These are acquisition contracts only. No real data was fabricated or
+  promoted; the canonical calendar still has zero verified rows and the exact
+  616-session calendar is still unrecovered. P1 remains blocked.
+- Detailed next five actions are in
+  `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
+

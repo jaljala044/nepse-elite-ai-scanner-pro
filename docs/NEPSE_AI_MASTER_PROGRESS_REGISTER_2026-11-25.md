@@ -924,3 +924,26 @@ The current environment does not provide access to the user's Drive archive or t
 69. Reconcile broker code/name histories and source date coverage from a real sample, preserving unknown identities and as-known dates.
 70. Re-run the 120-day and one-year coverage matrix against verified 281-equity + 47-mutual-fund membership and the date-level session evidence; keep unresolved dates/symbols visible.
 
+
+
+## 2026-11-25 continuation — priorities 64–70
+
+64. **Instrument manifest schema hardening:** malformed non-object rows, non-string identifiers/status/type fields, non-uppercase symbols and non-ISO effective dates now fail closed instead of crashing or being interpreted loosely. Primary-source and source-record evidence requirements remain mandatory for active target rows. Commits: `ed9bd82`, `9854ae3`.
+
+65. **Universe snapshot provenance hardening:** snapshot inputs now require strict source types, exact ISO dates, approved official HTTPS hosts without credentials/nonstandard ports, valid SHA-256, and typed instrument/status/scope fields. Unknown/malformed rows are rejected rather than coerced. Commits: `67a7c49`, `b6f9d38`.
+
+66. **Floorsheet sample acceptance report:** added `backend/app/floorsheet_sample_audit.py` to report sample date range, calendar-unverified dates, symbol and broker-code coverage, duplicates, amount exceptions, reject ratio, quantity and amount totals. A clean sample can pass only to rights review; it never authorizes canonical or training promotion. Commits: `8e55e5c`, `8d74af3`, `22cb457`.
+
+67. **Reviewed CSV extraction:** added `backend/extract_reviewed_floorsheet_members.py` and CLI. Extraction requires a safe inventory, exact reviewed archive SHA-256 and explicit CSV member allowlist; it records member SHA-256 and ZIP CRC verification, applies byte limits and refuses overwrites. Follow-up hardening ensures pre-existing partial files are not deleted and target paths are not overwritten. Documentation: `docs/FLOORSHEET_SAMPLE_REVIEW_WORKFLOW_2026-11-25.md`. Commits include `64339ad`, `f1e6b57`, `1e5a9bb`, `f6714f5`, `a4f7ec9`, `7245b18`, `ca06105`, `66c3dde`, `dbb0210`.
+
+68. **User archive reconciliation — blocked by source access:** Google Drive integration discovery reports that the Drive connector is disabled by the administrator in this environment. The user's >1 GB Drive archive has not been opened, downloaded, inventoried or compared. Do not imply that it was read. The safe intake and sample-review code is ready; actual source comparison still requires the archive bytes or a representative uploaded CSV sample.
+
+69. **Broker identity input hardening:** effective-dated broker name observations, identity links and resolver inputs now reject malformed identifiers, invalid date types and non-ISO string as-of dates. Broker-side aggregation requires explicit session/security keys and keeps unresolved identities separate. Commits: `1b3b213`, `0cf1c5a`, `2473931`.
+
+70. **Broker aggregate/control-total hardening:** party aggregation now requires typed grouping/lineage values, strict ISO trade dates, valid source hashes and nonblank evidence IDs. Source control counts are parsed as exact finite non-negative integers (fractional values are rejected, not truncated), including CSV string values. Commits: `9b9520e`, `96fdf02`, `2de751b`, `83aa5b0`, `24e8a65`, `f8aaeb6`.
+
+### CI verification and remaining evidence boundary
+- At commit `f8aaeb68035bada1e3db019631ad58f4d24ceaff`, the backend suite passed **446 tests** (run [45546726176](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546726176)).
+- The reviewed-extraction cleanup follow-ups are under CI at commit `dbb0210fe5dd92875ddc0be366e139c4be81868c`; backend, contract and integrated audit runs are still in progress at the time of this register update. Do not mark those latest runs passed until their conclusions are confirmed.
+- Drive archive contents, source licensing, a primary date-level NEPSE session calendar, a dated official 281+47 membership manifest and one-year/120-day verified data coverage remain outstanding. No canonical data promotion or model training is authorized.
+

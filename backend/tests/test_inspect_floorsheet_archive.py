@@ -30,6 +30,17 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
             self.assertEqual(result["archive_sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
             self.assertFalse((Path(tmp) / "2026-01-01.csv").exists())
 
+    def test_date_like_filename_is_only_an_unverified_candidate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._zip(tmp, [("floorsheet/2026-11-24.csv", b"x")])
+            result = inspect_zip(path)
+            self.assertEqual(result["filename_date_candidate_count"], 1)
+            self.assertEqual(result["filename_date_candidates"][0]["date"], "2026-11-24")
+            self.assertEqual(
+                result["filename_date_candidates"][0]["calendar_status"],
+                "unverified_filename_candidate_only",
+            )
+
     def test_path_traversal_and_absolute_paths_are_flagged(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = self._zip(tmp, [("../escape.csv", b"x"), ("/absolute.csv", b"x")])

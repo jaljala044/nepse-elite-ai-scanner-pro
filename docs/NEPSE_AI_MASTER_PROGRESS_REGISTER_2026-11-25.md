@@ -1230,7 +1230,7 @@ Workflow and artifact:
 |---|---|---|
 | 97 | Build a per-date exception ledger for the 262 source-only contracts | **Complete:** 262 hash-linked SocrateAI-only rows; all unresolved and no auto-resolution |
 | 98 | Compare broker-code distributions and code presence across the ten dates | **Complete:** same 91-code union across both archives; each date's code set matches; no legal-identity inference |
-| 99 | Compare observed symbols against a dated official target register | Do not classify or discard securities without primary registry evidence |
+| 99 | Compare observed symbols against a dated official target register | **Partial:** NEPSE stock-list and SEBON approved/pipeline evidence refreshed; dated 281 + 47 exchange register still unavailable |
 | 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | Batch execution, immutable manifests, source hashes, daily exceptions and explicit independent-control gaps |
 
 **Readiness remains REVIEW_REQUIRED.** The multi-date result improves source-comparison evidence but does not resolve source rights/lineage, the primary NEPSE session calendar, the dated 281-equity + 47-mutual-fund registry, or independent daily control totals. No canonical data or model-training data was promoted.
@@ -1257,3 +1257,14 @@ Priorities 98–100 remain open: cross-date broker-code distribution, dated offi
 - Backend suite: **512 tests passed** [run 45596771034](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596771034).
 
 Priority 99 remains focused on the official dated target-security register; priority 100 remains the bounded expansion to the complete one-year shared-date set with independent controls.
+
+
+### Priority 99 — official target-universe evidence refresh (partial)
+
+- Refreshed NEPSE's official stock-list evidence: the indexed snapshot is dated 2026-10-15 and reports 349 scrips traded in that session. This is a mixed-market daily trading count, not a 281-equity + 47-fund register.
+- Retrieved the official SEBON MFS Approved PDF dated 2026-10-28 and MFS Scheme Pipeline PDF dated 2026-10-30. These show approval/registration and pipeline events, including open-end and closed-end schemes, but do not prove current NEPSE listing/trading status.
+- Secondary sources disagree on listed-fund counts (45 trading in one 2026-11-08 report vs 43 in a 2026-11-24 directory); neither is authoritative.
+- The 2026-11-24 floorsheet sample has 347 distinct symbols, 19 above the arithmetic 328-symbol target. No symbol is discarded or relabeled from that difference.
+- Updated source research: `docs/ACTIVE_UNIVERSE_SOURCE_RESEARCH_2026-11-25.md`.
+
+Priority 99 remains partial until a dated NEPSE security-ID / instrument-type / lifecycle export is captured and reconciled. Priority 100 remains the bounded expansion to all shared one-year dates with independent controls.

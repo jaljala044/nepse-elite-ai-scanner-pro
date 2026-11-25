@@ -307,3 +307,25 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   blocked by calendar recovery, source rights/completeness, independent
   exchange controls, corporate actions and primary OHLCV conflict resolution.
 
+
+### P1 increment — cross-date broker coverage and explicit conflict quarantine
+
+- Rechecked the primary CDSC current clearing-member directory: 92 current CM
+  entries. Compared three pinned floorsheet samples: 2015-01-04 (49/49 code
+  matches), 2026-11-18 (91/91), 2026-11-19 (91/91). This is numeric matching
+  only; historical legal-entity identity remains unverified. The rendered
+  directory extract is recorded with a raw-byte/hash limitation.
+- Added a machine-readable eight-row OHLCV conflict ledger with both immutable
+  repository revisions, exact paths, blob OIDs and both values; all eight
+  remain quarantined.
+- Isolated the 2015-01-04 NMBSF1 contract amount exception: 2,610 × 10.87 =
+  NPR 28,370.70, while source reports NPR 28,371.00; difference NPR 0.30.
+  Raw row unchanged and quarantined pending source correction evidence.
+- P1 remains blocked by the 616-session calendar, primary notices, rights and
+  independent source provenance, effective-dated broker identity, and primary
+  resolution of OHLCV/corporate-action issues.
+- Detailed evidence: `data/evidence/acquired/broker-current-directory-multidate-coverage.json`,
+  `data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json`,
+  `data/evidence/acquired/floorsheet-2015-01-04-amount-exception.json` and
+  `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
+

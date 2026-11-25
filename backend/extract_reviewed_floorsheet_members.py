@@ -125,6 +125,8 @@ def extract_reviewed_csv_members(
                 after.st_size, after.st_mtime_ns, after.st_ino
             ):
                 raise ValueError("archive file changed during extraction")
+            if _sha256_stream(archive_stream) != actual_archive_hash:
+                raise ValueError("archive content hash changed during extraction")
     except Exception:
         for created in reversed(created_paths):
             try:
@@ -165,7 +167,8 @@ def main() -> int:
     rendered = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
     if args.manifest_output:
         args.manifest_output.parent.mkdir(parents=True, exist_ok=True)
-        args.manifest_output.write_text(rendered, encoding="utf-8")
+        with args.manifest_output.open("x", encoding="utf-8", newline="\\n") as manifest_stream:
+            manifest_stream.write(rendered)
     print(rendered, end="")
     return 0
 

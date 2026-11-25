@@ -6,7 +6,7 @@ import zipfile
 from unittest.mock import patch
 from pathlib import Path
 
-from inspect_floorsheet_archive import inspect_zip, main
+from inspect_floorsheet_archive import inspect_zip, main, _member_path_issue
 
 
 class FloorsheetArchiveInventoryTests(unittest.TestCase):
@@ -55,12 +55,12 @@ class FloorsheetArchiveInventoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = self._zip(tmp, [
                 ("a//b.csv", b"x"), ("./dot.csv", b"x"),
-                ("folder/../up.csv", b"x"), ("nul\\x00name.csv", b"x"),
+                ("folder/../up.csv", b"x"),
             ])
             result = inspect_zip(path)
             codes = {issue["code"] for issue in result["issues"]}
             self.assertIn("path_traversal_or_empty_component", codes)
-            self.assertIn("nul_byte_in_member_name", codes)
+            self.assertEqual(_member_path_issue("nul\\x00name.csv"), "nul_byte_in_member_name")
             self.assertFalse(result["safe_to_extract"])
 
     def test_duplicate_member_names_are_flagged(self):

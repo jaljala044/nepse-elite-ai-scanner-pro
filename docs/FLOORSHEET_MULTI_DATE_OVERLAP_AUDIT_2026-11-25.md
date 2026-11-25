@@ -69,3 +69,27 @@ The artifact contains the comparison report and source manifest only. Raw CSV fi
 - Inspect the 262 SocrateAI-only records by date and symbol, and reconcile them against the original page/API evidence rather than treating them as automatically valid or missing from Samir.
 - Expand the same audit from 10 dates to all 157 shared dates in the one-year candidate window, preferably in bounded batches.
 - Obtain the primary NEPSE session calendar and dated security register before declaring session or per-security coverage complete.
+
+
+## Hash-linked source-only exception ledger
+
+The same ten-date workflow now emits a separate JSON and CSV exception ledger. It contains **262 records**, all classified as `right_source_only` (SocrateAI-only). Each record retains trade date, contract ID, symbol, buyer/seller broker codes, quantity, rate, amount, both pinned source repositories/commits, both source filenames and SHA-256 digests.
+
+- No shared-field conflicts were found, so there are no conflict-type entries in this ledger.
+- All 262 records remain `unresolved_source_only_no_auto_selection`.
+- The ledger is not a missing-trade verdict; it is a record of one source containing a contract absent from the other.
+- Canonical selection and training eligibility remain false.
+
+Latest workflow:
+- [Multi-date comparison and exception-ledger run 45596489553](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596489553) — passed.
+- [Backend suite run 45596489636](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596489636) — **509 tests passed**.
+- [Backend contract tests run 45596451411](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596451411) — passed.
+- [Integrated evidence audit run 45596451157](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596451157) — passed.
+
+Ledger artifact:
+- Artifact ID: `15012988544`
+- ZIP SHA-256: `2433f2b88396f5461efefb60096a766d15c39a0943f28e6d8f42655476fc0056`
+- Ledger JSON SHA-256: `691fb4f0301886bdba8163c5b8f0c0e7192fccdab1cc83a2498d7414bcea1f29`
+- Ledger CSV SHA-256: `78562993608eda4a75cf49b61ccf915dd1e2c07e05da01880ea6bb3dfd221a1e`
+
+The artifact contains the report, source manifest and derived exception ledger. It does not contain the raw CSV payloads.

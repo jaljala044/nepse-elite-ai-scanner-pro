@@ -327,7 +327,20 @@ def capture(ledger_path, output_dir):
         for business_date in sorted({item["date"] for item in conflicts}):
             active_business_date = business_date
             try:
-                client.getPriceVolumeHistory(business_date=business_date)
+                # nepse-client==0.1.4 accepts business_date for the URL, but its
+                # getPriceVolumeHistory implementation passes the unbound
+                # getPOSTPayloadIDForFloorSheet method. That means the payload
+                # generator silently uses today's day-of-month for historical
+                # requests. Bind the requested session into the payload ID too.
+                date_url = (
+                    f"{market_price_volume_path}?size=500&businessDate={business_date}"
+                )
+                client.requestPOSTAPI(
+                    url=date_url,
+                    payload_generator=lambda d=business_date: (
+                        client.getPOSTPayloadIDForFloorSheet(d)
+                    ),
+                )
             except Exception as exc:
                 request_errors.setdefault("market-price-volume", {})[business_date] = {
                     "type": type(exc).__name__, "message": str(exc)[:300]

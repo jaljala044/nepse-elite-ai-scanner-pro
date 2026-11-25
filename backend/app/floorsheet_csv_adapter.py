@@ -68,7 +68,11 @@ def parse_floorsheet_csv(
     errors = []
     for physical_line, source_row in enumerate(reader, start=2):
         if None in source_row:
-            errors.append({"source_row_number": physical_line, "error": "extra_unmapped_columns"})
+            errors.append({
+                "source_row_number": physical_line,
+                "error": "extra_unmapped_columns",
+                "raw_source_row": dict(source_row),
+            })
             continue
         mapped = {field: source_row[header] for field, header in mapping.columns.items()}
         try:
@@ -77,7 +81,11 @@ def parse_floorsheet_csv(
                 row_number=physical_line,
             )
         except (KeyError, ValueError, InvalidOperation) as exc:
-            errors.append({"source_row_number": physical_line, "error": str(exc)})
+            errors.append({
+                "source_row_number": physical_line,
+                "error": str(exc),
+                "raw_source_row": dict(source_row),
+            })
             continue
         rows.append(contract)
     return {

@@ -42,3 +42,12 @@ Retain the unmodified response and its SHA-256. Normalize into a versioned manif
 - Do not silently classify ambiguous preference shares, promoter shares, closed-end funds or debt as ordinary equity.
 - Do not drop historical observations when a security becomes suspended or delisted.
 - Do not promote OHLCV or floorsheet data into canonical/training use until the manifest, provenance and redistribution rights are verified.
+
+
+## Additional registry discovery attempts — 2026-11-25
+
+A further search for an official instrument-type and lifecycle registry/API did not surface a reproducible public NEPSE/SEBON endpoint response containing security IDs, symbol, instrument type and effective listing/suspension/delisting dates together. The official catalogue remains a live/indexed catalogue page rather than an accessible dated lifecycle export.
+
+A third-party NEPSE SIMPLE symbol page exposes a broad mixed set of symbols, including ordinary shares, mutual funds and debt-like instruments. This reinforces why symbol-only scraping is unsafe: instrument classes must be identified from an authoritative registry, not guessed from ticker shape or a broad list.
+
+No exact 281 + 47 manifest has been generated. The required next acquisition is an official NEPSE/SEBON/registrar/CDSC data export or documented official endpoint with stable instrument IDs and lifecycle dates. CDSC/registrar data may corroborate units/scheme identities but should not silently replace NEPSE's exchange listing/trading status.

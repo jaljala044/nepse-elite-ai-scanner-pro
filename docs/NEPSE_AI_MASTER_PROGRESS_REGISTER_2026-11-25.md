@@ -943,7 +943,8 @@ The current environment does not provide access to the user's Drive archive or t
 70. **Broker aggregate/control-total hardening:** party aggregation now requires typed grouping/lineage values, strict ISO trade dates, valid source hashes and nonblank evidence IDs. Source control counts are parsed as exact finite non-negative integers (fractional values are rejected, not truncated), including CSV string values. Commits: `9b9520e`, `96fdf02`, `2de751b`, `83aa5b0`, `24e8a65`, `f8aaeb6`.
 
 ### CI verification and remaining evidence boundary
-- At commit `f8aaeb68035bada1e3db019631ad58f4d24ceaff`, the backend suite passed **446 tests** (run [45546726176](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546726176)).
-- The reviewed-extraction cleanup follow-ups are under CI at commit `dbb0210fe5dd92875ddc0be366e139c4be81868c`; backend, contract and integrated audit runs are still in progress at the time of this register update. Do not mark those latest runs passed until their conclusions are confirmed.
+- At commit `dbb0210fe5dd92875ddc0be366e139c4be81868c`, the backend suite passed **447 tests** (run [45546781957](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546781957)).
+- Backend contract tests passed (run [45546781843](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546781843)).
+- Integrated evidence audit passed (run [45546781889](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546781889)).
 - Drive archive contents, source licensing, a primary date-level NEPSE session calendar, a dated official 281+47 membership manifest and one-year/120-day verified data coverage remain outstanding. No canonical data promotion or model training is authorized.
 

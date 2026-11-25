@@ -36,7 +36,7 @@ def _member_path_issue(name: str) -> str | None:
         return "empty_member_name"
     if "\\" in name:
         return "backslash_in_member_name"
-    if "\\x00" in name:
+    if "\x00" in name:
         return "nul_byte_in_member_name"
     if name.startswith("/") or name.startswith("//"):
         return "absolute_member_path"

@@ -400,6 +400,24 @@ def capture(ledger_path, output_dir):
                 "type": type(exc).__name__, "message": str(exc)[:300]
             }
 
+        # Alternate official host control. The newer NEPSE pipeline reports
+        # .com and .com.np are separate API servers and uses .com; acquire a
+        # fresh token on that same host and omit explicit Host routing.
+        from nepse_client import NepseClient
+        client_com = NepseClient(timeout=90.0)
+        try:
+            client_com.base_url = "https://www.nepalstock.com"
+            client_com._update_dynamic_headers()
+            client_com.client.event_hooks["response"].append(preserve_response)
+            active_business_date = "current-session-com-host"
+            request_today_price_without_host_header(client_com, market_price_volume_path)
+        except Exception as exc:
+            request_errors["market-price-volume-current-session-com-host"] = {
+                "type": type(exc).__name__, "message": str(exc)[:300]
+            }
+        finally:
+            client_com.close()
+
         # Same-session, minimal floor-sheet POST control. This uses the
         # same Salter authorization and floor-sheet payload generator but a
         # different POST route; size=1 limits the captured public response.
@@ -517,6 +535,20 @@ def capture(ledger_path, output_dir):
         "request_error": request_errors.get("market-price-volume-current-session-no-host"),
     }
 
+    com_host_price = reports.get("market-price-volume.current-session-com-host")
+    com_host_market_price_volume_report = {
+        "status": "not_captured" if com_host_price is None else (
+            "captured" if com_host_price["http_status"] == 200
+            and com_host_price["parsed"] is not None else "non_200_or_unparseable"
+        ),
+        "http_status": com_host_price["http_status"] if com_host_price else None,
+        "source_url": com_host_price["source_url"] if com_host_price else None,
+        "response_sha256": com_host_price["response_sha256"] if com_host_price else None,
+        "response_bytes": com_host_price["response_bytes"] if com_host_price else None,
+        "parsed_type": type(com_host_price["parsed"]).__name__ if com_host_price else None,
+        "request_error": request_errors.get("market-price-volume-current-session-com-host"),
+    }
+
     floor_control = reports.get("floor-sheet-control")
     floor_sheet_control_report = {
         "status": "not_captured" if floor_control is None else (
@@ -597,6 +629,7 @@ def capture(ledger_path, output_dir):
         "floor_sheet_control": floor_sheet_control_report,
         "current_session_market_price_volume": current_market_price_volume_report,
         "current_session_market_price_volume_no_host": no_host_market_price_volume_report,
+        "current_session_market_price_volume_com_host": com_host_market_price_volume_report,
         "date_specific_market_price_volume": market_price_volume_reports,
         "date_specific_conflict_comparisons": date_specific_comparisons,
         "resolved_conflict_comparisons": resolved_comparisons,

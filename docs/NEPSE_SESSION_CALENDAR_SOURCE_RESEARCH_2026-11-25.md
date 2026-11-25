@@ -56,3 +56,16 @@ The enriched repeated-row artifact `14985599288` was downloaded and rechecked lo
 - CSV has 196,784 records and 196,784 unique (repository, path, current CSV line) identities.
 - Breakdown matches summary exactly: 196,542 consecutive-calendar-date + OHLC-valid candidates; 240 date-gap/unparseable candidates; 2 invalid-OHLC-bound repeated signatures.
 - All records remain review-only with calendar status unverified.
+
+
+## Primary-source session-regime notice located — 2026-11-25
+
+An official NEPSE-hosted PDF was located through the exchange's own file endpoint:
+- [NEPSE market-session notice, hosted at nepalstock.com.np](https://www.nepalstock.com.np/api/nots/security/fetchFiles?fileLocation=santosh_thapa%2F2022-06-16%2Fmarket+session+notice_1655356331971.PDF)
+- The notice states that, following the Government decision to revoke the two-day public-holiday arrangement, the NEPSE Board decision of 2079/02/25 set the secondary market schedule from Asar 1 (2022-06-16): Sunday–Thursday 11:00–15:00 and Friday 11:00–13:00.
+- This is primary exchange evidence for the 2022-06-16 schedule change and confirms Friday as a shortened trading session in that regime. It supports the weekday candidate regime through 2022-09-16, but it does not prove that every candidate date actually traded; date-specific holidays, closures and exceptional sessions still require evidence.
+- The PDF is linked from NEPSE's official host. Exact raw-byte SHA-256 and a locally preserved immutable copy have **not yet** been recorded; do not mark the evidence capture/hash requirement complete.
+
+### Calendar research update
+
+The previous gap statement that no original NEPSE session-regime notice had been retrieved is now narrowed: a primary NEPSE notice for the June 2022 regime transition has been found. The April 2026 Monday–Friday change remains supported only by secondary reports in the evidence currently captured; an original NEPSE notice is still outstanding. A complete date-level calendar remains unverified.

@@ -69,3 +69,29 @@ for the 2015–2025 captures; P1 remains active and P2 remains gated.
    segment.
 5. Rerun the calendar evidence validator and integrated P1 acceptance audit
    after independent review; do not infer open sessions from weekday regimes.
+
+
+## Automated archive integrity verification
+
+Added `backend/audit_nepse_holiday_api_archive.py` and four focused tests.
+The auditor independently checks each archived year directory, HTTP status,
+raw byte count, SHA-256, parsed/raw JSON equivalence, requested-year/date
+consistency and duplicate dates. Duplicate holiday reasons are reported, not
+silently removed. The auditor explicitly forbids canonical calendar promotion.
+
+The integrated evidence workflow now runs this audit and uploads its report.
+On commit `476a245e494fc43ecb84d27d80996041abe472ac`:
+
+- Backend tests run `45624325569`: success.
+- Integrated evidence audit run `45624325512`: success.
+- Artifact ID `15027027115`; ZIP SHA-256
+  `b65600839488e7a01ba81298effe25ca7f97897c713a147deef0b27a1a3a7b39`.
+- The generated archive report confirms 12/12 valid year captures, 499 records,
+  498 within-year unique dates, one duplicate-date row and zero integrity
+  failures.
+
+The same integrated artifact confirms the larger training-readiness gate is
+still fail-closed: all 12 model-readiness blockers remain false. This is
+expected; archived holiday records do not provide a verified open-session
+calendar, universe snapshot, licensed OHLCV coverage, broker identity history,
+corporate-action review or point-in-time holdout protocol.

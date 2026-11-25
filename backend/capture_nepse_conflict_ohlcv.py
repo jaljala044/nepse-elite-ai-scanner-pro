@@ -1,3 +1,4 @@
+import httpx
 #!/usr/bin/env python3
 """Capture official NEPSE price/volume history for quarantined OHLCV conflicts."""
 from __future__ import annotations
@@ -315,6 +316,38 @@ def request_today_price_without_host_header(client, endpoint):
     )
 
 
+
+def request_today_price_with_browser_headers(client, endpoint, response_hook):
+    """Call today-price with the current NEPSE pipeline's clean HTTP contract."""
+    authorization = client.getAuthorizationHeaders()["Authorization"]
+    payload_id = client.getPOSTPayloadIDForFloorSheet()
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        "Referer": client.base_url.rstrip("/") + "/",
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36"
+        ),
+    }
+    with httpx.Client(
+        http2=False,
+        verify=False,
+        timeout=90.0,
+        follow_redirects=True,
+        event_hooks={"response": [response_hook]},
+    ) as session:
+        return session.post(
+            client.get_full_url(f"{endpoint}?size=500"),
+            headers=headers,
+            json={"id": payload_id},
+        )
+
+
 def capture(ledger_path, output_dir):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     conflicts = ledger["conflicts"]
@@ -411,6 +444,10 @@ def capture(ledger_path, output_dir):
             client_com.client.event_hooks["response"].append(preserve_response)
             active_business_date = "current-session-com-host"
             request_today_price_without_host_header(client_com, market_price_volume_path)
+            active_business_date = "current-session-com-clean"
+            request_today_price_with_browser_headers(
+                client_com, market_price_volume_path, preserve_response
+            )
         except Exception as exc:
             request_errors["market-price-volume-current-session-com-host"] = {
                 "type": type(exc).__name__, "message": str(exc)[:300]
@@ -549,6 +586,20 @@ def capture(ledger_path, output_dir):
         "request_error": request_errors.get("market-price-volume-current-session-com-host"),
     }
 
+    clean_com_price = reports.get("market-price-volume.current-session-com-clean")
+    clean_com_market_price_volume_report = {
+        "status": "not_captured" if clean_com_price is None else (
+            "captured" if clean_com_price["http_status"] == 200
+            and clean_com_price["parsed"] is not None else "non_200_or_unparseable"
+        ),
+        "http_status": clean_com_price["http_status"] if clean_com_price else None,
+        "source_url": clean_com_price["source_url"] if clean_com_price else None,
+        "response_sha256": clean_com_price["response_sha256"] if clean_com_price else None,
+        "response_bytes": clean_com_price["response_bytes"] if clean_com_price else None,
+        "parsed_type": type(clean_com_price["parsed"]).__name__ if clean_com_price else None,
+        "request_error": request_errors.get("market-price-volume-current-session-com-clean"),
+    }
+
     floor_control = reports.get("floor-sheet-control")
     floor_sheet_control_report = {
         "status": "not_captured" if floor_control is None else (
@@ -630,6 +681,7 @@ def capture(ledger_path, output_dir):
         "current_session_market_price_volume": current_market_price_volume_report,
         "current_session_market_price_volume_no_host": no_host_market_price_volume_report,
         "current_session_market_price_volume_com_host": com_host_market_price_volume_report,
+        "current_session_market_price_volume_com_clean": clean_com_market_price_volume_report,
         "date_specific_market_price_volume": market_price_volume_reports,
         "date_specific_conflict_comparisons": date_specific_comparisons,
         "resolved_conflict_comparisons": resolved_comparisons,

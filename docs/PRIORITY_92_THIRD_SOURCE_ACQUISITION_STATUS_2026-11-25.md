@@ -34,3 +34,45 @@ References:
 - Priority 93 onward: multi-source row-level comparison must wait for an acquired sample.
 - No data was promoted to canonical or training datasets.
 - No claims are made about the contents of the user's Google Drive folder.
+
+
+## Follow-up acquisition — Yonepse daily JSON (2026-11-24)
+
+A second public acquisition route was tested after the Hugging Face CSV and Google Drive routes were inaccessible.
+
+- Repository: `Shubhamnpk/yonepse`
+- Exact file retrieved through GitHub Contents API: `data/floor_sheet/daily/2026-11-24.json`
+- Public raw-file convention is documented in the repository README; the exact JSON content was retrieved and parsed in this session.
+- Payload date: `2026-11-24`
+- Fields: `contractId`, `stockId`, `buyer`, `seller`, `qty`, `rate`, `amount`, `time`
+- Rows: 52,387; unique contract IDs: 52,387.
+- Recomputed quantity: 14,670,177 shares (matches the JSON summary).
+- Recomputed amount: NPR 5,553,019,249.459984 (matches the JSON summary within floating-point representation).
+- The JSON summary reports 52,387 trades.
+
+### Exact cross-source comparison
+
+Pinned comparison inputs:
+- Yonepse: `https://api.github.com/repos/Shubhamnpk/yonepse/contents/data/floor_sheet/daily/2026-11-24.json`
+- SocrateAI: `socrateai-official/nepse-open-data`, commit `cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3`, `floorsheet/floorsheet_2026-11-24.csv`
+- Samir/MeroLagani-derived: `SamirWagle/Nepse-All-Scraper`, commit `e6160adc6bdf3d19562167388e3d9d4f645c455a`, `data/floorsheet/floorsheet_2026-11-24.csv`
+
+Results:
+- Yonepse vs SocrateAI: 52,387/52,387 contract IDs matched; zero unmatched IDs in either direction; zero conflicts across buyer, seller, quantity, rate and amount.
+- Yonepse vs Samir: all 52,369 Samir contract IDs are present in Yonepse; 18 Yonepse contracts are absent from Samir; zero conflicts across buyer, seller, quantity, rate and amount on shared contracts.
+- SocrateAI totals: 52,387 rows, 14,670,177 shares, NPR 5,553,019,249.45998.
+- Samir totals: 52,369 rows, 14,662,346 shares, NPR 5,551,668,556.660005.
+
+This reproduces the earlier finding that the 18 extra contracts explain the entire difference between Samir and the larger 2026-11-24 dataset. The exact Yonepse–SocrateAI row match is **not independent corroboration**. Shared upstream capture, copying or derivation remains possible and has not been resolved. Yonepse is registered as a matching mirror/corroborating representation for this one date, not as an independent source.
+
+### Integrity and remaining limits
+
+- The payload was retrieved and parsed from the GitHub Contents API in this work session; it was not committed as a raw data artifact to the project.
+- A local byte-for-byte payload file and independently computed SHA-256 were not produced in this session. Do not treat the API response as a durable pinned acquisition artifact.
+- Yonepse uses `stockId`, while the compared CSVs use symbols. This comparison did not independently validate stock-ID-to-symbol mapping.
+- The comparison is limited to 2026-11-24. It does not establish historical date coverage, completeness across all sessions, effective-dated broker identity, upstream source independence, or commercial/training rights.
+- No canonical source selection or training-data promotion is authorized.
+
+### Updated Priority 92 decision
+
+**Partially complete for one-day payload retrieval and reconciliation; still open for durable byte pinning and source independence.** The Google Drive folder remains inaccessible because its connector is disabled by the workspace administrator. The Hugging Face candidate remains metadata-only. The project now has an additional exact one-day representation to use in the source-lineage investigation, but not a verified independent third source.

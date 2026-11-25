@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,21 +18,34 @@ from urllib.request import Request, urlopen
 ALLOWED_HOSTS = {"nepalstock.com.np", "www.nepalstock.com.np", "sebon.gov.np", "www.sebon.gov.np"}
 
 
-def capture_registry(url: str, source_id: str, output_dir: str | Path, timeout: int = 30) -> dict:
+def capture_registry(url: str, source_id: str, output_dir: str | Path, timeout: int = 30,
+                     max_response_bytes: int = 50 * 1024 * 1024) -> dict:
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.hostname not in ALLOWED_HOSTS:
         raise ValueError("registry URL must use HTTPS on an approved official NEPSE or SEBON host")
-    if not source_id or not source_id.strip():
-        raise ValueError("source_id is required")
+    if not isinstance(source_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", source_id):
+        raise ValueError("source_id must be a 1-64 character filename-safe identifier")
     if timeout < 1 or timeout > 120:
         raise ValueError("timeout must be between 1 and 120 seconds")
+    if not isinstance(max_response_bytes, int) or max_response_bytes < 1 or max_response_bytes > 250 * 1024 * 1024:
+        raise ValueError("max_response_bytes must be between 1 byte and 250 MiB")
     request = Request(url, headers={"User-Agent": "NEPSE-AI-Registry-Capture/1.0", "Accept": "application/json"})
     with urlopen(request, timeout=timeout) as response:
         status = getattr(response, "status", 200)
         if status != 200:
             raise RuntimeError(f"official registry request returned HTTP {status}")
-        raw = response.read()
         headers = dict(response.headers.items())
+        content_length = headers.get("Content-Length") or headers.get("content-length")
+        if content_length is not None:
+            try:
+                declared_length = int(content_length)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("registry response has invalid Content-Length") from exc
+            if declared_length < 0 or declared_length > max_response_bytes:
+                raise ValueError("registry response exceeds max_response_bytes")
+        raw = response.read(max_response_bytes + 1)
+        if len(raw) > max_response_bytes:
+            raise ValueError("registry response exceeds max_response_bytes")
         final_url = response.geturl()
     final = urlparse(final_url)
     if final.scheme != "https" or final.hostname not in ALLOWED_HOSTS:
@@ -78,8 +92,10 @@ def main() -> int:
     parser.add_argument("--source-id", required=True)
     parser.add_argument("--output-dir", type=Path, default=Path("data/evidence/registry"))
     parser.add_argument("--timeout", type=int, default=30)
+    parser.add_argument("--max-response-bytes", type=int, default=50 * 1024 * 1024)
     args = parser.parse_args()
-    print(json.dumps(capture_registry(args.url, args.source_id, args.output_dir, args.timeout),
+    print(json.dumps(capture_registry(args.url, args.source_id, args.output_dir, args.timeout,
+                                      args.max_response_bytes),
                      indent=2, ensure_ascii=False))
     return 0
 

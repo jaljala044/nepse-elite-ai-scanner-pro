@@ -1229,7 +1229,7 @@ Workflow and artifact:
 | Priority | Next action | Acceptance requirement |
 |---|---|---|
 | 97 | Build a per-date exception ledger for the 262 source-only contracts | **Complete:** 262 hash-linked SocrateAI-only rows; all unresolved and no auto-resolution |
-| 98 | Compare broker-code distributions and code presence across the ten dates | Preserve raw codes; do not infer effective-dated legal identity |
+| 98 | Compare broker-code distributions and code presence across the ten dates | **Complete:** same 91-code union across both archives; each date's code set matches; no legal-identity inference |
 | 99 | Compare observed symbols against a dated official target register | Do not classify or discard securities without primary registry evidence |
 | 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | Batch execution, immutable manifests, source hashes, daily exceptions and explicit independent-control gaps |
 
@@ -1245,3 +1245,15 @@ Workflow and artifact:
 - Backend suite: **509 tests passed** [run 45596489636](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596489636); contract tests and integrated evidence audit also passed [run 45596451411](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596451411) and [run 45596451157](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596451157).
 
 Priorities 98–100 remain open: cross-date broker-code distribution, dated official instrument-universe reconciliation, and expanding from the 10-date pilot to all shared one-year dates with independent controls.
+
+
+### Priority 98 — broker-code coverage across the ten-date sample
+
+- Added `backend/analyze_floorsheet_broker_code_coverage.py` and tests.
+- The ten-date run found the same **91 distinct raw broker codes** in both archives; no code appears in only one publisher's files.
+- Each date has identical buyer/seller code presence across sources. Six dates contain 91 codes; four dates (2026-11-02 to 2026-11-05) contain 90.
+- Activity counts are retained per date, source, side and raw broker code. No legal identity is inferred.
+- Artifact [15013881435](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596771362) contains the code-coverage JSON and activity CSV. ZIP SHA-256: `dfd2d18a5266421e10394affe77619551da2afbaed79a20e385471c623214fc9`.
+- Backend suite: **512 tests passed** [run 45596771034](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45596771034).
+
+Priority 99 remains focused on the official dated target-security register; priority 100 remains the bounded expansion to the complete one-year shared-date set with independent controls.

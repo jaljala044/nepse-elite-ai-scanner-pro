@@ -76,8 +76,8 @@ class FloorsheetManifestTests(unittest.TestCase):
 
     def test_source_row_dates_must_match_manifest_date(self):
         (self.base / "right.csv").write_text(
-            "transaction,symbol,buyer,seller,quantity,rate,amount,date\\n"
-            "C1,NABIL,11,22,2,100,200,2026-11-23\\n",
+            "transaction,symbol,buyer,seller,quantity,rate,amount,date\n"
+            "C1,NABIL,11,22,2,100,200,2026-11-23\n",
             encoding="utf-8",
         )
         self.write_manifest([self.pair()])

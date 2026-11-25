@@ -41,6 +41,12 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
 - The report deliberately labels all 2026 candidate dates as unverified; it does not infer confirmed sessions or missing sessions.
 - Workflow YAML, script, and paths were re-fetched from GitHub after commit. The GitHub status endpoint returned no status checks and the available workflow-run lookup returned no runs; execution and inventory output are therefore **not yet verified**. Do not claim the tests passed or that live dataset inventories have been generated until the Actions run and artifact are inspected.
 
+## P1 row-level reconciliation increment — 2026-11-25
+- Added `backend/app/ohlcv_reconciliation.py` and focused tests.
+- The comparator matches CSVs by identical relative path, requires explicit ISO dates and recognized OHLCV columns, canonicalizes numeric formatting, and reports left-only/right-only dates, value mismatches, duplicate dates, invalid rows, file SHA-256 hashes and source revision labels.
+- It does not infer sessions, adjust prices, merge sources, or select a winning value. Different relative paths are intentionally not guessed to be the same ticker.
+- Added the focused test suite to the data-integrity workflow. Actual test execution and archive-to-archive reconciliation remain unverified; source archive roots/revisions must be supplied before a real comparison can be reported.
+
 ## P2 — Historical market intelligence
 - Build separate market, sector, stock and broker execution-channel histories.
 - Store timestamped episodes, recurring participation/accumulation/distribution

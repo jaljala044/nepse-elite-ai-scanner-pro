@@ -1,0 +1,57 @@
+import json
+import tempfile
+import unittest
+from datetime import date
+from pathlib import Path
+
+from app.temporal_registry import SecurityMasterRecord, CorporateActionRecord
+from app.versioned_feature_store import build_versioned_feature_snapshot, persist_versioned_snapshot
+
+
+class VersionedFeatureStoreTests(unittest.TestCase):
+    def test_as_of_security_and_action_join_and_immutable_persistence(self):
+        records = [{"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",
+                    "available_at":"2026-11-23T16:00:00Z","close":11,
+                    "previous_close":10,"volume":100}]
+        securities = [SecurityMasterRecord("SEC-A","AAA","equity","active",
+                                           date(2020,1,1),None,"security-registry-v1")]
+        actions = [
+            CorporateActionRecord("CA1","SEC-A","bonus",date(2026,11,20),
+                                  "2026-11-18T09:00:00Z","2026-11-18T09:00:00Z",1.1,"action-e1"),
+            CorporateActionRecord("CA2","SEC-A","right",date(2026,11,21),
+                                  "2026-11-25T09:00:00Z","2026-11-25T09:00:00Z",1.2,"action-e2"),
+        ]
+        snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
+                                                     securities, actions, ["AAA"])
+        joined = snapshot["security_and_action_joins"]["AAA"]
+        self.assertEqual(joined["security_id"], "SEC-A")
+        self.assertEqual(joined["corporate_action_count"], 1)
+        self.assertFalse(snapshot["ohlcv_adjustment_applied"])
+        with tempfile.TemporaryDirectory() as tmp:
+            first = persist_versioned_snapshot(tmp, snapshot)
+            second = persist_versioned_snapshot(tmp, snapshot)
+            self.assertFalse(first["idempotent"])
+            self.assertTrue(second["idempotent"])
+            self.assertTrue(Path(first["path"]).exists())
+            saved = json.loads(Path(first["path"]).read_text())
+            self.assertEqual(saved["snapshot_sha256"], snapshot["snapshot_sha256"])
+
+    def test_ambiguous_security_does_not_join_actions(self):
+        records = [{"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",
+                    "available_at":"2026-11-23T16:00:00Z","close":11,
+                    "previous_close":10,"volume":100}]
+        securities = [
+            SecurityMasterRecord("SEC-A","AAA","equity","active",date(2020,1,1),None,"e1"),
+            SecurityMasterRecord("SEC-B","AAA","equity","active",date(2020,1,1),None,"e2"),
+        ]
+        snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
+                                                     securities, [], ["AAA"])
+        self.assertEqual(snapshot["security_and_action_joins"]["AAA"]["security_status"], "ambiguous")
+
+    def test_hash_tampering_rejected(self):
+        with self.assertRaises(ValueError):
+            persist_versioned_snapshot(tempfile.gettempdir(), {"snapshot_sha256":"bad"})
+
+
+if __name__ == "__main__":
+    unittest.main()

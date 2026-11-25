@@ -49,7 +49,7 @@ def main() -> int:
     args = parser.parse_args()
     report = build_broker_identity_coverage(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(report, indent=2, ensure_ascii=False) + "\\n"
+    encoded = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     if args.output.exists() and args.output.read_text(encoding="utf-8") != encoded:
         raise RuntimeError("broker coverage output exists with different content")
     if not args.output.exists():

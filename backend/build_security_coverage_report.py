@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 from collections import Counter, defaultdict
 from datetime import date
@@ -66,10 +67,18 @@ def _read_universe(path: str | Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _read_observations(paths: list[str | Path]) -> dict[str, dict[str, Counter]]:
+def _read_observations(paths: list[str | Path]) -> tuple[dict[str, dict[str, Counter]], list[dict[str, Any]]]:
     observed: dict[str, dict[str, Counter]] = defaultdict(lambda: defaultdict(Counter))
+    file_evidence = []
     for source_path in paths:
-        with Path(source_path).open(encoding="utf-8-sig", newline="") as stream:
+        source_file = Path(source_path)
+        raw_bytes = source_file.read_bytes()
+        file_evidence.append({
+            "path": str(source_file),
+            "byte_count": len(raw_bytes),
+            "sha256": hashlib.sha256(raw_bytes).hexdigest(),
+        })
+        with source_file.open(encoding="utf-8-sig", newline="") as stream:
             reader = csv.DictReader(stream)
             missing = set(DATA_FIELDS) - set(reader.fieldnames or [])
             if missing:
@@ -81,7 +90,7 @@ def _read_observations(paths: list[str | Path]) -> dict[str, dict[str, Counter]]
                     raise ValueError(f"{source_path}:{line}: source_id and symbol are required")
                 day = date.fromisoformat((row.get("date") or "").strip()).isoformat()
                 observed[source_id][symbol][day] += 1
-    return observed
+    return observed, file_evidence
 
 
 def build_security_coverage_report(
@@ -95,7 +104,7 @@ def build_security_coverage_report(
         raise ValueError("end date must not precede start date")
     universe = _read_universe(universe_path)
     calendar = load_calendar(calendar_path)
-    observed_by_source = _read_observations(data_paths)
+    observed_by_source, source_file_evidence = _read_observations(data_paths)
 
     sessions = sorted(
         day for day, evidence in calendar.items()
@@ -186,6 +195,8 @@ def build_security_coverage_report(
         ),
         "verified_open_session_count": len(sessions),
         "source_count": len(per_source),
+        "source_file_count": len(source_file_evidence),
+        "source_file_evidence": source_file_evidence,
         "source_specific_reports": per_source,
         "per_security": single_source["per_security"] if single_source else [],
         "expected_security_session_observations": single_source["expected_security_session_observations"] if single_source else None,

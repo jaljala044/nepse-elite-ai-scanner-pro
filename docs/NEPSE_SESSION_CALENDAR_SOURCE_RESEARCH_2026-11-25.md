@@ -89,3 +89,15 @@ A fresh search found additional reporting:
 - [Ratopati, 2026-04-08](https://english.ratopati.com/story/57946/stock-market-now-trades-from-monday-to-friday) reports that a notice was issued and Saturday/Sunday were excluded.
 
 These sources improve corroboration and provide a narrower retrieval target (NEPSE notice issued 2026-04-08, Board decision 22 Chaitra 2082). They are still secondary reports: the primary notice PDF or NEPSE-hosted notice record has not yet been captured. Do not upgrade the April 2026 weekday schedule to primary-source verified solely on these articles.
+
+
+## Calendar-source refresh for acquisition window — 2026-11-25
+
+A further search targeted the NEPSE-hosted notices index and the reported April 2026 change. The NEPSE notice/file index is publicly reachable, and the exchange-hosted 2022 schedule notice remains available, but no pinned original NEPSE notice PDF for the **2026-04-06 Monday–Friday transition** was found in the retrieved results. Secondary reports place the effective change on Monday 2026-04-06 and state that a NEPSE notice was issued on Wednesday 2026-04-08; the reported Board decision is 22 Chaitra 2082 (2026-04-05). These remain leads for a targeted search of the NEPSE notices archive, not primary calendar evidence.
+
+The date-file coverage from the two floorsheet archives also cannot be treated as a trading-session calendar. Their manifests include some dates not independently verified as exchange sessions and omit some dates present in the other publisher's archive. Do not infer that a missing file means a holiday, nor that a present dated file proves a full session. The 196,784 repeated-row candidate set remains unclassified for holiday/suspension purposes until a primary date-level calendar is built.
+
+Current evidence state:
+- 2022-06-16 weekly regime change: primary NEPSE notice located and visually reviewed; raw PDF hash still absent.
+- 2026-04-06 weekly regime change: secondary reports corroborate; original NEPSE notice/raw hash still absent.
+- Daily market-open/closed date list: not yet acquired from NEPSE.

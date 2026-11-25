@@ -1231,7 +1231,7 @@ Workflow and artifact:
 | 97 | Build a per-date exception ledger for the 262 source-only contracts | **Complete:** 262 hash-linked SocrateAI-only rows; all unresolved and no auto-resolution |
 | 98 | Compare broker-code distributions and code presence across the ten dates | **Complete:** same 91-code union across both archives; each date's code set matches; no legal-identity inference |
 | 99 | Compare observed symbols against a dated official target register | **Partial:** NEPSE stock-list and SEBON approved/pipeline evidence refreshed; dated 281 + 47 exchange register still unavailable |
-| 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | Batch execution, immutable manifests, source hashes, daily exceptions and explicit independent-control gaps |
+| 100 | Extend the bounded sample to all shared one-year dates and issue an updated readiness decision | **Partial:** 40 of 157 shared date files compared in two batches; independent daily controls and remaining 117 dates open |
 
 **Readiness remains REVIEW_REQUIRED.** The multi-date result improves source-comparison evidence but does not resolve source rights/lineage, the primary NEPSE session calendar, the dated 281-equity + 47-mutual-fund registry, or independent daily control totals. No canonical data or model-training data was promoted.
 
@@ -1268,3 +1268,16 @@ Priority 99 remains focused on the official dated target-security register; prio
 - Updated source research: `docs/ACTIVE_UNIVERSE_SOURCE_RESEARCH_2026-11-25.md`.
 
 Priority 99 remains partial until a dated NEPSE security-ID / instrument-type / lifecycle export is captured and reconciled. Priority 100 remains the bounded expansion to all shared one-year dates with independent controls.
+
+
+### Priority 100 — 30-date expansion and cumulative 40-date audit (partial)
+
+- Added deterministic `--skip-latest` batching to avoid repeating the same dates.
+- Compared the 30 shared dates immediately preceding the first ten-date pilot (2026-09-02 through 2026-10-27).
+- Results: 1,489,600 shared contract rows matched exactly; SocrateAI had 1,203 additional contracts; zero Samir-only rows and zero shared-row conflicts.
+- Combined latest 40 shared dates: 2,061,219 Samir rows; 2,062,684 SocrateAI rows; 1,465 SocrateAI-only rows; zero Samir-only rows; zero shared-row conflicts; quantity surplus 1,391,155 and gross-turnover surplus NPR 95,442,892.48.
+- Broker-code coverage remained identical: same 91-code union across both archives, with identical per-date code sets.
+- Workflow [45597195384](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45597195384) passed; backend suite [45597195251](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45597195251) passed with **513 tests**.
+- Artifact [15014345535](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45597195384) includes the 30-date comparison, manifest, 1,203-row exception ledger and broker-code activity evidence.
+
+The full one-year candidate overlap contains 157 common date files. **40/157 have now been compared**; 117 remain. Independent daily controls, official session calendar and official 281 + 47 instrument register remain open. No canonical data or training data has been promoted.

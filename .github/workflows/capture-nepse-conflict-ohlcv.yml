@@ -1,0 +1,68 @@
+name: Capture official NEPSE conflict OHLCV history
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nepse-conflict-ohlcv-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned NEPSE client
+        run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+      - name: Capture primary OHLCV conflict records
+        id: capture
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          python backend/capture_nepse_conflict_ohlcv.py --ledger data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json --output-dir evidence/nepse-conflict-ohlcv
+          status=$?
+          echo "capture_exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Commit all captured raw evidence, including partial results
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d evidence/nepse-conflict-ohlcv ]; then
+            target="data/evidence/raw/nepse/conflict-ohlcv/$(date -u +%Y-%m-%d)"
+            mkdir -p "$target"
+            cp -R evidence/nepse-conflict-ohlcv/. "$target/"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$target"
+            if ! git diff --cached --quiet; then
+              git commit -m "data: archive primary NEPSE OHLCV conflict responses"
+              git pull --rebase origin main
+              git push
+            fi
+          fi
+      - name: Upload capture artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-conflict-ohlcv-${{ github.run_id }}
+          path: evidence/nepse-conflict-ohlcv/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Require all conflict dates to have a primary match
+        if: always()
+        run: |
+          if [ "${{ steps.capture.outputs.capture_exit_code }}" != "0" ]; then
+            echo "Primary capture is partial or unresolved; inspect the preserved artifact."
+            exit 1
+          fi

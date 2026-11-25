@@ -78,6 +78,21 @@ class OhlcvSourceDailyReconciliationTests(unittest.TestCase):
         result = reconcile_ohlcv_sources([self.a], self.controls)
         self.assertEqual(result["control_total_results"][0]["differences"], ["missing_source_rows"])
 
+    def test_duplicate_csv_headers_rejected(self):
+        self.a.write_text(
+            "source_id,symbol,date,open,high,low,close,volume,volume\\n",
+            encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "duplicate CSV headers"):
+            reconcile_ohlcv_sources([self.a])
+
+    def test_extra_unmapped_csv_column_rejected(self):
+        self.a.write_text(
+            "source_id,symbol,date,open,high,low,close,volume,extra\\n"
+            "A,AAA,2026-11-24,9,11,8,10,100,unmapped\\n",
+            encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "extra_unmapped_columns"):
+            reconcile_ohlcv_sources([self.a])
+
     def test_invalid_ohlcv_numeric_rejected(self):
         self.write_rows(self.a, [self.row("A", volume="NaN")])
         with self.assertRaisesRegex(ValueError, "must be finite"):

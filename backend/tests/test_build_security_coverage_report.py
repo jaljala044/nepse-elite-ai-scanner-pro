@@ -95,8 +95,8 @@ class SecurityCoverageReportTests(unittest.TestCase):
     def test_unknown_symbols_are_reported_not_silently_dropped(self):
         self.write_inputs()
         with self.data.open("a", encoding="utf-8") as stream:
-            stream.write("publisher-a,NOT_IN_UNIVERSE,2026-01-02\\n")
-            stream.write("publisher-a,NOT_IN_UNIVERSE,2026-01-02\\n")
+            stream.write("publisher-a,NOT_IN_UNIVERSE,2026-01-02\n")
+            stream.write("publisher-a,NOT_IN_UNIVERSE,2026-01-02\n")
         report = build_security_coverage_report(
             self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
         source = report["source_specific_reports"][0]
@@ -109,7 +109,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
     def test_excluded_debenture_can_remain_in_reference_universe(self):
         self.write_inputs()
         with self.universe.open("a", encoding="utf-8") as stream:
-            stream.write("D1,DEBT1,non_convertible_debenture,2020-01-01,,false\\n")
+            stream.write("D1,DEBT1,non_convertible_debenture,2020-01-01,,false\n")
         report = build_security_coverage_report(
             self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
         self.assertEqual(report["target_security_count"], 2)
@@ -117,7 +117,7 @@ class SecurityCoverageReportTests(unittest.TestCase):
     def test_debenture_cannot_be_marked_in_target_scope(self):
         self.write_inputs()
         with self.universe.open("a", encoding="utf-8") as stream:
-            stream.write("D1,DEBT1,non_convertible_debenture,2020-01-01,,true\\n")
+            stream.write("D1,DEBT1,non_convertible_debenture,2020-01-01,,true\n")
         with self.assertRaisesRegex(ValueError, "only equity and mutual_fund"):
             build_security_coverage_report(
                 self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))

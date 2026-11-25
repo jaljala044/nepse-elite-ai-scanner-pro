@@ -104,9 +104,9 @@ def extract_reviewed_csv_members(
                         if target.exists():
                             raise FileExistsError(f"refusing to overwrite existing extracted file: {target}")
                         os.link(temporary, target)
+                        created_paths.append(target)
                         temporary.unlink()
                         created_paths.remove(temporary)
-                        created_paths.append(target)
                     except Exception:
                         if temporary in created_paths and temporary.exists():
                             temporary.unlink()

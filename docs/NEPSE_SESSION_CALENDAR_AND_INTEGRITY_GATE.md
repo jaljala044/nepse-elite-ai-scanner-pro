@@ -414,7 +414,7 @@ original NEPSE notices.
 
 ## Per-security OHLCV coverage report
 
-`backend/build_security_coverage_report.py` calculates expected and observed rows per in-scope security using an explicit security-universe CSV, the evidence-backed session calendar, and normalized OHLCV symbol/date CSVs. It reports equity and mutual-fund counts separately, per-security expected sessions, missing sessions, duplicate rows, observations on verified closures, and observations on dates without calendar evidence.
+`backend/build_security_coverage_report.py` calculates expected and observed rows per in-scope security using an explicit security-universe CSV, the evidence-backed session calendar, and normalized OHLCV CSVs with `source_id,symbol,date` columns. Each publisher receives a separate coverage report; publishers are never combined into one coverage ratio. It reports equity and mutual-fund counts separately, per-security expected sessions, missing sessions, duplicate rows, observations on verified closures, and observations on dates without calendar evidence.
 
 Example (run from `backend/`):
 

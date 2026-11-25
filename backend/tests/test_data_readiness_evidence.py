@@ -17,6 +17,7 @@ class DataReadinessEvidenceTests(unittest.TestCase):
             provenance_reports=[{
                 "training_eligibility": {"rights_clearance": True},
                 "capture": {"payload_sha256": "a" * 64, "source_record_id": "row-1"},
+                "provenance_sha256": "b" * 64,
             }],
             ohlcv_report={"integrity_status": "passed", "unresolved_exception_count": 0,
                           "coverage_ratio": 0.99},

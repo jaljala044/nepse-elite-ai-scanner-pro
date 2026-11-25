@@ -1,5 +1,5 @@
 import unittest
-from app.broker_aggregation import aggregate_broker_observations
+from app.broker_aggregation import aggregate_broker_observations, reconcile_source_control_totals
 
 
 def row(code="B11", status="verified", side="buy", amount="100.10", quantity="1.5", line=1):
@@ -58,6 +58,42 @@ class BrokerAggregationTests(unittest.TestCase):
         item["trade_date"] = "not-a-date"
         with self.assertRaisesRegex(ValueError, "trade_date must be ISO date"):
             aggregate_broker_observations([item])
+
+    def test_aggregation_is_independent_of_input_order(self):
+        rows = [row(line=1), row(line=2, amount="0.20", quantity="2.5"),
+                row(side="sell", line=3)]
+        first = aggregate_broker_observations(rows)
+        second = aggregate_broker_observations(list(reversed(rows)))
+        self.assertEqual(first, second)
+
+    def test_source_control_totals_count_contract_once(self):
+        buyer = row(line=1)
+        seller = row(line=1)
+        seller["side"] = "sell"
+        controls = [{"source_id":"src","trade_date":"2026-11-24",
+                     "contract_count":1,"gross_amount":"100.10","party_observation_count":2}]
+        result = reconcile_source_control_totals([buyer, seller], controls)
+        self.assertEqual(result["passed_source_dates"], 1)
+        self.assertEqual(result["results"][0]["observed_gross_amount"], "100.10")
+        self.assertEqual(result["results"][0]["observed_contract_count"], 1)
+
+    def test_source_control_mismatch_is_reported(self):
+        buyer = row(line=1)
+        seller = row(line=1)
+        seller["side"] = "sell"
+        seller["amount"] = "100.11"
+        controls = [{"source_id":"src","trade_date":"2026-11-24",
+                     "contract_count":1,"gross_amount":"100.10","party_observation_count":2}]
+        result = reconcile_source_control_totals([buyer, seller], controls)
+        self.assertEqual(result["failed_source_dates"], 1)
+        self.assertIn("contract_party_anomalies", result["results"][0]["differences"])
+
+    def test_missing_buyer_or_seller_side_is_anomaly(self):
+        controls = [{"source_id":"src","trade_date":"2026-11-24",
+                     "contract_count":1,"gross_amount":"100.10","party_observation_count":2}]
+        result = reconcile_source_control_totals([row(line=1)], controls)
+        self.assertEqual(result["failed_source_dates"], 1)
+        self.assertEqual(result["results"][0]["contract_anomalies"][0]["party_count"], 1)
 
     def test_unverified_broker_does_not_merge_into_entity_bucket(self):
         result = aggregate_broker_observations([row(line=1), row(code=None, status="ambiguous", line=2)])

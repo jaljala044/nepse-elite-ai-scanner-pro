@@ -922,6 +922,7 @@ def capture(ledger_path, output_dir):
     request_errors = {}
     official_company_floorsheet_reports = []
     official_company_floorsheet_com_reports = []
+    official_company_floorsheet_clean_reports = []
     try:
         # Capture NEPSE's date-specific market price-volume endpoint once per
         # disputed session. Preserve raw responses for independent field review.
@@ -1030,7 +1031,6 @@ def capture(ledger_path, output_dir):
         # Historical symbol-specific floor sheet endpoint may retain
         # transaction rows beyond the rolling EOD window. Test package
         # defaults and the clean browser-header contract on .com.np.
-        official_company_floorsheet_clean_reports = []
         for conflict in conflicts:
             if conflict["date"] != "2025-07-28":
                 continue

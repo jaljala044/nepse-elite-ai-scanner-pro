@@ -747,66 +747,6 @@ def fetch_official_company_floorsheet_clean(
 
 
 
-def fetch_official_company_floorsheet(client, symbol, business_date, output_dir, host_label="nepalstock-com-np"):
-    """Fetch a historical symbol-specific floorsheet through NEPSE's API."""
-    try:
-        records = client.getFloorSheetOf(symbol, business_date=business_date, size=500)
-        normalized = []
-        for row in records:
-            contract_id = str(row.get("contractId") or row.get("contractID") or "")
-            quantity = row.get("contractQuantity", row.get("quantity"))
-            rate = row.get("contractRate", row.get("rate"))
-            amount = row.get("contractAmount", row.get("amount"))
-            try:
-                normalized.append({
-                    "contract_id": contract_id,
-                    "quantity": int(quantity),
-                    "rate": float(rate),
-                    "amount": float(amount),
-                })
-            except (TypeError, ValueError):
-                continue
-        normalized.sort(key=lambda item: item["contract_id"])
-        total_quantity = sum(item["quantity"] for item in normalized)
-        total_amount = sum(item["amount"] for item in normalized)
-        summary = {
-            "status": "captured" if normalized else "empty",
-            "record_count": len(normalized),
-            "open_from_first_contract": normalized[0]["rate"] if normalized else None,
-            "high": max((item["rate"] for item in normalized), default=None),
-            "low": min((item["rate"] for item in normalized), default=None),
-            "last_contract_rate": normalized[-1]["rate"] if normalized else None,
-            "volume": total_quantity,
-            "full_day_vwap": total_amount / total_quantity if total_quantity else None,
-            "first_contract_id": normalized[0]["contract_id"] if normalized else None,
-            "last_contract_id": normalized[-1]["contract_id"] if normalized else None,
-        }
-        safe_symbol = "".join(ch for ch in symbol if ch.isalnum())
-        path = Path(output_dir) / f"official-company-floor.{safe_symbol}.{host_label}.json"
-        payload = {
-            "source": "NEPSE official company_floorsheet API",
-            "symbol": symbol,
-            "business_date": business_date,
-            "base_url": client.base_url,
-            "summary": summary,
-            "records": records,
-        }
-        raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
-        path.write_bytes(raw)
-        summary["response_path"] = str(path)
-        summary["response_sha256"] = hashlib.sha256(raw).hexdigest()
-        return summary
-    except Exception as exc:
-        return {
-            "status": "request_error",
-            "symbol": symbol,
-            "business_date": business_date,
-            "error_type": type(exc).__name__,
-            "error": str(exc)[:500],
-        }
-
-
-
 def fetch_legacy_nepse_daily_row(symbol, business_date, output_dir):
     """Probe NEPSE's legacy date/symbol POST endpoint and preserve its HTML."""
     url = "http://www.nepalstock.com.np/todaysprice"
@@ -920,7 +860,6 @@ def capture(ledger_path, output_dir):
 
     client.client.event_hooks["response"].append(preserve_response)
     request_errors = {}
-    official_company_floorsheet_reports = []
     official_company_floorsheet_com_reports = []
     official_company_floorsheet_clean_reports = []
     try:
@@ -1251,7 +1190,6 @@ def capture(ledger_path, output_dir):
         "client_version": "nepse-client==0.1.4",
         "conflict_count": len(conflicts), "symbol_count": len(by_symbol),
         "runtime_clock": runtime_clock,
-        "official_company_floorsheet": official_company_floorsheet_reports,
         "official_company_floorsheet_com": official_company_floorsheet_com_reports,
         "official_company_floorsheet_clean": official_company_floorsheet_clean_reports,
         "legacy_full_market": legacy_full_market_report,

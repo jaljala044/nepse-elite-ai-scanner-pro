@@ -176,7 +176,7 @@ def main() -> int:
     args = parser.parse_args()
     report = build_security_coverage_report(args.universe, args.calendar, args.input, args.start_date, args.end_date)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in (
         "target_security_count", "target_equity_count", "target_mutual_fund_count",
         "verified_open_session_count", "expected_security_session_observations",

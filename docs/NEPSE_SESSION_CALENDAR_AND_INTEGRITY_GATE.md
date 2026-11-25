@@ -505,3 +505,63 @@ The integrated workflow runs available registry, calendar, source inventory, cal
 - Walk-forward evaluation validates ISO dates, exact binary outcomes and finite [0,1] probabilities before fold construction. Footprint features reject invalid prices/volumes and duplicate security sessions; market breadth excludes and separately reports symbols outside the supplied target universe.
 
 All outputs remain descriptive/audit-only. These guards do not establish exchange calendar completeness, source rights, universe membership or predictive performance.
+
+
+## 2026 closure-evidence triage — 2026-11-25
+
+This review advances the 2026 evidence queue but does **not** populate the
+canonical calendar. The primary exchange notices have not yet been captured
+as immutable raw evidence with SHA-256 and review timestamps.
+
+### Five checks completed
+
+1. **Government-holiday context checked against the Nepal Rastra Bank 2083
+   holiday PDF.** It lists (among others) Bakar Eid 28 May, Republic Day
+   29 May, Rakshabandhan 28 August, Krishna Janmashtami/Gaura 4 September,
+   Indra Jatra 25 September, Dashain 17–23 October, Tihar 8–12 November and
+   Chhath 15 November. This is a banking/government holiday list, not a
+   NEPSE-specific trading calendar. It is context only.
+2. **NEPSE-specific secondary reports cross-checked for 2026 closures.**
+   ShareSansar reports NEPSE closed 28–29 May for Bakar Eid/Republic Day,
+   8 September for Gen Z Sahid Diwas, 25 September for Indra Jatra,
+   19–23 October for Dashain, 9–12 November for Tihar, and 16 November
+   for Chhath. These remain secondary evidence leads until the underlying
+   dated NEPSE notice or equivalent exchange record is archived.
+3. **Exceptional operational suspension kept distinct from a holiday.**
+   The 21 September Data Hub outage is an operational suspension lead, not
+   a recurring holiday. It must be represented as an exceptional closure
+   only after the specific exchange notice is archived and verified.
+4. **Weekday regime cross-checked.** The schedule helper and this gate agree
+   on the published candidate regimes: Sunday–Thursday through 5 April 2026,
+   Monday–Friday from 6 April 2026. Weekday eligibility is still only a
+   candidate; it does not establish that trading occurred.
+5. **Fail-closed promotion rule rechecked in code.** The calendar loader
+   accepts only explicit `verified_open`, `verified_closed`,
+   `verified_exceptional_open`, or `verified_exceptional_closed` rows and
+   requires source ID, evidence URI, raw evidence SHA-256, UTC retrieval and
+   verification timestamps, and scope. The OHLCV audit quarantines every
+   row whose date is not explicitly verified open. Secondary reports and
+   government holiday lists cannot pass this gate by themselves.
+
+### Reviewed public evidence
+
+- Nepal Rastra Bank, *List of Holidays to be effective from 2026/04/14 to
+  2027/04/13*: https://www.nrb.org.np/contents/uploads/2026/03/Holiday-List-2083-English.pdf
+- ShareSansar, 28 May 2026 NEPSE closure report:
+  https://www.sharesansar.com/newsdetail/nepse-to-remain-closed-for-two-days-as-government-declares-public-holiday-for-bakar-eid-and-republic-day-2026-05-28
+- ShareSansar, 8 September 2026 Gen Z Sahid Diwas closure:
+  https://www.sharesansar.com/newsdetail/nepse-to-remain-closed-today-govt-declares-public-holiday-on-the-occasion-of-gen-z-sahid-diwas-2026-09-08
+- ShareSansar, 17 October 2026 Dashain closure:
+  https://www.sharesansar.com/index.php/newsdetail/nepse-to-remain-close-to-mark-holiday-on-the-occasion-of-dashain-festival-2026-10-17
+- Existing evidence-lead register:
+  `data/reference/nepse_calendar_evidence_leads_2026.csv`
+
+### Disposition
+
+No 2026 closure lead has been promoted to the canonical calendar in this
+review. No raw notice PDF or NEPSE-hosted announcement was archived and
+hashed here, so there are no new evidence-complete calendar rows. The
+calendar remains blocked. Next evidence task: obtain the original NEPSE
+notice documents (not just article summaries), preserve their exact bytes,
+compute SHA-256, and independently review each date/scope before adding
+verified calendar rows.

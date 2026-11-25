@@ -215,3 +215,50 @@ provenance or correctness of the data. The 500 identical files remain one
 shared content lineage until upstream origins are established. The eight
 conflicting rows remain quarantined. Calendar and corporate-action review
 remain open.
+
+
+## Provenance and corporate-action evidence review
+
+Reviewed the starter archive's pinned import record
+`historical_imports/sharesansar_2026-11-20.json` (blob
+`3cc3995055d281908f0a4ae318022fc1579e97d5`) and its data README at the
+pinned starter revision.
+
+- The import record names the upstream source as ShareSansar data distributed
+  through ShareSansarScraper, pins scraper commit
+  `d5949bd628d6b5ca9ebb2b4a15e001a434c6732c`, records the downloaded XLSX
+  SHA-256, and describes the imported price basis as published OHLC and volume
+  with Close taken from the source Close field.
+- It reports 525 source/imported symbols, 303,438 source rows, 301,632
+  imported rows and 1,806 flagged rows. It records per-symbol output SHA-256
+  values. This is useful provenance for the starter import, but it does not
+  establish that the upstream publisher's data are error-free.
+- The starter README says its import workflow writes source records with
+  input/output hashes. The inspected `historical_imports/` directory contains
+  the ShareSansar 2026-11-20 import record and flagged-row file.
+- The 500 byte-identical cross-repository files should therefore be treated
+  as shared content lineage, not two independent sources. The older portions
+  of the 25 differing SMC files do not yet have a per-file source record
+  identified by this review. Their extra history must remain unverified until
+  its upstream source and price basis are traced.
+- The current corporate-action ledger contains three documented actions:
+  LBBL bonus, DORDI rights and BNHC rights. None of the seven symbols with
+  same-date conflicts (API, BGWT, HRL, MEHL, RAWA, RHGCL, ULHC) appears in
+  that ledger. This does not prove no corporate action occurred; it means
+  this reviewed ledger supplies no event evidence explaining those conflicts.
+- The price-basis review explicitly warns that vendor-adjusted history has
+  inconsistent or undocumented adjustment timing. The project must not
+  assume that the longer SMC history is raw/unadjusted without a source-level
+  declaration and cross-check.
+
+### Provenance acceptance still open
+
+1. Trace the source and adjustment basis of the 25 legacy SMC files, especially
+   the rows predating 2024-03-04.
+2. Retrieve primary issuer/exchange notices and independent raw OHLCV/tape
+   evidence for the eight conflicting rows, beginning with the shared
+   2025-07-28 cluster.
+3. Check corporate actions and symbol lifecycle events for every disputed
+   symbol/date; absence from the three-row sample ledger is not sufficient.
+4. Do not select a source or build canonical adjusted/unadjusted series until
+   the above checks are complete.

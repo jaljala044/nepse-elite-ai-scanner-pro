@@ -832,3 +832,25 @@ The new adapters and reports are engineering tools, not source data. No actual o
 33. Add source-specific corporate-action adjustment audit and detect adjusted/unadjusted OHLCV mixing before features.
 34. Add a broker identity coverage report per date/security/side with both observation-count and gross-amount denominators.
 35. Add an integration workflow that runs registry, calendar, OHLCV, floorsheet, broker and readiness audits in sequence and uploads all artifacts without promoting data.
+
+## 2026-11-25 continuation — engineering priorities 31–35
+
+31. **Raw source evidence inventory:** added `backend/audit_source_evidence_inventory.py` to check manifest paths against raw objects under a confined root, verifying file existence and SHA-256 and flagging missing/mismatched files, duplicate manifest keys and path traversal. Commits `7d26ca3`, `05c4272`, `838b87e`.
+32. **Calendar versus observed source dates:** extended the calendar coverage matrix to flag (a) source files on verified closed dates, (b) source files on dates with no calendar evidence, and (c) verified open dates with no source files. No file-presence or weekday inference is promoted to a session. Commits `f2a7010`, `fcaa969`.
+33. **Adjusted/unadjusted OHLCV mixing:** added `backend/audit_ohlcv_adjustment_basis.py`, requiring explicit adjusted/unadjusted/unknown basis and flagging within-source mixed series and cross-source basis differences. No adjustment is applied. Commits `2a4f277`, `0936fac`, `e0a226e`.
+34. **Broker identity coverage:** added `backend/report_broker_identity_coverage.py`, reporting verified/unresolved observation counts and gross amounts by date/security/side, with source-file SHA-256. Commits `66ff6b9`, `8036eac`, `c024993`.
+35. **Integrated evidence audit:** added `.github/workflows/integrated-evidence-audit.yml`. It runs the regression suite and then executes registry, calendar evidence, raw inventory, calendar date matrix, OHLCV daily totals, adjustment basis, per-security coverage, floorsheet window, broker identity and readiness audits when inputs exist. Missing inputs produce explicit skipped statuses; no canonical promotion or model training is possible. Commits `beb3df8`, `a8156ef`, `80ff8f9`, `d3b78b4`, `6676b29`, `e13f2c0`; acquisition manifest now records explicit source schema at `26c7b89`.
+
+### CI and artifact verification
+- Backend regression suite passed on final workflow commit `e13f2c06aaf73a97b764903daf4c7d9357fd8b03`: run `45543406700`.
+- Integrated evidence audit workflow passed on the same commit: run `45543406762`.
+- The integrated workflow artifact `nepse-integrated-evidence-audit` (artifact `14990182086`) was downloaded and inspected. ZIP SHA-256: `b4069f7a077c0b58d1fe892140fdfb2f470c41911a98d8d72074fd6906e079a6`. All seven artifact files parse as valid JSON.
+- Input inventory confirms the official session calendar CSV is header-only; observed index date-list exists; registry snapshot, source object manifest/raw root, calendar evidence manifest, source-date manifest, normalized OHLCV, security universe CSV, floorsheet acquisition manifest and broker observations are absent from the repository checkout. Corresponding audits are explicitly marked skipped, not passed.
+- Readiness report remains `training_ready=false`, `model_training_allowed=false`, with 12 blockers. The workflow is green because the audit ran correctly and archived the fail-closed result—not because data readiness passed.
+
+### Next execution batch (36–40)
+36. Capture and review the actual official NEPSE registry response using the new adapter; verify response schema and stable security IDs before creating any target manifest.
+37. Acquire the user's raw floorsheet ZIP through an explicitly connected Drive/file path or obtain a separately rights-cleared official/public sample; hash it and run row-level audit.
+38. Capture official daily session/holiday/exceptional-session notices as raw bytes and build date-level claims linked through the calendar evidence manifest.
+39. Stage source-specific normalized OHLCV files and source controls; run daily totals, adjustment basis, per-security coverage and cross-source comparisons.
+40. Re-run the integrated workflow with real inputs and only advance readiness gates when all required evidence is present and verified.

@@ -22,8 +22,11 @@ def _read_rows(paths: list[str | Path]) -> list[dict]:
             if len(headers) != len(set(headers)):
                 raise ValueError(f"{source_path}: duplicate CSV headers are not allowed")
             missing = REQUIRED - set(headers)
+            extra = set(headers) - REQUIRED
             if missing:
                 raise ValueError(f"{source_path}: missing columns: " + ", ".join(sorted(missing)))
+            if extra:
+                raise ValueError(f"{source_path}: unsupported columns: " + ", ".join(sorted(extra)))
             for line, raw in enumerate(reader, 2):
                 try:
                     if None in raw:

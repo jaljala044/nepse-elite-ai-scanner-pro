@@ -35,6 +35,11 @@ class FloorsheetContractTests(unittest.TestCase):
         self.assertEqual(result["counts"]["amount_reconciliation_exception"], 1)
         self.assertTrue(result["rows"][0]["amount_reconciliation_exception"])
 
+    def test_non_finite_decimals_are_rejected(self):
+        for value in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.row(amount=value)
+
     def test_invalid_values_and_lineage_rejected(self):
         with self.assertRaises(ValueError):
             self.row(amount="-1")

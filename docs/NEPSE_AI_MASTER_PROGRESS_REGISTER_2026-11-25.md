@@ -948,3 +948,22 @@ The current environment does not provide access to the user's Drive archive or t
 - Integrated evidence audit passed (run [45546781889](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45546781889)).
 - Drive archive contents, source licensing, a primary date-level NEPSE session calendar, a dated official 281+47 membership manifest and one-year/120-day verified data coverage remain outstanding. No canonical data promotion or model training is authorized.
 
+
+
+## 2026-11-25 continuation — priorities 71–80
+
+71. **Floorsheet contract field typing:** identifiers, source hashes, physical row numbers, Decimal values and symbols now require their exact expected types; booleans cannot masquerade as row numbers. Commit: `e15942d`.
+72. **Canonical floorsheet dates and identity:** contract dates require a real `YYYY-MM-DD` calendar date and symbols must be uppercase/trimmed. Mapping construction validates source ID, payload digest and row number before constructing a contract. Commits: `2a03d93`, `9554949`.
+73. **Sample-audit recomputation:** sample acceptance no longer trusts caller-supplied reconciliation output; it recomputes reconciliation from parsed contract rows and rejects mismatches. Commit: `d52305e`.
+74. **Rejected-row provenance and session evidence uniqueness:** rejected rows must retain physical CSV line numbers, error text and raw source row; supplied verified session dates must be unique. Commit: `0e517f3`.
+75. **Point-in-time timestamp strictness:** malformed timestamp types/strings and non-object records fail closed; missing availability is distinct from malformed availability. Commit: `cbe124e`.
+76. **UTC chronological ordering:** selected point-in-time records are ordered by normalized UTC timestamps, not lexical local-offset strings. Commits: `aa70e85`, `4a6df78`.
+77. **Floorsheet CSV adapter input safety:** parser requires bytes, a typed mapping, a nonblank source ID, valid delimiter/encoding and nonblank unique source headers. Commits: `a9bb36a`, `e661e3b`, `a293aa1`.
+78. **CSV edge-case regression tests:** added checks for newline delimiters, blank headers, malformed payloads and mapping types; one initially incorrect test fixture was corrected after CI exposed it. Commits: `2063c64`, `e53411c`.
+79. **Archive identity stability and report immutability:** ZIP inventory now checks the archive file identity and SHA-256 before and after inspection, rejecting a changed archive; CLI report creation uses exclusive mode and cannot overwrite existing evidence. Commits: `fea1fcb`, `1362e40`, `1933e96`.
+80. **ZIP path ambiguity checks:** ZIP member names containing NUL bytes, empty path components, dot components or traversal are flagged; regression coverage includes these cases. Commits: `31eced4`, `af9edff`.
+
+### Verification status for priorities 71–80
+- At commit `31eced4925b9d174ab8e0a37798d9febd6c8effd`: backend suite **463 tests passed** (run [45549003032](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45549003032)); backend contract tests passed (run [45549003026](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45549003026)); integrated evidence audit passed (run [45549002977](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45549002977)).
+- The final additional ZIP path regression test is committed at `af9edffe05ce0c2ca7f5d2220a0760684399b8c1`; its backend, contract and integrated CI runs must be checked before claiming that final commit passed.
+- These changes improve validation and source handling only. They do not establish Drive archive access, source-data rights, official session dates, verified 281+47 membership, one-year history coverage, or model predictive performance. No canonical data promotion or training is authorized.

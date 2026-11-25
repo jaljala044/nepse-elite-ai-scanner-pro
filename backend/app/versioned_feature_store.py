@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import asdict
 from datetime import date, datetime
 from pathlib import Path
@@ -58,8 +59,29 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
             "corporate_action_count": action_result["included_count"],
             "corporate_action_evidence_ids": sorted({a.evidence_id for a in action_result["actions"]}),
         }
+    included_records = [
+        row for row in records
+        if row.get("available_at") and datetime.fromisoformat(row["available_at"].replace("Z", "+00:00")) <= cutoff
+    ]
+    input_lineage = []
+    for row in included_records:
+        payload_hash = str(row.get("source_payload_sha256") or row.get("payload_sha256") or "").lower()
+        input_lineage.append({
+            "record_id": row.get("record_id"),
+            "source_id": row.get("source_id"),
+            "payload_sha256": payload_hash if re.fullmatch(r"[0-9a-f]{64}", payload_hash) else None,
+            "source_row_number": row.get("source_row_number"),
+            "available_at": row.get("available_at"),
+        })
+    lineage_complete = all(
+        item["record_id"] and item["source_id"] and item["payload_sha256"]
+        and isinstance(item["source_row_number"], int) and item["source_row_number"] > 0
+        for item in input_lineage
+    )
     body = {"schema_version": 1, "decision_time": features["decision_time"],
             "features": features, "security_and_action_joins": joins,
+            "input_lineage": input_lineage,
+            "input_lineage_status": "complete" if lineage_complete else "incomplete",
             "ohlcv_adjustment_applied": False}
     canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), default=_json_default)
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()

@@ -179,13 +179,22 @@ def capture(ledger_path, output_dir):
 
     from nepse_client import NepseClient
     client = NepseClient(timeout=90.0)
+    graph_path_prefix = client.api_end_points.get("company_daily_graph", "")
 
     def preserve_response(response):
         path = urlparse(str(response.url)).path
-        if path != SECURITY_PATH and not path.startswith(HISTORY_PATH_PREFIX):
+        is_security_list = path == SECURITY_PATH
+        is_history = path.startswith(HISTORY_PATH_PREFIX)
+        is_daily_graph = bool(graph_path_prefix) and path.startswith(graph_path_prefix)
+        if not (is_security_list or is_history or is_daily_graph):
             return
         response.read()
-        key = "security-list" if path == SECURITY_PATH else (active_symbol or "unknown-symbol")
+        if is_security_list:
+            key = "security-list"
+        elif is_history:
+            key = active_symbol or "unknown-symbol"
+        else:
+            key = (active_symbol or "unknown-symbol") + ".daily-graph"
         captured[key] = {
             "body": response.content, "status": response.status_code,
             "url": str(response.url),
@@ -206,7 +215,16 @@ def capture(ledger_path, output_dir):
                     symbol, start_date=query_start, end_date=query_end
                 )
             except Exception as exc:
-                request_errors[symbol] = {"type": type(exc).__name__, "message": str(exc)[:300]}
+                request_errors[symbol] = {"history": {"type": type(exc).__name__, "message": str(exc)[:300]}}
+            # Capture the separate official daily-scrip graph endpoint as an
+            # independent response. Its schema is inspected from raw evidence;
+            # do not assume it contains opening prices or a complete OHLCV row.
+            try:
+                client.getDailyScripPriceGraph(symbol)
+            except Exception as exc:
+                request_errors.setdefault(symbol, {})["daily_graph"] = {
+                    "type": type(exc).__name__, "message": str(exc)[:300]
+                }
     finally:
         client.close()
 

@@ -63,18 +63,17 @@ OHLCV ordering above: open, high, low, close, volume.
 
 ## 2026-11-25 follow-up: exact v0.1.4 authentication bug and historical archive findings
 
-### Confirmed client-library defect and patch
+### Authentication investigation — corrected interpretation of v0.1.4 payload semantics
 
 Inspected the exact published nepse-client==0.1.4 source at tag v0.1.4 (release published 2025-11-12), not the newer v0.1.1 documentation:
 
-- NepseClient.getPriceVolumeHistory(business_date) adds businessDate to the URL.
-- It passes self.getPOSTPayloadIDForFloorSheet as a bare callback, without passing business_date.
-- In the same v0.1.4 implementation, getPOSTPayloadIDForFloorSheet(business_date=None) uses date.today().day when called without an argument; with a supplied date it derives the day from that requested session.
-- Therefore the historical request URL was date-specific, but its date-dependent authentication payload ID was generated using the capture run's current day-of-month. This is a concrete implementation defect and a plausible explanation for the route-specific 401; it is not yet proof that the endpoint will accept the corrected payload.
+- NepseClient.getPriceVolumeHistory(business_date) adds businessDate to the URL and deliberately passes the unbound getPOSTPayloadIDForFloorSheet callback.
+- getPOSTPayloadIDForFloorSheet() without an argument derives its ID from the current market-status ID and current day-of-month. The package's market-status function reads the current NEPSE market-open response.
+- The newer independent reverse-engineering implementation documents the same current-session formula: lookup-table value + market-open ID + 2 × current day-of-month. This supports treating businessDate as a data filter, not as the authentication clock.
+- Therefore the earlier interpretation that v0.1.4 had a bug because it did not pass the historical date into the payload generator was incorrect. The date-bound caller change was only a diagnostic hypothesis and did not resolve the 401; it has now been reverted to the package's current-session payload semantics.
 
 Project changes on fix/p1-empty-nepse-responses:
-- a3dd34799e3c8ce40684ccbfd06c4e3575e0695e: isolated a helper that binds the requested historical date into getPOSTPayloadIDForFloorSheet.
-- 7c36cd57893a2d7fa841f2e576b4131db62e7d7d: added a regression test asserting both the businessDate URL parameter and the same date passed into the payload generator.
+- The initial helper/test experiment bound historical businessDate into the payload generator; run #8/#9 showed it did not clear 401. That interpretation is superseded by the correction below.
 - 510c670790c009bec7d83235c23a6f55c1d81e19: updated the capture workflow to run the focused unit tests and automatically run a capture when relevant files change on this feature branch, while retaining manual workflow_dispatch.
 
 Important: these are code-level and test-fixture changes only. A live NEPSE 2xx response has not yet verified the authentication fix. The capture workflow must complete and the preserved raw response must be inspected before calling the endpoint issue resolved.
@@ -114,3 +113,19 @@ Artifact SHA-256: fd876aba4d67ac6c178ff912be83a48e3c42390e009ee6af0efc9956cf6f91
 - The evidence artifact uploaded successfully, but the evidence commit push was rejected because the feature branch advanced during the run. Run #9 used the previous workflow version; the new workflow commit adds a same-branch fetch/rebase before push. Recheck this in the next run.
 
 No endpoint authentication pass yet. Do not infer that HTTP 200 on the floor-sheet control fixes today-price. All eight remain quarantined; no training or promotion.
+
+
+### Correction after run #10: current-session payload is the intended contract
+
+The exact v0.1.4 tag resolves to source commit c84f037e544cee8e4a7d8f7c5add31539d5da54e. Its getPriceVolumeHistory implementation passes getPOSTPayloadIDForFloorSheet without a business_date argument. The current-session payload formula is also described by the independent reverse-engineering project at https://github.com/rajeevpaudel/nepse-api (payload_calc.py and docs/blog.md): fetch market-open id, then calculate lookup[id] + id + 2 × current day-of-month. This independent implementation is not an official NEPSE specification, but it corroborates the library's current-session behavior.
+
+The caller has therefore been corrected back to the package's intended contract. A new regression test asserts that the historical businessDate remains in the URL while the payload generator is called with no historical date argument. A new current-session today-price probe (no businessDate query parameter) is included in the next capture, alongside the historical today-price probes and the minimal floor-sheet control.
+
+Run #10: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45677312190
+- Focused capture tests passed.
+- Evidence capture commit succeeded after the same-branch rebase fix: 51dafef (full commit is available in the branch history).
+- Both historical today-price requests still returned HTTP 401.
+- The floor-sheet control returned HTTP 200 with an empty-list body. This proves route-level acceptance for that control, not data availability.
+- The run still failed its evidence-completeness gate. Authentication remains unresolved.
+
+The next diagnostic is the no-businessDate current-session today-price request. If it also returns 401 while the floor-sheet control remains 200, the endpoint is likely independently restricted or requires a different route-specific request contract. Do not change tokens, salts, or payload formulas based on guesswork; compare raw responses and exact source behavior first.

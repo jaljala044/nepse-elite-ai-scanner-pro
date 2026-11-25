@@ -255,6 +255,28 @@ def analyze_date_price_volume_payload(payload, conflicts, security_id_to_symbol=
         })
     return comparisons
 
+
+def select_primary_comparison(date_specific_result, per_security_result):
+    """Select a complete primary result without hiding endpoint disagreements."""
+    accepted = {"matches_source_a", "matches_source_b", "matches_both"}
+    date_ok = bool(date_specific_result and date_specific_result.get("status") in accepted)
+    history_ok = bool(per_security_result and per_security_result.get("status") in accepted)
+    if date_ok and history_ok:
+        if date_specific_result.get("official_ohlcv") != per_security_result.get("official_ohlcv"):
+            return {
+                "symbol": date_specific_result["symbol"], "date": date_specific_result["date"],
+                "status": "primary_endpoint_disagreement",
+                "date_specific_ohlcv": date_specific_result.get("official_ohlcv"),
+                "per_security_ohlcv": per_security_result.get("official_ohlcv"),
+            }
+        return date_specific_result
+    if date_ok:
+        return date_specific_result
+    if history_ok:
+        return per_security_result
+    return date_specific_result or per_security_result
+
+
 def capture(ledger_path, output_dir):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     conflicts = ledger["conflicts"]
@@ -431,8 +453,7 @@ def capture(ledger_path, output_dir):
         key = (conflict["symbol"], conflict["date"])
         date_result = date_by_key.get(key)
         history_result = history_by_key.get(key)
-        accepted = {"matches_source_a", "matches_source_b", "matches_both"}
-        chosen = date_result if date_result and date_result.get("status") in accepted else history_result or date_result
+        chosen = select_primary_comparison(date_result, history_result)
         if chosen is not None:
             resolved_comparisons.append(chosen)
     all_matched = len(resolved_comparisons) == len(conflicts) and all(

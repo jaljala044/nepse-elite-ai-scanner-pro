@@ -5,9 +5,30 @@ must be explicit and evidence-backed; unresolved codes remain unresolved.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
+
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _nonblank(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _parse_as_of(value: date | str | None) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    if not isinstance(value, str) or not ISO_DATE.fullmatch(value):
+        raise ValueError("as_of must be a date or YYYY-MM-DD string")
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError("as_of must be a valid calendar date") from exc
+
 
 @dataclass(frozen=True)
 class BrokerNameObservation:
@@ -18,9 +39,12 @@ class BrokerNameObservation:
     evidence_id: str
 
     def __post_init__(self):
-        if not all((self.source_id.strip(), self.source_broker_code.strip(),
-                    self.observed_name.strip(), self.evidence_id.strip())):
+        if not all(_nonblank(value) for value in (
+            self.source_id, self.source_broker_code, self.observed_name, self.evidence_id
+        )):
             raise ValueError("broker name observations require source, code, name and evidence")
+        if not isinstance(self.observed_at, date):
+            raise ValueError("observed_at must be a date")
 
 
 @dataclass(frozen=True)
@@ -32,8 +56,12 @@ class BrokerEntityName:
     evidence_id: str
 
     def __post_init__(self):
-        if not all((self.broker_entity_id.strip(), self.name.strip(), self.evidence_id.strip())):
+        if not all(_nonblank(value) for value in (self.broker_entity_id, self.name, self.evidence_id)):
             raise ValueError("broker entity names require ID, name and evidence")
+        if self.valid_from is not None and not isinstance(self.valid_from, date):
+            raise ValueError("valid_from must be a date or None")
+        if self.valid_to is not None and not isinstance(self.valid_to, date):
+            raise ValueError("valid_to must be a date or None")
         if self.valid_from and self.valid_to and self.valid_to < self.valid_from:
             raise ValueError("valid_to must be on or after valid_from")
 
@@ -46,8 +74,12 @@ def _normalized_name(value: str) -> str:
 def reconcile_broker_source_name(observed_name: str, as_of: date,
                                  known_names: list[BrokerEntityName]) -> dict:
     """Return review candidates only; a name match never creates a verified link."""
-    if not observed_name.strip():
+    if not _nonblank(observed_name):
         raise ValueError("observed_name is required")
+    if not isinstance(as_of, date):
+        raise ValueError("as_of must be a date")
+    if not isinstance(known_names, list) or any(not isinstance(item, BrokerEntityName) for item in known_names):
+        raise ValueError("known_names must be a list of BrokerEntityName records")
     candidates = [item for item in known_names
                   if (item.valid_from is None or item.valid_from <= as_of)
                   and (item.valid_to is None or as_of <= item.valid_to)
@@ -68,6 +100,8 @@ def reconcile_broker_source_name(observed_name: str, as_of: date,
 
 def broker_name_history(observations: list[BrokerNameObservation]) -> list[dict]:
     """Preserve observed source names by source/code/date; never collapse history."""
+    if not isinstance(observations, list) or any(not isinstance(item, BrokerNameObservation) for item in observations):
+        raise ValueError("observations must be a list of BrokerNameObservation records")
     return [
         {"source_id": item.source_id, "source_broker_code": item.source_broker_code,
          "observed_name": item.observed_name, "observed_at": item.observed_at.isoformat(),
@@ -100,15 +134,21 @@ class BrokerIdentityLink:
 
 
 def validate_identity_link(link: BrokerIdentityLink) -> None:
-    if not link.source_id.strip() or not link.source_broker_code.strip():
+    if not isinstance(link, BrokerIdentityLink):
+        raise ValueError("link must be a BrokerIdentityLink record")
+    if not _nonblank(link.source_id) or not _nonblank(link.source_broker_code):
         raise ValueError("source_id and source_broker_code are required")
-    if link.link_status not in VALID_LINK_STATUSES:
+    if not isinstance(link.link_status, str) or link.link_status not in VALID_LINK_STATUSES:
         raise ValueError(f"invalid link_status: {link.link_status}")
     if link.link_status == "verified":
-        if not link.broker_entity_id or not link.evidence_id:
+        if not _nonblank(link.broker_entity_id) or not _nonblank(link.evidence_id):
             raise ValueError("verified links require broker_entity_id and evidence_id")
     elif link.broker_entity_id is not None:
         raise ValueError("non-verified links must not assign broker_entity_id")
+    if link.valid_from is not None and not isinstance(link.valid_from, date):
+        raise ValueError("valid_from must be a date or None")
+    if link.valid_to is not None and not isinstance(link.valid_to, date):
+        raise ValueError("valid_to must be a date or None")
     if link.valid_from and link.valid_to and link.valid_to < link.valid_from:
         raise ValueError("valid_to must be on or after valid_from")
 
@@ -120,12 +160,22 @@ def resolve_broker_identity(
     as_of: date | str | None = None,
 ) -> dict:
     """Resolve one explicit verified link valid on as_of; never fuzzy-match."""
-    if isinstance(as_of, str):
-        as_of = date.fromisoformat(as_of)
+    if not _nonblank(source_id) or not _nonblank(source_broker_code):
+        raise ValueError("source_id and source_broker_code are required")
+    if not isinstance(links, list):
+        raise ValueError("links must be a list")
+    as_of = _parse_as_of(as_of)
     matches = [
         link for link in links
-        if link.source_id == source_id and link.source_broker_code == source_broker_code
+        if isinstance(link, BrokerIdentityLink)
+        and link.source_id == source_id and link.source_broker_code == source_broker_code
     ]
+    if len(matches) != sum(
+        1 for link in links
+        if isinstance(link, BrokerIdentityLink)
+        and link.source_id == source_id and link.source_broker_code == source_broker_code
+    ):
+        raise ValueError("links must contain BrokerIdentityLink records")
     for link in matches:
         validate_identity_link(link)
     if as_of is None:
@@ -154,8 +204,12 @@ def aggregate_broker_side(records: list[dict]) -> list[dict]:
     Rows without verified broker identity are retained in explicit unknown
     buckets; callers must not treat them as mapped entities.
     """
+    if not isinstance(records, list):
+        raise ValueError("records must be a list")
     totals: dict[tuple, dict] = {}
-    for row in records:
+    for index, row in enumerate(records):
+        if not isinstance(row, dict):
+            raise ValueError(f"row {index}: expected object")
         side = row.get("side")
         if side not in {"buy", "sell"}:
             raise ValueError("side must be buy or sell")
@@ -170,14 +224,19 @@ def aggregate_broker_side(records: list[dict]) -> list[dict]:
             raise ValueError("quantity must be a non-negative integer and amount a finite non-negative decimal")
         quantity = int(quantity_decimal)
         status = row.get("identity_status", "unmapped")
-        if status not in {"verified", "ambiguous", "unmapped", "rejected"}:
+        if status not in VALID_LINK_STATUSES:
             raise ValueError("unsupported identity_status")
         entity = row.get("broker_entity_id") if status == "verified" else None
-        if status == "verified" and not entity:
+        if status == "verified" and not _nonblank(entity):
             raise ValueError("verified identity requires broker_entity_id")
         if status != "verified" and row.get("broker_entity_id") is not None:
             raise ValueError("unresolved identity cannot carry broker_entity_id")
-        key = (row["session_date"], row["security_id"], entity, side, status)
+        session_date = row.get("session_date")
+        security_id = row.get("security_id")
+        if not _nonblank(session_date) or not _nonblank(security_id):
+            raise ValueError("session_date and security_id are required")
+        _parse_as_of(session_date)
+        key = (session_date, security_id, entity, side, status)
         item = totals.setdefault(key, {
             "session_date": key[0], "security_id": key[1],
             "broker_entity_id": entity, "side": side,

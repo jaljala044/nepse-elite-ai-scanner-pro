@@ -231,3 +231,115 @@ Additional preserved objects:
 - `data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-derived-ohlcv.csv`
 
 Updated source object and date manifests are under `data/evidence/acquired/`.
+
+
+## P1 execution increment — broker derivation, external EOD and stratified audit
+
+### Broker-party derivation implementation
+
+Added `backend/derive_broker_party_observations.py` with explicit source
+header mapping for the pinned source schema:
+
+`date,transaction_no,symbol,buyer,seller,quantity,rate,amount`.
+
+The script verifies the exact source SHA-256, expected date and row count;
+rejects duplicate transaction IDs and malformed identifiers; uses Decimal for
+quantity/rate/amount; emits one buy-side and one sell-side observation per
+contract; preserves broker codes as source execution-channel identifiers;
+leaves broker entity IDs null and identity status `unmapped`; and aggregates
+by date/security/source broker code/side. It does not assign beneficial owners
+or infer historical legal-entity identity.
+
+Added unit tests for two-sided observations, leading-zero broker codes, hash
+mismatch and duplicate contract rejection. The broker-party template now
+includes `source_broker_code`. The data-integrity workflow runs this test and
+produces a downloadable party-observation CSV plus aggregate JSON artifact
+from the pinned raw sample. CI has been triggered by the workflow changes;
+record its actual conclusion and artifact digest after completion.
+
+An independently calculated aggregate snapshot is preserved at
+`data/evidence/acquired/broker-aggregates-2026-11-19.json`:
+
+- 40,818 contracts and 81,636 buyer/seller party observations represented.
+- 91 distinct source broker codes and 346 securities.
+- 15,466 broker/security/side aggregate rows.
+- Quantity 9,435,392 and gross amount NPR 3,877,623,296.62, each contract
+  counted once (not double-counting both parties).
+- Zero duplicate transaction IDs and zero quantity × rate / amount exceptions.
+- All 91 codes remain unmapped to canonical legal entities.
+
+These are source-file internal controls, not independent exchange totals. The
+publisher reports 40,837 expected rows, so the known 19-contract shortfall
+remains. No completeness claim is made.
+
+### Independent-repository EOD cross-check
+
+A separate daily EOD object was inspected from
+`srijankarki07/nepse-data`, pinned revision
+`e6e6fe77cd3378204c7938e66601cee2339a8b7a`, path
+`data/daily/2026/2026-11-19.csv`, blob
+`79fbb09935a1b704a3e247a06c1c2ed55220dcba`, 17,912 bytes, SHA-256
+`98a12d21865c80cb96362fbb8a33631c55fc1ca49d61528b8255409f20bbb732`.
+
+Numeric OHLCV comparison against the floorsheet publisher's own derived EOD
+file found 346 common symbols, one extra Srijan symbol (RSY2), and 77 common
+symbols with at least one differing field: Open 4, High 7, Low 72, Close 1,
+Volume 0. This is a distinct repository lineage but its README states its data
+is scraped from ShareSansar and the dataset is not covered by the repository's
+MIT license; ShareSansar's terms are described as permitting reading rather
+than republication. The raw EOD file was therefore removed from this project
+repository after review; only the source pointer, blob OID, hash, and comparison
+metrics are retained in `docs/P1_EXTERNAL_EOD_CROSSCHECK_2026-11-25.json`.
+This is not primary NEPSE proof and does not resolve the 77 differences.
+
+### Stratified historical source sample review
+
+Pinned-revision samples from 2015 and 2026 were inspected without copying the
+additional raw files into the project while redistribution rights remain
+unverified. Results are in
+`data/evidence/acquired/stratified-floorsheet-sample-audit.json`:
+
+- 2015-01-04: 2,343 rows, 126 symbols, 49 broker codes, zero malformed rows,
+  one quantity × rate / amount exception.
+- 2026-11-18: 41,594 rows, 344 symbols, 91 broker codes, zero malformed rows,
+  zero amount exceptions; publisher manifest reports a 33-row shortfall.
+- 2026-11-19: 40,818 rows, 346 symbols, 91 broker codes, zero malformed rows,
+  zero amount exceptions; publisher manifest reports a 19-row shortfall.
+
+The 2015 and 2026-11-18 source blobs, sizes and SHA-256 values are recorded;
+their raw copies are not staged. Their dates remain candidate_unverified until
+authoritative session evidence is acquired.
+
+### 616-session recovery search update
+
+The exact base commit named by the starter backfill manifest was recursively
+searched (573 tree entries), as was the later pinned starter revision (621 tree
+entries). Neither tree contains a calendar/session/616/holiday artifact path.
+The pinned import and scanner-preparation scripts also contain no calendar
+loader or 616-date generator. The exact list remains unrecovered; see
+`docs/616_SESSION_CALENDAR_RECOVERY_AUDIT_2026-11-25.md`.
+
+### Status after this increment
+
+P1 remains blocked. Improvements are source-preserving code, broker-side
+observations/aggregates, and better quantified external disagreements. Still
+missing: primary NEPSE calendar notices and the exact 616-date input, licensed
+or primary raw source coverage across history, independent same-day exchange
+controls, effective-dated broker legal-entity history, corporate-action
+reconciliation, and primary resolution of OHLCV conflicts.
+
+### Next five execution tasks
+
+1. Verify the new CI run and inspect/download its broker-party artifact; hash
+   the artifact and reconcile 81,636 party observations to 40,818 unique
+   contracts without double-counting market turnover.
+2. Obtain a primary or licensed same-day exchange control for 2026-11-19
+   (contract count, quantity, gross turnover and, if available, per-symbol
+   totals); do not substitute the publisher's own derived EOD file.
+3. Retrieve the 616-date input from original operator backups, workflow
+   artifacts, pull-request attachments, forks or other retained build outputs.
+4. Acquire dated primary NEPSE notices and build the evidence-backed calendar;
+   do not promote 2015-01-04, 2026-11-18 or 2026-11-19 based only on file presence.
+5. Obtain rights-cleared multi-year floorsheet samples and primary corporate-
+   action/issuer evidence; then reconcile the 25 cross-repository OHLCV files
+   and rerun the integrated P1 audit.

@@ -16,8 +16,15 @@ def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) 
         symbol = str(row.get("symbol", "")).upper()
         if symbol and row.get("close") is not None and row.get("previous_close") is not None:
             latest[symbol] = row
+    unexpected_symbols = []
+    if expected_symbols is not None:
+        expected_set = set(normalized_expected)
+        unexpected_symbols = sorted(set(latest) - expected_set)
+        observed_rows = {symbol: row for symbol, row in latest.items() if symbol in expected_set}
+    else:
+        observed_rows = latest
     advancing = declining = unchanged = 0
-    for symbol, row in latest.items():
+    for symbol, row in observed_rows.items():
         try:
             close, previous = float(row["close"]), float(row["previous_close"])
         except (TypeError, ValueError, OverflowError) as exc:
@@ -39,10 +46,12 @@ def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) 
         eligible = len(normalized_expected)
     else:
         eligible = len(latest)
-    observed = len(latest)
+    observed = len(observed_rows)
     return {
         "advancing": advancing, "declining": declining, "unchanged": unchanged,
         "observed_symbols": observed, "eligible_symbols": eligible,
+        "unexpected_symbol_count": len(unexpected_symbols),
+        "unexpected_symbols": unexpected_symbols,
         "coverage_ratio": observed / eligible if eligible else None,
         "advance_decline_ratio": advancing / declining if declining else None,
         "status": "insufficient_coverage" if not eligible or observed < eligible else "observed",

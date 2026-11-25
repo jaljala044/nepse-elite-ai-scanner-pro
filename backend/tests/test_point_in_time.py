@@ -15,6 +15,17 @@ class PointInTimeTests(unittest.TestCase):
     def test_missing_available_time_is_not_eligible(self):
         self.assertFalse(eligible_as_of({"event_time":"2026-11-24T09:00:00Z"}, "2026-11-24T12:00:00Z"))
 
+    def test_missing_and_future_availability_are_separately_counted(self):
+        result = build_as_of_snapshot([
+            {"record_id":"missing"},
+            {"record_id":"future","available_at":"2026-11-25T00:00:00Z"},
+            {"record_id":"known","available_at":"2026-11-24T10:00:00Z"},
+        ], "2026-11-24T12:00:00Z")
+        self.assertEqual(result["missing_available_at_count"], 1)
+        self.assertEqual(result["missing_available_at_record_indexes"], [0])
+        self.assertEqual(result["future_excluded_count"], 1)
+        self.assertEqual(result["excluded_count"], 2)
+
     def test_naive_time_rejected(self):
         with self.assertRaises(ValueError):
             eligible_as_of({"available_at":"2026-11-24T09:00:00"}, "2026-11-24T12:00:00Z")

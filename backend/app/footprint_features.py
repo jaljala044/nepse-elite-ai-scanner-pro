@@ -17,7 +17,13 @@ def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) 
         if symbol and row.get("close") is not None and row.get("previous_close") is not None:
             latest[symbol] = row
     unexpected_symbols = []
+    normalized_expected = None
     if expected_symbols is not None:
+        normalized_expected = [str(symbol).strip().upper() for symbol in expected_symbols]
+        if any(not symbol for symbol in normalized_expected):
+            raise ValueError("expected_symbols cannot contain blank values")
+        if len(normalized_expected) != len(set(normalized_expected)):
+            raise ValueError("expected_symbols must be unique")
         expected_set = set(normalized_expected)
         unexpected_symbols = sorted(set(latest) - expected_set)
         observed_rows = {symbol: row for symbol, row in latest.items() if symbol in expected_set}
@@ -37,12 +43,7 @@ def market_breadth(rows: list[dict], expected_symbols: list[str] | None = None) 
             declining += 1
         else:
             unchanged += 1
-    if expected_symbols is not None:
-        normalized_expected = [str(symbol).strip().upper() for symbol in expected_symbols]
-        if any(not symbol for symbol in normalized_expected):
-            raise ValueError("expected_symbols cannot contain blank values")
-        if len(normalized_expected) != len(set(normalized_expected)):
-            raise ValueError("expected_symbols must be unique")
+    if normalized_expected is not None:
         eligible = len(normalized_expected)
     else:
         eligible = len(latest)

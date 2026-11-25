@@ -19,6 +19,16 @@ def conflict(day="2025-07-28"):
 
 
 class AnalyzeHistoryPayloadTests(unittest.TestCase):
+    def test_query_window_expands_single_date_by_30_calendar_days(self):
+        start, end = MODULE._query_window([conflict("2025-07-28")])
+        self.assertEqual(start.isoformat(), "2025-06-28")
+        self.assertEqual(end.isoformat(), "2025-08-27")
+
+    def test_query_window_covers_multiple_conflict_dates(self):
+        start, end = MODULE._query_window([conflict("2025-07-28"), conflict("2025-08-10")])
+        self.assertEqual(start.isoformat(), "2025-06-28")
+        self.assertEqual(end.isoformat(), "2025-09-09")
+
     def test_empty_content_is_valid_empty_response_and_emits_missing_comparison(self):
         result = MODULE.analyze_history_payload({"content": [], "totalElements": 0}, [conflict()])
         self.assertEqual(result["status"], "empty_valid_response")

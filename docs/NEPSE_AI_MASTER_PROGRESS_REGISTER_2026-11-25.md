@@ -864,3 +864,36 @@ The new adapters and reports are engineering tools, not source data. No actual o
 40. **Integrated workflow — executed with current checkout.** The final integration run `45543406762` passed and its artifact was inspected. It explicitly marks registry, raw source objects, calendar evidence manifest, source-date manifest, normalized OHLCV, universe CSV, floorsheet acquisition manifest and broker observations as missing/skipped. Session calendar header and observed-index date list are present. Readiness remains blocked with 12 gates false. This is an accurate empty-input result, not a real-data pass.
 
 The current environment does not provide access to the user's Drive archive or the official registry endpoint. Engineering can continue, but the next data-dependent milestones cannot be truthfully completed without those source bytes. The project remains fail-closed: no canonical/training promotion and no production signals.
+
+## 2026-11-25 continuation — priorities 41–50
+
+41. **Universe-safe OHLCV coverage:** unknown symbols are now retained as explicit `unknown_symbol_observations` rather than silently disappearing from per-security coverage. Commits `d478b37`, `c2d0c54`.
+42. **Corporate actions as-known:** point-in-time reports now distinguish all visible actions from confirmed actions, listing visible provisional/cancelled/disputed items and their evidence. Commits `f731a0b`, `38e1f65`.
+43. **Corporate-action provenance:** source tier is now mandatory along with action, security, source and evidence IDs. Commits `5695db6`, `35a3397`.
+44. **Historical coverage integrity:** reject non-finite/non-positive closes and expose rows outside the supplied verified session/security grid without allowing them to increase coverage. Commits `2668822`, `0b69bd4`.
+45. **Broker aggregation input integrity:** reject whitespace-only broker entity IDs and grouping/lineage fields. Commits `d34c9b3`, `c28d4b3`.
+46. **Reference universe lifecycle:** allow excluded instrument classes (including non-convertible debentures) to remain in the reference universe while fail-closing if any is marked in target scope. Commits `890ef83`, `a68d2df`.
+47. **Target count assertion:** per-security coverage report now explicitly compares its target against the required 281 equities and 47 mutual funds; mismatch is visible and does not promote data. Commits `a2b00ac`, `95a7187`.
+48. **Coverage source provenance:** each source CSV's path, byte count and SHA-256 are pinned in the coverage report. Commits `cf6d6b8`, `bad090e`.
+49. **Raw evidence manifest digest validation:** source-object inventory now requires a 64-character hexadecimal SHA-256, not merely a 64-character string. Commits `0652e57`, `2847966`.
+50. **Calendar claim references:** calendar evidence claims now reject duplicate/blank source IDs and missing scope values. Commits `725db58`, `ce4e685`.
+
+## 2026-11-25 continuation — priorities 51–60
+
+51. **Calendar evidence chronology:** enforce publication no later than retrieval and verification no earlier than retrieval. Commits `641eb6d`, `b5be7f9`.
+52. **Point-in-time exclusion accounting:** snapshots now separately count records missing `available_at` and records excluded because they were published after the decision cutoff. Commits `c56ba03`, `9318044`.
+53. **Floorsheet mapping contract:** require exactly the supported normalized fields and nonblank string source headers; reject extra normalized mapping keys. Commits `1062dc3`, `572523f`.
+54. **OHLCV CSV schema:** reject duplicate headers and unsupported extra columns instead of silently ignoring them. Commits `525444b`, `f29a94e`, `20e3e23`, `6f86f30`, `2454a7e`.
+55. **Corporate-action type safety:** validate `ex_date`, timestamp string types, nonblank identifiers and safely parse finite positive Decimal factors. Commits `68f5bc4`, `4e2abdd`.
+56. **Walk-forward evaluation inputs:** validate ISO observation dates, exact binary labels (no fractional-to-integer truncation), and finite probabilities in [0,1] before splitting. Commits `c4e4315`, `701f59c`.
+57. **OHLC range integrity:** daily source reconciliation now rejects impossible high/low bounds. Commits `d7a935c`, `6be39e8`.
+58. **Daily control totals:** validate date, non-negative integer row count, finite non-negative volume, duplicate headers and extra cells. Commits `d8e49d5`, `07f3dde`.
+59. **Footprint numeric/session integrity:** validate finite positive prices, finite non-negative volume, unique session dates and unique expected symbols. Commits `dd679e8`, `e0198e0`.
+60. **Market breadth universe boundary:** exclude out-of-universe symbols from the breadth numerator and report them separately; this prevents coverage exceeding 100% or debt/fund extras inflating breadth. Commits `e311294`, `c9fb99f`, `8e8dc36`.
+
+### CI verification and correction record
+- Latest full backend suite passed: 401 tests, run `45545160738` at commit `8e8dc361de1ae9a66f632f48c208718e71f2058d`.
+- Backend contract tests passed at the same commit: run `45545160526`.
+- Integrated evidence audit passed at the same commit: run `45545160687`.
+- Intermediate failures were not hidden: CI caught a literal-newline test fixture issue, an outdated error-message assertion, an unsupported-header test mismatch, and an expected-universe normalization ordering bug. These were corrected before the final passing run.
+- These changes improve fail-closed validation only. No new primary NEPSE registry, official date-level calendar, rights-cleared floorsheet sample or verified 281+47 manifest was acquired. No training or canonical promotion is authorized.

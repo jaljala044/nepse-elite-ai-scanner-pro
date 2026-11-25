@@ -142,7 +142,7 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
         "response_headers": captured.get("headers", {}),
         "response_bytes": len(captured.get("body", b"")),
         "response_sha256": None,
-        "response_preserved": "body" in captured,
+        "response_preserved": bool(captured.get("body")),
         "request_error": request_error,
         "calendar_claims_promoted": False,
         "canonical_calendar_promotion_allowed": False,

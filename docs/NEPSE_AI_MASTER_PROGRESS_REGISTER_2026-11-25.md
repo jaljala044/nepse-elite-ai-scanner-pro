@@ -807,3 +807,28 @@ The new utilities and validators are ready, but no official notice bytes, full d
 28. Add source-specific OHLCV daily control totals and duplicate/conflict reconciliation before coverage can be considered complete.
 29. Add broker reconciliation output with per-source/date contract count, gross amount, quantity and party-row exceptions persisted as immutable artifacts.
 30. Run the read-only readiness CLI against the current actual evidence and archive the blocker report, demonstrating that the current dataset remains not training-ready.
+
+## 2026-11-25 continuation — engineering priorities 26–30
+
+26. **Official registry capture adapter:** added `backend/capture_official_registry.py`. It captures JSON responses only from official NEPSE/SEBON HTTPS hosts, stores raw bytes by SHA-256 and records retrieval metadata. It explicitly labels schema `unreviewed` and `manifest_verified=false`; the candidate security endpoint is not presumed valid until an actual response is captured and reviewed. Commits `2d78b58`, `b650491`, `faec6e6`.
+27. **Calendar evidence manifest:** added `app.calendar_evidence_manifest`. It links date/status/scope claims to captured notice IDs, validates official URLs, raw hashes, raw paths and UTC retrieval timestamps, and detects contradictory open/closed claims with overlapping scopes. It does not populate the calendar. Commits `5156ee0`, `6e5163a`, `99529d3`, `4849bd9`.
+28. **OHLCV daily control reconciliation:** added `backend/reconcile_ohlcv_source_daily.py`. It reports source/date row counts and total volume, within-source duplicate symbol/date rows, cross-source exact matches/conflicts, and comparisons to source control totals—including controls for dates with no source rows. Commits `0414589`, `f3a13a5`, `7b15fea`, `599291b`, `ddbc3dd`.
+29. **Immutable broker reconciliation artifact:** added `backend/reconcile_broker_control_totals.py`; it hashes every party input and control file, reconciles contract parties and writes a content-addressed report that cannot overwrite different existing content. Commits `17bf7b0`, `425c885`, `f20661f`.
+30. **Current readiness run and archived blockers:** executed the read-only readiness workflow `45542756700`; artifact `14989249027` (`nepse-training-readiness-blockers`) was downloaded and inspected. ZIP SHA-256 `66a1553e3c8f8897714e320b5b53974487b882e792bd91c3a6baec01d0c105d7`; JSON SHA-256 `4423702fe5b93626324bedc67a97f17585e5235336fd1617a72669ddb9591a47`. The report explicitly says `training_ready=false`, `model_training_allowed=false`, and lists all 12 readiness blockers: universe, session calendar, rights, lineage, OHLCV integrity, broker identity, point-in-time leakage, corporate-action review, historical coverage, holdout protocol, OHLCV coverage threshold and broker identity coverage threshold. No model performance is claimed. This run had no committed evidence report inputs, so it demonstrates the fail-closed empty-evidence state—not an audit of unmounted Drive files.
+
+### CI verification for priorities 26–30
+- Full backend and contract tests passed at `ddbc3dd5c731db8b038d2ed27e0ecd614de6a7c0`: backend `45542820966`, contract `45542821029`.
+- Broker immutable report tests passed at `f20661fd0122c65cf491f9f01908759b3be5394a`: backend `45542731187`, contract `45542731113`.
+- OHLCV daily reconciliation tests passed at `7b15fea816f746e29c2e55fa1963fa223d216137`: backend `45542694225`, contract `45542694177`.
+- Calendar evidence manifest tests passed after fixture provenance fields were added at `4849bd9d5186c9903f4549ca762625dfb79fed92`: backend `45542797749`, contract `45542797833`.
+- Official registry capture tests passed at `faec6e66cf575dcb318b199ad44a65da9aeefc19` and were included in the later full passing suite.
+
+### Still not acquired
+The new adapters and reports are engineering tools, not source data. No actual official registry API response has been captured; the date-level session calendar remains header-only; no verified 281 + 47 instrument manifest exists; no authorized raw floorsheet sample is staged; and the OHLCV archive quality exceptions remain unresolved. The user's Google Drive archive remains inaccessible in this run. Training and canonical promotion remain blocked.
+
+### Next execution batch (31–35)
+31. Add a source-evidence inventory report that cross-checks every manifest path/hash against downloaded raw bytes and flags missing raw objects.
+32. Add a verified exchange-session calendar reconciliation against source daily index and floorsheet dates, while retaining all dates as unverified until official evidence is linked.
+33. Add source-specific corporate-action adjustment audit and detect adjusted/unadjusted OHLCV mixing before features.
+34. Add a broker identity coverage report per date/security/side with both observation-count and gross-amount denominators.
+35. Add an integration workflow that runs registry, calendar, OHLCV, floorsheet, broker and readiness audits in sequence and uploads all artifacts without promoting data.

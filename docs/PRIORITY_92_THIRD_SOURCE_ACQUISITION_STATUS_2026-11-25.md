@@ -88,3 +88,10 @@ The Yonepse file was resolved to its file-specific commit and Git tree entry, th
 - Pinned-content re-fetch: 52,387 rows, 52,387 unique contract IDs, quantity 14,670,177, amount NPR 5,553,019,249.459984.
 
 This provides a durable Git commit/tree/blob identity for the retrieved object, but **not an independently computed SHA-256**. The blob is pinned and reproducible from GitHub; local raw-byte retention and SHA-256 remain outstanding.
+
+
+### Publisher-declared acquisition lineage review
+
+Yonepse's pinned repository README and `pages/sources.html` identify the NEPSE Official API as the primary source for live prices, index snapshots, disclosures and floor sheets. Its `official_scraper.py` contains a transformation function that converts API-style fields (`contractId`, `stockId`, `buyerMemberId`, `sellerMemberId`, `contractQuantity`, `contractRate`, `contractAmount`, `tradeTime`) into the observed compact floor-sheet array. The same repository credits SocrateAI separately for longer historical index series.
+
+This is useful publisher-side lineage evidence and makes Yonepse a plausible independently captured NEPSE-API representation. However, the 2026-11-24 raw API response, request/response logs, and capture-time hashes are not preserved in the reviewed artifact. Therefore the upstream path is still a publisher claim, not independently verified capture provenance. The exact match to SocrateAI remains consistent with both reflecting the same exchange records; it does not by itself prove copying or independent capture.

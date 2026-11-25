@@ -2,12 +2,20 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import zipfile
 from pathlib import Path, PurePosixPath
 
-from inspect_floorsheet_archive import inspect_zip, sha256_file
+from inspect_floorsheet_archive import inspect_zip
+
+
+def _sha256_stream(stream, chunk_size: int = 8 * 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    stream.seek(0)
+    for chunk in iter(lambda: stream.read(chunk_size), b""):
+        digest.update(chunk)
+    stream.seek(0)
+    return digest.hexdigest()
 
 
 def extract_reviewed_csv_members(
@@ -59,7 +67,7 @@ def extract_reviewed_csv_members(
     try:
         with archive.open("rb") as archive_stream:
             before = os.fstat(archive_stream.fileno())
-            if sha256_file(archive) != actual_archive_hash:
+            if _sha256_stream(archive_stream) != actual_archive_hash:
                 raise ValueError("archive changed after inventory verification")
             with zipfile.ZipFile(archive_stream, "r") as zf:
                 for member_name in member_names:

@@ -12,6 +12,8 @@ on:
       - "backend/tests/test_compare_floorsheet_source_csvs.py"
       - "backend/build_floorsheet_source_exception_ledger.py"
       - "backend/tests/test_build_floorsheet_source_exception_ledger.py"
+      - "backend/analyze_floorsheet_broker_code_coverage.py"
+      - "backend/tests/test_analyze_floorsheet_broker_code_coverage.py"
       - ".github/workflows/multi-date-floorsheet-overlap.yml"
   workflow_dispatch:
 
@@ -36,6 +38,7 @@ jobs:
           python -m unittest discover -s tests -p "test_compare_floorsheet_manifest.py" -v
           python -m unittest discover -s tests -p "test_compare_floorsheet_source_csvs.py" -v
           python -m unittest discover -s tests -p "test_build_floorsheet_source_exception_ledger.py" -v
+          python -m unittest discover -s tests -p "test_analyze_floorsheet_broker_code_coverage.py" -v
       - name: Acquire latest 10 pinned overlapping dates
         run: |
           python backend/acquire_floorsheet_overlap.py \
@@ -56,7 +59,13 @@ jobs:
             --manifest /tmp/floorsheet-overlap-raw/manifest.json \
             --json-output /tmp/floorsheet-source-exception-ledger.json \
             --csv-output /tmp/floorsheet-source-exception-ledger.csv
-      - name: Upload comparison and exception evidence
+      - name: Analyze broker-code presence and activity
+        run: |
+          python backend/analyze_floorsheet_broker_code_coverage.py \\
+            --manifest /tmp/floorsheet-overlap-raw/manifest.json \\
+            --json-output /tmp/floorsheet-broker-code-coverage.json \\
+            --csv-output /tmp/floorsheet-broker-code-activity.csv
+      - name: Upload comparison, exception and broker evidence
         uses: actions/upload-artifact@v4
         with:
           name: floorsheet-multi-date-overlap-audit
@@ -65,5 +74,7 @@ jobs:
             /tmp/floorsheet-overlap-raw/manifest.json
             /tmp/floorsheet-source-exception-ledger.json
             /tmp/floorsheet-source-exception-ledger.csv
+            /tmp/floorsheet-broker-code-coverage.json
+            /tmp/floorsheet-broker-code-activity.csv
           if-no-files-found: error
           retention-days: 30

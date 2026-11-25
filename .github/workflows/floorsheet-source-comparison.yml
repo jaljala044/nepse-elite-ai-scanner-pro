@@ -1,0 +1,56 @@
+name: floorsheet-source-comparison-2026-11-24
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/compare_floorsheet_source_csvs.py"
+      - "backend/tests/test_compare_floorsheet_source_csvs.py"
+      - ".github/workflows/floorsheet-source-comparison.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare-pinned-source-copies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify source comparison tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p "test_compare_floorsheet_source_csvs.py" -v
+      - name: Fetch pinned Samir capture
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/SamirWagle/Nepse-All-Scraper/e6160adc6bdf3d19562167388e3d9d4f645c455a/data/floorsheet/floorsheet_2026-11-24.csv \
+            -o /tmp/samir-floorsheet-2026-11-24.csv
+      - name: Fetch pinned SocrateAI capture
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-11-24.csv \
+            -o /tmp/socrateai-floorsheet-2026-11-24.csv
+      - name: Compare every contract and independent daily totals
+        run: |
+          python backend/compare_floorsheet_source_csvs.py \
+            --left /tmp/samir-floorsheet-2026-11-24.csv \
+            --right /tmp/socrateai-floorsheet-2026-11-24.csv \
+            --left-format samir \
+            --right-format socrate \
+            --control-date 2026-11-24 \
+            --control-quantity 14670177 \
+            --control-gross-amount 5553019249.46 \
+            --output data/reports/floorsheet-source-comparison-2026-11-24.json
+      - name: Upload comparison report only
+        uses: actions/upload-artifact@v4
+        with:
+          name: floorsheet-source-comparison-2026-11-24
+          path: data/reports/floorsheet-source-comparison-2026-11-24.json
+          if-no-files-found: error
+          retention-days: 30

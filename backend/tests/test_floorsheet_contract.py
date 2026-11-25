@@ -30,6 +30,11 @@ class FloorsheetContractTests(unittest.TestCase):
         self.assertEqual(result["counts"]["conflicting_duplicate"], 2)
         self.assertTrue(all(x["retained_for_review"] for x in result["rows"]))
 
+    def test_invalid_amount_tolerance_is_rejected(self):
+        for tolerance in (Decimal("-0.01"), Decimal("NaN"), Decimal("Infinity")):
+            with self.subTest(tolerance=tolerance), self.assertRaises(ValueError):
+                reconcile_floorsheet_rows([self.row()], amount_tolerance=tolerance)
+
     def test_amount_mismatch_is_flagged(self):
         result = reconcile_floorsheet_rows([self.row(amount="999")])
         self.assertEqual(result["counts"]["amount_reconciliation_exception"], 1)

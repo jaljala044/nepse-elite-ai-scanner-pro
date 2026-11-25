@@ -473,3 +473,14 @@ python evaluate_training_readiness.py \
 ```
 
 The CLI is read-only. Missing evidence yields explicit blockers and a nonzero exit code; it never writes canonical tables or starts training. A passing software test suite is not a substitute for passing real-source evidence.
+
+## Source inventory, calendar reconciliation and adjustment basis
+
+- `backend/audit_source_evidence_inventory.py` reads JSONL manifest rows (`source_id,path,sha256`, optional `local_path`) and verifies that each raw object exists under the declared raw root and matches its pinned SHA-256. Missing objects, hash mismatches, duplicate manifest keys and path escapes are reported; no repair or promotion occurs.
+- `backend/build_calendar_coverage_matrix.py` compares source-date manifests against explicit calendar evidence. It flags source files on verified closed dates, source files on unverified dates, and verified open dates without source files. It does not infer session status from weekday patterns or file presence.
+- `backend/audit_ohlcv_adjustment_basis.py` requires each normalized row to declare `adjusted`, `unadjusted` or `unknown`, then detects mixed bases within a source/security and cross-source basis differences. It never applies adjustment factors; corporate-action evidence must be reviewed separately.
+- `backend/report_broker_identity_coverage.py` reports broker mapping coverage by date/security/side using both party-observation counts and gross-amount denominators, retaining unresolved rows.
+
+## Integrated evidence audit workflow
+
+`.github/workflows/integrated-evidence-audit.yml` runs the backend regression suite, then executes registry validation, calendar evidence validation, raw-source inventory, source-specific OHLCV daily reconciliation, per-security coverage, floorsheet-window row audit and broker identity coverage when their required evidence inputs are present. Missing inputs are recorded as skipped rather than treated as passes. The workflow always writes a readiness report and uploads the artifacts. It never promotes canonical data or starts model training.

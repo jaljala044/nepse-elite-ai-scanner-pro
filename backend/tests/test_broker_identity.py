@@ -51,6 +51,29 @@ class BrokerIdentityTests(unittest.TestCase):
             aggregate_broker_side([row])
 
 
+    def test_broker_side_aggregation_uses_exact_decimal_amounts(self):
+        rows = [
+            {"session_date":"2026-11-24","security_id":"SEC1","broker_entity_id":"B42",
+             "identity_status":"verified","side":"buy","quantity":"1","amount":"0.1"},
+            {"session_date":"2026-11-24","security_id":"SEC1","broker_entity_id":"B42",
+             "identity_status":"verified","side":"buy","quantity":"2","amount":"0.2"},
+        ]
+        result = aggregate_broker_side(rows)
+        self.assertEqual(result[0]["amount"], "0.3")
+        self.assertEqual(result[0]["quantity"], 3)
+
+    def test_broker_side_aggregation_rejects_non_finite_amount(self):
+        row = {"session_date":"2026-11-24","security_id":"SEC1","broker_entity_id":"B42",
+               "identity_status":"verified","side":"buy","quantity":"1","amount":"NaN"}
+        with self.assertRaisesRegex(ValueError, "finite non-negative"):
+            aggregate_broker_side([row])
+
+    def test_broker_side_aggregation_rejects_unresolved_entity_id(self):
+        row = {"session_date":"2026-11-24","security_id":"SEC1","broker_entity_id":"B42",
+               "identity_status":"ambiguous","side":"buy","quantity":"1","amount":"10"}
+        with self.assertRaisesRegex(ValueError, "unresolved identity"):
+            aggregate_broker_side([row])
+
     def test_effective_dated_mapping_resolves_historical_identity(self):
         links = [
             BrokerIdentityLink("src", "42", "B42", "verified", "e1",

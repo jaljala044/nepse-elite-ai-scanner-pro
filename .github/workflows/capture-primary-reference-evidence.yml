@@ -121,6 +121,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+          echo "Capturing the authenticated official holiday API response body."
           python backend/capture_nepse_holiday_evidence.py \
             --year 2026 \
             --output-dir evidence/nepse-api-authenticated || true

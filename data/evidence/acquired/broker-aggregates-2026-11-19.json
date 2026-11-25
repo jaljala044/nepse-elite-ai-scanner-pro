@@ -14,7 +14,7 @@
   "distinct_symbols": 346,
   "total_quantity": "9435392",
   "total_gross_amount": "3877623296.62",
-  "quantity_times_rate_amount_exceptions": 40818,
+  "quantity_times_rate_amount_exceptions": 0,
   "broker_symbol_side_aggregate_rows": 15466,
   "broker_side_total_rows": 181,
   "identity_policy": "Execution-channel codes only; every identity remains unmapped pending effective-dated primary evidence.",

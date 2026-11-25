@@ -46,4 +46,4 @@ No manifest result by itself authorizes canonical data promotion or model traini
 
 ## Current execution status
 
-The new runner and regression tests are committed. The one-day 2026-11-24 comparison remains the only fully executed multi-source contract comparison documented so far. The multi-date utility must pass CI and then be run against a pinned overlap manifest before any historical coverage claim is upgraded.
+The runner and regression tests passed CI. A bounded run compared the 10 most recent shared dates (2026-10-28 through 2026-11-24): 571,619 shared contracts matched exactly, SocrateAI contained 262 additional contracts, there were zero Samir-only contracts and zero shared-row conflicts. Both sources passed row syntax/math checks, and all source row dates matched the manifest dates. The detailed findings, daily quantities, turnover differences, artifact hashes and limitations are recorded in `docs/FLOORSHEET_MULTI_DATE_OVERLAP_AUDIT_2026-11-25.md`. This remains review-only; independent daily controls and independent source lineage are unresolved.

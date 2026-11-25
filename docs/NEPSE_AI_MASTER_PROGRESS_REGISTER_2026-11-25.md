@@ -475,3 +475,60 @@ When the project owner asks for all progress, retrieve this register and current
 8. Add corporate-action source ingestion and evidence-backed adjustment policy, keeping raw prices immutable.
 9. Add cross-source coverage and reconciliation reports for the 120-day / one-year priority window.
 10. Add a real-data readiness gate that blocks model training until lineage, calendar, universe, broker identity, rights and quality thresholds are satisfied.
+
+
+## 17. Remaining eight priorities — implementation record (2026-11-25)
+
+### Priority 3 — exact broker aggregation and coverage
+- Added `backend/app/broker_aggregation.py` and tests.
+- Uses `Decimal` totals at trade-date/security/broker/side/identity-status grain. Unknown and ambiguous identity rows remain separate buckets.
+- Reports party-observation, gross-amount and quantity denominators and verified/unresolved coverage. Duplicate source-payload/row/side lineage is rejected.
+- Commits: [1a7e5f7](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/1a7e5f7ddc140af270debe09ed107076de0c6e47), [65cf790](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/65cf79097cfd8ff1f6a6199ebec123f59c78517e).
+
+### Priority 4 — source provenance and rights metadata
+- Added `backend/app/source_provenance.py` and tests.
+- Records publisher/source identity, provenance class, capture method/time, actor, exact payload hash/bytes, rights state, attribution/redistribution declarations and evidence references.
+- Unknown/review-required rights block rights clearance. Redistribution requires an explicit permission state and evidence ID. These declarations are not legal advice or an independent legal opinion.
+- Commits: [4ac39d9](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/4ac39d9d68e725bb5ad191a2b68980e97df008e3), [3936bea](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/3936beac96f140a5f5b6d2f4a36c6e55ae6e3a89).
+
+### Priority 5 — explicit-mapping OHLCV source adapter
+- Added `backend/app/ohlcv_csv_adapter.py` and tests.
+- Requires explicit source-header mapping; records source payload SHA-256, physical CSV line, raw mapped values and numeric values. Invalid OHLC bounds are retained as quarantined exceptions; malformed rows are retained in a rejection ledger.
+- Source-specific mapping remains unverified, and no source archive was parsed in this step. The adapter does not promote data.
+- Commits: [9b90d62](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/9b90d62a401eb2746e82b412b4cfde5ada7c841c), [3f759db](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/3f759db130f253b8519c3f60cac20479618c711c), input-row count correction [8e51cdf](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/8e51cdf09cf2efb252bac9b1518cad791a1ea187).
+
+### Priority 6 — dated active-universe manifest gate
+- Added `backend/app/instrument_manifest.py` and tests.
+- Validates effective dates, stable IDs, unique active symbols/IDs, target counts (281 equities and 47 mutual funds), primary-source tier and source-record evidence. Suspended/delisted instruments are not counted as active; lifecycle rows are retained.
+- An empty or incomplete manifest fails closed. This is a validator, not an official 328-instrument manifest; exact official membership is still unverified.
+- Commits: [81f6de4](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/81f6de4c30bf8cb19fade3ac1a20f27aa4a90ac0), [8d9001f](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/8d9001fe0be13fd440c36ef6aaaa9d858bdea8fb).
+
+### Priority 7 — point-in-time exchange-session evidence
+- Added `backend/app/session_evidence.py` and tests.
+- Resolves confirmed trading sessions, confirmed exchange closures and exceptional sessions only from evidence visible at the decision time and, by default, exchange/regulator primary tiers. Conflicts remain unknown.
+- Missing evidence never means closed. Weekday regimes and banking holidays are not silently converted into confirmed NEPSE sessions.
+- Commits: [549ab07](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/549ab0715c6240c4abe30f0a775e052f617978e4), [c095f8b](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/c095f8ba54821cfdd273525a552434f491357cb0).
+
+### Priority 8 — corporate-action evidence and adjustment policy
+- Added `backend/app/corporate_action_policy.py` and tests.
+- Validates event identity, type, announcement/availability timestamps, status and positive Decimal factors. As-known selection excludes events not yet available at decision time.
+- Adjustment eligibility is only a separate review decision; no raw price series is modified and no adjusted series is emitted.
+- Commits: [eb2f880](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/eb2f880aab411100b584afab3d17b58dd2d6c32e), [37b7241](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/37b724175aa3e5996ab980c6d08a8161c8fc2187).
+
+### Priority 9 — expected-session coverage and cross-source reconciliation
+- Added `backend/app/historical_coverage.py` and tests.
+- Computes source-by-source coverage against caller-supplied verified session dates and symbols, flags duplicate keys and differing overlapping close values, and reports union gaps.
+- It does not infer exchange sessions from weekdays or select a canonical source. No 120-day/one-year real archive run is claimed.
+- Commits: [6545c4c](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/6545c4c84b028a79c32939f93ea4292f433a70ff), [df7d54d](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/df7d54d9d7b7c9f5349a9b53680d74119279d82c).
+
+### Priority 10 — fail-closed training readiness gate
+- Added `backend/app/training_readiness.py` and tests.
+- Requires explicit boolean evidence for universe, calendar, rights, lineage, OHLCV integrity, broker identity, point-in-time leakage, corporate-action review, historical coverage and holdout protocol. Configurable OHLCV and broker-identity coverage thresholds are enforced.
+- Missing/false evidence blocks model training. The gate reports no model performance and does not claim the current project is training-ready.
+- Commits: [44871a8](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/44871a8fbe249fff60a4ff77f480ce48b8f58519), [2b93b5c](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/2b93b5c29e4f6d90dc53d9c1abf12583af3be4dd).
+
+### Verification status and blockers
+- Backend CI workflow `.github/workflows/backend-contract-tests.yml` is configured to run the complete `backend/tests` unittest suite for backend changes.
+- The GitHub status endpoint did not expose check/status entries for the commits at this update. Therefore the eight priorities above are **committed implementations with synthetic tests authored, but test execution is not yet independently verified**. Do not mark them CI-passing until an actual successful Actions run is confirmed.
+- No real floorsheet or OHLCV publisher export was parsed. No official 281+47 instrument manifest or complete primary NEPSE session calendar has been ingested. Rights clearance and corporate-action completeness remain unverified. Historical archive coverage has not been re-run using verified session dates.
+- Training readiness remains blocked; the gate is implemented but not passed with real evidence.

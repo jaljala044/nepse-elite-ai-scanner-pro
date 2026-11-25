@@ -675,7 +675,7 @@ A later documentation-only progress-register commit `969d27b85b98ea9462236851846
 
 ### CI status and unresolved data gates
 - Backend unit and contract workflows passed on commit `0009264d858b51fd5bdaf6b73dbdea2b4f8e4d98` (runs `45540805486`, `45540805517`).
-- The later parser row-retention change and its regression test are committed at `296c34285f4eaf7cc2d092d82eb8cd747f294fff`; its backend and contract workflows were queued/in progress at the time of this entry. Do not treat those newest runs as green until they complete.
+- The parser row-retention change and regression test at `296c34285f4eaf7cc2d092d82eb8cd747f294fff` are verified green: backend run `45540886522` and contract run `45540886542` both completed successfully.
 - The OHLCV archive workflow's exception-ledger build step succeeded, but the overall audit gate remains failed because the source audit still reports 8 cross-source conflicts and invalid OHLC rows. The workflow's separate latest-index coverage cross-check also failed. Neither issue is repaired by this pipeline work.
 - No verified live floorsheet sample, official 281-equity/47-fund manifest, complete official session calendar, source-rights clearance or one-year instrument coverage has been established here. Canonical data promotion, training and production signals remain blocked.
 

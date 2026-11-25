@@ -64,6 +64,18 @@ DATASETS: dict[str, dict[str, Any]] = {
     },
 }
 
+def _resolve_revision(client: httpx.Client, repo: str, revision: str) -> str:
+    """Resolve a mutable branch/tag to the immutable Hub commit SHA."""
+    url = f"{HF_API}/{quote(repo, safe='/')}/revision/{quote(revision, safe='')}"
+    response = client.get(url)
+    response.raise_for_status()
+    payload = response.json()
+    commit_sha = payload.get("sha") if isinstance(payload, dict) else None
+    if not isinstance(commit_sha, str) or not re.fullmatch(r"[0-9a-fA-F]{40}", commit_sha):
+        raise ValueError(f"Hugging Face did not return an immutable commit SHA for {repo}@{revision}")
+    return commit_sha.lower()
+
+
 def _safe_repo_dir(repo: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", repo.replace("/", "__"))
 
@@ -282,12 +294,17 @@ def collect_hf_datasets(
         raise ValueError("from_date must not be after to_date")
 
     results: dict[str, Any] = {}
+    resolved_revisions: dict[str, str] = {}
     with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=True) as client:
         remaining = max_total_bytes
         downloaded_count = 0
         for key in selected:
             spec = DATASETS[key]
-            files = list_dataset_files(client, key, revision=revision)
+            repo = spec["repo"]
+            if repo not in resolved_revisions:
+                resolved_revisions[repo] = _resolve_revision(client, repo, revision)
+            pinned_revision = resolved_revisions[repo]
+            files = list_dataset_files(client, key, revision=pinned_revision)
             files = [f for f in files if _matches_date(f["path"], from_date, to_date)]
             selected_files = files[:max_files]
             records: list[dict[str, Any]] = []
@@ -298,7 +315,7 @@ def collect_hf_datasets(
                         continue
                     try:
                         result = _download_one(
-                            client, spec["repo"], revision, item, key,
+                            client, repo, pinned_revision, item, key,
                             max_file_bytes, remaining
                         )
                     except Exception as exc:
@@ -309,7 +326,10 @@ def collect_hf_datasets(
                         remaining -= result["bytes"]
                         downloaded_count += 1
             results[key] = {
-                "repo": spec["repo"], "revision": revision, "notes": spec["notes"],
+                "repo": repo, "requested_revision": revision,
+                "revision": pinned_revision, "notes": spec["notes"],
+                "listing_complete": True,
+                "inventory_complete": len(selected_files) == len(files),
                 "files_found": len(files), "files_considered": len(selected_files),
                 "estimated_bytes": sum(f["size"] for f in selected_files),
                 "records": records if download else selected_files,

@@ -1,0 +1,52 @@
+import unittest
+from datetime import date
+from app.corporate_action_policy import (
+    CorporateActionEvidence, corporate_action_as_known, evaluate_adjustment_eligibility,
+)
+
+
+def action(**kwargs):
+    values = dict(action_id="A1", security_id="SEC1", action_type="bonus",
+                  ex_date=date(2026, 11, 30), announced_at="2026-11-20T10:00:00Z",
+                  available_at="2026-11-20T10:05:00Z", source_id="issuer",
+                  source_tier="primary", evidence_id="DOC1", factor="1.1")
+    values.update(kwargs)
+    return CorporateActionEvidence(**values)
+
+
+class CorporateActionPolicyTests(unittest.TestCase):
+    def test_as_known_excludes_not_yet_published_action(self):
+        r = corporate_action_as_known([action()], security_id="SEC1",
+                                      decision_time="2026-11-19T00:00:00Z")
+        self.assertEqual(r["actions"], [])
+
+    def test_confirmed_action_visible_by_decision_time(self):
+        r = corporate_action_as_known([action()], security_id="SEC1",
+                                      decision_time="2026-11-25T00:00:00Z")
+        self.assertEqual(len(r["actions"]), 1)
+        self.assertEqual(r["evidence_ids"], ["DOC1"])
+
+    def test_adjustment_never_applied_by_eligibility_check(self):
+        r = evaluate_adjustment_eligibility(action(), policy_version="raw_unadjusted_v1",
+                                            decision_time="2026-11-25T00:00:00Z",
+                                            independently_reviewed=True)
+        self.assertTrue(r["eligible_for_adjustment_review"])
+        self.assertFalse(r["adjustment_applied"])
+        self.assertFalse(r["raw_price_series_mutated"])
+
+    def test_unreviewed_or_unapproved_policy_blocks_adjustment(self):
+        r = evaluate_adjustment_eligibility(action(), policy_version="unknown-v9",
+                                            decision_time="2026-11-25T00:00:00Z")
+        self.assertFalse(r["eligible_for_adjustment_review"])
+
+    def test_available_before_announcement_rejected(self):
+        with self.assertRaisesRegex(ValueError, "cannot precede"):
+            action(available_at="2026-11-19T00:00:00Z")
+
+    def test_invalid_factor_rejected(self):
+        with self.assertRaisesRegex(ValueError, "finite positive"):
+            action(factor="NaN")
+
+
+if __name__ == "__main__":
+    unittest.main()

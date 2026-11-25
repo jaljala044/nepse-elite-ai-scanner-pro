@@ -1325,3 +1325,5 @@ Cumulative latest 100 shared dates: 5,328,566 shared exact contract rows, 53,014
 - Updated report: [Priority 92 acquisition status](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/PRIORITY_92_THIRD_SOURCE_ACQUISITION_STATUS_2026-11-25.md), commit `1ed3f610255da3bff9dd72b63b4cad8c2f277bd6`.
 
 **Priority 92 state: partially complete for one-day retrieval and reconciliation; not complete for durable byte pinning, independent source lineage, historical coverage or rights. No canonical promotion.**
+
+- Yonepse file is now pinned to file commit `1bfa798e84c7170f826e473e7e1ec3957c81966c`, tree `33e7fc54f0b225e92d148f0ef362fbb67045abcd`, Git blob SHA-1 `2a758194c470048e3b22aefc8954365397d9c48d`, size 3,037,252 bytes. Re-fetch at the pinned commit reproduces the 52,387-row summary. Independent SHA-256 and local raw-byte retention remain open. Priority 92 report updated again at commit `32dbea91e8fae817f4419a954cd928fcdf1e1e5d`.

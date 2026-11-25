@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -33,8 +34,8 @@ def audit_source_evidence_inventory(manifest_paths: list[str | Path], raw_root: 
                     relative_path = str(row["path"]).strip()
                     expected_hash = str(row["sha256"]).lower()
                     local_path = Path(row.get("local_path") or (root / relative_path)).resolve()
-                    if not source_id or not relative_path or len(expected_hash) != 64:
-                        raise ValueError("source_id, path and 64-character sha256 are required")
+                    if not source_id or not relative_path or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+                        raise ValueError("source_id, path and 64-character hexadecimal sha256 are required")
                     key = (source_id, relative_path)
                     if key in seen:
                         raise ValueError(f"duplicate manifest object {source_id}:{relative_path}")

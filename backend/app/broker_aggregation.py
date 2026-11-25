@@ -45,7 +45,7 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         required = ("trade_date", "symbol", "source_id", "contract_id", "source_payload_sha256")
         if any(not isinstance(row.get(k), str) or not row[k].strip() for k in required):
             raise ValueError(f"row {index}: missing grouping or lineage field")
-        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", row["trade_date"]):
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["trade_date"]):
             raise ValueError(f"row {index}: trade_date must be ISO date")
         try:
             date.fromisoformat(row["trade_date"])
@@ -145,7 +145,7 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
         required = ("source_id", "trade_date", "contract_id", "side", "amount", "quantity")
         if any(not isinstance(row.get(key), str) or not row[key].strip() for key in required[:3]):
             raise ValueError(f"row {index}: missing source control reconciliation field")
-        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", row["trade_date"]):
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["trade_date"]):
             raise ValueError(f"row {index}: trade_date must be ISO date")
         try:
             date.fromisoformat(row["trade_date"])
@@ -194,7 +194,7 @@ def reconcile_source_control_totals(rows: list[dict], controls: list[dict]) -> d
         if (
             not isinstance(control.get("source_id"), str) or not control["source_id"].strip()
             or not isinstance(control.get("trade_date"), str)
-            or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", control["trade_date"])
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", control["trade_date"])
             or key in expected
         ):
             raise ValueError(f"control {index}: missing or duplicate source/date control key")

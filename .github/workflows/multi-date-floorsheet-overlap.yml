@@ -39,7 +39,7 @@ jobs:
           python -m unittest discover -s tests -p "test_compare_floorsheet_source_csvs.py" -v
           python -m unittest discover -s tests -p "test_build_floorsheet_source_exception_ledger.py" -v
           python -m unittest discover -s tests -p "test_analyze_floorsheet_broker_code_coverage.py" -v
-      - name: Acquire latest 10 pinned overlapping dates
+      - name: Acquire preceding 30 pinned overlapping dates
         run: |
           python backend/acquire_floorsheet_overlap.py \
             --limit 30 \

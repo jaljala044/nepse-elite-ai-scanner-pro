@@ -129,3 +129,38 @@ Run #10: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/4
 - The run still failed its evidence-completeness gate. Authentication remains unresolved.
 
 The next diagnostic is the no-businessDate current-session today-price request. If it also returns 401 while the floor-sheet control remains 200, the endpoint is likely independently restricted or requires a different route-specific request contract. Do not change tokens, salts, or payload formulas based on guesswork; compare raw responses and exact source behavior first.
+
+### Run #13: route-wide today-price 401 confirmed
+
+Workflow run #13: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45677613651
+Artifact ID: 15051468437
+Artifact SHA-256: 71a53e1f6fca30b6d5be93fc15d472bee91921768ac3070377e19efc7baeccf8
+
+- Focused capture regression tests passed.
+- today-price returned HTTP 401 for both historical dates and for a current-session request with no businessDate parameter. All three responses were the same two-byte empty-list body.
+- The minimal floor-sheet POST control returned HTTP 200 with a two-byte empty-list body.
+- Therefore the issue is not merely historical-date filtering. It is specific to the today-price route/request contract or host/header routing. The floor-sheet 200 control does not prove the today-price route is authenticated.
+
+### Additional July 2025 archive cross-check (not primary proof)
+
+Inspected socrateai-official/nepse-open-data at commit 7648ec7ce9988e032975d6cf8bcc876ba7da7ae5, committed 2025-07-28. Its ohlc_unadjusted_stock/unadj_2025-07-28.csv (blob c6642c2d179b34800b5758ad4225b0861dbf5313) contains all five disputed symbols. Its OHLC values match Source B exactly; volumes are close but not identical for BGWT, RHGCL and ULHC:
+
+| Symbol | Archive OHLCV (open, high, low, close, volume) |
+|---|---|
+| BGWT | 940, 992, 933.4, 945.0, 14016 |
+| MEHL | 471.1, 480.5, 460.0, 470.83, 29753 |
+| RAWA | 796, 811, 780.3, 794.83, 3165 |
+| RHGCL | 346.7, 362, 341.4, 350.07, 296683 |
+| ULHC | 509, 515, 495, 504.0, 32285 |
+
+This is a distinct archive and was committed on the session date, but its README does not document the upstream source. Its public issue #2 explicitly asks the maintainer to clarify whether the OHLCV originates from NEPSE, Nepalytix or another provider, and no answer is recorded. The daily floorsheet file is present in the commit but could not be inspected through the available file reader. Consequently this archive is unverified provenance, not original NEPSE evidence and not sufficient for promotion. Do not silently treat the Source B match as proof of origin.
+
+Also inspected Aabishkar2/nepse-data. Its README and scraper code explicitly identify ShareSansar as the source (including the history endpoint and company ID map), so it is another ShareSansar-derived corroboration of Source A, not independent NEPSE proof.
+
+### Next endpoint diagnostic
+
+The current capture workflow adds two controls:
+1. Repeat current-session today-price with the package Authorization and payload ID but omit the explicit Host header.
+2. Repeat against https://www.nepalstock.com (the other official host) with a fresh client/token on that same host and no explicit Host header.
+
+This follows the independently documented current NEPSE pipeline behavior: both .com and .com.np are separate API hosts; the pipeline strips the library's explicit Host header; its today-price call uses the current-session floor-sheet payload ID. Results are pending in workflow run #16.

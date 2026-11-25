@@ -6,7 +6,7 @@ from collections import Counter
 from datetime import date
 from decimal import Decimal
 
-from app.floorsheet_contract import FloorsheetContract
+from app.floorsheet_contract import FloorsheetContract, reconcile_floorsheet_rows
 
 HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -40,13 +40,38 @@ def build_floorsheet_sample_acceptance_report(
         raise ValueError("parsed rows must contain FloorsheetContract records")
     if len(rows) != len(audit_rows):
         raise ValueError("parsed and reconciled row counts must match")
-    if parsed.get("parsed_rows") != len(rows):
+    parsed_count = parsed.get("parsed_rows")
+    if isinstance(parsed_count, bool) or not isinstance(parsed_count, int) or parsed_count != len(rows):
         raise ValueError("parsed_rows count does not match row payload")
+    rejected_count = parsed.get("rejected_rows")
+    if rejected_count is not None and (
+        isinstance(rejected_count, bool) or not isinstance(rejected_count, int)
+        or rejected_count != len(rejected)
+    ):
+        raise ValueError("rejected_rows count does not match error payload")
+    for index, error in enumerate(rejected):
+        if not isinstance(error, dict):
+            raise ValueError(f"rejected row {index} must be an object")
+        row_number = error.get("source_row_number")
+        if isinstance(row_number, bool) or not isinstance(row_number, int) or row_number < 2:
+            raise ValueError(f"rejected row {index} must preserve its physical CSV line number")
+        if not isinstance(error.get("error"), str) or not error["error"].strip():
+            raise ValueError(f"rejected row {index} must preserve a nonblank error")
+        if not isinstance(error.get("raw_source_row"), dict):
+            raise ValueError(f"rejected row {index} must preserve the raw source row")
     input_rows = parsed.get("input_data_rows")
     if isinstance(input_rows, bool) or not isinstance(input_rows, int) or input_rows != len(rows) + len(rejected):
         raise ValueError("input_data_rows must equal parsed plus rejected rows")
-    if reconciled.get("input_rows") != len(rows) or reconciled.get("output_rows") != len(audit_rows):
+    if (
+        isinstance(reconciled.get("input_rows"), bool)
+        or reconciled.get("input_rows") != len(rows)
+        or isinstance(reconciled.get("output_rows"), bool)
+        or reconciled.get("output_rows") != len(audit_rows)
+    ):
         raise ValueError("reconciliation control totals do not match parsed rows")
+    expected_reconciliation = reconcile_floorsheet_rows(rows)
+    if reconciled != expected_reconciliation:
+        raise ValueError("reconciliation payload does not match recomputed source-row evidence")
 
     supplied_sessions = [] if verified_session_dates is None else verified_session_dates
     if not isinstance(supplied_sessions, list):
@@ -59,6 +84,8 @@ def build_floorsheet_sample_acceptance_report(
             date.fromisoformat(value)
         except ValueError as exc:
             raise ValueError("verified session dates must be valid calendar dates") from exc
+        if value in session_set:
+            raise ValueError("verified session dates must be unique")
         session_set.add(value)
     for row in rows:
         if row.source_id != source_id or row.source_payload_sha256.lower() != digest.lower():

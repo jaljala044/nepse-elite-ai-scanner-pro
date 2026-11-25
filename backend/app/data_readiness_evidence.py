@@ -45,7 +45,7 @@ def assemble_training_evidence(*, universe_report: dict | None,
     lineage_ok = bool(provenance) and all(
         _SHA256.fullmatch(str(item.get("capture", {}).get("payload_sha256", ""))) is not None
         and bool(item.get("capture", {}).get("source_record_id"))
-        and bool(item.get("provenance_sha256"))
+        and _SHA256.fullmatch(str(item.get("provenance_sha256", ""))) is not None
         for item in provenance
     )
     ohlcv_ok = bool(ohlcv_report) and (

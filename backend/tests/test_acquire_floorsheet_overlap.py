@@ -7,11 +7,22 @@ from unittest.mock import patch
 
 from acquire_floorsheet_overlap import (
     SAMIR_REPO, SAMIR_COMMIT, SOCRATE_REPO, SOCRATE_COMMIT,
-    git_blob_sha1, main,
+    git_blob_sha1, main, select_overlap_dates,
 )
 
 
 class FloorsheetOverlapAcquisitionTests(unittest.TestCase):
+    def test_skip_latest_selects_a_non_overlapping_older_batch(self):
+        dates = {"2026-11-20", "2026-11-21", "2026-11-22", "2026-11-23"}
+        selected = select_overlap_dates(
+            dates, dates,
+            start_date=__import__("datetime").date(2026, 11, 20),
+            end_date=__import__("datetime").date(2026, 11, 23),
+            limit=2,
+            skip_latest=1,
+        )
+        self.assertEqual(selected, ["2026-11-21", "2026-11-22"])
+
     def test_git_blob_hash_matches_git_object_format(self):
         payload = b"sample floorsheet bytes\n"
         self.assertEqual(

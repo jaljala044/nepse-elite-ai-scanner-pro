@@ -45,7 +45,8 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
     def test_builds_quarantine_rows_with_full_lineage(self):
         ledger = build_ledger(report_fixture(), expected_invalid_rows=1, expected_conflicts=1)
         self.assertEqual(ledger["counts"]["total_exception_records"], 2)
-        invalid, conflict = ledger["exceptions"]
+        invalid = next(x for x in ledger["exceptions"] if x["exception_type"] == "invalid_ohlc")
+        conflict = next(x for x in ledger["exceptions"] if x["exception_type"] == "cross_source_ohlcv_conflict")
         self.assertEqual(invalid["source_csv_line"], 7)
         self.assertEqual(invalid["raw_source_row"]["High"], "9")
         self.assertEqual(conflict["source_evidence"]["source-a"]["row"]["close"], "10")

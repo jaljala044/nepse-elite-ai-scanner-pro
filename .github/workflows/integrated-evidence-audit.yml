@@ -43,8 +43,8 @@ jobs:
               "registry": "data/evidence/security-registry-snapshot.json",
               "calendar_manifest": "data/evidence/calendar-evidence-manifest.json",
               "ohlcv_inputs": "data/normalized/ohlcv",
-              "floorsheet_manifest": "data/evidence/floorsheet-window-acquisition.json",
-              "floorsheet_date_list": "data/reference/floorsheet-date-list.csv",
+              "floorsheet_manifest": "data/reports/floorsheet-window-acquisition.json",
+              "floorsheet_date_list": "data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv",
               "broker_observations": "data/normalized/broker-party-observations.csv",
           }
           states = {}
@@ -80,19 +80,19 @@ jobs:
             python backend/reconcile_ohlcv_source_daily.py "${args[@]}" \
               --output "$OUT/ohlcv-daily-reconciliation.json"
           fi
-          if [ -f data/evidence/floorsheet-window-acquisition.json ] && [ -f data/reference/floorsheet-date-list.csv ]; then
+          if [ -f data/reports/floorsheet-window-acquisition.json ] && [ -f data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv ]; then
             schema=$(python - <<'PY'
           import json
           from pathlib import Path
-          value=json.loads(Path("data/evidence/floorsheet-window-acquisition.json").read_text())
+          value=json.loads(Path("data/reports/floorsheet-window-acquisition.json").read_text())
           print(value.get("source_schema", ""))
           PY
           )
             if [ "$schema" = "urek" ] || [ "$schema" = "socrateai" ]; then
               set +e
               python backend/audit_floorsheet_window.py \
-                --manifest data/evidence/floorsheet-window-acquisition.json \
-                --date-list data/reference/floorsheet-date-list.csv \
+                --manifest data/reports/floorsheet-window-acquisition.json \
+                --date-list data/reference/nepse_observed_index_dates_2026-05-18_2026-11-24.csv \
                 --source-schema "$schema" --min-files 1 --allow-missing-dates \
                 --output "$OUT/floorsheet-window-audit.json"
               floorsheet_status=$?

@@ -76,3 +76,15 @@ This reproduces the earlier finding that the 18 extra contracts explain the enti
 ### Updated Priority 92 decision
 
 **Partially complete for one-day payload retrieval and reconciliation; still open for durable byte pinning and source independence.** The Google Drive folder remains inaccessible because its connector is disabled by the workspace administrator. The Hugging Face candidate remains metadata-only. The project now has an additional exact one-day representation to use in the source-lineage investigation, but not a verified independent third source.
+
+
+### Immutable Git object pin added
+
+The Yonepse file was resolved to its file-specific commit and Git tree entry, then re-fetched at that exact commit:
+- File commit: `1bfa798e84c7170f826e473e7e1ec3957c81966c` (2026-11-24T11:18:50Z; unsigned GitHub Actions commit)
+- Tree: `33e7fc54f0b225e92d148f0ef362fbb67045abcd`
+- Git blob SHA-1: `2a758194c470048e3b22aefc8954365397d9c48d`
+- Exact file size reported by Git tree: 3,037,252 bytes
+- Pinned-content re-fetch: 52,387 rows, 52,387 unique contract IDs, quantity 14,670,177, amount NPR 5,553,019,249.459984.
+
+This provides a durable Git commit/tree/blob identity for the retrieved object, but **not an independently computed SHA-256**. The blob is pinned and reproducible from GitHub; local raw-byte retention and SHA-256 remain outstanding.

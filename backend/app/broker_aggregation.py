@@ -30,8 +30,8 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         if status not in {"verified", "unmapped", "ambiguous", "rejected"}:
             raise ValueError(f"row {index}: unsupported identity_status")
         broker_id = row.get("broker_entity_id")
-        if status == "verified" and not broker_id:
-            raise ValueError(f"row {index}: verified identity requires broker_entity_id")
+        if status == "verified" and (not isinstance(broker_id, str) or not broker_id.strip()):
+            raise ValueError(f"row {index}: verified identity requires a nonblank broker_entity_id")
         if status != "verified" and broker_id is not None:
             raise ValueError(f"row {index}: unresolved identity cannot carry broker_entity_id")
         try:
@@ -41,7 +41,7 @@ def aggregate_broker_observations(rows: list[dict]) -> dict:
         if not amount.is_finite() or not quantity.is_finite() or amount < 0 or quantity < 0:
             raise ValueError(f"row {index}: amount and quantity must be finite and non-negative")
         required = ("trade_date", "symbol", "source_id", "contract_id", "source_payload_sha256", "source_row_number")
-        if any(row.get(k) in (None, "") for k in required):
+        if any(row.get(k) is None or not str(row.get(k)).strip() for k in required):
             raise ValueError(f"row {index}: missing grouping or lineage field")
         try:
             date.fromisoformat(str(row["trade_date"]))

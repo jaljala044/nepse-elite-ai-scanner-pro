@@ -79,5 +79,29 @@ class FloorsheetSourceComparisonTests(unittest.TestCase):
             compare_sources(bad, right, left_format="samir", right_format="socrate")
 
 
+    def test_independent_controls_require_matching_file_date(self):
+        left = write_csv("samir", [
+            {"date":"2026-11-23","sn":"1","contract_no":"C1","stock_symbol":"NABIL",
+             "buyer":"11","seller":"22","quantity":"2","rate":"100","amount":"200"},
+        ])
+        right = write_csv("socrate", [
+            {"transaction":"C1","symbol":"NABIL","buyer":"11","seller":"22",
+             "quantity":"2","rate":"100","amount":"200","date":"2026-11-23"},
+        ])
+        self.paths = [left, right]
+        result = compare_sources(
+            left, right, left_format="samir", right_format="socrate",
+            independent_control={
+                "trade_date":"2026-11-24","quantity":"2","gross_amount":"200",
+            },
+        )
+        self.assertEqual(result["independent_control"]["left"]["status"], "failed")
+        self.assertIn(
+            "source_date_mismatch",
+            result["independent_control"]["left"]["differences"],
+        )
+
+
+
 if __name__ == "__main__":
     unittest.main()

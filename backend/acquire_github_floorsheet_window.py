@@ -79,6 +79,7 @@ def acquire_window(
     workers: int,
     confirm_data_rights: bool,
     output: str | Path,
+    source_schema: str | None = None,
 ) -> dict[str, Any]:
     if not confirm_data_rights:
         raise ValueError("explicit rights-review confirmation is required")
@@ -114,6 +115,7 @@ def acquire_window(
         item["repository_path"] = local_path.relative_to(repository_root).as_posix()
     report = {
         "repository": f"{owner}/{repo}",
+        "source_schema": source_schema,
         "resolved_commit_sha": commit_sha,
         "prefix": prefix,
         "date_list_path": str(date_list),
@@ -157,6 +159,7 @@ def main() -> None:
     parser.add_argument("--max-total-bytes", type=int, required=True)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--confirm-data-rights", action="store_true")
+    parser.add_argument("--source-schema", choices=("urek", "socrateai"))
     parser.add_argument("--output", type=Path, default=Path("data/reports/floorsheet-window-acquisition.json"))
     args = parser.parse_args()
     report = acquire_window(
@@ -170,6 +173,7 @@ def main() -> None:
         workers=args.workers,
         confirm_data_rights=args.confirm_data_rights,
         output=args.output,
+        source_schema=args.source_schema,
     )
     print(json.dumps({
         "repository": report["repository"],

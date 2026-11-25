@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import stat
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -61,8 +62,13 @@ def inspect_zip(
     ):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{name} must be a positive integer")
-    if not isinstance(max_compression_ratio, (int, float)) or isinstance(max_compression_ratio, bool) or max_compression_ratio <= 0:
-        raise ValueError("max_compression_ratio must be positive")
+    if (
+        not isinstance(max_compression_ratio, (int, float))
+        or isinstance(max_compression_ratio, bool)
+        or not math.isfinite(max_compression_ratio)
+        or max_compression_ratio <= 0
+    ):
+        raise ValueError("max_compression_ratio must be finite and positive")
 
     archive_hash = sha256_file(path)
     entries = []

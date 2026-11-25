@@ -188,20 +188,52 @@ def compare_sources(
 
     control_report = None
     if independent_control is not None:
-        expected_quantity = Decimal(str(independent_control["quantity"]))
-        expected_amount = Decimal(str(independent_control["gross_amount"]))
+        if not isinstance(independent_control, dict):
+            raise ValueError("independent_control must be an object")
+        try:
+            expected_trade_date = str(independent_control["trade_date"])
+            date_type.fromisoformat(expected_trade_date)
+            expected_quantity = Decimal(str(independent_control["quantity"]))
+            expected_amount = Decimal(str(independent_control["gross_amount"]))
+        except (KeyError, ValueError, InvalidOperation, TypeError) as exc:
+            raise ValueError("independent_control requires valid trade_date, quantity and gross_amount") from exc
+        if (
+            not expected_quantity.is_finite() or expected_quantity < 0
+            or not expected_amount.is_finite() or expected_amount < 0
+        ):
+            raise ValueError("independent control totals must be finite and non-negative")
         control_report = {}
         for label, source in (("left", left), ("right", right)):
             qdiff = source["quantity"] - expected_quantity
             adiff = source["gross_amount"] - expected_amount
+            source_date_matches = set(source["date_counts"]) == {expected_trade_date}
+            source_quality_passes = source["data_quality_status"] == "passed"
+            passed = (
+                qdiff == 0 and adiff == 0
+                and source_date_matches and source_quality_passes
+            )
+            reasons = []
+            if qdiff != 0:
+                reasons.append("quantity_mismatch")
+            if adiff != 0:
+                reasons.append("gross_amount_mismatch")
+            if not source_date_matches:
+                reasons.append("source_date_mismatch")
+            if not source_quality_passes:
+                reasons.append("source_row_quality_not_passed")
             control_report[label] = {
+                "expected_trade_date": expected_trade_date,
+                "observed_date_counts": source["date_counts"],
+                "source_date_matches": source_date_matches,
+                "source_data_quality_status": source["data_quality_status"],
                 "expected_quantity": str(expected_quantity),
                 "observed_quantity": str(source["quantity"]),
                 "quantity_difference": str(qdiff),
                 "expected_gross_amount": str(expected_amount),
                 "observed_gross_amount": str(source["gross_amount"]),
                 "gross_amount_difference": str(adiff),
-                "status": "passed" if qdiff == 0 and adiff == 0 else "failed",
+                "differences": reasons,
+                "status": "passed" if passed else "failed",
             }
 
     if left_only or right_only or conflicts:

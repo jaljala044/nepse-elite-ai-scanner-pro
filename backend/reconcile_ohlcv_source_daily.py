@@ -18,11 +18,16 @@ def _read_rows(paths: list[str | Path]) -> list[dict]:
     for source_path in paths:
         with Path(source_path).open(encoding="utf-8-sig", newline="") as stream:
             reader = csv.DictReader(stream)
-            missing = REQUIRED - set(reader.fieldnames or [])
+            headers = reader.fieldnames or []
+            if len(headers) != len(set(headers)):
+                raise ValueError(f"{source_path}: duplicate CSV headers are not allowed")
+            missing = REQUIRED - set(headers)
             if missing:
                 raise ValueError(f"{source_path}: missing columns: " + ", ".join(sorted(missing)))
             for line, raw in enumerate(reader, 2):
                 try:
+                    if None in raw:
+                        raise ValueError("extra_unmapped_columns")
                     item = {key: (raw.get(key) or "").strip() for key in REQUIRED}
                     item["source_row_number"] = line
                     if not item["source_id"] or not item["symbol"]:

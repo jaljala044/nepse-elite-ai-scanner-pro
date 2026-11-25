@@ -262,3 +262,30 @@ dates remain candidates only; confirmed sessions added by this investigation: 0.
   validity. P1 remains blocked; details and the next five acquisition tasks
   are in `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
 
+
+
+## P1 execution increment — 2026-11-25 (broker and external EOD)
+
+- Added pinned-source broker party derivation script, tests and CI artifact
+  generation. Every contract becomes one buy and one sell execution-channel
+  observation; source codes remain strings; identities remain unmapped.
+- Independently calculated one-date control: 40,818 contracts, 81,636 party
+  observations, 91 codes, 346 securities, 15,466 broker/security/side groups,
+  9,435,392 quantity, NPR 3,877,623,296.62 gross amount, zero duplicate
+  contract IDs and zero quantity-rate-amount exceptions. The source itself
+  reports 19 missing contracts against 40,837 expected; totals are internal,
+  not independent exchange controls.
+- Added separate-repository EOD cross-check: 346 common symbols, one extra
+  symbol, 77 symbols with OHLCV differences (Open 4, High 7, Low 72, Close 1,
+  Volume 0). Its data license excludes the dataset; raw copy was removed and
+  only pointer/hash/metrics retained. Not primary exchange evidence.
+- Reviewed 2015-01-04 and 2026-11-18 pinned floorsheet samples by hash and
+  structure without staging extra raw copies pending rights review. The latter
+  has a publisher-reported 33-row shortfall; 2015 sample has one amount
+  arithmetic exception.
+- Repeated 616-calendar recovery search against the exact backfill base tree
+  and later pinned tree; no calendar file or generator found. Exact date set
+  remains unavailable.
+- P1 remains blocked. Current increment and next five actions are documented
+  in `docs/P1_ACCEPTANCE_STATUS_AND_NEXT_5_2026-11-25.md`.
+

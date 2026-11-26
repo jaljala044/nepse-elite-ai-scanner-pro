@@ -76,6 +76,10 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             broker_contract_failures.append({"row_index": index, "symbol": row.get("symbol"),
                 "trade_date": row.get("trade_date"), "reason": "session_or_complete_floorsheet_provenance_unverified"})
 
+    # Keep raw point-in-time prices for descriptive diagnostics; the contract
+    # gate below independently controls whether any component score is admitted.
+    prices = raw_prices
+
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
         "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(prices),

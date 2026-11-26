@@ -4,7 +4,7 @@
 - [x] Private repository and project documentation
 - [x] FastAPI health, CSV ingestion, history and scan endpoints
 - [x] Basic OHLCV validation and audit metadata
-- [ ] Persistent database and migrations
+- [x] Persistent DuckDB store for API CSV uploads/history (schema initialized automatically; formal migration/versioning strategy remains open)
 - [x] Automated tests and CI (20 backend tests passed on 2026-11-23)
 
 ## Phase 1 — verified data

@@ -652,7 +652,7 @@ def main() -> None:
                     "public_dates_expected", "public_files_found", "missing_public_files",
                     "official_rows_matched_by_date", "fully_matching_rows",
                     "match_rate_pct", "field_comparisons", "field_mismatches",
-                    "mismatches_by_field", "missing_public_active_rows",
+                    "mismatches_by_field", "field_error_stats", "missing_public_active_rows",
                     "missing_public_zero_activity_rows", "mismatch_examples",
                     "official_hash_errors", "download_errors", "gate")
     }, "gate": report["gate"]}, indent=2))

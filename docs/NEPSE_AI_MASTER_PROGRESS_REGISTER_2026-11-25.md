@@ -1686,3 +1686,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added [UNL historical coverage and alternate-source audit](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/UNL_historical_coverage_alternate_source_audit_2026-11-26.md), commit `560ac404d6585f00fad4abbd4879def6c71de7ad`.
 - Disposition: historical source discovered, ingestion rejected pending source correction, independent validation and rights/provenance review. UNL remains historically incomplete; no raw data changed, no price splice, no canonical/training promotion.
 - Next: obtain independently documented valid daily OHLCV for UNL, then expand symbol-specific coverage reconciliation and run full row-level OHLCV validation across both archives.
+
+
+## 2026-11-26 — historical instrument identity gate hardening
+
+- Extended `backend/app/instrument_manifest.py` to reject overlapping effective-date intervals across the full validated lifecycle, not just currently active rows. Conflicts are reported with lifecycle row indexes and the duplicated security ID and/or symbol dimension.
+- Adjacent, non-overlapping effective-date intervals remain valid. Added regression tests for historical security-ID overlap, symbol reuse under a different ID, and valid adjacent intervals.
+- Updated `.github/workflows/historical-identity-regression.yml` to run both the historical identity regression and instrument-manifest regression suites on relevant pushes and pull requests.
+- Focused CI: [Historical identity regression run 45829193181](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45829193181) — SUCCESS; 14 historical identity tests and 14 instrument-manifest tests passed.
+- Full backend CI: [run 45829193192](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45829193192) — SUCCESS; 641 tests passed.
+- This closes an engineering validation gap only. It does not verify the 281-equity universe, certify primary exchange dates, adjudicate OHLCV/floorsheet exceptions, establish data rights, or authorize canonical/training promotion.

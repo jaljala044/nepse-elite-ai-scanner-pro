@@ -1371,3 +1371,20 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 3. Continue the 616-session calendar recovery and primary NEPSE notice capture.
 4. Continue the OHLCV exception and corporate-action review without overwriting raw values or owner-finalized records.
 5. Continue floorsheet source lineage, missing-date and index-anomaly adjudication; keep canonical promotion blocked until all gates pass.
+
+
+## Work-session update — 2026-11-26 (Priority 94 equity classification)
+
+- Reviewed the three symbols that differ between the 278-symbol candidate list and 281-symbol provisional OHLCV coverage set: NESDO, ULBSL and YMHL.
+- ShareSansar company profiles identify NESDO and ULBSL as microfinance-sector companies with listed shares, and YMHL as a hydropower company with listed shares. ShareSansar's YMHL notice records NEPSE listing on 2026-06-19 and trading commencement on 2026-06-22. NEPSE's stock-list page also included all three symbols in its 2026-10-15 snapshot.
+- Microfinance is a sector, not a mutual-fund instrument classification. NESDO and ULBSL are company-share equities, not mutual funds. YMHL is a hydropower equity.
+- Report: [Priority 94 NESDO/ULBSL/YMHL equity classification evidence](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/PRIORITY_94_NESDO_ULBSL_YMHL_EQUITY_CLASSIFICATION_2026-11-26.md), commit `a458485be6c4c1d62de10959be24bf966435389e`.
+- **Disposition:** approved-provider evidence supports all three as equity inclusion candidates. Canonical promotion remains blocked pending dated symbol-to-security-ID reconciliation and effective lifecycle evidence; 2026-11-25 snapshot IDs NESDO/8041, ULBSL/8063 and YMHL/9342 are not yet a complete historical security master. No canonical universe or raw OHLCV/floorsheet data changed. No P2 training approval.
+
+### Updated next execution priorities
+
+1. Reconcile NESDO/8041, ULBSL/8063 and YMHL/9342 against dated security-master evidence and the active-equity universe's as-of date; then correct the candidate universe if the identity mapping is validated.
+2. Execute and inspect automation PR #3 dependency smoke test; then implement staged writes, immutable raw-response capture, session-date checks and end-to-end validation before production.
+3. Continue the 616-session calendar recovery and primary NEPSE notice capture.
+4. Continue OHLCV exception and corporate-action review without overwriting raw values or owner-finalized records.
+5. Continue floorsheet source-lineage, missing-date and index-anomaly adjudication; keep canonical promotion blocked until all gates pass.

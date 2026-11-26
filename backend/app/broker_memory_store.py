@@ -310,14 +310,19 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
         )
         if market_context_by_symbol is not None and not isinstance(market_context_by_symbol, dict):
             raise ValueError("market_context_by_symbol must be an object keyed by stock symbol")
+        body_as_of_session = covered_sessions[-1]
         early_patterns = []
+        normalized_context = {
+            str(key).strip().upper(): value
+            for key, value in (market_context_by_symbol or {}).items()
+        }
         for symbol, symbol_windows in channel_features["securities"].items():
             broker_windows = {
                 horizon: symbol_windows.get(horizon, {})
                 for horizon in ("1D", "1W", "1M")
             }
             latest_channels = broker_windows["1D"].get("execution_channels", [])
-            context = (market_context_by_symbol or {}).get(symbol, {})
+            context = normalized_context.get(symbol, {})
             for channel in latest_channels:
                 early_patterns.append(evaluate_broker_early_pattern(
                     broker_code=channel["execution_channel_code"],
@@ -328,7 +333,6 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                     as_of_session=body_as_of_session,
                     minimum_daily_flow_multiple=minimum_daily_flow_multiple,
                 ))
-        body_as_of_session = covered_sessions[-1]
         body = {
             "schema_version": 1,
             "feature_version": "broker-footprint-v1",

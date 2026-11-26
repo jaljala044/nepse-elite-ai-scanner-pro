@@ -77,13 +77,25 @@ def reconcile_broker_batch(
     if availability.tzinfo is None or availability.utcoffset() is None:
         raise IngestionError("available_at_must_be_timezone_aware")
 
-    expected = expected_source_ids or set()
-    if not expected or not received_source_ids:
+    if not isinstance(batch_id, str) or not batch_id.strip():
+        raise IngestionError("batch_id_must_be_nonblank")
+    try:
+        threshold = Decimal(str(coverage_threshold))
+    except (InvalidOperation, TypeError, ValueError):
+        raise IngestionError("invalid_coverage_threshold") from None
+    if not threshold.is_finite() or not (Decimal("0") < threshold <= Decimal("1")):
+        raise IngestionError("invalid_coverage_threshold")
+
+    expected = set(expected_source_ids or set())
+    received = set(received_source_ids or set())
+    if any(not isinstance(item, str) or not item.strip() for item in expected | received):
+        raise IngestionError("invalid_source_inventory")
+    if not expected or not received:
         coverage_status, ratio = "unknown", None
     else:
-        ratio_decimal = Decimal(len(expected & received_source_ids)) / Decimal(len(expected))
+        ratio_decimal = Decimal(len(expected & received)) / Decimal(len(expected))
         ratio = str(ratio_decimal)
-        coverage_status = "complete" if ratio_decimal >= coverage_threshold else "partial"
+        coverage_status = "complete" if ratio_decimal >= threshold else "partial"
 
     report = IngestionReport(batch_id, coverage_status, ratio)
     prior = dict(seen_natural_keys or {})
@@ -107,10 +119,15 @@ def reconcile_broker_batch(
             session = date.fromisoformat(str(raw["session_date"]))
         except ValueError:
             session = None
+        for identity_field in ("security_id", "broker_id", "source_id", "evidence_id"):
+            if not isinstance(raw[identity_field], str) or not raw[identity_field].strip():
+                reasons.append("blank_required_identity:" + identity_field)
         if session is None or str(raw["session_date"]) not in verified_sessions:
             reasons.append("unverified_or_invalid_session")
         if str(raw["broker_id"]) not in verified_brokers:
             reasons.append("unverified_broker_identity")
+        if str(raw["source_id"]) not in expected or str(raw["source_id"]) not in received:
+            reasons.append("source_not_in_verified_inventory")
         side = str(raw["side"]).upper()
         if side not in SIDES:
             reasons.append("invalid_side")

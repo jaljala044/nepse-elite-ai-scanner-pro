@@ -1,0 +1,1 @@
+action_id,symbol,security_id,isin,action_type,announcement_date,announced_at,available_at,last_trade_date,record_date,ex_date,allotment_distribution_date,ratio_or_terms,factor,factor_method,source_id,source_tier,evidence_uri,raw_evidence_path,raw_evidence_sha256,identity_status,identity_evidence_id,review_status,reviewer_id,reviewed_at,notes

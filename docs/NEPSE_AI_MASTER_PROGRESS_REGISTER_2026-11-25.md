@@ -1573,3 +1573,11 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - SMATA's acquisition share addition is explicitly not treated as a new ticker first-trade event: the symbol already had active OHLCV rows by 2024-07-20, before the 2024-08-02 additional listing.
 - These are project archive OHLCV observations, not independent trade-level verification. Exact floor-sheet contract corroboration is still required; first_trading_date_verified remains false. Repeated carry-forward OHLCV rows are a known caveat.
 - No stable IDs/validity intervals inferred, no price series modified/spliced, no canonical or training promotion. Priority 97 remains open.
+
+
+### Priority 97 — identity snapshot cross-check and acceptance decision (2026-11-26)
+
+- Cross-checked 573-row `nepse_security_id_snapshot_2026-11-25.csv`. Current successor snapshot IDs: SLBSL 2804, NMLBBL 396, MATRI 694, SMATA 2761, SMPDA 2896, GBLBS 583, PFL 236 (all status A). These are recorded as snapshot IDs only; `stable_id` remains null.
+- Former symbols BPW, MMFDB, NLBBL, JALPA, KLBSL, MKLB, SABSL, SDLBSL, SAMAJ and SFCL are absent from this current snapshot. This is not evidence of no historical ID; historical IDs remain unresolved.
+- Corrected report to reconcile earlier null statements: six positive-volume OHLCV first-session candidates are now recorded in JSON (SLBSL/NMLBBL 2024-05-19; MATRI 2024-08-13; SMPDA 2024-08-18; GBLBS 2025-12-23; PFL 2026-09-16), all unverified pending historical floorsheets. SMATA is an additional-share event on an existing symbol.
+- Acceptance decision: Priority 97 is partially evidenced but NOT CLOSED. Missing: historical predecessor security IDs, historical security-master payload, independent contract-level floorsheet confirmation, and legal effective-date boundaries. No canonical ID assignment, price splice or training promotion.

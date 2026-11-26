@@ -172,7 +172,7 @@ def persist_evidence_batch(
         })
         record_json = json.dumps(record_body, sort_keys=True, separators=(",", ":"), default=str)
         record_id = hashlib.sha256(
-            f"{source_id}:{digest}:{row_number}:{parser_version}".encode("utf-8")
+            f"{fetch_id}:{source_id}:{digest}:{row_number}:{parser_version}".encode("utf-8")
         ).hexdigest()
         normalized.append((
             record_id, fetch_id, source_id, digest, row_number, record_type,
@@ -190,6 +190,17 @@ def persist_evidence_batch(
         ).fetchone()
         if existing and (existing[0] != source_id or existing[1] != digest or existing[2] != manifest_json):
             raise ValueError("fetch_id already exists with different immutable capture metadata")
+        if existing:
+            stored_rows = con.execute(
+                "SELECT source_row_number, record_json FROM normalized_evidence_records "
+                "WHERE fetch_id = ? ORDER BY source_row_number",
+                [fetch_id],
+            ).fetchall()
+            expected_rows = sorted((item[4], item[11]) for item in normalized)
+            if stored_rows != expected_rows:
+                raise ValueError(
+                    "fetch_id already exists with different immutable normalized record batch"
+                )
         con.execute("""
             INSERT INTO raw_source_objects
             VALUES (?, ?, ?, ?, ?)
@@ -206,7 +217,6 @@ def persist_evidence_batch(
             con.execute("""
                 INSERT INTO normalized_evidence_records
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (record_id) DO NOTHING
             """, list(item))
         con.execute("COMMIT")
     except Exception:

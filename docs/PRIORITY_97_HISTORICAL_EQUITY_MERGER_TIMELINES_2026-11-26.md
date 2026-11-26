@@ -135,3 +135,22 @@ The read-only review was extended to BPW, MMFDB, NLBBL, SAMAJ, SFCL, SABSL and S
 Successor files show that SLBSL, GBLBS and PFL already had OHLCV histories before the respective integration events; they are not cleanly newly-started successor series in these archives. NMLBBL's first file row is 2024-05-19; SMPDA's first file row is 2024-08-18. The file start is not automatically the legal first-trading date. All these boundary checks remain repository observations, not exchange-primary certification.
 
 **Data-quality guardrail:** a repeated OHLCV row with nonzero volume can be a carried-forward value in these files. The terminal row date alone is therefore not a safe proxy for last trade. Distinct row/signature analysis and source trading calendar evidence are required before promoting last-trade dates.
+
+
+## Security-ID reconciliation — dated successor snapshot (2026-11-26)
+
+The dated 2026-11-25 security-ID snapshot (`data/reference/nepse_security_id_snapshot_2026-11-25.csv`, Git blob `ed548857eb550fbb237910eb903fc202751c63a1`) supplies current successor mappings:
+
+| Successor | Security ID | Snapshot date |
+|---|---:|---:|
+| SLBSL | 2804 | 2026-11-25 |
+| NMLBBL | 396 | 2026-11-25 |
+| MATRI | 694 | 2026-11-25 |
+| SMATA | 2761 | 2026-11-25 |
+| SMPDA | 2896 | 2026-11-25 |
+| GBLBS | 583 | 2026-11-25 |
+| PFL | 236 | 2026-11-25 |
+
+These are **current snapshot IDs only**. They are not backdated into predecessor periods and do not establish whether an ID was retained, replaced, or reassigned across a merger. The unmatched-symbol review still lists the predecessor symbols BPW, JALPA, KLBSL, MKLB, MMFDB, NLBBL, SABSL, SAMAJ, SDLBSL and SFCL as unresolved historical identities. No predecessor ID is inferred from ticker similarity, successor company name, or current ID.
+
+Disposition: successor snapshot IDs are attached as dated observations in the JSON evidence file; predecessor historical IDs, ID validity intervals, and legal continuity remain unresolved. No `stable_id` values are populated and no price history is linked or spliced.

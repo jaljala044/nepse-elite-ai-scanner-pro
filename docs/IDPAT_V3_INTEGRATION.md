@@ -1,0 +1,3 @@
+# IDPAT V3 integration
+
+Original IDPAT V3 rules not located. No output is presented as an authentic IDPAT score. The separate nepse_provisional_v1 method is an experimental research-only score: 25 points each for close above SMA20, positive 20-session return, latest volume at least 1.5 times prior 20-bar mean, and close above prior 20-bar high. Weights and volume threshold are configurable in the engine. Prior range low is an invalidation reference, not a trade recommendation. A low sweep is an OHLC proxy. No predictive calibration or backtest yet. P1 evidence gate blocks both methods on unverified rows. P3 integration and authentic rules remain pending. No historical data modified.

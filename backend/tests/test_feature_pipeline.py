@@ -51,6 +51,13 @@ class FeaturePipelineTests(unittest.TestCase):
         smc = result["smc_features"]["AAA"]
         self.assertEqual(smc["status"], "observed")
         self.assertEqual(smc["timeframes"]["daily"]["status"], "observed")
+        candidates = result["component_candidates"]["AAA"]
+        self.assertIsNotNone(candidates["wyckoff"])
+        self.assertIsNotNone(candidates["trend"])
+        self.assertIsNotNone(candidates["volume"])
+        self.assertIsNotNone(candidates["smc"])
+        self.assertIsNone(candidates["relative_strength"])
+        self.assertIsNone(candidates["broker"])
 
 
 if __name__ == "__main__":

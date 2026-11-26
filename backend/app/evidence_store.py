@@ -201,23 +201,24 @@ def persist_evidence_batch(
                 raise ValueError(
                     "fetch_id already exists with different immutable normalized record batch"
                 )
-        con.execute("""
-            INSERT INTO raw_source_objects
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT (source_id, payload_sha256) DO NOTHING
-        """, [source_id, digest, len(payload), stored["payload_path"], received_at])
-        con.execute("""
-            INSERT INTO source_captures
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (fetch_id) DO NOTHING
-        """, [fetch_id, source_id, source_url, digest, requested_at, received_at,
-              parser_version, str(manifest.get("rights_status") or "unknown"),
-              manifest_json, stored["manifest_path"]])
-        for item in normalized:
+            # An exact replay is a read-only confirmation, not a second insert.
+        else:
             con.execute("""
-                INSERT INTO normalized_evidence_records
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, list(item))
+                INSERT INTO raw_source_objects
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (source_id, payload_sha256) DO NOTHING
+            """, [source_id, digest, len(payload), stored["payload_path"], received_at])
+            con.execute("""
+                INSERT INTO source_captures
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, [fetch_id, source_id, source_url, digest, requested_at, received_at,
+                  parser_version, str(manifest.get("rights_status") or "unknown"),
+                  manifest_json, stored["manifest_path"]])
+            for item in normalized:
+                con.execute("""
+                    INSERT INTO normalized_evidence_records
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, list(item))
         con.execute("COMMIT")
     except Exception:
         con.execute("ROLLBACK")

@@ -55,6 +55,20 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         symbol: smc_features(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
     }
+    component_candidates = {}
+    for symbol in sorted(by_symbol):
+        if not symbol:
+            continue
+        component_candidates[symbol] = {
+            "wyckoff": wyckoff_features[symbol].get("score") if wyckoff_features[symbol].get("status") == "observed" else None,
+            "trend": trend_features[symbol].get("score") if trend_features[symbol].get("status") == "observed" else None,
+            "relative_strength": None,
+            "broker": None,
+            "volume": volume_features[symbol].get("score") if volume_features[symbol].get("status") == "observed" else None,
+            "liquidity": None,
+            "sector": None,
+            "smc": smc_features_by_symbol[symbol].get("score") if smc_features_by_symbol[symbol].get("status") == "observed" else None,
+        }
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
@@ -71,6 +85,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "volume_features": volume_features,
         "wyckoff_features": wyckoff_features,
         "smc_features": smc_features_by_symbol,
+        "component_candidates": component_candidates,
         "broker_participation": broker_participation_summary(broker_rows),
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

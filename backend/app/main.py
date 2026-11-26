@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone, time
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
+from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .storage import DATA, IMPORTS, store_rows, snapshot
@@ -52,10 +53,19 @@ def scan(request: ScanRequest):
         errors = assess(symbol.upper(), rows, cutoff.isoformat(), REVIEWED_ROWS)
         result["eligibility"] = {"eligible": not errors, "reasons": errors}
         if errors:
+            structure_status = (
+                result["status"] if result["status"] == "data_quality_failed" else "eligibility_unverified"
+            )
+            result["market_structure"] = {"status": structure_status, "bias": "neutral", "events": []}
             result["signals"] = []
             result["metrics"] = {}
             if result["status"] == "screened":
                 result["status"] = "eligibility_unverified"
+        else:
+            structure = detect_structure(rows)
+            reviewed_rows = [REVIEWED_ROWS[(symbol.upper(), str(row["date"]))] for row in rows]
+            add_event_evidence(structure, reviewed_rows)
+            result["market_structure"] = structure
         results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}

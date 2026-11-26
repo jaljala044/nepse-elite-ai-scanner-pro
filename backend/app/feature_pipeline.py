@@ -66,6 +66,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             contract["exclusions"].append(failure)
 
     broker_contract_failures = []
+    broker_contract_by_symbol = {}
     broker_rows = []
     for index, row in enumerate(raw_broker_rows):
         day = str(row.get("trade_date", ""))
@@ -77,11 +78,17 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             and isinstance(row.get("source_id"), str) and bool(row["source_id"].strip())
             and valid_digest(row.get("source_payload_sha256"))
         )
+        symbol = str(row.get("symbol", "")).strip().upper()
+        contract = broker_contract_by_symbol.setdefault(symbol, {"input_rows": 0, "admitted_rows": 0, "exclusions": []})
+        contract["input_rows"] += 1
         if admitted:
             broker_rows.append(row)
+            contract["admitted_rows"] += 1
         else:
-            broker_contract_failures.append({"row_index": index, "symbol": row.get("symbol"),
-                "trade_date": row.get("trade_date"), "reason": "session_or_complete_floorsheet_provenance_unverified"})
+            failure = {"row_index": index, "symbol": row.get("symbol"),
+                "trade_date": row.get("trade_date"), "reason": "session_or_complete_floorsheet_provenance_unverified"}
+            broker_contract_failures.append(failure)
+            contract["exclusions"].append(failure)
 
     # Sector mappings must be effective-dated at the exact as-of session.
     sector_membership_contract_ok = False
@@ -118,6 +125,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
 
     for contract in price_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
+    for contract in broker_contract_by_symbol.values():
+        contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
 
     # Keep raw point-in-time prices for descriptive diagnostics; the contract
     # gate below independently controls whether each symbol's component score is admitted.
@@ -130,7 +139,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                   "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
                   "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
-                  "exclusions": broker_contract_failures},
+                  "exclusions": broker_contract_failures, "symbols": broker_contract_by_symbol},
         "sector_membership": {"score_eligible": sector_membership_contract_ok,
                               "reason": sector_membership_contract_reason},
     }
@@ -250,7 +259,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         # accepts only status='observed' plus a numeric score; unavailable,
         # partial and experimental outputs remain missing.
         price_score_gate = input_contracts["ohlcv"]["symbols"].get(symbol, {}).get("score_eligible", False)
-        broker_score_gate = input_contracts["broker_floorsheet"]["score_eligible"]
+        broker_score_gate = input_contracts["broker_floorsheet"]["symbols"].get(symbol, {}).get("score_eligible", False)
         feature_bundle = {
             "wyckoff": ({**wyckoff_features[symbol], "status": "input_contract_unverified", "score": None}
                         if not price_score_gate else wyckoff_features[symbol]),

@@ -70,6 +70,34 @@ def validate_instrument_manifest(records: list[dict], *, as_of: str,
             if row["instrument_type"] in TARGET_COUNTS and row["status"].casefold() in ACTIVE_STATUSES:
                 active.append(row)
 
+    # Validate identity uniqueness across the complete dated lifecycle, not only
+    # rows active on the requested as-of date. This catches historical overlaps
+    # that could otherwise leak into point-in-time joins or price histories.
+    overlapping_intervals = []
+    dated = []
+    for row in lifecycle:
+        start = date.fromisoformat(row["valid_from"])
+        end = date.fromisoformat(row["valid_to"]) if row.get("valid_to") is not None else date.max
+        dated.append((row, start, end))
+    for index, (left, left_start, left_end) in enumerate(dated):
+        for right, right_start, right_end in dated[index + 1:]:
+            if left_start <= right_end and right_start <= left_end:
+                same_id = left["security_id"] == right["security_id"]
+                same_symbol = left["symbol"] == right["symbol"]
+                if same_id or same_symbol:
+                    overlapping_intervals.append({
+                        "left_row": lifecycle.index(left),
+                        "right_row": lifecycle.index(right),
+                        "security_id": left["security_id"] if same_id else None,
+                        "symbol": left["symbol"] if same_symbol else None,
+                    })
+    if overlapping_intervals:
+        errors.append({
+            "error": "overlapping_lifecycle_identity_intervals",
+            "count": len(overlapping_intervals),
+            "conflicts": overlapping_intervals,
+        })
+
     ids = [r["security_id"] for r in active]
     symbols = [r["symbol"] for r in active]
     duplicate_ids = sorted(x for x, n in Counter(ids).items() if n > 1)
@@ -100,6 +128,7 @@ def validate_instrument_manifest(records: list[dict], *, as_of: str,
         "target_counts": TARGET_COUNTS,
         "duplicate_active_security_ids": duplicate_ids,
         "duplicate_active_symbols": duplicate_symbols,
+        "overlapping_lifecycle_identity_intervals": overlapping_intervals,
         "errors": errors,
         "manifest_verified": not errors and len(active) == sum(TARGET_COUNTS.values()),
         "promotion_allowed": not errors and len(active) == sum(TARGET_COUNTS.values()),

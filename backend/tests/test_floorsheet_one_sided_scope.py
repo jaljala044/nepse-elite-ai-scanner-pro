@@ -101,6 +101,41 @@ class OneSidedScopeTests(unittest.TestCase):
         self.assertFalse(report["coverage_admission_allowed"])
         self.assertFalse(report["canonical_promotion_allowed"])
         self.assertEqual(report["date_summaries"]["2026-11-19"]["one_sided_contract_count"], 4)
+        self.assertEqual(report["scope_classification_basis"],
+                         "current_snapshot_hint_only_not_historical_effective_dated_identity")
+        self.assertTrue(all(not row["historical_security_identity_verified"]
+                            for row in report["one_sided_contracts"]))
+
+    def test_bond_name_uses_word_boundaries(self):
+        audit = self._audit()
+        audit["date_reports"]["2026-11-20"]["audit"]["comparison"]["right_only_contracts"] = [
+            {"trade_date": "2026-11-20", "contract_id": "B1", "symbol": "BOND",
+             "quantity": "10", "rate": "100", "amount": "1000"}
+        ]
+        report = classify_one_sided_contracts(
+            audit, self.crosswalk, self.candidates, self.snapshot, "2026-11-25"
+        )
+        self.assertEqual(report["one_sided_contracts"][0]["scope_class"], "OUT_OF_SCOPE_BOND")
+
+    def test_snapshot_rows_must_match_expected_snapshot_date(self):
+        rows = self._read(self.snapshot)
+        rows[0]["snapshot_date"] = "2026-11-24"
+        self._write(self.snapshot, rows)
+        with self.assertRaisesRegex(ValueError, "not dated 2026-11-25"):
+            classify_one_sided_contracts(
+                self._audit(), self.crosswalk, self.candidates, self.snapshot,
+                "2026-11-25",
+            )
+
+    def test_candidate_snapshot_id_conflict_fails_closed(self):
+        rows = self._read(self.candidates)
+        rows[0]["official_snapshot_id"] = "999"
+        self._write(self.candidates, rows)
+        with self.assertRaisesRegex(ValueError, "target candidate/security snapshot ID conflict"):
+            classify_one_sided_contracts(
+                self._audit(), self.crosswalk, self.candidates, self.snapshot,
+                "2026-11-25",
+            )
 
     def test_crosswalk_snapshot_identity_mismatch_fails_closed(self):
         rows = self._read(self.crosswalk)

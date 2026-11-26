@@ -584,5 +584,53 @@
     "Stable historical security IDs and effective trading intervals still outstanding.",
     "Joint-transaction start dates are corporate integration dates, not necessarily the last trading date, first trading date under successor ticker, or stable security-ID effective boundary.",
     "Additional 2024–2026 merger dates are corporate joint-operation start dates; they must not be interpreted as predecessor last-trading dates or successor first-trading dates."
-  ]
+  ],
+  "security_id_recovery": {
+    "reviewed_on": "2026-11-26",
+    "provider_lead": {
+      "provider": "ShareHub",
+      "documentation_url": "https://sharehubnepal.com/data/nepse-data-documentation/",
+      "companies_endpoint": "GET /data/api/v1/nepse-data/companies",
+      "stock_table_endpoint": "GET /data/api/v1/nepse-data/stocks",
+      "documented_id_field": "nepseSecurityId",
+      "access_requirements": [
+        "Bearer-authenticated Data API account",
+        "licensed service entitlement",
+        "server IP allow-list"
+      ],
+      "public_retrieval_status": "not_acquired",
+      "response_body_sha256": null,
+      "retrieval_http_status": null,
+      "note": "Public documentation describes schema only. No authenticated response or historical snapshot archive acquired. The companies endpoint schema does not include a security ID field for every company row."
+    },
+    "historical_predecessor_ids": {
+      "status": "unresolved",
+      "symbols": [
+        "BPW",
+        "JALPA",
+        "KLBSL",
+        "MKLB",
+        "MMFDB",
+        "NLBBL",
+        "SABSL",
+        "SDLBSL",
+        "SAMAJ",
+        "SFCL"
+      ],
+      "rule": "Do not infer predecessor IDs from current successor IDs, ticker similarity, company names, or OHLCV filename."
+    },
+    "successor_snapshot": {
+      "snapshot_date": "2026-11-25",
+      "source_file": "data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "source_blob_sha": "ed548857eb550fbb237910eb903fc202751c63a1",
+      "scope": "current snapshot observation only; not a historical validity interval"
+    },
+    "promotion": {
+      "stable_ids_assigned": false,
+      "predecessor_ids_assigned": false,
+      "history_splicing_authorized": false,
+      "canonical_universe_promotion_authorized": false,
+      "training_promotion_authorized": false
+    }
+  }
 }

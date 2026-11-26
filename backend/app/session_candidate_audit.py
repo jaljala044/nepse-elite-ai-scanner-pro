@@ -66,7 +66,7 @@ def audit_session_candidates(
                     payload = source_path.read_bytes()
                     actual_size = len(payload)
                     actual_blob = hashlib.sha1(
-                        b"blob " + str(actual_size).encode("ascii") + b"\\0" + payload
+                        b"blob " + str(actual_size).encode("ascii") + b"\0" + payload
                     ).hexdigest()
                     if actual_size != size:
                         source_failures.append({"line": line, "date": day.isoformat(), "reason": "source_byte_count_mismatch", "expected": size, "actual": actual_size})

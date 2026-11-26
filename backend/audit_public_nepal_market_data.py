@@ -729,6 +729,241 @@ def crosscheck_socrateai_history(official_root: Path) -> dict:
     return result
 
 
+
+def compare_srijankarki_daily_csvs(official_rows: list[dict],
+                                    daily_csv_by_date: dict[str, bytes]) -> dict:
+    """Compare a free ShareSansar-derived daily archive to official NEPSE rows."""
+    fields = {
+        "high": ("high", "highPrice", Decimal("0.0001")),
+        "low": ("low", "lowPrice", Decimal("0.0001")),
+        "close": ("close", "closePrice", Decimal("0.0001")),
+        "volume": ("volume", "totalTradedQuantity", Decimal("0")),
+        "turnover": ("turnover", "totalTradedValue", Decimal("0.05")),
+    }
+    result = {
+        "official_rows": len(official_rows),
+        "public_dates_expected": len({str(r.get("businessDate", ""))[:10] for r in official_rows}),
+        "public_files_found": len(daily_csv_by_date),
+        "missing_public_files": [],
+        "public_rows": 0,
+        "duplicate_symbol_rows": 0,
+        "malformed_rows": 0,
+        "invalid_ohlc_rows": 0,
+        "official_rows_matched_by_date": 0,
+        "fully_matching_rows": 0,
+        "field_comparisons": 0,
+        "field_mismatches": 0,
+        "mismatches_by_field": {key: 0 for key in fields},
+        "field_error_accumulators": {
+            key: {"absolute_difference_sum": 0.0, "max_absolute_difference": 0.0,
+                  "max_relative_difference_pct": 0.0}
+            for key in fields
+        },
+        "missing_public_active_rows": 0,
+        "missing_public_zero_activity_rows": 0,
+        "mismatch_examples": [],
+        "per_day": [],
+        "fields_compared": list(fields),
+        "not_compared": ["open"],
+        "open_values_observed": 0,
+    }
+    official_by_day = {}
+    expected_symbols = set()
+    for row in official_rows:
+        day = str(row.get("businessDate", ""))[:10]
+        symbol = str(row.get("symbol", "")).strip().upper()
+        if not day or not symbol:
+            continue
+        expected_symbols.add(symbol)
+        official_by_day.setdefault(day, []).append(row)
+
+    for day in sorted(official_by_day):
+        content = daily_csv_by_date.get(day)
+        if content is None:
+            result["missing_public_files"].append(day)
+            public_rows = {}
+        else:
+            try:
+                reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig")))
+                if reader.fieldnames != ["date", "symbol", "open", "high", "low", "close", "volume", "turnover"]:
+                    result["malformed_rows"] += 1
+                    public_rows = {}
+                else:
+                    public_rows = {}
+                    for row in reader:
+                        symbol = (row.get("symbol") or "").strip().upper()
+                        if symbol not in expected_symbols:
+                            continue
+                        result["public_rows"] += 1
+                        if row.get("date") != day or not symbol:
+                            result["malformed_rows"] += 1
+                            continue
+                        if symbol in public_rows:
+                            result["duplicate_symbol_rows"] += 1
+                            continue
+                        try:
+                            values = {
+                                key: Decimal(str(row[key]))
+                                for key in ("open", "high", "low", "close", "volume", "turnover")
+                            }
+                            if any(not value.is_finite() for value in values.values()):
+                                raise InvalidOperation("non-finite value")
+                        except (InvalidOperation, TypeError, ValueError, KeyError):
+                            result["malformed_rows"] += 1
+                            continue
+                        result["open_values_observed"] += 1
+                        if (min(values["open"], values["high"], values["low"], values["close"]) <= 0
+                                or values["high"] < max(values["open"], values["low"], values["close"])
+                                or values["low"] > min(values["open"], values["high"], values["close"])
+                                or values["volume"] < 0 or values["turnover"] < 0):
+                            result["invalid_ohlc_rows"] += 1
+                        public_rows[symbol] = values
+            except (UnicodeDecodeError, csv.Error):
+                result["malformed_rows"] += 1
+                public_rows = {}
+
+        day_result = {"date": day, "official_rows": len(official_by_day[day]),
+                      "matched": 0, "mismatches": 0}
+        for official in official_by_day[day]:
+            symbol = str(official.get("symbol", "")).strip().upper()
+            public = public_rows.get(symbol)
+            quantity = Decimal(str(official.get("totalTradedQuantity", 0) or 0))
+            turnover = Decimal(str(official.get("totalTradedValue", 0) or 0))
+            if public is None:
+                if quantity > 0 or turnover > 0:
+                    result["missing_public_active_rows"] += 1
+                else:
+                    result["missing_public_zero_activity_rows"] += 1
+                continue
+            result["official_rows_matched_by_date"] += 1
+            day_result["matched"] += 1
+            row_mismatches = []
+            for field, (public_key, official_key, tolerance) in fields.items():
+                try:
+                    left = public[public_key]
+                    right = Decimal(str(official[official_key]))
+                    if not left.is_finite() or not right.is_finite():
+                        raise InvalidOperation("non-finite value")
+                    result["field_comparisons"] += 1
+                    difference = abs(left - right)
+                    if difference > tolerance:
+                        result["field_mismatches"] += 1
+                        result["mismatches_by_field"][field] += 1
+                        stats = result["field_error_accumulators"][field]
+                        absolute = float(difference)
+                        relative_pct = float(difference / abs(right) * 100) if right else None
+                        stats["absolute_difference_sum"] += absolute
+                        stats["max_absolute_difference"] = max(stats["max_absolute_difference"], absolute)
+                        if relative_pct is not None:
+                            stats["max_relative_difference_pct"] = max(
+                                stats["max_relative_difference_pct"], relative_pct
+                            )
+                        row_mismatches.append({
+                            "field": field, "public": str(left), "official": str(right),
+                        })
+                except (InvalidOperation, TypeError, ValueError, KeyError) as exc:
+                    result["field_mismatches"] += 1
+                    result["mismatches_by_field"][field] += 1
+                    row_mismatches.append({"field": field, "error": str(exc)})
+            if row_mismatches:
+                day_result["mismatches"] += 1
+                if len(result["mismatch_examples"]) < 100:
+                    result["mismatch_examples"].append({
+                        "symbol": symbol, "date": day, "mismatches": row_mismatches,
+                    })
+            else:
+                result["fully_matching_rows"] += 1
+        result["per_day"].append(day_result)
+
+    result["field_error_stats"] = {
+        field: {
+            "count": result["mismatches_by_field"][field],
+            "mean_absolute_difference": round(
+                values["absolute_difference_sum"] / result["mismatches_by_field"][field], 6
+            ) if result["mismatches_by_field"][field] else 0,
+            "max_absolute_difference": round(values["max_absolute_difference"], 6),
+            "max_relative_difference_pct": round(values["max_relative_difference_pct"], 6),
+        }
+        for field, values in result["field_error_accumulators"].items()
+    }
+    del result["field_error_accumulators"]
+    result["match_rate_pct"] = round(
+        result["fully_matching_rows"] / result["official_rows_matched_by_date"] * 100, 4
+    ) if result["official_rows_matched_by_date"] else None
+    result["status"] = "COMPLETED"
+    result["gate"] = "RECONCILED_REVIEW_ONLY" if (
+        not result["missing_public_files"] and not result["duplicate_symbol_rows"]
+        and not result["malformed_rows"] and not result["invalid_ohlc_rows"]
+        and not result["missing_public_active_rows"] and not result["field_mismatches"]
+    ) else "FAIL"
+    return result
+
+
+def crosscheck_srijankarki_history(official_root: Path) -> dict:
+    """Fetch pinned public ShareSansar-derived daily CSVs and compare official fields."""
+    evidence_root = official_root.parent
+    manifest_path = evidence_root / "SHA256SUMS"
+    manifest = {}
+    if manifest_path.exists():
+        for line in manifest_path.read_text(encoding="utf-8").splitlines():
+            parts = line.strip().split(None, 1)
+            if len(parts) == 2:
+                manifest[parts[1].lstrip("* ")] = parts[0].lower()
+    official_rows = []
+    hash_errors = []
+    for symbol_dir in sorted(p for p in official_root.iterdir() if p.is_dir()):
+        response_path = symbol_dir / "response-01.bin"
+        if not response_path.exists():
+            continue
+        relative = str(response_path.relative_to(evidence_root)).replace("\\", "/")
+        raw = response_path.read_bytes()
+        if manifest.get(relative) != hashlib.sha256(raw).hexdigest():
+            hash_errors.append({"symbol": symbol_dir.name, "error": "official_response_sha256_missing_or_mismatched"})
+            continue
+        try:
+            rows = json.loads(raw.decode("utf-8")).get("content")
+            if not isinstance(rows, list):
+                raise ValueError("official response missing content array")
+            for row in rows:
+                official_rows.append({**row, "symbol": symbol_dir.name})
+        except Exception as exc:
+            hash_errors.append({"symbol": symbol_dir.name, "error": f"official_json_invalid:{type(exc).__name__}"})
+    dates = sorted({str(r.get("businessDate", ""))[:10] for r in official_rows if r.get("businessDate")})
+    if not dates:
+        return {"status": "OFFICIAL_CAPTURE_NOT_PRESENT", "official_hash_errors": hash_errors}
+    headers = {"User-Agent": "NEPSE-ELITE-public-source-crosscheck/1.0",
+               "Accept": "application/vnd.github+json"}
+    with httpx.Client(timeout=httpx.Timeout(45.0, connect=15.0),
+                      headers=headers, follow_redirects=True) as client:
+        commit_response = client.get("https://api.github.com/repos/srijankarki07/nepse-data/commits/main")
+        commit_response.raise_for_status()
+        source_commit = commit_response.json()["sha"]
+        daily_files = {}
+        download_errors = []
+        for day in dates:
+            url = (f"https://raw.githubusercontent.com/srijankarki07/nepse-data/{source_commit}"
+                   f"/data/daily/{day[:4]}/{day}.csv")
+            response = client.get(url)
+            if response.status_code == 404:
+                download_errors.append({"date": day, "error": "daily_file_missing"})
+                continue
+            response.raise_for_status()
+            daily_files[day] = response.content
+    result = compare_srijankarki_daily_csvs(official_rows, daily_files)
+    result["source_repository"] = "srijankarki07/nepse-data"
+    result["source_commit"] = source_commit
+    result["official_hash_errors"] = hash_errors
+    result["download_errors"] = download_errors
+    result["source_provenance"] = "publisher states all data was scraped from ShareSansar; not direct NEPSE data"
+    result["source_rights_verified"] = False
+    result["corporate_action_adjustments_verified"] = False
+    result["open_price_independently_verified"] = False
+    result["gate"] = "FAIL" if (
+        hash_errors or download_errors or result["gate"] != "RECONCILED_REVIEW_ONLY"
+    ) else "RECONCILED_REVIEW_ONLY"
+    return result
+
+
 def audit_public_archive(*, workers: int = 8) -> dict:
     headers = {"User-Agent": "NEPSE-ELITE-public-archive-audit/1.0",
                "Accept": "application/vnd.github+json"}

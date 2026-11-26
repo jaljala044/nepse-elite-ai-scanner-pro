@@ -20,7 +20,11 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         symbol: security_footprint(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
     }
-    trend_features = {\n        symbol: minervini_trend_template(items)\n        for symbol, items in sorted(by_symbol.items()) if symbol\n    }\n    latest_by_symbol = []
+    trend_features = {
+        symbol: minervini_trend_template(items)
+        for symbol, items in sorted(by_symbol.items()) if symbol
+    }
+    latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
         latest_by_symbol.append(latest)
@@ -31,7 +35,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "max_input_available_at": snapshot["max_input_available_at"],
         "point_in_time_eligible": snapshot["point_in_time_eligible"],
         "market_breadth": market_breadth(latest_by_symbol, expected_symbols),
-        "security_features": security_features,\n        "trend_features": trend_features,
+        "security_features": security_features,
+        "trend_features": trend_features,
         "broker_participation": broker_participation_summary(broker_rows),
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

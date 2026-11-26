@@ -2045,3 +2045,13 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - CI on `630a05f6c82fc456b6b05402830cf9de7b95b57d`: backend tests **786 passed** (run 45845056584); unit test workflow passed (45845056512); integrated evidence audit passed (45845056446); historical data integrity workflow passed (45845056635). Logs and job conclusions inspected.
 - The evidence audit's security-coverage report remains skipped because verified universe, calendar or OHLCV inputs are unavailable. Passing CI validates code and existing audits, not archive completeness.
 - This is a schema/parser adapter only. No raw SocrateAI archive was acquired into canonical storage; no date × security coverage cells were upgraded; no broker score or BUY authorization was enabled.
+
+
+## 2026-11-26 — cross-source contract reconciliation engine
+
+- Added `backend/app/floorsheet_cross_source.py` to compare two independently parsed source datasets by (trade date, contract ID), enumerate exact shared contracts, conflicting shared fields, and source-only contract keys, and calculate source-specific contract/quantity/gross-amount totals.
+- The comparator rejects empty or untyped inputs and duplicate date/contract keys. It explicitly sets `source_independence_verified=false`, `daily_capture_completeness_verified=false`, `coverage_admission_allowed=false` and `canonical_promotion_allowed=false`; matching rows do not certify completeness or independence.
+- Added five unit tests covering exact overlap, source-only records, field conflicts, totals, duplicate keys and invalid inputs.
+- CI on commit `5c79285099f42e93dcc7b3bf80bab513f7bc5c5f`: backend tests **797 passed** (run 45845284256); standard unit workflow **797 passed** (run 45845284092); integrated evidence audit passed (run 45845284090); historical data integrity passed (run 45845284193). Job conclusions and test logs inspected.
+- The historical integrity workflow's pinned inventory/coverage generation passed; this does not turn candidate archive inventory into verified exchange coverage.
+- Next: add a date/contract identity anomaly report for cases where the same contract ID appears under different trade dates across source files; then run the comparator on pinned raw files only when reproducible raw bytes are acquired and rights permit. Keep the 2026-11-24 pair review-only until lineage, trade-date semantics, rights and point-in-time universe/session controls are resolved.

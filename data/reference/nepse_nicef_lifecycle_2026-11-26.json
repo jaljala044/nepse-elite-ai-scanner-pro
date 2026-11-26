@@ -15,5 +15,42 @@
     "https://www.merolagani.com/AnnouncementDetail.aspx?id=68146&ntf=true",
     "https://www.arthakendra.com/stock-market/company/NICEF/price-history"
   ],
-  "policy": "Exclude pre-listing dates from coverage expectations; do not infer no trading or manufacture zero-price candles. Actual first trade remains unverified."
+  "policy": "Exclude pre-listing dates from coverage expectations; do not infer no trading or manufacture zero-price candles. Actual first trade remains unverified.",
+  "evidence_review_2026_11_26": {
+    "status": "partially_verified_first_trade_and_ohlcv_pending",
+    "confirmed_listing_agreement_date": "2026-11-04",
+    "listing_agreement_evidence": "ShareSansar article dated 2026-11-04 states 100,000,000 units at NPR 10 and says trading is expected to begin Thursday.",
+    "expected_first_trade_date": "2026-11-05",
+    "expected_date_basis": "Thursday following the 2026-11-04 Wednesday listing announcement; this is an expectation in the article, not proof of an executed trade.",
+    "independent_listing_notice": {
+      "source": "Asian Securities Pvt. Ltd. (Broker No. 26)",
+      "url": "https://aspl26.com/News-List",
+      "published_date": "2026-11-05",
+      "title": "Listing NIC ASIA Equity Opportunity Fund - NICEF",
+      "limitation": "Confirms a listing notice was published on 2026-11-05; it does not provide first executed trade date or OHLCV."
+    },
+    "independent_announcement": {
+      "source": "MeroLagani",
+      "url": "https://www.merolagani.com/AnnouncementDetail.aspx?id=68146&ntf=true",
+      "announcement_date": "2026-11-04",
+      "detail": "100,000,000 units have been listed in NEPSE - NIC ASIA Equity Opportunity Fund (NICEF)"
+    },
+    "historical_price_lookup": {
+      "source": "ShareSansarScraper public API (ShareSansar-derived archive)",
+      "url": "https://omitnomis.github.io/ShareSansarScraper/api/history/NICEF.json",
+      "result": "HTTP 404 page_not_found",
+      "interpretation": "This archive endpoint does not currently provide a NICEF history file. A 404 is not evidence that the fund did not trade."
+    },
+    "actual_first_trade_date": null,
+    "first_ohlcv": null,
+    "evidence_gap": "No source retrieved in this review exposes a dated NICEF executed trade or a complete daily OHLCV row. The chart lookup via NepseAlpha could not be completed in this run.",
+    "ingestion_decision": "Do not ingest an OHLCV row yet. Keep NICEF in the instrument/lifecycle registry; start expected coverage from 2026-11-05 provisionally, but only mark first-trade coverage once an actual dated trade/price row is sourced.",
+    "sources_reviewed": [
+      "https://www.sharesansar.com/index.php/newsdetail/nic-asia-equity-opportunity-fund-have-been-listed-on-nepse-2026-11-04",
+      "https://aspl26.com/News-List",
+      "https://www.merolagani.com/AnnouncementDetail.aspx?id=68146&ntf=true",
+      "https://omitnomis.github.io/ShareSansarScraper/api/history/NICEF.json",
+      "https://nepsealpha.com/nepse-chart"
+    ]
+  }
 }

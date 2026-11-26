@@ -873,6 +873,8 @@ class UnifiedPortfolioEventRequest(BaseModel):
     evidence_cutoff: str
     benchmark_rows: list[dict] | None = None
     benchmark_symbol: str | None = None
+    risk_limits: dict | None = None
+    sector_by_symbol: dict[str, str] | None = None
 
 
 @app.post("/v1/research/portfolio/event-ledger")

@@ -1,0 +1,8 @@
+minimum_contract_quantity,volume_matches,volume_high_low_matches,floorsheet_above_ohlcv,floorsheet_below_ohlcv
+1,1,1,272,0
+5,1,1,272,0
+10,1,1,272,0
+11,1,0,157,115
+20,0,0,123,150
+50,0,0,67,206
+100,0,0,25,248

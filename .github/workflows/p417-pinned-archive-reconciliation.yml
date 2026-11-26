@@ -10,6 +10,8 @@ on:
       - "backend/app/floorsheet_contract.py"
       - "backend/app/floorsheet_cross_source.py"
       - "backend/audit_floorsheet_symbol_scope.py"
+      - "backend/audit_floorsheet_archive_window.py"
+      - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -36,6 +38,10 @@ jobs:
       - name: Test floorsheet symbol scope audit
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_floorsheet_symbol_scope.py' -v
+
+      - name: Test multi-date pinned archive verifier
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_floorsheet_archive_window.py' -v
 
       - name: Fetch exact pinned Samir raw CSV
         run: |
@@ -69,6 +75,49 @@ jobs:
             --right-profile socrateai \
             --right-sha256 "$SOCRATEAI_SHA256" \
             --output artifacts/p417-floorsheet-pair-audit-2026-11-24.json
+
+      - name: Fetch additional overlapping pinned archive dates
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pinned-window
+          cp /tmp/samir-floorsheet-2026-11-24.csv /tmp/pinned-window/samir-2026-11-24.csv
+          cp /tmp/socrateai-floorsheet-2026-11-24.csv /tmp/pinned-window/socrateai-2026-11-24.csv
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/SamirWagle/Nepse-All-Scraper/e6160adc6bdf3d19562167388e3d9d4f645c455a/data/floorsheet/floorsheet_2026-11-19.csv \
+            -o /tmp/pinned-window/samir-2026-11-19.csv
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/SamirWagle/Nepse-All-Scraper/e6160adc6bdf3d19562167388e3d9d4f645c455a/data/floorsheet/floorsheet_2026-11-20.csv \
+            -o /tmp/pinned-window/samir-2026-11-20.csv
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-11-19.csv \
+            -o /tmp/pinned-window/socrateai-2026-11-19.csv
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-11-20.csv \
+            -o /tmp/pinned-window/socrateai-2026-11-20.csv
+
+      - name: Reconcile three overlapping pinned dates
+        run: |
+          set -euo pipefail
+          python backend/audit_floorsheet_archive_window.py \
+            --input-dir /tmp/pinned-window \
+            --output artifacts/p419-three-date-floorsheet-audit.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p419-three-date-floorsheet-audit.json").read_text())
+          summary = {
+              "audit_status": report["audit_status"],
+              "dates": {day: item["summary"] for day, item in report["date_reports"].items()},
+              "source_independence_verified": False,
+              "daily_capture_completeness_verified": False,
+              "canonical_promotion_allowed": False,
+          }
+          rendered = json.dumps(summary, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.19 multi-date archive comparison\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
 
       - name: Reconcile all observed symbols to dated instrument scope
         run: |
@@ -179,9 +228,10 @@ jobs:
       - name: Upload review-only reconciliation report
         uses: actions/upload-artifact@v4
         with:
-          name: p417-p418-floorsheet-reconciliation-2026-11-24
+          name: p417-p419-floorsheet-reconciliation-2026-11-24
           path: |
             artifacts/p417-floorsheet-pair-audit-2026-11-24.json
             artifacts/p418-floorsheet-symbol-scope-2026-11-24.json
+            artifacts/p419-three-date-floorsheet-audit.json
           if-no-files-found: error
           retention-days: 30

@@ -42,7 +42,7 @@ class VolumeVSATests(unittest.TestCase):
     def test_volume_dry_up_and_narrow_spread_reported(self):
         data = rows(21, final_volume=500)
         data[-1]["high"] = data[-1]["close"] + 0.1
-        data[-1]["low"] = data[-1]["close"] - 0.1
+        data[-1]["low"] = data[-1]["open"] - 0.1
         result = volume_vsa_features(data)
         self.assertTrue(result["checks"]["volume_dry_up"])
         self.assertTrue(result["checks"]["narrow_spread"])

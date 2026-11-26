@@ -180,3 +180,11 @@ The repository does not currently expose a verified deployment target or deploym
 - Verified that a test request carrying both a syntactically valid subject and the configured proxy secret can reach readiness and the terminal.
 - CI run `45891950033` (workflow run 44) passed; its job log marks both private-image build and authentication-boundary smoke-test steps successful. Backend tests `45891950038` and backend contract tests `45891950048` also passed on commit `02722569bb3e1f5ccc38923bcc0b41e222e22272`.
 - This validates the application-side gate in a container. It does **not** independently audit a real reverse proxy's header stripping, OIDC verification, TLS, CSRF protections, persistent-volume permissions, or deployed account isolation. Those remain deployment gates.
+
+
+### Candidate-universe provenance surfaced in scan responses (2026-11-27)
+
+- Every successful `POST /v1/scan/market-wide` response now includes `candidate_universe_provenance`: record count, observation date, provider, snapshot SHA-256, evidence tier, explicit `membership_authoritatively_verified=false` and `promotion_allowed=false`, plus a human-readable warning.
+- The scanner UI displays the warning beside the scan coverage summary. This prevents the 281-row secondary snapshot from appearing to be an official or point-in-time NEPSE active-equity universe.
+- API regression coverage asserts the provenance flags and warning are present.
+- This is a transparency/contract improvement only. It does not resolve official-universe membership, reviewed OHLCV, live data coverage or deployment acceptance gates.

@@ -38,4 +38,5 @@ This manifest is a dated **secondary-provider snapshot (NepseAlpha)**, not a raw
 
 ## CI status
 
-The new tests are part of the existing `backend-tests` workflow, which runs full unittest discovery on pushes to main. CI confirmation must be recorded from the resulting workflow run before marking the code gate complete.
+- Full backend unit-test workflow [run 45832163019](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832163019) completed successfully on commit `d36a4c78bcc45439ce5ac1d06766d5f6f150acc3`.
+- The workflow's `Run unit tests` step completed successfully using full unittest discovery (`python -m unittest discover -s tests -v`).

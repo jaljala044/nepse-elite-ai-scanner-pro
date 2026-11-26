@@ -138,12 +138,28 @@ def scan_market_wide(request: ScanRequest):
             result["buy_list_eligible"] = False
         return result
 
-    return run_market_scan(
+    payload = run_market_scan(
         selected,
         DATA,
         as_of=effective_as_of,
         scan_symbol=scan_one,
     )
+    # Every scan response carries the candidate-universe provenance so clients
+    # cannot mistake a structurally valid secondary snapshot for official membership.
+    payload["candidate_universe_provenance"] = {
+        "record_count": EQUITY_UNIVERSE.get("record_count", len(candidate_symbols)),
+        "observed_on": EQUITY_UNIVERSE.get("observed_on"),
+        "source": EQUITY_UNIVERSE.get("source"),
+        "source_snapshot_sha256": EQUITY_UNIVERSE.get("source_snapshot_sha256"),
+        "evidence_tier": EQUITY_UNIVERSE.get("evidence_tier", "unverified"),
+        "membership_authoritatively_verified": False,
+        "promotion_allowed": False,
+        "warning": (
+            "Candidate set only: secondary-provider snapshot. It is not an "
+            "authoritative or point-in-time NEPSE active-equity universe."
+        ),
+    }
+    return payload
 
 
 @app.post("/v1/scan")

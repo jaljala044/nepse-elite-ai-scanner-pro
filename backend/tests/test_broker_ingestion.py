@@ -26,7 +26,7 @@ class BrokerIngestionTests(unittest.TestCase):
     def test_valid_complete_batch_is_descriptive_and_eligible(self):
         result = run(contracts=[ContractTotal("CFCL", "BROKER-1", "2026-11-25",
             "BUY", Decimal("10"), Decimal("1250.00"))])
-        self.assertTrue(result.memory_eligible)
+        self.assertTrue(result.memory_eligible, repr(result))
         self.assertEqual(result.accepted[0]["status"], "descriptive_only")
 
     def test_unverified_broker_quarantined(self):
@@ -53,7 +53,7 @@ class BrokerIngestionTests(unittest.TestCase):
     def test_exact_duplicate_is_skipped(self):
         row = make_row()
         result = run([row, row])
-        self.assertEqual(result.duplicates_skipped, 1)
+        self.assertEqual(result.duplicates_skipped, 1, repr(result))
         self.assertEqual(len(result.accepted), 1)
 
     def test_conflicting_duplicate_blocks_batch(self):

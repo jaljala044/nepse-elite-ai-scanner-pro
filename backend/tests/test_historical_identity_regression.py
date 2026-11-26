@@ -94,6 +94,31 @@ class IdentityRegressionTests(unittest.TestCase):
                                  start=r["snapshot_date"], end=r["snapshot_date"],
                                  source=r["source_blob_sha"]) for r in rows])
 
+    def test_current_successor_ids_are_resolved_from_dated_snapshot(self):
+        path = ROOT / "data/reference/nepse_security_id_snapshot_2026-11-25.csv"
+        with path.open(encoding="utf-8-sig", newline="") as handle:
+            rows = {r["symbol"]: r for r in csv.DictReader(handle)}
+        expected = {
+            "SLBSL": "2804",
+            "NMLBBL": "396",
+            "MATRI": "694",
+            "SMATA": "2761",
+            "SMPDA": "2896",
+            "GBLBS": "583",
+            "PFL": "236",
+        }
+        retired_aliases = {
+            "BPW", "MMFDB", "NLBBL", "JALPA", "KLBSL",
+            "MKLB", "SABSL", "SDLBSL", "SAMAJ", "SFCL",
+        }
+        for symbol, security_id in expected.items():
+            self.assertIn(symbol, rows)
+            self.assertEqual(rows[symbol]["security_id"], security_id)
+            self.assertEqual(rows[symbol]["snapshot_date"], "2026-11-25")
+            self.assertEqual(rows[symbol]["active_status"], "A")
+            self.assertEqual(rows[symbol]["ohlcv_file_present"], "yes")
+        self.assertTrue(retired_aliases.isdisjoint(rows))
+
     def test_merger_predecessors_quarantined(self):
         path = ROOT / "data/reference/nepse_historical_identity_evidence_2026-11-26.json"
         evidence = json.loads(path.read_text(encoding="utf-8"))

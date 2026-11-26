@@ -69,7 +69,7 @@ def audit_session_candidates(
             if source_root is not None and candidate.get("source_path"):
                 try:
                     root_path = Path(source_root).resolve(strict=True)
-                    source_path = (root_path / candidate["source_path"]).resolve(strict=True)
+                    source_path = (root_path / candidate["source_path"]).resolve(strict=False)
                     source_path.relative_to(root_path)
                     payload = source_path.read_bytes()
                     actual_size = len(payload)

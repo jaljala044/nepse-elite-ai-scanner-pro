@@ -11,7 +11,7 @@ import re
 
 from app.floorsheet_csv_adapter import CsvFloorsheetMapping, parse_floorsheet_csv
 from app.floorsheet_cross_source import compare_floorsheet_sources
-from app.floorsheet_identity_audit import audit_contract_date_identity
+from app.floorsheet_identity_audit import audit_contract_date_identity\nfrom app.floorsheet_contract import reconcile_floorsheet_rows
 
 
 def audit_floorsheet_archive_pair(

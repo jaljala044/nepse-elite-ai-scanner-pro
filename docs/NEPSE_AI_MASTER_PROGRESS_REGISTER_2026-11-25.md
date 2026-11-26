@@ -1632,3 +1632,11 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - BNL is active but extremely illiquid; exclude from ordinary BUY eligibility until trade frequency, turnover and depth satisfy scanner liquidity criteria. 2024-12-17/18 suspension/release explains that event window only, not all historical coverage gaps.
 - Report: [BNL sparse-history reconciliation](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/BNL_sparse_history_and_missing_trade_reconciliation_2026-11-26.md), commit `eca287455d4825502948540dbc05c9f32523b167`. Lifecycle report updated in commit `3fef6b18f95f26ac93cb1ec85c5d4891e9eab22d`.
 - Next: build a symbol-level reconciliation queue for all low-overlap equities, distinguishing executed trades, no-trade sessions, suspension/corporate-action intervals, and source/archive omissions. Require at least two independent records for trade-row promotion; keep unresolved rows quarantined.
+
+
+### 26-symbol low-overlap triage — 2026-11-26
+
+- Created a triage register separating the 26 below-90% overlap symbols into 3 reviewed cases (NLO, BNL, PFL), 12 later-start candidates requiring listing/first-trade date verification, and 11 mid-2026-start / low-overlap unresolved cases (including UNL, which warrants a separate older-history audit). The 225-date security-ID-8108 benchmark remains a screening proxy, not a universal expected-session denominator.
+- Register: [equity low-overlap triage](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/equity_low_overlap_triage_register_2026-11-26.md), final wording commit `3fd16a798c10598d5d19b92b73f156bec2936b58`.
+- Updated the original observed-date audit to reflect NLO sparse trading and BNL's confirmed missing 23 Nov trade: commit `b8a3df878ae4be1a56ccc43ca08bf9654f31c860`.
+- No raw OHLCV was modified. Next work is lifecycle verification for later-start candidates and per-symbol trade/no-trade evidence for remaining low-overlap names, then full OHLCV row/value checks across both repositories.

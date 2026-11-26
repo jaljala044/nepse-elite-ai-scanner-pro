@@ -26,20 +26,20 @@ REQUIRED_CHECKS = {
     "ohlcv": {
         "payload_integrity", "source_identity", "schema_mapping",
         "instrument_identity", "session_calendar", "point_in_time",
-        "corporate_action_basis", "price_integrity",
+        "corporate_action_basis", "price_integrity", "exchange_finality",
     },
     "index_ohlcv": {
         "payload_integrity", "source_identity", "schema_mapping",
-        "session_calendar", "point_in_time", "price_integrity",
+        "session_calendar", "point_in_time", "price_integrity", "exchange_finality",
     },
     "market_summary": {
         "payload_integrity", "source_identity", "schema_mapping",
-        "session_calendar", "point_in_time", "market_reconciliation",
+        "session_calendar", "point_in_time", "market_reconciliation", "exchange_finality",
     },
     "floorsheet": {
         "payload_integrity", "source_identity", "schema_mapping",
         "session_calendar", "point_in_time", "trade_identity",
-        "coverage_completeness",
+        "coverage_completeness", "exchange_finality",
     },
     "sector_membership": {
         "payload_integrity", "source_identity", "schema_mapping",
@@ -47,7 +47,7 @@ REQUIRED_CHECKS = {
     },
     "sector_price": {
         "payload_integrity", "source_identity", "schema_mapping",
-        "session_calendar", "point_in_time", "constituent_mapping",
+        "session_calendar", "point_in_time", "constituent_mapping", "exchange_finality",
     },
     "corporate_action": {
         "payload_integrity", "source_identity", "schema_mapping",
@@ -55,7 +55,7 @@ REQUIRED_CHECKS = {
     },
     "broker_observation": {
         "payload_integrity", "source_identity", "schema_mapping",
-        "broker_identity", "point_in_time",
+        "broker_identity", "point_in_time", "exchange_finality",
     },
 }
 

@@ -71,8 +71,8 @@ class FloorsheetArchivePairAuditTests(unittest.TestCase):
 
     def test_no_valid_rows_on_one_side_is_reported_without_crashing(self):
         invalid = (
-            b"date,contract_no,symbol,buyer,seller,quantity,rate,amount\\n"
-            b"2026-11-24,C3,CCC,11,22,0,10,0\\n"
+            b"date,contract_no,symbol,buyer,seller,quantity,rate,amount\n"
+            b"2026-11-24,C3,CCC,11,22,0,10,0\n"
         )
         result = self.run_audit(left=invalid)
         self.assertEqual(result["left_file"]["parsed_rows"], 0)

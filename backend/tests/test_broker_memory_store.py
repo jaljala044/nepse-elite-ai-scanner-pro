@@ -86,6 +86,9 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         first = self.persist(rows=first_rows, decision_time=self.sessions[2] + "T16:00:00+05:45")
         second = self.persist(rows=later_rows, decision_time=self.sessions[4] + "T16:00:00+05:45")
         self.assertEqual(first["observation_count"], 6)
+        first_week = first["features"]["security_features"]["NABIL"]["1W"]
+        self.assertEqual(first_week["expected_covered_sessions"], 3)
+        self.assertFalse(first_week["window_complete"])
         self.assertEqual(second["observation_count"], 10)
         self.assertEqual(broker_memory_status()["observation_count"], 10)
         latest = get_latest_broker_memory(symbol="NABIL")

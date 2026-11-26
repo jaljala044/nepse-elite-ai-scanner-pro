@@ -82,7 +82,10 @@ class ExecutionBacktestTests(unittest.TestCase):
         rows[1].update(open=110.0, high=110.0, low=110.0, close=110.0)
         reviewed = dict(self.reviewed)
         reviewed[("TEST", self.sessions[1])] = dict(reviewed[("TEST", self.sessions[1])], **rows[1])
-        result = self.run_scenario(rows=rows, reviewed=reviewed)
+        signal = dict(self.signal)
+        signal["details"] = {"decision_date": self.sessions[0],
+                             "plan": {"entry": "110", "stop": "95", "targets": ["115"]}}
+        result = self.run_scenario(rows=rows, reviewed=reviewed, signal=signal)
         self.assertEqual(result["reason"], "buy_side_upper_circuit_lock_fill_unverified")
 
     def test_missing_cost_assumptions_withhold(self):

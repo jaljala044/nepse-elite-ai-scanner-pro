@@ -162,6 +162,7 @@ def persist_evidence_batch(
         record_body.pop("finality_status", None)
         record_body.pop("available_at", None)
         record_body.update({
+            "fetch_id": fetch_id,
             "source_id": source_id,
             "source_payload_sha256": digest,
             "source_row_number": row_number,

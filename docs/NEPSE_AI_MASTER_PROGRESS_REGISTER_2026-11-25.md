@@ -1792,3 +1792,5 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added API regression coverage for a candidate equity with no validated rows. Existing UNL-specific evidence reasons and policy remain intact.
 - Code commit: [c7d2ed6](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/c7d2ed657495b8fa1c3c89a386f5958c88f34a54); test commit: [82ba000](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/82ba000803eae8b6d13af4a3e2d7cc247ac0a9f9).
 - CI/test execution has not yet been verified for these commits. Do not treat the change as test-passed or production-ready until workflow evidence is available.
+
+- Follow-up schema alignment: the UNL-specific quarantine response now also exposes `overall_rating=NOT_RATED` and explicit UNKNOWN actions for all four horizons; its regression test asserts these fields. Commits: [ee7afb9](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/ee7afb965c384c1975149520f05f8740e3b01756) and [a0bf276](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/a0bf2760a0ab860027dee090227eb7e01af7d6ec). CI remains unverified.

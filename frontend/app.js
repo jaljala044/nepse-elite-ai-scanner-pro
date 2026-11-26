@@ -69,11 +69,11 @@ function renderLineage(container, data){
   card.append(node("p",data.total_observations+" party observations · showing "+data.observations.length));
   if(!data.observations.length){card.append(node("p","No source rows available for this filter."));container.append(card);return;}
   const table=node("table");const head=node("thead");const hr=node("tr");
-  for(const label of ["Session","Side","Code","Quantity","Amount","Source","Row","Rights","Evidence ID"])hr.append(node("th",label));
+  for(const label of ["Session","Side","Code","Quantity","Amount","Source","Payload SHA-256","Row","Rights","Rights evidence","Evidence ID"])hr.append(node("th",label));
   head.append(hr);table.append(head);const body=node("tbody");
   for(const item of data.observations){const tr=node("tr");for(const value of [
     item.trade_date,item.side,item.source_broker_code,item.quantity,item.amount,
-    item.source_id,item.source_row_number,item.source_rights_status,item.evidence_id
+    item.source_id,item.source_payload_sha256,item.source_row_number,item.source_rights_status,item.rights_evidence_id,item.evidence_id
   ])tr.append(node("td",value??"—"));body.append(tr);}
   table.append(body);card.append(table);container.append(card);
 }

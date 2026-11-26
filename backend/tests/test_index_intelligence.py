@@ -83,7 +83,7 @@ class IndexIntelligenceTests(unittest.TestCase):
         rows.append(dict(rows[-1]))
         with self.assertRaisesRegex(ValueError, "duplicate_index_session"):
             build_verified_index_intelligence(
-                rows, decision_time="2026-11-26T15:30:00+05:45"
+                rows, verified_session_dates=[r["session_date"] for r in self.verified_rows()], decision_time="2026-11-26T15:30:00+05:45"
             )
 
     def test_invalid_ohlc_not_applicable_close_only_but_bad_close_rejected(self):

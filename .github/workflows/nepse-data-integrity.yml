@@ -6,6 +6,10 @@ on:
     paths:
       - "backend/app/hf_dataset_collector.py"
       - "backend/app/coverage_matrix.py"
+      - "backend/app/session_candidate_audit.py"
+      - "backend/audit_session_candidates.py"
+      - "data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv"
+      - "data/reference/nepse_session_calendar.csv"
       - "backend/derive_broker_party_observations.py"
       - "backend/tests/test_derive_broker_party_observations.py"
       - "data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-floorsheet.csv"
@@ -52,6 +56,16 @@ jobs:
             --expected-rows 40818 \
             --party-output ../artifacts/broker-derivation-2026-11-19/broker-party-observations.csv \
             --aggregate-output ../artifacts/broker-derivation-2026-11-19/broker-aggregates.json
+      - name: Test NEPSE session candidate audit
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_session_candidate_audit.py' -v
+      - name: Audit recovered 616-session candidate inventory
+        working-directory: backend
+        run: |
+          python audit_session_candidates.py \
+            --candidates ../data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv \
+            --calendar ../data/reference/nepse_session_calendar.csv \
+            --output ../data/reports/nepse-616-session-candidate-audit.json
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000
@@ -71,6 +85,7 @@ jobs:
           path: |
             data/raw/huggingface/manifests/*.json
             data/reports/hf-source-coverage-candidates.json
+            data/reports/nepse-616-session-candidate-audit.json
             artifacts/broker-derivation-2026-11-19/*
           if-no-files-found: error
           retention-days: 30

@@ -91,6 +91,11 @@ def _classify(symbol: str, security_id: str, snapshot: dict, crosswalk: dict,
         if str(cross.get("security_id", "")) == security_id:
             return "IN_SCOPE_EQUITY_CANDIDATE", "2026-11-26 equity crosswalk plus 2026-11-25 snapshot ID match", sec.get("security_name")
         return "UNKNOWN_SECURITY_ID_MISMATCH", "equity crosswalk ID differs from bulk/snapshot", sec.get("security_name")
+    if candidate:
+        candidate_id = str(candidate.get("official_snapshot_id", "")).strip()
+        candidate_status = str(candidate.get("official_snapshot_status", "")).strip()
+        if not candidate_id or candidate_id != security_id or candidate_status != str(sec.get("active_status", "")).strip():
+            return "UNKNOWN_SECURITY_ID_MISMATCH", "target-candidate registry ID/status differs from bulk/snapshot", sec.get("security_name")
     candidate_class = str((candidate or {}).get("instrument_class_from_rendered_list", "")).strip().casefold()
     name = str(sec.get("security_name", "")).casefold()
     if candidate_class == "mutual fund":
@@ -176,9 +181,13 @@ def audit_bulk_scope(bulk_report_path: Path, raw_dir: Path, summary_body_path: P
             raw = raw_by_symbol.get(symbol)
             if raw is None:
                 raise ValueError(f"{day}/{symbol}: parsed row absent from raw response")
+            if str(row.get("businessDate", ""))[:10] != day or str(raw.get("businessDate", ""))[:10] != day:
+                raise ValueError(f"{day}/{symbol}: row business date mismatch")
             security_id = str(row.get("securityId", "")).strip()
             if not security_id or security_id != str(raw.get("securityId", "")).strip():
                 raise ValueError(f"{day}/{symbol}: security ID raw/parsed mismatch")
+            if str(row.get("securityName", "")) != str(raw.get("securityName", "")):
+                raise ValueError(f"{day}/{symbol}: raw/parsed security name mismatch")
             for key, raw_key in (("trades", "totalTrades"), ("volume", "totalTradedQuantity"), ("turnover", "totalTradedValue")):
                 value = _decimal(row.get(raw_key), f"{day}/{symbol} {raw_key}")
                 if value <= 0:
@@ -193,6 +202,7 @@ def audit_bulk_scope(bulk_report_path: Path, raw_dir: Path, summary_body_path: P
                 "symbol": symbol, "bulk_security_id": security_id,
                 "bulk_security_name": row.get("securityName"),
                 "snapshot_security_name": security_name,
+                "bulk_snapshot_name_match": str(row.get("securityName", "")) == str(security_name or ""),
                 "scope_class": scope, "scope_evidence": evidence,
                 "current_snapshot_date": expected_snapshot_date,
                 "historical_instrument_identity_verified": False,

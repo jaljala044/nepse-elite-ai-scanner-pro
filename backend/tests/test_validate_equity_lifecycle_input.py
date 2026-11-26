@@ -16,9 +16,10 @@ class EquityLifecycleInputTests(unittest.TestCase):
         report = validate_equity_lifecycle_input(self.lifecycle, self.crosswalk)
         self.assertEqual(report["status"], "valid_input_with_unverified_lifecycle")
         self.assertEqual(report["lifecycle_row_count"], 281)
-        self.assertEqual(report["verified_start_count"], 1)
-        self.assertEqual(report["verified_start_symbols"], ["YMHL"])
-        self.assertEqual(report["unverified_start_count"], 280)
+        self.assertEqual(report["verified_start_count"], 9)
+        self.assertEqual(report["verified_start_symbols"],
+                         ["APHL", "BJHL", "HFIN", "KHPL", "RSML", "SABBL", "SKHL", "SOHL", "YMHL"])
+        self.assertEqual(report["unverified_start_count"], 272)
         self.assertFalse(report["promotion_allowed"])
         self.assertEqual(report["errors"], [])
 

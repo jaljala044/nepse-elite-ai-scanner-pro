@@ -108,3 +108,12 @@ PR #139 is merged at `bf5d16cdcaedaa85478526ae415dac791bf380e6`. GitHub Actions 
 The new `backend/app/sector_membership_manifest.py` performs deterministic structural checks for versioned membership manifests: manifest/payload SHA-256 references, source identity consistency, capture cutoff, record identity, sector codes, effective-date intervals, overlap detection, source-record references and point-in-time symbol coverage. Its strongest possible status is `review_ready`; it always reports `verified=false` and `admission_allowed=false`. It does not authenticate a publisher or prove official NEPSE classification.
 
 Tracking issue [#146](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/146) now owns the remaining primary-source work: acquire a reproducible NEPSE/SEBON sector classification source, preserve raw bytes and TLS/provenance evidence, establish effective dates and stable security identity, reconcile symbol changes and independently review the resulting manifest. No sector membership was promoted. Sector leadership and market-health sector participation remain unavailable until that evidence is approved.
+
+
+## P2.03 Nepal-local effective-date validator correction — 2026-11-27
+
+PR #147 was merged after both GitHub Actions workflows passed on the exact reviewed head `28e56e1874f1b4dc78a3eadb651ddddb8688b894`. Squash merge commit: `b6cc4a32baa2e36290ea2cd8e0985fe51d92a974`.
+
+The validator now derives the effective-date cutoff from `Asia/Kathmandu`, preventing UTC date rollover from selecting the prior Nepal calendar date near local midnight. It also rejects non-string/blank expected symbols and invalid/empty sector-code entries. Regression coverage includes 00:15 Nepal local time while UTC remains on the previous date, plus malformed expected-symbol input.
+
+This is a structural correctness fix only. Manifest status remains `review_ready`; `verified=false` and `admission_allowed=false`. It does not validate or promote official sector membership, and sector signals remain disabled pending issue #146 evidence review.

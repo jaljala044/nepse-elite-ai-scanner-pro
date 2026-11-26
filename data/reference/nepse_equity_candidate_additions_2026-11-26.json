@@ -8,13 +8,55 @@
       "symbol": "NESDO",
       "security_id": "8041",
       "status": "active_snapshot_candidate",
-      "ohlcv_file_present": true
+      "ohlcv_file_present": true,
+      "listing_date": "2022-03-27",
+      "first_trading_date": "2022-03-28",
+      "instrument_type": "equity",
+      "sector": "Microfinance",
+      "evidence": [
+        {
+          "provider": "ShareSansar",
+          "url": "https://www.sharesansar.com/eventdetail/listing-ipo-shares-of-nesdo-sambridha-laghubitta-bittiya-sanstha-limited-nesdo-2022-03-27",
+          "supports": "NEPSE listing notice; 2,550,000 IPO units listed; NEPSE PDF linked"
+        },
+        {
+          "provider": "ShareHub",
+          "url": "https://sharehubnepal.com/company/NESDO",
+          "supports": "Company profile classifies as active microfinance equity; first trading date reference March 28, 2022"
+        },
+        {
+          "provider": "Laganilab",
+          "url": "https://laganilab.com/nepse-company/NESDO/",
+          "supports": "Listing date 2022-03-27 and active company market history"
+        }
+      ]
     },
     {
       "symbol": "ULBSL",
       "security_id": "8063",
       "status": "active_snapshot_candidate",
-      "ohlcv_file_present": true
+      "ohlcv_file_present": true,
+      "listing_date": "2022-05-26",
+      "first_trading_date": "2022-05-27",
+      "instrument_type": "equity",
+      "sector": "Microfinance",
+      "evidence": [
+        {
+          "provider": "Merolagani",
+          "url": "https://eng.merolagani.com/NewsDetail.aspx?newsID=81372",
+          "supports": "Shares listed May 26, 2022; first trading May 27; NEPSE symbol ULBSL"
+        },
+        {
+          "provider": "ShareHub",
+          "url": "https://sharehubnepal.com/company/ULBSL",
+          "supports": "Active microfinance equity; listing date May 26, 2022"
+        },
+        {
+          "provider": "Laganilab",
+          "url": "https://laganilab.com/nepse-company/ULBSL/",
+          "supports": "Listing date May 26, 2022 and historical trading window"
+        }
+      ]
     },
     {
       "symbol": "YMHL",
@@ -22,14 +64,31 @@
       "status": "active_snapshot_candidate",
       "ohlcv_file_present": true,
       "listing_date": "2026-06-19",
-      "sources": [
-        "https://www.sharesansar.com/eventdetail/listing-ipo-share-of-yambaling-hydropower-limited-ymhl-2026-06-19",
-        "https://nepsealpha.com/stocks/YMHL/info"
+      "first_trading_date": "2026-06-22",
+      "instrument_type": "equity",
+      "sector": "Hydro Power",
+      "evidence": [
+        {
+          "provider": "ShareSansar",
+          "url": "https://www.sharesansar.com/eventdetail/listing-ipo-share-of-yambaling-hydropower-limited-ymhl-2026-06-19",
+          "supports": "NEPSE listing notice; first trading June 22; includes linked NEPSE PDF"
+        },
+        {
+          "provider": "NepseBajar",
+          "url": "https://www.nepsebajar.com/details/announcement/listing-ipo-share-of-yambaling-hydropower-limited-ymhl",
+          "supports": "Listing and commencement dates corroboration"
+        },
+        {
+          "provider": "NepseLabs",
+          "url": "https://nepselabs.com/stocks/YMHL",
+          "supports": "Listed date and trading start; classifies as hydropower equity"
+        }
       ]
     }
   ],
   "candidate_equities": 281,
   "candidate_funds": 47,
   "manifest_verified": false,
-  "limitations": "Full dated membership and historical lifecycle validation outstanding; no raw data changes."
+  "limitations": "Historical stable-ID continuity and complete dated membership validation remain outstanding; no raw data changes.",
+  "evidence_assessment": "All three have corroborated equity classification and dated listing/trading-start evidence from multiple market sources; current security IDs are corroborated by the dated 2026-11-25 security snapshot and 2026-11-19 NEPSE OHLCV capture. Historical stable-ID continuity is not yet proven. This candidate evidence does not by itself verify the complete 281-member universe."
 }

@@ -1466,3 +1466,7 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 - Sources include ShareSansar merger/listing notices and Merolagani's Matribhumi merger announcement. The dates describe joint corporate operations, not proven last-trading/first-trading boundaries or stable-ID validity windows.
 - The JSON continues to mark `effective_date_verified=false` and `stable_id=null`; no historical prices were spliced, no aliases renamed, and no raw data changed.
 - Next step: obtain exchange suspension/resumption notices and effective-dated security IDs for these predecessor/successor pairs. Do not promote identity intervals until those records are corroborated.
+
+
+- Follow-up to Priority 97: added joint-operation dates for SABSL/SDLBSL → SMPDA (2024-07-14), SAMAJ → GBLBS (2025-10-19), and SFCL → PFL (2026-07-10), with secondary evidence links. Data commit `c1f5129b7e9658698621fb866ed9a88036e12ae6`; report commit `18fde7c6f07d4b3237df2911c02b5aaf4f8dd1ad`.
+- Nine merger predecessor symbols now have documented joint-operation dates across the two Priority 97 batches. These remain corporate-operation dates, not verified exchange-trading boundaries or stable-ID intervals. `stable_id` remains null and `effective_date_verified` remains false; no raw history or canonical manifest changed.

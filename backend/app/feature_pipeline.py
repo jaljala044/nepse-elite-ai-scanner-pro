@@ -9,6 +9,7 @@ from app.wyckoff_features import wyckoff_event_features
 from app.smc_features import smc_features
 from app.sector_strength_features import sector_strength_features
 from app.liquidity_features import liquidity_tradability_features
+from app.scoring_engine import score_scan
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
@@ -123,6 +124,22 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             ),
             "smc": smc_features_by_symbol[symbol].get("score") if smc_features_by_symbol[symbol].get("status") == "observed" else None,
         }
+    aggregate_scores = {}
+    for symbol, components in component_candidates.items():
+        aggregate_scores[symbol] = score_scan(
+            components,
+            stage1_quality="UNKNOWN",
+            structure_confirmed=False,
+            liquidity_ok=False,
+            market_tradeable=False,
+            reward_risk=None,
+            hard_blocks=[
+                "stage1_hard_gates_not_connected",
+                "horizon_trade_plan_not_available",
+            ],
+        )
+        aggregate_scores[symbol]["decision_status"] = "research_only_fail_closed_stage2_preview"
+
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
@@ -140,6 +157,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "wyckoff_features": wyckoff_features,
         "smc_features": smc_features_by_symbol,
         "component_candidates": component_candidates,
+        "aggregate_scores": aggregate_scores,
         "broker_participation": broker_participation_summary(broker_rows),
         "broker_footprint": broker_footprint,
         "sector_strength": sector_features,

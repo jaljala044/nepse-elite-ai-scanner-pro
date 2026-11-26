@@ -13,9 +13,11 @@ on:
       - "backend/audit_floorsheet_archive_window.py"
       - "backend/audit_floorsheet_one_sided_scope.py"
       - "backend/audit_floorsheet_eod_controls.py"
+      - "backend/audit_official_market_summary_reconciliation.py"
       - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_one_sided_scope.py"
       - "backend/tests/test_floorsheet_eod_controls.py"
+      - "backend/tests/test_official_market_summary_reconciliation.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -142,6 +144,39 @@ jobs:
           print(rendered)
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
               stream.write("## P4.19 multi-date archive comparison\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
+
+      - name: Fetch immutable official NEPSE market-summary capture
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/official-summary
+          base="https://raw.githubusercontent.com/jaljala044/nepse-elite-ai-scanner-pro/043344174e7f048560a112c294d11a727289ac87/data/evidence/raw/nepse/market-summary-history/2026-11-26"
+          curl --fail --silent --show-error --location "$base/response-body.bin" -o /tmp/official-summary/response-body.bin
+          curl --fail --silent --show-error --location "$base/capture-report.json" -o /tmp/official-summary/capture-report.json
+          sha256sum /tmp/official-summary/response-body.bin /tmp/official-summary/capture-report.json
+
+      - name: Reconcile pinned floorsheet totals with official NEPSE aggregates
+        run: |
+          set -euo pipefail
+          python backend/audit_official_market_summary_reconciliation.py \
+            --official-capture-dir /tmp/official-summary \
+            --floorsheet-dir /tmp/pinned-window \
+            --output artifacts/p421-official-market-summary-reconciliation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p421-official-market-summary-reconciliation.json").read_text())
+          rendered = json.dumps({
+              "official_capture": report["official_capture"],
+              "date_reports": report["date_reports"],
+              "floorsheet_source_independence_verified": False,
+              "per_security_completeness_verified": False,
+              "coverage_admission_allowed": False,
+          }, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.21 official NEPSE aggregate reconciliation\\n\\n")
               stream.write("```json\\n" + rendered + "\\n```\\n")
           PY
 

@@ -95,6 +95,15 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
             "invalid_date_row_count": len(payload),
             "date_comparison": None,
             "canonical_calendar_promotion_allowed": False,
+            "activity_metric_fields": {name: list(aliases) for name, aliases in SUMMARY_METRIC_FIELDS.items()},
+            "activity_validated_record_count": 0,
+            "activity_confirmed_date_count": 0,
+            "activity_confirmed_dates": [],
+            "activity_unverified_rows": [
+                {"row_index": index, "date": None, "reason": "no_recognized_date_field"}
+                for index in range(len(payload))
+            ],
+            "activity_duplicate_dates": [],
         }
 
     dates = [value for value in parsed_values if value is not None]

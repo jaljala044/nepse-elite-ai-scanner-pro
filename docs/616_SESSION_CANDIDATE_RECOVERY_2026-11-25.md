@@ -113,3 +113,24 @@ workflow configuration and code have been committed, but the corresponding
 GitHub Actions execution and artifact have not yet been observed. Therefore
 the 616 candidate dates remain unverified and the canonical calendar is
 unchanged.
+
+## Pinned source-object verification hardening — 2026-11-26
+
+The candidate audit now checks the inventory against an actual checkout of
+`srijankarki07/nepse-data` at immutable revision
+`e6e6fe77cd3378204c7938e66601cee2339a8b7a`. For every one of the 616
+candidate paths it verifies file existence, exact byte count, and the Git
+blob SHA-1 computed using Git's object framing. It also requires the expected
+repository and revision, rejects paths escaping the pinned checkout, and
+fails closed when source-object verification is not supplied.
+
+The CI workflow checks out that exact source revision with credentials
+disabled and passes its root and identity into the audit. Ten focused tests
+now cover source-file presence, blob hash, byte count, revision pinning,
+path traversal, duplicate dates, closure conflicts, weekday constraints,
+metadata, and the non-promotion invariant.
+
+A fresh Actions run for the latest workflow commit has not yet been returned
+by the GitHub workflow-run query. The implementation is committed, but the
+616-file byte/hash reconciliation is **not yet verified**. No candidate has
+been promoted and the canonical calendar remains unchanged.

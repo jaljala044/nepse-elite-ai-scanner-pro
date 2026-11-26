@@ -82,5 +82,19 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
         self.assertEqual(payload["ranked_results"], [])
         self.assertEqual(payload["buy_candidates"], [])
 
+    def test_default_scan_includes_unloaded_candidate_unl_as_unknown(self):
+        with patch.object(main, "DATA", {"ADBL": []}):
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan", json={})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        by_symbol = {item["symbol"]: item for item in payload["results"]}
+        self.assertIn("UNL", by_symbol)
+        self.assertEqual(by_symbol["UNL"]["status"], "unknown_result")
+        self.assertIn("UNL", {item["symbol"] for item in payload["unknown_results"]})
+        self.assertEqual(payload["ranked_results"], [])
+        self.assertEqual(payload["buy_candidates"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

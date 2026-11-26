@@ -47,7 +47,7 @@ def validate_instrument_manifest(records: list[dict], *, as_of: str,
             continue
         if row["instrument_type"] not in {
             "equity", "mutual_fund", "convertible_debenture",
-            "non_convertible_debenture", "preference_share", "other",
+            "non_convertible_debenture", "preference_share", "promoter_share", "other",
         }:
             errors.append({"row": index, "error": "unknown_instrument_type"})
             continue

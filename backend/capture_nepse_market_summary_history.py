@@ -17,6 +17,7 @@ SOURCE_ID = "NEPSE_OFFICIAL_MARKET_SUMMARY_HISTORY"
 ENDPOINT_PATH = "/api/nots/market-summary-history"
 SOURCE_URL = "https://nepalstock.com.np" + ENDPOINT_PATH  # fallback host: https://newweb.nepalstock.com
 DATE_FIELDS = ("businessDate", "business_date", "businessdate", "date")
+OFFICIAL_HOSTS = {"nepalstock.com.np", "www.nepalstock.com.np", "newweb.nepalstock.com"}
 
 
 def _as_date(value: object) -> str | None:
@@ -185,12 +186,18 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
         client.headers["Referer"] = base_url
 
         def preserve_response(response) -> None:
-            if urlparse(str(response.url)).path != ENDPOINT_PATH:
+            parsed_url = urlparse(str(response.url))
+            if parsed_url.path.rstrip("/") != ENDPOINT_PATH:
                 return
             response.read()
             captured["body"] = response.content
             captured["status"] = response.status_code
             captured["url"] = str(response.url)
+            captured["origin_verified"] = (
+                parsed_url.scheme == "https"
+                and parsed_url.hostname in OFFICIAL_HOSTS
+                and parsed_url.port in (None, 443)
+            )
             captured["headers"] = {
                 key: response.headers.get(key)
                 for key in ("date", "content-type", "content-length", "server")
@@ -215,6 +222,7 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
             "response_bytes": len(body),
             "response_sha256": hashlib.sha256(body).hexdigest() if body else None,
             "response_preserved": bool(body),
+            "response_origin_verified": bool(captured.get("origin_verified", False)),
             "request_error": request_error,
         }
         attempts.append(attempt)
@@ -232,7 +240,7 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
                 encoding="utf-8",
             )
 
-        if captured.get("status") == 200 and body:
+        if captured.get("status") == 200 and body and captured.get("origin_verified") is True:
             successful_payload = None
             try:
                 successful_payload = json.loads(body)
@@ -261,6 +269,7 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
         "response_bytes": len(successful_body or b""),
         "response_sha256": hashlib.sha256(successful_body).hexdigest() if successful_body else None,
         "response_preserved": bool(successful_body),
+        "response_origin_verified": bool(successful_body),
         "calendar_claims_promoted": False,
         "canonical_calendar_promotion_allowed": False,
         "policy": "raw primary-source capture only; review schema and date scope before any calendar promotion",

@@ -77,6 +77,8 @@ class MarketSectorParticipationTests(unittest.TestCase):
         data = features()
         data["sectors"]["Hotels"]["windows"]["1M"]["status"] = "insufficient_evidence"
         data["sectors"]["Hotels"]["windows"]["3M"]["status"] = "insufficient_evidence"
+        data["sectors"]["Manufacturing"]["windows"]["1M"]["status"] = "insufficient_evidence"
+        data["sectors"]["Manufacturing"]["windows"]["3M"]["status"] = "insufficient_evidence"
         result = self.run_component(sector_features=data)
         self.assertEqual(result["reason"], "sector_return_coverage_below_threshold")
         self.assertIsNone(result["score"])

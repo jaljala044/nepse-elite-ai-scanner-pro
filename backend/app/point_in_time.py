@@ -1,6 +1,7 @@
 """Point-in-time eligibility and as-of snapshot primitives."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime, timezone
 
 
@@ -16,8 +17,8 @@ def _aware(value: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def eligible_as_of(record: dict, decision_time: str) -> bool:
-    if not isinstance(record, dict):
+def eligible_as_of(record: Mapping, decision_time: str) -> bool:
+    if not isinstance(record, Mapping):
         raise ValueError("record must be an object")
     cutoff = _aware(decision_time)
     available = record.get("available_at")

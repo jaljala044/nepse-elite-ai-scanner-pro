@@ -2301,3 +2301,12 @@ Investigate official NEPSE `securityDailyTradeStat` historical date support and 
 ### P4.25 next
 
 Build and validate the effective-dated security identity and corporate-action registry using the existing 36-record historical identity evidence set, six typed lifecycle events and 281-row lifecycle coverage input. Preserve the current coverage: 44 secondary dated-start records, 237 undated, zero primary dated-start evidence; historical stable security IDs remain unresolved for the predecessor set. For BENH, preserve the ShareSansar listing notice, official per-security 14-Oct zero / 15-Oct first-positive rows and secondary first-trade archive match, while obtaining and pinning the underlying NEPSE listing PDF and contract-level floorsheet. Validate symbol/ID changes, mergers, delistings, bonus/rights, splits and instrument-class transitions before historical joins or scanner admission.
+
+
+## 3A.01 all-market scanner continuation — 2026-11-27
+
+- Latest scanner application commit: `afd4d28e90f4c46f308e691505e05b46c72c3797`; all three workflows passed on that exact commit: backend tests `45893514529`, backend contract tests `45893514442`, frontend/deployment-image checks `45893514395`.
+- Added a research note to `docs/ACTIVE_UNIVERSE_SOURCE_RESEARCH_2026-11-25.md` (documentation commit `ec3b9ca36094522dff6ad8be9e33593283722f36`) distinguishing third-party-described NEPSE company-list and non-delisted security-list semantics. These sources are not accepted as a primary ordinary-equity lifecycle registry.
+- Updated PR #112 with the latest validation state and the additional source qualification. PR remains draft and unmerged.
+- No universe symbols, OHLCV rows, or reviewed-row decisions were changed.
+- 3A.01 remains **not accepted**: authoritative point-in-time universe, nonempty reviewed-row evidence, deployment-wide OHLCV coverage, and live deployed API/UI verification remain open. No ranking/BUY output enabled; do not advance to 3A.02.

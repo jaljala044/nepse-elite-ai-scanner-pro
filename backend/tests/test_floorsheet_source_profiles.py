@@ -172,8 +172,8 @@ class SocrateAIFloorsheetSourceProfileTests(unittest.TestCase):
             SOCRATEAI_PINNED_COMMIT, socrateai_floorsheet_mapping,
         )
         raw = (
-            "transaction,symbol,buyer,seller,quantity,rate,amount,date\\n"
-            "2026112405013267,BBC,58,11,10,3878.00,38780.00,2026-11-24\\n"
+            "transaction,symbol,buyer,seller,quantity,rate,amount,date\n"
+            "2026112405013267,BBC,58,11,10,3878.00,38780.00,2026-11-24\n"
         ).encode("utf-8")
         parsed = parse_floorsheet_csv(
             raw,

@@ -60,7 +60,7 @@ def _append_receipt(path: Path, event: dict[str, Any]) -> dict[str, Any]:
         event["previous_event_sha256"] = previous
         event["event_sha256"] = _hash(event)
         with path.open("a", encoding="utf-8") as stream:
-            stream.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\\n")
+            stream.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n")
             stream.flush()
             os.fsync(stream.fileno())
         return event

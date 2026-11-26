@@ -308,3 +308,10 @@ def volume_profile(symbol: str, start: date, end: date):
     if EQUITY_UNIVERSE is None or symbol not in EQUITY_UNIVERSE["symbols"]:
         return {"status":"unavailable","symbol":symbol,"levels":[],"reason":"equity_universe_gate"}
     return load_profile(symbol,start,end)
+
+# Mount only the built public frontend, never the repository or raw data.
+from fastapi.staticfiles import StaticFiles
+import os
+_public_frontend = Path(os.environ.get("NEPSE_PUBLIC_FRONTEND", str(Path(__file__).resolve().parents[2] / "frontend" / "public-build")))
+if (_public_frontend / "index.html").is_file():
+    app.mount("/terminal", StaticFiles(directory=str(_public_frontend), html=True), name="terminal")

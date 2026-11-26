@@ -1,0 +1,13 @@
+symbol,requested_archive_blob_sha,reference_dates,valid_structural_rows,missing_dates,invalid_dates,duplicate_dates,error,backtest_promotion_allowed
+BBC,9567fc34a93e02fdbddb25989fd5c8be9f0e524a,120,119,2026-07-24,,,,false
+BEDC,24e60f29e5bb01ce8f3dd5c69405799b618c9da1,120,119,2026-07-24,,,,false
+BFC,150b88bac6345ab608a0afbd95880166bff860ed,120,119,2026-07-24,,,,false
+BHCL,dd4a4a0276c888ce3bbed2b0ba1cbf05f1673d53,120,119,2026-07-24,,,,false
+BHL,140bc21ea228bc4b03e73bdb762f86f6747d2118,120,119,2026-07-24,,,,false
+BHPL,568bcba35188b8032d549e7952729b1ede74500c,120,119,2026-07-24,,,,false
+BPCL,af76d3d7e742186f652c17e3bb688bc4e08baae1,120,119,2026-07-24,,,,false
+CHCL,9ce61b8784ab1a778debab4480af47778429815b,120,119,2026-07-24,,,,false
+CHDC,d1319b31b948e0976a9aacc692c45276fa4a4a57,120,119,2026-07-24,,,,false
+CHL,69bcdd1d0c026a4169af52d4e0759f57041ec1b4,120,119,2026-07-24,,,,false
+CIT,7aa8fea8f9dfcc06d544cfbadaeb001ffc81389e,120,119,2026-07-24,,,,false
+CKHL,2ca969453220986a7a057bd124bf22d0b06f4717,120,119,2026-07-24,,,,false

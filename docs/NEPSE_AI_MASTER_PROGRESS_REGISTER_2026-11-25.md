@@ -1900,3 +1900,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 
 
 - Added and merged a third-party floorsheet CSV adapter after CI initially exposed a regex defect; corrected it and reran. PR #12 merged as `91cf082b53cb2ed3564d06c85cc08a7964a5eaee`. CI run [45839623070](https://github.com/jaljala044/nepse-smc-data/actions/runs/45839623070) passed all 16 tests. It accepts the alternate lower-case schema, parses K/lakh/crore display amounts with precision-aware tolerance, and rejects quantity × rate mismatches. Detailed source audit updated in [commit cf083be](https://github.com/jaljala044/nepse-smc-data/commit/cf083be7698d6c2c0704ff1cd506487f783398bc).
+
+
+### Follow-up provenance lead — independent capture pipeline (2026-11-26)
+
+- Inspected the public ANKITSANJYAL/nepse-pipeline source. Its floorsheet collector reads upstream totalElements, fetches all pages, archives raw payloads before parsing, upserts by contract ID, retries incomplete sweeps and applies uniqueness, required-field, positive-value, trade-date and amount-identity checks. The public workflow publishes the warehouse to Hugging Face after close.
+- This establishes a concrete capture methodology to test, NOT a link between that pipeline and the SocrateAI CSV. SocrateAI's public repository contains no capture workflow, raw page archive or per-date metadata manifest; its meta/ directory is empty apart from .gitkeep.
+- The published Hugging Face dataset card declares floorsheet coverage from 2026-08-19 with a gap 2026-08-26 through 2026-11-18. Therefore 2026-11-20 is a promising independent comparison date, but the page inspected did not expose date-specific contract rows/count, upstream totalElements or bronze evidence. Direct partition retrieval was unavailable in this execution environment; no cross-source row match is claimed.
+- Updated data-repo audit: https://github.com/jaljala044/nepse-smc-data/commit/65e8ac1e285934477938894c63fe0087bcae49cd
+- Still unresolved: 500-row vs 39,966-row extract mismatch; date-specific independent completeness proof; broader 281-equity floorsheet/OHLCV reconciliation. Keep absent symbols UNKNOWN and keep NO_TRADE, canonical promotion, broker-flow scoring and training disabled until evidence is recovered.
+- Next recovery attempt: obtain the Hugging Face 2026-11-20 floorsheet partition and compare normalized contract IDs/rows against both local extracts, then recover date-specific upstream totalElements and page-level bronze evidence.

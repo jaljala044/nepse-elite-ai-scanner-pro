@@ -16,6 +16,7 @@ on:
       - "backend/audit_official_market_summary_reconciliation.py"
       - "backend/audit_official_security_history_vs_floorsheet.py"
       - "backend/audit_official_bulk_symbol_scope.py"
+      - "backend/tests/test_official_bulk_symbol_scope.py"
       - "backend/audit_official_equity_candidate_history.py"
       - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_one_sided_scope.py"

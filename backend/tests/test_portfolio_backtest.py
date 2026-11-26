@@ -84,7 +84,7 @@ class PortfolioBacktestTests(unittest.TestCase):
             symbol = kwargs["signal"]["symbol"]
             qty = min(kwargs["quantity"], 1000)
             entry_day = self.days[1] if symbol == "AAA" else self.days[4]
-            exit_day = self.days[3] if symbol == "AAA" else self.days[5]
+            exit_day = self.days[3] if symbol == "AAA" else self.days[6]
             return {
                 "status": "scenario_completed", "entry_session": entry_day,
                 "exit_session": exit_day, "scenario_quantity": qty,

@@ -12,7 +12,7 @@ import re
 from typing import Iterable
 
 
-_THOUSANDS_GROUPED_DECIMAL = re.compile(r"^[+-]?\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?$")
+_THOUSANDS_GROUPED_DECIMAL = re.compile(r"^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$")
 
 
 def _parse_source_decimal(value, field: str) -> Decimal:

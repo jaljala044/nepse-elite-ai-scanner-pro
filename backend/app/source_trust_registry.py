@@ -260,6 +260,21 @@ def build_promotion_event(
         reasons.append("source_registry_digest_not_trusted")
     if not verify_reviewer_signature(validation, reviewer_keys):
         reasons.append("reviewer_signature_invalid_or_untrusted")
+    expected_context = {
+        "decision_action": action,
+        "record_id": record.get("record_id"),
+        "source_id": record.get("source_id"),
+        "record_type": record.get("record_type"),
+        "source_payload_sha256": record.get("source_payload_sha256"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
+        "registry_sha256": registry.get("registry_sha256"),
+        "decision_time": _utc(decision_time, "decision_time").isoformat().replace("+00:00", "Z"),
+    }
+    if any(validation.get(key) != value for key, value in expected_context.items()):
+        reasons.append("review_attestation_context_mismatch")
     if action == "promote":
         _, policy_reasons = resolve_source_policy(
             registry, source_id=record.get("source_id", ""),
@@ -295,6 +310,7 @@ def build_promotion_event(
         "reasons": sorted(set(reasons)),
         "registry_sha256": registry.get("registry_sha256"),
         "validation_signature": validation.get("signature"),
+        "validation_attestation": validation,
     }
     return body
 
@@ -357,15 +373,66 @@ def verify_promotion_ledger(path: str | Path) -> dict[str, Any]:
             "last_event_sha256": previous, "errors": errors}
 
 
-def active_promoted_record_ids(path: str | Path) -> set[str]:
+def active_promoted_record_ids(
+    path: str | Path, *, registry: dict[str, Any],
+    trusted_registry_sha256: str, reviewer_keys: dict[str, bytes],
+) -> set[str]:
+    """Return only records whose ledger, pinned policy and signed attestations re-verify."""
     audit = verify_promotion_ledger(path)
     if not audit["valid"]:
         raise ValueError("promotion ledger integrity check failed")
+    if not verify_source_registry(registry, trusted_registry_sha256):
+        raise ValueError("source registry digest is not trusted")
     state: dict[str, bool] = {}
     for event in audit["events"]:
+        if event.get("accepted") is not True or event.get("action") not in {"promote", "revoke"}:
+            continue
+        attestation = event.get("validation_attestation")
+        if not isinstance(attestation, dict) or not verify_reviewer_signature(attestation, reviewer_keys):
+            raise ValueError("promotion ledger contains an invalid reviewer attestation")
+        if event.get("registry_sha256") != registry.get("registry_sha256"):
+            raise ValueError("promotion ledger registry digest mismatch")
+        context = {
+            "decision_action": event.get("action"),
+            "record_id": event.get("record_id"),
+            "source_id": event.get("source_id"),
+            "record_type": event.get("record_type"),
+            "source_payload_sha256": event.get("source_payload_sha256"),
+            "session_date": event.get("session_date"),
+            "available_at": event.get("available_at"),
+            "registry_sha256": event.get("registry_sha256"),
+            "decision_time": event.get("decision_time"),
+        }
+        if any(attestation.get(key) != value for key, value in context.items()):
+            raise ValueError("promotion ledger reviewer attestation context mismatch")
         record_id = event.get("record_id")
-        if event.get("action") == "promote" and event.get("accepted") is True:
+        if not record_id:
+            raise ValueError("promotion ledger event missing record_id")
+        if event["action"] == "promote":
+            _, policy_reasons = resolve_source_policy(
+                registry, source_id=event.get("source_id", ""),
+                record_type=event.get("record_type", ""),
+                session_date=event.get("session_date", ""),
+                decision_time=event.get("decision_time", ""),
+            )
+            validation_reasons = validate_promotion_evidence(
+                {
+                    "record_id": record_id,
+                    "source_id": event.get("source_id"),
+                    "record_type": event.get("record_type"),
+                    "source_payload_sha256": event.get("source_payload_sha256"),
+                    "session_date": event.get("session_date"),
+                    "available_at": event.get("available_at"),
+                },
+                raw_payload_sha256=event.get("source_payload_sha256", ""),
+                validation=attestation,
+                decision_time=event.get("decision_time", ""),
+            )
+            if policy_reasons or validation_reasons:
+                raise ValueError("promotion ledger event no longer satisfies source policy and validation")
             state[record_id] = True
-        elif event.get("action") == "revoke" and event.get("accepted") is True:
+        elif event["action"] == "revoke":
+            if not attestation.get("evidence_refs") or not attestation.get("reviewer"):
+                raise ValueError("promotion ledger contains an unsupported revocation")
             state[record_id] = False
-    return {record_id for record_id, active in state.items() if active and record_id}
+    return {record_id for record_id, active in state.items() if active}

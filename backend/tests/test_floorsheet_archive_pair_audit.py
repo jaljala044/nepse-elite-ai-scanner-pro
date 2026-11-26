@@ -65,6 +65,22 @@ class FloorsheetArchivePairAuditTests(unittest.TestCase):
         result = self.run_audit(left=malformed)
         self.assertEqual(result["audit_status"], "review_only_with_rejected_rows")
         self.assertEqual(result["left_file"]["rejected_rows"], 1)
+        self.assertEqual(len(result["left_file"]["rejected_row_ledger"]), 1)
+        self.assertEqual(result["left_file"]["rejected_row_ledger"][0]["source_row_number"], 4)
+
+
+    def test_no_valid_rows_on_one_side_is_reported_without_crashing(self):
+        invalid = (
+            b"date,contract_no,symbol,buyer,seller,quantity,rate,amount\\n"
+            b"2026-11-24,C3,CCC,11,22,0,10,0\\n"
+        )
+        result = self.run_audit(left=invalid)
+        self.assertEqual(result["left_file"]["parsed_rows"], 0)
+        self.assertEqual(
+            result["comparison"]["comparison_status"],
+            "not_run_no_parsed_rows_on_one_or_both_sides",
+        )
+        self.assertFalse(result["canonical_promotion_allowed"])
 
     def test_empty_payload_and_invalid_digest_rejected(self):
         with self.assertRaisesRegex(ValueError, "non-empty bytes"):

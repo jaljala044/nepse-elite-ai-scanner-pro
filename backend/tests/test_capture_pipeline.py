@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.capture_pipeline import capture_normalize_and_build_features, normalize_json_payload
+from app.capture_pipeline import capture_normalize_and_build_features, normalize_json_payload\nfrom app.evidence_store import load_evidence_records
 
 
 class CapturePipelineIntegrationTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class CapturePipelineIntegrationTests(unittest.TestCase):
                 payload, storage_root=tmp, decision_time="2026-11-24T12:00:00Z",
                 expected_symbols=["AAA","BBB","CCC"], **self.manifest_args()
             )
-            self.assertEqual(Path(result["capture"]["payload_path"]).read_bytes(), payload)
+            self.assertEqual(Path(result["capture"]["payload_path"]).read_bytes(), payload)\n            self.assertEqual(result["capture"]["evidence_status"], "stored_review_required")\n            self.assertFalse(result["capture"]["production_eligible"])\n            evidence = load_evidence_records(database_path=Path(tmp) / "evidence.duckdb")\n            self.assertEqual(len(evidence), 3)\n            self.assertTrue(all(row["source_validation_status"] == "review_required" for row in evidence))
             self.assertEqual(result["capture"]["payload_bytes"], len(payload))
             self.assertEqual(result["normalized_record_count"], 3)
             features = result["feature_snapshot"]
@@ -52,7 +52,7 @@ class CapturePipelineIntegrationTests(unittest.TestCase):
         args["received_at"] = "2026-11-24T13:00:00Z"
         with tempfile.TemporaryDirectory() as tmp:
             result = capture_normalize_and_build_features(
-                payload, storage_root=tmp, decision_time="2026-11-24T12:00:00Z", **args
+                payload, storage_root=tmp, evidence_database_path=Path(tmp) / "evidence.duckdb",\n                decision_time="2026-11-24T12:00:00Z", **args
             )
             self.assertEqual(result["feature_snapshot"]["included_input_count"], 0)
             self.assertEqual(result["feature_snapshot"]["market_breadth"]["observed_symbols"], 0)

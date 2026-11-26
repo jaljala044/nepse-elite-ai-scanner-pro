@@ -107,6 +107,9 @@ def scan_market_wide(request: ScanRequest):
     invalid_symbols = sorted(set(selected) - candidate_symbols)
     if invalid_symbols:
         raise HTTPException(422, "Symbols outside the candidate equity universe: " + ", ".join(invalid_symbols))
+    # Default to the current Nepal calendar date so future-dated rows can
+    # never enter a scan merely because the caller omitted an explicit as_of.
+    effective_as_of = request.as_of or datetime.now(ZoneInfo("Asia/Kathmandu")).date()
     cutoff = datetime.now(timezone.utc)
     if request.as_of:
         cutoff = min(
@@ -136,7 +139,7 @@ def scan_market_wide(request: ScanRequest):
     return run_market_scan(
         selected,
         DATA,
-        as_of=request.as_of,
+        as_of=effective_as_of,
         scan_symbol=scan_one,
     )
 

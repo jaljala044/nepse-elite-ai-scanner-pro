@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_public_nepal_market_data import (\n    audit_symbol_csv, crosscheck_official_history, compare_socrateai_daily_csvs,\n)
+from audit_public_nepal_market_data import (
+    audit_symbol_csv, crosscheck_official_history, compare_socrateai_daily_csvs,
+)
 
 
 HEADER = b"published_date,open,high,low,close,per_change,traded_quantity,traded_amount,status\n"

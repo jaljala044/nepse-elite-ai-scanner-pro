@@ -25,6 +25,7 @@ SCOPE_CLASSES = {
     "OUT_OF_SCOPE_MUTUAL_FUND",
     "OUT_OF_SCOPE_PROMOTER_SHARE",
     "OUT_OF_SCOPE_DEBENTURE",
+    "OUT_OF_SCOPE_BOND",
     "EQUITY_CANDIDATE_NOT_IN_CROSSWALK",
     "UNCLASSIFIED_SECURITY_SNAPSHOT_ONLY",
     "UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH",
@@ -173,6 +174,10 @@ def audit_floorsheet_symbol_scope(
             scope_class = "OUT_OF_SCOPE_DEBENTURE"
             security_id = (security or {}).get("security_id")
             evidence = "dated_security_snapshot_name_identifies_debenture"
+        elif "bond" in normalized_name.split():
+            scope_class = "OUT_OF_SCOPE_BOND"
+            security_id = (security or {}).get("security_id")
+            evidence = "dated_security_snapshot_name_identifies_bond"
         elif candidate_class.casefold() == "equity":
             scope_class = "EQUITY_CANDIDATE_NOT_IN_CROSSWALK"
             security_id = (candidate or {}).get("official_snapshot_id") or (security or {}).get("security_id")

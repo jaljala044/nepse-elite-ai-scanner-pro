@@ -1707,3 +1707,16 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Important qualification: the file is a dated NepseAlpha **secondary-provider snapshot**. Structural validation passes, but official membership/effective-dated lifecycle is not yet authoritative; the validator explicitly keeps `membership_authoritatively_verified=false` and `promotion_allowed=false`.
 - Current 281-equity file may be used as a working candidate universe for equity-only scanner development and coverage reconciliation. Mutual funds, promoter shares, debentures, suspended and delisted instruments remain excluded.
 - Full backend CI passed: [run 45832163019](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832163019), including full unittest discovery after the validator date-pattern fix. No canonical/training promotion is approved.
+
+
+### Equity universe scanner integration — 2026-11-26
+
+- Added the equity-manifest loader and wired it into the scanner API.
+- `GET /v1/universe` returns the validated 281-equity candidate manifest and explicitly marks it secondary / non-authoritative.
+- `GET /v1/symbols` is now scoped to loaded symbols within the active-equity candidate set.
+- `POST /v1/scan` rejects out-of-scope symbols (including mutual funds such as NICEF) before indicator computation; it fails closed if the candidate manifest cannot load.
+- Existing row-level reviewed-source, session, price-basis and point-in-time gates remain mandatory. Candidate-universe membership alone does not authorize a signal.
+- Added API regression tests and updated the market-structure API test fixture.
+- Latest full backend CI: [run 45832612455](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832612455), **SUCCESS — 677 tests**.
+- Evidence/report: [EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md](EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md).
+- Remaining: primary-source membership/effective-dated lifecycle, official session calendar, OHLCV exceptions, corporate-action review, source rights and per-equity coverage remain separate data-promotion gates.

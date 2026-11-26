@@ -1770,3 +1770,15 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Detailed evidence and acceptance criteria: [UNL low-frequency execution and unknown scan policy](UNL_LOW_FREQUENCY_EXECUTION_AND_UNKNOWN_SCAN_POLICY_2026-11-26.md).
 - Code commit: [8ac0403](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/8ac0403327d9fd230cbbab32260398a8ffbe4945); test commit: [7f7153c](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/7f7153c3456110ca7e37200d6926c317948b0b4f); evidence report commit: [268f3df](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/268f3fdfbecfd3ee2a56055af8800f3112508297).
 
+
+
+### Equity lifecycle provenance validation — 2026-11-26
+
+- Added `backend/validate_equity_lifecycle_input.py` and regression tests to validate the 281-row lifecycle input against the dated current-security-ID crosswalk.
+- Enforces unique symbol/ID rows, equity-only scope, current snapshot ID alignment, allowed evidence statuses, mandatory date+URI+note for verified starts, and blank/no-URI handling for unverified starts.
+- Current checked-in input validates with 281 rows, 1 verified-secondary first-trading date (YMHL, 2026-06-22), 280 explicitly unverified starts, and zero validation errors. This is a documentation coverage gap, not a claim those 280 securities lack listing dates.
+- Backend CI: [run 45834139262](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45834139262), **741 tests passed**.
+- Integrated evidence audit: [run 45834139271](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45834139271), success.
+- Historical data integrity: [run 45834139312](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45834139312), success.
+- Report: [EQUITY_LIFECYCLE_PROVENANCE_VALIDATOR_2026-11-26.md](EQUITY_LIFECYCLE_PROVENANCE_VALIDATOR_2026-11-26.md).
+- Remaining: independently sourced effective listing/trading starts and lifecycle end intervals for the remaining 280; verified exchange calendar; source-separated OHLCV row-level coverage; corporate-action/price-basis validation and data rights. No canonical promotion or training.

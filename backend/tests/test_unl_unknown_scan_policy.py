@@ -11,6 +11,9 @@ class UnlUnknownScanPolicyTests(unittest.TestCase):
         result = response.json()["results"][0]
         self.assertEqual(result["symbol"], "UNL")
         self.assertEqual(result["status"], "unknown_result")
+        self.assertEqual(result["result_bucket"], "unknown_results")
+        self.assertFalse(result["ranking_eligible"])
+        self.assertFalse(result["buy_list_eligible"])
         self.assertEqual(result["data_status"], "UNKNOWN")
         self.assertEqual(result["data_quality"], "LOW_CONFIDENCE")
         self.assertEqual(result["overall_rating"], "NOT_RATED")

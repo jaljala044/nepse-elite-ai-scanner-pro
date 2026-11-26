@@ -20,7 +20,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         symbol: security_footprint(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
     }
-    latest_by_symbol = []
+    trend_features = {\n        symbol: minervini_trend_template(items)\n        for symbol, items in sorted(by_symbol.items()) if symbol\n    }\n    latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
         latest_by_symbol.append(latest)

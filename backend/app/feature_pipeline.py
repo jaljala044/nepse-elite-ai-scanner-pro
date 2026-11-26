@@ -82,7 +82,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
 
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
-        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(prices),
+        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(raw_prices) - len(price_contract_failures),
                   "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and len(prices) == len(raw_prices),
                   "exclusions": price_contract_failures},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
@@ -212,8 +212,9 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             "trend": ({**trend_features[symbol], "status": "input_contract_unverified", "score": None}
                       if not price_score_gate else trend_features[symbol]),
             "relative_strength": {
-                "status": rs_item.get("score_status", "insufficient_evidence"),
-                "score": rs_item.get("score"),
+                "status": (rs_item.get("score_status", "insufficient_evidence")
+                           if price_score_gate else "input_contract_unverified"),
+                "score": rs_item.get("score") if price_score_gate else None,
                 "as_of_session": rs_item.get("as_of_session"),
                 "rank": rs_item.get("rank"),
             },

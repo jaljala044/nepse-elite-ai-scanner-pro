@@ -18,7 +18,8 @@ def run(rows=None, **kwargs):
     defaults = dict(batch_id="B-1", rows=rows or [make_row()],
         verified_brokers={"BROKER-1"}, verified_sessions={"2026-11-25"},
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
-        available_at="2026-11-26T09:00:00+05:45")
+        available_at="2026-11-26T09:00:00+05:45",
+        verified_session_finality={"2026-11-25": "2026-11-25T16:00:00+05:45"})
     defaults.update(kwargs)
     return reconcile_broker_batch(**defaults)
 

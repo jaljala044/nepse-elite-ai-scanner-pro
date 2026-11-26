@@ -15,7 +15,8 @@ from urllib.request import (
     HTTPSHandler, HTTPRedirectHandler, Request, build_opener,
 )
 
-from app.raw_capture import build_capture_manifest, persist_capture
+from app.raw_capture import build_capture_manifest
+from app.evidence_store import persist_evidence_batch
 
 
 class FloorsheetCaptureRejected(ValueError):
@@ -91,6 +92,7 @@ def capture_public_floorsheet(
     policy: FloorsheetCapturePolicy,
     storage_root: str,
     fetch_id: str,
+    database_path: str | None = None,
     timeout_seconds: float = 20.0,
     opener: Any | None = None,
     clock: Callable[[], datetime] = _now,
@@ -182,7 +184,9 @@ def capture_public_floorsheet(
         parser_version=policy.parser_version,
         rights_status=policy.rights_status,
     )
-    persisted = persist_capture(storage_root, payload, manifest)
+    persisted = persist_evidence_batch(
+        payload, manifest, [], storage_root=storage_root, database_path=database_path
+    )
     return {
         "status": "captured",
         "source_id": policy.source_id,

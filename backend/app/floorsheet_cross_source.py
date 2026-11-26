@@ -52,9 +52,25 @@ def compare_floorsheet_sources(
             conflicts.append({
                 "trade_date": key[0], "contract_id": key[1],
                 "differing_fields": differing,
+                "left_record": row_detail(a),
+                "right_record": row_detail(b),
             })
         else:
             exact.append({"trade_date": key[0], "contract_id": key[1]})
+
+    def row_detail(row):
+        return {
+            "source_id": row.source_id,
+            "source_row_number": row.source_row_number,
+            "trade_date": row.trade_date,
+            "contract_id": row.contract_id,
+            "symbol": row.symbol,
+            "buyer_broker_code": row.buyer_broker_code,
+            "seller_broker_code": row.seller_broker_code,
+            "quantity": str(row.quantity),
+            "rate": str(row.rate),
+            "amount": str(row.amount),
+        }
 
     def totals(rows):
         return {
@@ -78,6 +94,12 @@ def compare_floorsheet_sources(
         ],
         "right_only_contract_keys": [
             {"trade_date": d, "contract_id": c} for d, c in sorted(right_keys - left_keys)
+        ],
+        "left_only_contracts": [
+            row_detail(left_index[key]) for key in sorted(left_keys - right_keys)
+        ],
+        "right_only_contracts": [
+            row_detail(right_index[key]) for key in sorted(right_keys - left_keys)
         ],
         "exact_shared_contracts": exact,
         "conflicts": conflicts,

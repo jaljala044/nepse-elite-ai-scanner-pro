@@ -134,8 +134,8 @@ proof of entitlement.
 ### Acceptance decision
 
 - Implementation and synthetic unit/API tests: complete.
-- Latest verified code CI (commit `28fed929`): 2/2 workflows passed.
-- Documentation-only follow-up commit: CI result pending/none reported yet.
+- Latest verified code CI (commit `cee143bcc407eccacc7231e46e8f771f382656b7`): backend unit tests, backend contract tests, and full public archive audit passed; all five commit check-runs concluded successfully.
+- Subsequent commits changed documentation/PR evidence only; the tested application/audit code is unchanged.
 - Production-reviewed historical rows: unavailable.
 - Real-market backtest and out-of-sample calibration: not performed.
 - Production signal eligibility: not granted.

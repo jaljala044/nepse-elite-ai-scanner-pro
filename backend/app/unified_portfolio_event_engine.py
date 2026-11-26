@@ -54,6 +54,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
     if cutoff.tzinfo is None or cutoff.utcoffset() is None:
         raise ValueError("evidence_cutoff_timezone_required")
     cash = _positive(initial_cash, "initial_cash", zero=True)
+    starting_cash = cash
     if not isinstance(portfolio_sessions, list) or len(portfolio_sessions) < 2:
         raise ValueError("verified_portfolio_sessions_required")
     days = [_day(x, "portfolio_session") for x in portfolio_sessions]
@@ -144,6 +145,8 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             raise ValueError("corporate_action_effective_date_not_verified_session")
         if kind == "rights" and listing not in days and listing <= as_of:
             raise ValueError("rights_listing_date_not_verified_session")
+        if record_day not in days or effective < record_day or (kind == "rights" and listing < record_day):
+            raise ValueError("corporate_action_dates_must_follow_verified_record_date")
         actions_by_day[record_day].append(action)
         entitlement_by_action[aid] = {"symbol": symbol, "event": event,
                                       "source_id": action["source_id"], "action": action}
@@ -288,7 +291,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         "status": "completed_with_limitations",
         "classification": "caller_attested_transaction_and_corporate_action_research_ledger",
         "methodology_version": "p4.48_unified_portfolio_event_engine_v1",
-        "as_of_date": as_of.isoformat(), "initial_cash": cash if not curve else None,
+        "as_of_date": as_of.isoformat(), "initial_cash": starting_cash,
         "ending_equity": curve[-1]["equity"], "equity_curve": curve,
         "benchmark_comparison": benchmark,
         "corporate_action_entitlements": [

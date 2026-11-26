@@ -51,6 +51,7 @@ def research_readiness():
             "multitimeframe": "implemented_not_production_certified",
             "broker_confluence": "implemented_not_production_certified",
             "broker_behaviour_memory": "durable_research_store_no_live_ingestion",
+            "broker_early_patterns": "uncalibrated_research_rule_requires_verified_nepse_context",
             "combined_strategy": "research_test_not_approved",
         },
         "missing_evidence_policy": "UNKNOWN",

@@ -88,6 +88,13 @@ class ExecutionBacktestTests(unittest.TestCase):
         result = self.run_scenario(rows=rows, reviewed=reviewed, signal=signal)
         self.assertEqual(result["reason"], "buy_side_upper_circuit_lock_fill_unverified")
 
+    def test_slippage_adjusted_price_cannot_break_circuit_band(self):
+        bands = dict(self.bands)
+        bands[self.sessions[1]] = {"lower": 100.0, "upper": 100.05}
+        config = dict(self.config, price_bands=bands)
+        result = self.run_scenario(execution_config=config)
+        self.assertEqual(result["reason"], "slippage_adjusted_buy_price_outside_circuit_band")
+
     def test_missing_cost_assumptions_withhold(self):
         result = self.run_scenario(cost_assumptions={"slippage_bps": 0})
         self.assertEqual(result["reason"], "complete_versioned_cost_assumptions_required")

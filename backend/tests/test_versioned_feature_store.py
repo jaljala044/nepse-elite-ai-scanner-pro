@@ -32,6 +32,7 @@ class VersionedFeatureStoreTests(unittest.TestCase):
         self.assertEqual(joined["corporate_action_count"], 1)
         self.assertEqual(joined["corporate_action_adjustment_eligible_count"], 1)
         self.assertEqual(len(joined["corporate_action_adjustment_actions"]), 1)
+        self.assertFalse(joined["corporate_action_source_universe_completeness_verified"])
         self.assertEqual(snapshot["features"]["trend_features"]["AAA"]["status"], "insufficient_evidence")
         self.assertIsNone(snapshot["features"]["trend_features"]["AAA"]["score"])
         self.assertFalse(snapshot["ohlcv_adjustment_applied"])
@@ -117,6 +118,7 @@ class VersionedFeatureStoreTests(unittest.TestCase):
         self.assertEqual(joined["corporate_action_adjustment_eligible_count"], 0)
         self.assertEqual(joined["corporate_action_excluded_unverified_count"], 1)
         self.assertFalse(joined["corporate_action_point_in_time_eligible"])
+        self.assertFalse(joined["corporate_action_source_universe_completeness_verified"])
         self.assertFalse(snapshot["ohlcv_adjustment_applied"])
 
     def test_hash_tampering_rejected(self):

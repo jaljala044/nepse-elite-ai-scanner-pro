@@ -47,7 +47,7 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         result = run_market_scan(
             ["AAA", "BBB"],
             {"AAA": [{"date": "2026-01-01"}]},
-            as_of=None,
+            as_of=date(2026, 1, 2),
             scan_symbol=lambda *args: called.append(args) or {"status": "screened"},
         )
         self.assertEqual(len(called), 1)
@@ -56,8 +56,8 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         self.assertEqual(missing["status"], "insufficient_data")
         self.assertEqual(missing["freshness_status"], "no_observation")
         self.assertIsNone(missing["latest_observation_calendar_age_days"])
-        self.assertIsNone(missing["requested_as_of"])
-        self.assertIsNone(missing["as_of"])
+        self.assertEqual(missing["requested_as_of"], "2026-01-02")
+        self.assertEqual(missing["as_of"], "2026-01-02")
         self.assertFalse(missing["ranking_eligible"])
         self.assertEqual(result["symbols_without_observations"], 1)
         self.assertEqual(result["status_counts"]["insufficient_data"], 1)

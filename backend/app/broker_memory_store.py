@@ -154,18 +154,74 @@ class BrokerMemoryStore:
     def append_many(self, snapshots: Iterable[dict], *, key_prefix: str,
                     methodology_version: str = "p4.31-v1",
                     available_at: datetime | None = None) -> dict:
-        """Append snapshots individually; repeated batches are idempotent."""
-        results = []
-        for index, snapshot in enumerate(snapshots):
+        """Atomically append a batch; exact retries are no-ops and conflicts roll back all writes."""
+        if not isinstance(key_prefix, str) or not key_prefix.strip():
+            raise ValueError("key_prefix must be nonblank")
+        if not isinstance(methodology_version, str) or not methodology_version.strip():
+            raise ValueError("methodology_version must be nonblank")
+        available_at = available_at or datetime.now(timezone.utc)
+        if available_at.tzinfo is None or available_at.utcoffset() is None:
+            raise ValueError("available_at must be timezone-aware")
+        items = list(snapshots)
+        prepared = []
+        for snapshot in items:
+            self._validate_snapshot(snapshot)
             identity = "|".join((
                 key_prefix, str(snapshot.get("security_id", "")),
                 str(snapshot.get("broker_entity_id", "")),
                 str(snapshot.get("as_of_date", "")), str(snapshot.get("window", "")),
             ))
-            results.append(self.append(
-                snapshot, idempotency_key=identity,
-                methodology_version=methodology_version, available_at=available_at,
-            ))
+            payload = _canonical_json(snapshot)
+            digest = _sha256(payload)
+            prepared.append({
+                "snapshot": snapshot, "identity": identity, "payload": payload,
+                "digest": digest,
+                "snapshot_id": _sha256(identity + ":" + digest),
+            })
+        if not prepared:
+            return {"received": 0, "inserted": 0, "replayed": 0, "results": []}
+
+        created_at = datetime.now(timezone.utc)
+        results = []
+        con = self._connect()
+        try:
+            con.execute("BEGIN TRANSACTION")
+            for item in prepared:
+                existing = con.execute("""
+                    SELECT snapshot_id, payload_sha256 FROM broker_memory_snapshots
+                    WHERE idempotency_key = ?
+                """, [item["identity"]]).fetchone()
+                if existing:
+                    if existing[1] != item["digest"]:
+                        raise IdempotencyConflict(
+                            "idempotency key already exists with different immutable content"
+                        )
+                    results.append({
+                        "snapshot_id": existing[0], "inserted": False,
+                        "idempotent_replay": True, "payload_sha256": item["digest"],
+                    })
+                    continue
+                snapshot = item["snapshot"]
+                con.execute("""
+                    INSERT INTO broker_memory_snapshots VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, [
+                    item["snapshot_id"], item["identity"],
+                    date.fromisoformat(snapshot["as_of_date"]), available_at,
+                    snapshot["security_id"], snapshot["broker_entity_id"],
+                    snapshot["window"], item["payload"], item["digest"],
+                    methodology_version, created_at,
+                ])
+                results.append({
+                    "snapshot_id": item["snapshot_id"], "inserted": True,
+                    "idempotent_replay": False, "payload_sha256": item["digest"],
+                })
+            con.execute("COMMIT")
+        except Exception:
+            con.execute("ROLLBACK")
+            raise
+        finally:
+            con.close()
         return {
             "received": len(results),
             "inserted": sum(x["inserted"] for x in results),

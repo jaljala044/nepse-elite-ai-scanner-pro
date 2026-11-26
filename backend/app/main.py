@@ -309,6 +309,47 @@ def volume_profile(symbol: str, start: date, end: date):
         return {"status":"unavailable","symbol":symbol,"levels":[],"reason":"equity_universe_gate"}
     return load_profile(symbol,start,end)
 
+
+@app.get("/v1/broker/summary/{symbol}")
+def broker_summary(symbol: str, start: date, end: date):
+    from decimal import Decimal
+    from .volume_profile_store import load_profile
+    symbol = symbol.upper()
+    if EQUITY_UNIVERSE is None or symbol not in EQUITY_UNIVERSE["symbols"]:
+        return {"status":"unavailable","reason":"equity_universe_gate"}
+    profile = load_profile(symbol, start, end)
+    if profile.get("status") != "research_only":
+        return {"status":profile.get("status","unavailable"),"reason":profile.get("reason"),"symbol":symbol}
+    brokers = {}
+    for level in profile["levels"]:
+        for side in ("buyer","seller"):
+            for code, qty in level[side+"_broker_quantity"].items():
+                b = brokers.setdefault(code, {"buy_qty":Decimal(0),"sell_qty":Decimal(0),"buy_amount":Decimal(0),"sell_amount":Decimal(0)})
+                prefix = "buy" if side=="buyer" else "sell"
+                b[prefix+"_qty"] += Decimal(qty)
+                b[prefix+"_amount"] += Decimal(qty)*Decimal(level["price"])
+    rows = []
+    for code, b in brokers.items():
+        rows.append({"broker_code":code, **{k:str(v) for k,v in b.items()},
+                     "net_qty":str(b["buy_qty"]-b["sell_qty"]),
+                     "net_amount":str(b["buy_amount"]-b["sell_amount"])})
+    rows.sort(key=lambda x:(-Decimal(x["net_amount"]),x["broker_code"]))
+    total = Decimal(profile["total_amount"])*2
+    gross = sorted((b["buy_amount"]+b["sell_amount"] for b in brokers.values()),reverse=True)
+    return {"status":"research_only","symbol":symbol,"start":str(start),"end":str(end),
+            "brokers":rows,"top3_gross_share_pct":str(sum(gross[:3])/total*100) if total else None,
+            "control_evidence_ids":profile["control_evidence_ids"],
+            "limitations":["Broker codes are execution channels, not verified beneficial owners.",
+                           "Net buying is not proof of accumulation or future return."]}
+
+@app.get("/v1/research/strategy-modes")
+def strategy_modes():
+    return {"status":"research_only","production_recommendations_enabled":False,
+            "modes":{"swing":{"holding_days":[3,15],"broker_confirmation_sessions":5},
+                     "positional":{"holding_weeks":[2,8],"broker_confirmation_sessions":21}},
+            "minimum_reward_risk":2,"short_selling_enabled":False,
+            "parameters_status":"research_policy_not_validated"}
+
 # Mount only the built public frontend, never the repository or raw data.
 from fastapi.staticfiles import StaticFiles
 import os

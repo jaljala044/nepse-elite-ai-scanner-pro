@@ -1,4 +1,6 @@
 from datetime import date, datetime, timezone, time
+import json
+import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
@@ -11,6 +13,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .canonical_feature_pipeline import build_canonical_feature_snapshot
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -26,6 +29,10 @@ except (OSError, ValueError) as exc:
 class ScanRequest(BaseModel):
     symbols: list[str] | None = None
     as_of: date | None = None
+
+class CanonicalFeatureRequest(BaseModel):
+    decision_time: datetime
+    symbols: list[str] | None = None
 
 @app.get("/health")
 def health():
@@ -270,6 +277,52 @@ def scan(request: ScanRequest):
         "research_only_results": [item for item in results if item.get("result_bucket") == "research_only"],
         "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal.",
     }
+
+
+@app.post("/v1/canonical-feature-snapshot")
+def canonical_feature_snapshot(request: CanonicalFeatureRequest):
+    """Research-only scanner features from server-configured canonical evidence."""
+    root = Path(__file__).resolve().parents[2]
+    registry_path = Path(os.getenv(
+        "NEPSE_SOURCE_TRUST_REGISTRY_PATH",
+        str(root / "data" / "reference" / "source-trust-registry.v1.json"),
+    ))
+    calendar_value = os.getenv("NEPSE_SESSION_CALENDAR_PATH")
+    ledger_path = Path(os.getenv(
+        "NEPSE_PROMOTION_LEDGER_PATH",
+        str(root / "backend" / "data" / "promotion-ledger.jsonl"),
+    ))
+    trusted_digest = os.getenv("NEPSE_SOURCE_REGISTRY_SHA256", "")
+    reviewer_keys_raw = os.getenv("NEPSE_REVIEWER_KEYS_JSON", "")
+    if not calendar_value or not trusted_digest or not reviewer_keys_raw:
+        return {
+            "status": "insufficient_evidence", "decision_status": "UNKNOWN",
+            "action": "PRESERVE_CAPITAL", "feature_snapshot": None,
+            "missing": ["server_side_calendar_registry_digest_or_reviewer_keys"],
+            "production_source_claim": False,
+        }
+    try:
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+        raw_keys = json.loads(reviewer_keys_raw)
+        if not isinstance(raw_keys, dict) or any(
+            not isinstance(name, str) or not isinstance(value, str) or not value
+            for name, value in raw_keys.items()
+        ):
+            raise ValueError("reviewer key configuration must be a non-empty string mapping")
+        reviewer_keys = {name: value.encode("utf-8") for name, value in raw_keys.items()}
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return {
+            "status": "insufficient_evidence", "decision_status": "UNKNOWN",
+            "action": "PRESERVE_CAPITAL", "feature_snapshot": None,
+            "missing": ["valid_server_side_registry_or_reviewer_key_configuration"],
+            "production_source_claim": False,
+        }
+    return build_canonical_feature_snapshot(
+        database_path=None, ledger_path=ledger_path, registry=registry,
+        trusted_registry_sha256=trusted_digest, reviewer_keys=reviewer_keys,
+        calendar_path=calendar_value, decision_time=request.decision_time.isoformat(),
+        expected_symbols=request.symbols or sorted(set(DATA.keys()) & set(EQUITY_UNIVERSE["symbols"] if EQUITY_UNIVERSE else [])),
+    )
 
 @app.get("/v1/data/{symbol}")
 def history(symbol: str):

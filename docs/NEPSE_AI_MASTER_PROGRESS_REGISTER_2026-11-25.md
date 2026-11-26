@@ -2108,3 +2108,16 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - Added CLI tests for source-profile header validation, manifest generation and pinned-object size rejection; added amount-arithmetic exception regression.
 - CI at commit `e92fa561f6217bcf09783ffc26f6676a83a64e83`: backend tests **822 passed** (run 45847792155); standard unit tests **822 passed** (run 45847792069); integrated evidence audit passed (run 45847792074); historical data integrity passed (run 45847792158). Test logs and completed workflow conclusions inspected.
 - Real Samir/SocrateAI pair execution remains pending exact local raw files; no synthetic substitute or summary-derived comparison was run.
+
+
+## P4.17 — actual pinned floorsheet archive reconciliation completed (2026-11-26)
+
+- Added reproducible GitHub Actions workflow `.github/workflows/p417-pinned-archive-reconciliation.yml`. Successful run: [#45849142578](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45849142578). Review-only JSON artifact ID `15132074862`.
+- Downloaded the exact SamirWagle commit/file and SocrateAI commit/file; both pinned Git blob SHA-1 and byte-size checks passed. Full payload SHA-256 values are recorded in `docs/P4.17_PINNED_FLOORSHEET_ARCHIVE_RECONCILIATION_2026-11-26.md`.
+- First real execution exposed a parser defect: Samir numeric fields use thousands separators. Corrected decimal parsing to accept only valid 3-digit grouping and reject malformed grouping. Added regression tests for grouped values, malformed groups and exact Decimal preservation.
+- Final execution: Samir **52,369/52,369** rows parsed; SocrateAI **52,387/52,387** parsed; zero rejected rows, duplicates or quantity × rate arithmetic exceptions.
+- Contract comparison: **52,369 exact shared records**, **0 shared-field conflicts**, **0 Samir-only**, **18 SocrateAI-only**. No same-contract date collisions or cross-source date disagreements were observed.
+- The 18 SocrateAI-only records sum to **7,831 shares / NPR 1,350,692.80**. Point-in-time 2026-11-25 security snapshot/candidate classifications identify 16 RSY2 mutual-fund trades, one NMLBBLP promoter-share trade and one ICFCD89 debenture trade. They are out of ordinary-equity scanner scope; retain in raw reconciliation, do not add to the equity universe.
+- SocrateAI totals match the indexed MeroLagani 2026-11-24 quantity and gross-amount controls exactly. This is same-day arithmetic/set consistency, not independent source-lineage or exchange completeness proof: Samir's scraper is MeroLagani-derived and SocrateAI's upstream capture route remains unverified.
+- **Disposition:** high-confidence one-day transaction-set consistency; LOW CONFIDENCE for source independence and daily completeness; review-only. Source rights, official session completeness, effective-dated 281-equity master, coverage admission, broker scoring and production BUY authorization remain blocked.
+- Detailed report: [P4.17 pinned floorsheet archive reconciliation](docs/P4.17_PINNED_FLOORSHEET_ARCHIVE_RECONCILIATION_2026-11-26.md).

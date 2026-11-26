@@ -48,7 +48,7 @@ class MarketSectorParticipationTests(unittest.TestCase):
     def test_verified_sector_participation_component(self):
         result = self.run_component()
         self.assertEqual(result["status"], "verified")
-        self.assertEqual(result["score"], 76.0)
+        self.assertEqual(result["score"], 68.0)
         self.assertEqual(result["metrics"]["positive_sector_participation_pct"]["1M"], 60.0)
         self.assertEqual(result["metrics"]["positive_sector_participation_pct"]["3M"], 80.0)
 

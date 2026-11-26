@@ -87,8 +87,8 @@ def _classify(symbol: str, security_id: str, bulk_name: str, snapshot: dict, cro
         return "UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH", "no dated security snapshot row", None
     if str(sec.get("security_id", "")) != security_id:
         return "UNKNOWN_SECURITY_ID_MISMATCH", "bulk security ID differs from 2026-11-25 snapshot", sec.get("security_name")
-    if str(sec.get("security_name", "")) != bulk_name:
-        return "UNKNOWN_SECURITY_NAME_MISMATCH", "bulk security name differs from 2026-11-25 snapshot", sec.get("security_name")
+    if str(sec.get("security_name", "")).strip() != bulk_name.strip():
+        return "UNKNOWN_SECURITY_NAME_MISMATCH", "bulk security name differs from 2026-11-25 snapshot after whitespace normalization", sec.get("security_name")
     if cross:
         if str(cross.get("security_id", "")) == security_id:
             return "IN_SCOPE_EQUITY_CANDIDATE", "2026-11-26 equity crosswalk plus 2026-11-25 snapshot ID match", sec.get("security_name")
@@ -204,7 +204,8 @@ def audit_bulk_scope(bulk_report_path: Path, raw_dir: Path, summary_body_path: P
                 "symbol": symbol, "bulk_security_id": security_id,
                 "bulk_security_name": row.get("securityName"),
                 "snapshot_security_name": security_name,
-                "bulk_snapshot_name_match": str(row.get("securityName", "")) == str(security_name or ""),
+                "bulk_snapshot_name_exact_match": str(row.get("securityName", "")) == str(security_name or ""),
+                "bulk_snapshot_name_normalized_match": str(row.get("securityName", "")).strip() == str(security_name or "").strip(),
                 "scope_class": scope, "scope_evidence": evidence,
                 "current_snapshot_date": expected_snapshot_date,
                 "historical_instrument_identity_verified": False,

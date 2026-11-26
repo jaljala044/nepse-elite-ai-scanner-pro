@@ -44,3 +44,7 @@ Regression tests added for the unknown-lifecycle case and ambiguous duplicate-sy
 - **Training:** not allowed.
 
 The next data task is to collect independently evidenced listing/trading-start and delisting/suspension intervals, then reconcile OHLCV rows against verified exchange sessions. The 2026-11-25 current-snapshot policy remains in force; former merger tickers are not reintroduced.
+
+## CI
+
+Full backend unit-test discovery passed on the crosswalk commit: [run 45833462850](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45833462850) — 736 tests passed.

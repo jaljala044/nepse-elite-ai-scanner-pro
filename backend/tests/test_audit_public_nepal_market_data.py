@@ -292,8 +292,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         }]
         daily = {
             "2024-01-02": (
-                b"date,symbol,open,high,low,close,volume,turnover\\n"
-                b"2024-01-02,TEST,10,11,9,10.5,100,1050\\n"
+                b"date,symbol,open,high,low,close,volume,turnover\n"
+                b"2024-01-02,TEST,10,11,9,10.5,100,1050\n"
             )
         }
         result = compare_srijankarki_daily_csvs(official, daily)
@@ -312,8 +312,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         }]
         daily = {
             "2024-01-02": (
-                b"date,symbol,open,high,low,close,volume,turnover\\n"
-                b"2024-01-02,TEST,10,11,9,10.5,101,1050\\n"
+                b"date,symbol,open,high,low,close,volume,turnover\n"
+                b"2024-01-02,TEST,10,11,9,10.5,101,1050\n"
             )
         }
         result = compare_srijankarki_daily_csvs(official, daily)
@@ -329,8 +329,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         }]
         daily = {
             "2024-01-02": (
-                b"date,symbol,open,high,low,close,volume,turnover\\n"
-                b"2024-01-02,TEST,12,11,9,10.5,100,1050\\n"
+                b"date,symbol,open,high,low,close,volume,turnover\n"
+                b"2024-01-02,TEST,12,11,9,10.5,100,1050\n"
             )
         }
         result = compare_srijankarki_daily_csvs(official, daily)
@@ -344,7 +344,7 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             "totalTradedQuantity": 0, "totalTradedValue": 0,
         }]
         daily = {
-            "2024-01-02": b"date,symbol,open,high,low,close,volume,turnover\\n"
+            "2024-01-02": b"date,symbol,open,high,low,close,volume,turnover\n"
         }
         result = compare_srijankarki_daily_csvs(official, daily)
         self.assertEqual(result["missing_public_zero_activity_rows"], 1)

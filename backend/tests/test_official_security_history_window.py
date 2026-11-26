@@ -11,11 +11,11 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
     def _fixture(self, root):
         start, end = "2026-10-05", "2026-11-26"
         dates = ["2026-11-19", "2026-11-20"]
-        market = {"content": [
+        market = [
             {"businessDate": day, "totalTransactions": 100, "totalTradedShares": 1000,
              "totalTurnover": 100000, "tradedScrips": 10}
             for day in dates
-        ]}
+        ]
         body = root / "market-body.json"
         raw = json.dumps(market).encode()
         body.write_bytes(raw)

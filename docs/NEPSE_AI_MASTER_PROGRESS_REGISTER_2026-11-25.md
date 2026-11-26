@@ -1794,3 +1794,11 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - CI/test execution has not yet been verified for these commits. Do not treat the change as test-passed or production-ready until workflow evidence is available.
 
 - Follow-up schema alignment: the UNL-specific quarantine response now also exposes `overall_rating=NOT_RATED` and explicit UNKNOWN actions for all four horizons; its regression test asserts these fields. Commits: [ee7afb9](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/ee7afb965c384c1975149520f05f8740e3b01756) and [a0bf276](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/a0bf2760a0ab860027dee090227eb7e01af7d6ec). CI remains unverified.
+
+
+### 2026-11-26 follow-up — lifecycle and OHLCV audit
+- Added secondary-source first-trade dates for APHL, KHPL, SKHL, BJHL, SOHL, HFIN, SABBL and RSML with source URLs and provenance caveats. With YMHL, 9/281 lifecycle starts are populated; 272 remain unknown. Commit: [085e41a](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/085e41aaeb9f1f75e0edd6c1a1e67edb7eac2c12).
+- Expanded the data-repository OHLCV audit for hashes, schema/numeric checks, duplicate/order checks, OHLC bounds, volume, repeated-row flags and cautious calendar classifications. Commit: [711e4e2](https://github.com/jaljala044/nepse-smc-data/commit/711e4e2162c886bf1506f18967073dbc42bd30b9).
+- Existing archive comparison matches 276/281 current equities; missing files: NESDO, SYPNL, ULBSL, USLB and YMHL. Full workflow artifact still needs inspection.
+- Calendar remains incomplete for an expected-session denominator. Corporate-action register currently contains three adjustment events (LBBL, DORDI, BNHC); NLIC proposed split remains unverified and no split factor is applied.
+- Canonical promotion and model training remain blocked.

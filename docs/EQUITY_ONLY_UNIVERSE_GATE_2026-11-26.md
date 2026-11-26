@@ -40,3 +40,16 @@ This manifest is a dated **secondary-provider snapshot (NepseAlpha)**, not a raw
 
 - Full backend unit-test workflow [run 45832163019](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832163019) completed successfully on commit `d36a4c78bcc45439ce5ac1d06766d5f6f150acc3`.
 - The workflow's `Run unit tests` step completed successfully using full unittest discovery (`python -m unittest discover -s tests -v`).
+
+
+## Scanner API integration — 2026-11-26
+
+- Added a validated loader for the versioned 281-equity candidate manifest.
+- Added `GET /v1/universe`, which exposes the dated candidate count and source qualification while explicitly reporting that membership is not authoritative and promotion is disabled.
+- Updated `GET /v1/symbols` to report only loaded symbols that also belong to the equity candidate universe, plus the candidate-universe count and status.
+- Updated `POST /v1/scan` to fail closed if the candidate manifest cannot load and to return `out_of_scope` with empty signals/metrics for symbols outside the active equity candidate universe. This excludes NICEF and other mutual funds before indicator analysis.
+- Preserved the independent per-row reviewed-evidence, session, price-basis and point-in-time eligibility checks. Being in the candidate list does not itself authorize a BUY/SELL signal.
+- Added API tests for the universe endpoint, out-of-scope mutual-fund rejection and unknown symbols.
+- Fixed the existing market-structure API test fixture to declare its test symbol in the injected candidate universe.
+
+Latest full backend CI: [run 45832612455](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832612455) — **SUCCESS, 677 tests**.

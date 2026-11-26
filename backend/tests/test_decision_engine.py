@@ -75,7 +75,8 @@ class DecisionEngineTests(unittest.TestCase):
                       result["reasons"])
 
     def test_no_trade_does_not_report_high_confidence(self):
-        result = evaluate_horizon("TEST", "SWING", self.stage1, self.stage2,
+        stage2 = {"components": self.stage2["components"], "structure": {}}
+        result = evaluate_horizon("TEST", "SWING", self.stage1, stage2,
                                   self.plan, ["ohlcv:1", "stage2:1"])
         self.assertEqual(result["action"], "NO_TRADE")
         self.assertEqual(result["confidence"], "LOW")

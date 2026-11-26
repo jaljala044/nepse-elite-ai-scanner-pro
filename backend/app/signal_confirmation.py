@@ -25,9 +25,15 @@ def confirm_signal(rows, *, eligible=False, min_observations=55,
     if not isinstance(rows, list) or quality_errors(rows):
         base["limitations"].append("OHLCV input is empty or failed structural validation.")
         return base
+    valid_volume_multiple = (
+        isinstance(volume_multiple, (int, float))
+        and not isinstance(volume_multiple, bool)
+        and isfinite(float(volume_multiple))
+        and volume_multiple > 0
+    )
     if (not isinstance(min_observations, int) or isinstance(min_observations, bool) or min_observations < 51
             or not isinstance(breakout_lookback, int) or isinstance(breakout_lookback, bool) or breakout_lookback < 5
-            or not isfinite(float(volume_multiple)) or volume_multiple <= 0):
+            or not valid_volume_multiple):
         raise ValueError("invalid signal confirmation configuration")
     ordered = sorted(rows, key=lambda row: str(row["date"]))
     required = max(min_observations, breakout_lookback + 1, 51)

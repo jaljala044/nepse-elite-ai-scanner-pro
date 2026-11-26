@@ -111,8 +111,8 @@ The complete-window capture workflow and its tests passed in run
 Latest backend/contract CI for the later comparator fix passed in run
 [45898263009](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45898263009)
 and [45898262972](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45898262972).
-The newest signal-validator/zero-volume tests are running on the current
-branch; their result is not asserted here.
+The signal-validator and zero-volume tests passed on code commit
+`3c36ed5368d076212bede4e571095dbe46e7dd10`: [backend tests](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45898475384), [contract tests](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45898475337), and [public archive audit](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45898475354) all passed. Later commits only updated documentation and the PR description.
 
 **Decision:** this materially improves the evidence baseline and allows
 research code to handle the fields NEPSE actually publishes, but 3B.01 is

@@ -242,3 +242,28 @@ All rows below are exact CSV rows; blob SHAs are stored in the evidence JSON:
 - PFL: `2026-09-16,374.10,386.00,372.00,373.00,33240` (blob `ace0983a96ecc90cc888c96b1d600894b4b22557`)
 
 Caution: some archive dates carry forward identical OHLCV values, so a date's presence alone is not proof of a trade. These six boundary rows have positive volume and were checked against the gap/suspension context, but the exact trade-level count/turnover still needs floorsheet corroboration. No stable IDs, validity intervals or legal identity boundaries are inferred. No raw price file was modified, no series was spliced and no canonical/training promotion is authorized.
+
+
+## Reconciliation correction and current snapshot IDs (2026-11-26)
+
+The project OHLCV boundary check above supersedes earlier listing-only statements that first_trading_date was null for SLBSL and NMLBBL. The evidence JSON now records 2024-05-19 as a **medium-confidence first post-suspension OHLCV candidate** for both, with exact positive-volume rows and CSV blob hashes. These dates are not marked verified because contract-level historical floorsheets are not present in the repository. The same status applies to MATRI (2024-08-13), SMPDA (2024-08-18), GBLBS (2025-12-23) and PFL (2026-09-16). SMATA's 2024-08-02 event is an additional-share listing, not a ticker launch; the symbol traded before the event.
+
+A 2026-11-25 current security snapshot contains these successor records:
+
+| Successor | Snapshot security ID | Snapshot status | Meaning |
+|---|---:|---|---|
+| SLBSL | 2804 | Active | Current snapshot observation only |
+| NMLBBL | 396 | Active | Current snapshot observation only |
+| MATRI | 694 | Active | Current snapshot observation only |
+| SMATA | 2761 | Active | Current snapshot observation only |
+| SMPDA | 2896 | Active | Current snapshot observation only |
+| GBLBS | 583 | Active | Current snapshot observation only |
+| PFL | 236 | Active | Current snapshot observation only |
+
+These values are stored as `current_snapshot_security_id`, **not** `stable_id`. The snapshot is dated 25 November 2026 and cannot establish historical ID continuity or effective dates. The predecessor symbols BPW, MMFDB, NLBBL, JALPA, KLBSL, MKLB, SABSL, SDLBSL, SAMAJ and SFCL do not appear in this snapshot; that absence does not prove they lacked IDs at the time they traded.
+
+Source artifact: `jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv`, source blob SHA `eed3bbb3152e83d4abcb0ee8d03d720c33c63cef`. The snapshot has 573 rows. The provider acquisition note states that no raw authenticated historical security-master payload was acquired, and the public detail-route number is not proven to be a globally stable ID.
+
+### Priority 97 acceptance status
+
+**Partially evidenced; not closed.** The project archive provides positive-volume first-session candidates for six successor symbols and a current snapshot ID for seven successors. It does not provide historical predecessor IDs, a complete security master, independently corroborated first-trade floorsheets, or legal effective-date boundaries. Therefore the task cannot safely be marked complete. No canonical ID assignments, historical price splices or training promotion are authorized.

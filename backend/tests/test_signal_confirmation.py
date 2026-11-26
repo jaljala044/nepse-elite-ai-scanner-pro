@@ -34,6 +34,15 @@ class SignalConfirmationTests(unittest.TestCase):
         self.assertNotIn("recommendation", result)
         self.assertNotIn("probability", result)
 
+    def test_bearish_breakdown_requires_strictly_below_both_averages(self):
+        rows = rising_rows()
+        rows[-1].update(open=105, high=110, low=98, close=99, volume=2500)
+        result = confirm_signal(rows, eligible=True)
+        self.assertEqual(result["classification"], "bearish_warning")
+        self.assertTrue(result["checks"]["close_below_sma20"])
+        self.assertTrue(result["checks"]["close_below_sma50"])
+        self.assertTrue(result["checks"]["sma20_below_sma50"])
+
     def test_failed_volume_prevents_confirmation(self):
         rows = rising_rows()
         rows[-1].update(open=159, high=165, low=158, close=164, volume=1000)
@@ -45,6 +54,10 @@ class SignalConfirmationTests(unittest.TestCase):
         rows[-1]["high"] = 1
         result = confirm_signal(rows, eligible=True)
         self.assertEqual(result["classification"], "UNKNOWN")
+
+    def test_boolean_history_parameter_is_rejected(self):
+        with self.assertRaises(ValueError):
+            confirm_signal(rising_rows(), eligible=True, min_observations=True)
 
 
 if __name__ == "__main__":

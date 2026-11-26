@@ -115,6 +115,29 @@ A scanner is complete only when its implementation, tests, data/evidence contrac
 
 The overall workstream is complete only when all 23 items pass their acceptance criteria, integration tests pass, ranked outputs are reproducible, and the production data/rights/deployment gates are independently satisfied.
 
+## Phase 1 implementation log
+
+### 3A.01 — market-wide scanner foundation
+
+- Implemented deterministic all-candidate orchestration and `POST /v1/scan/market-wide`.
+- Enforced an effective Nepal-date cutoff; future `as_of` requests are clamped to today and future OHLCV rows are excluded before analysis.
+- Exposed observation coverage, missing observations, latest observation and calendar-age metadata without claiming session freshness.
+- Connected the browser scanner view to the market-wide endpoint.
+- Kept production ranking and BUY eligibility disabled; the empty reviewed-row manifest continues to fail closed.
+- Added backend unit/API coverage for ordering, date cutoffs, missing rows, invalid universes and unreviewed-row suppression.
+- Added frontend build checks to pull-request CI and changed `backend/Dockerfile` to build and package the browser terminal at `/terminal`.
+- Latest verified CI head `e4378f8d33bf9f5785e90b8565c75d450a6c3261`: backend unit tests, backend contract tests, frontend syntax/build, generated asset checks and Docker image build all passed.
+
+### Outstanding acceptance gates
+
+3A.01 is **implemented in the repository but not production-verified**. Do not mark it fully complete until:
+- The active-equity universe is reconciled against authoritative NEPSE membership and effective dates.
+- Canonical OHLCV rows have passed the reviewed identity, provenance, session, corporate-action and point-in-time gates.
+- The actual deployment's DuckDB data coverage is measured across the candidate universe.
+- The built image is deployed and `/terminal`, `/v1/research/readiness`, `/v1/symbols` and `/v1/scan/market-wide` are smoke-tested against the deployed data snapshot.
+
+The repository does not currently expose a verified deployment target or deployment credentials. CI builds a deployable image, but this is not evidence that a live service was deployed or tested.
+
 ## Initial status
 
 - Scope catalogue: documented in this branch.

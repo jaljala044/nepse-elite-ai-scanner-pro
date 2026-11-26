@@ -5,6 +5,7 @@ on:
       - 'backend/audit_priority_equity_continuity.py'
       - 'backend/classify_historical_continuity_gaps.py'
       - 'backend/crosscheck_unresolved_equity_gaps.py'
+      - 'backend/crosscheck_sharesansar_no_trade.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -37,6 +38,10 @@ jobs:
           git clone --filter=blob:none --no-checkout https://github.com/socrateai-official/nepse-open-data.git /tmp/secondary
           git -C /tmp/secondary cat-file -e ffb4b0d4b348ed17d07236f914d3efbccac722f6^{commit}
           python backend/crosscheck_unresolved_equity_gaps.py --gaps /tmp/audit/classified_gaps.csv --repo /tmp/secondary --revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/unresolved_crosscheck.csv
+      - name: Compare separate ShareSansar daily capture
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/srijankarki07/nepse-data.git /tmp/sharesansar
+          python backend/crosscheck_sharesansar_no_trade.py --gaps /tmp/audit/unresolved_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/sharesansar_crosscheck.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

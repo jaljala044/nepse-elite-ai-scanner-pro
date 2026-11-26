@@ -76,10 +76,16 @@ def _valid_levels(plan):
     entry_high = _number(plan.get("entry_high"))
     stop = _number(plan.get("stop_loss"))
     targets = plan.get("targets") if isinstance(plan.get("targets"), dict) else {}
-    t1, t2, t3 = (_number(targets.get(key)) for key in ("t1", "t2", "t3"))
+    t1 = _number(targets.get("t1"))
+    t2 = _number(targets.get("t2")) if targets.get("t2") is not None else None
+    t3 = _number(targets.get("t3")) if targets.get("t3") is not None else None
     if None in (entry_low, entry_high, stop, t1):
         return None
     if not (0 < stop < entry_low <= entry_high < t1):
+        return None
+    if targets.get("t2") is not None and (t2 is None or t2 <= t1):
+        return None
+    if targets.get("t3") is not None and (t3 is None or t2 is None or t3 <= t2):
         return None
     risk = entry_high - stop
     if risk <= 0:
@@ -105,7 +111,10 @@ def evaluate_horizon(symbol, horizon, stage1, stage2, plan, evidence_refs=None,
     structure = stage2.get("structure") if isinstance(stage2.get("structure"), dict) else {}
     plan = plan if isinstance(plan, dict) else {}
     refs = sorted({str(x) for x in (evidence_refs or []) if isinstance(x, str) and x.strip()})
-    level_refs = sorted({str(x) for x in plan.get("evidence_refs", [])
+    raw_level_refs = plan.get("evidence_refs", [])
+    if not isinstance(raw_level_refs, (list, tuple, set)):
+        raw_level_refs = []
+    level_refs = sorted({x.strip() for x in raw_level_refs
                          if isinstance(x, str) and x.strip()})
     score, coverage, accepted, missing = _score(stage2.get("components"))
     rating = _rating(score, coverage)
@@ -191,13 +200,15 @@ def evaluate_horizon(symbol, horizon, stage1, stage2, plan, evidence_refs=None,
         "missing_components": missing,
         "rating": rating,
         "data_quality": quality,
-        "confidence": "LOW" if hard_failures or coverage < 0.75 else (
+        "confidence": "LOW" if hard_failures or coverage < 0.75 or action == "NO_TRADE" else (
             "HIGH" if quality == "HIGH" and coverage == 1 and len(refs) >= 3 and len(level_refs) >= 1 else "MEDIUM"
         ),
         "entry_zone": (
             {"low": levels["entry_low"], "high": levels["entry_high"]}
             if levels else None
         ),
+        "add_on_zone": plan.get("add_on_zone"),
+        "exit_zone": plan.get("exit_zone"),
         "stop_loss": levels["stop_loss"] if levels else None,
         "targets": levels["targets"] if levels else {"t1": None, "t2": None, "t3": None},
         "risk_percent": levels["risk_percent"] if levels else None,

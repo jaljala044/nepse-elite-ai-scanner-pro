@@ -83,9 +83,10 @@ class MarketIndexTrendTests(unittest.TestCase):
     def test_duplicate_session_is_rejected(self):
         rows = fixture_rows()
         rows.append(dict(rows[-1]))
+        calendar = session_dates(fixture_rows())
         with self.assertRaisesRegex(ValueError, "duplicate NEPSE index session"):
             nepse_index_trend_component(
-                rows, session_dates=session_dates(rows), decision_time=DECISION_TIME
+                rows, session_dates=calendar, decision_time=DECISION_TIME
             )
 
     def test_missing_exact_session_is_not_filled(self):

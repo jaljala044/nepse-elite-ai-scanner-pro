@@ -126,6 +126,42 @@ class FootprintFeatureTests(unittest.TestCase):
         self.assertEqual(daily["unresolved_party_observation_count"], 1)
         self.assertEqual(daily["status"], "insufficient_identity_coverage_or_history")
 
+
+    def test_broker_persistence_requires_complete_1w_1m_3m_windows(self):
+        from datetime import date, timedelta
+        rows = []
+        start = date(2026, 1, 1)
+        for i in range(63):
+            trade_date = (start + timedelta(days=i)).isoformat()
+            for buyer, seller, amount in (("B1", "B2", "100"), ("B2", "B1", "20")):
+                rows.extend([
+                    {"trade_date": trade_date, "symbol": "NABIL", "side": "buy",
+                     "amount": amount, "quantity": "1", "identity_status": "verified",
+                     "broker_entity_id": buyer, "source_broker_code": buyer},
+                    {"trade_date": trade_date, "symbol": "NABIL", "side": "sell",
+                     "amount": amount, "quantity": "1", "identity_status": "verified",
+                     "broker_entity_id": seller, "source_broker_code": seller},
+                ])
+        result = broker_footprint_features(rows)
+        persistence = result["security_features"]["NABIL"]["persistent_broker_flow"]
+        b1 = next(item for item in persistence if item["broker_entity_id"] == "B1")
+        b2 = next(item for item in persistence if item["broker_entity_id"] == "B2")
+        self.assertEqual(b1["classification"], "strong_accumulation")
+        self.assertEqual(b2["classification"], "heavy_distribution")
+        self.assertEqual(set(b1["observed_complete_windows"]), {"1W", "1M", "3M"})
+
+    def test_partial_multi_month_history_does_not_claim_persistent_accumulation(self):
+        rows = [
+            {"trade_date": f"2026-11-{day:02d}", "symbol": "NABIL", "side": side,
+             "amount": "100", "quantity": "1", "identity_status": "verified",
+             "broker_entity_id": broker, "source_broker_code": broker}
+            for day in range(1, 6)
+            for side, broker in (("buy", "B1"), ("sell", "B2"))
+        ]
+        result = broker_footprint_features(rows)
+        persistence = result["security_features"]["NABIL"]["persistent_broker_flow"]
+        self.assertTrue(all(item["classification"] == "insufficient_history" for item in persistence))
+
     def test_broker_footprint_refuses_missing_party_schema(self):
         result = broker_footprint_features([{"side": "buy", "amount": "100"}])
         self.assertEqual(result["status"], "insufficient_evidence")

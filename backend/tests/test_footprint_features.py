@@ -144,5 +144,36 @@ class FootprintFeatureTests(unittest.TestCase):
         self.assertEqual(broker_participation_summary([])["status"], "insufficient_evidence")
 
 
+
+    def test_broker_breadth_score_uses_net_broker_counts_not_zero_sum_amount(self):
+        rows = []
+        for broker, side, amount in (
+            ("A", "buy", "100"), ("A", "sell", "10"),
+            ("B", "buy", "10"), ("B", "sell", "100"),
+        ):
+            rows.append({
+                "trade_date": "2026-11-24", "symbol": "NABIL", "side": side,
+                "amount": amount, "quantity": "1", "identity_status": "verified",
+                "broker_entity_id": broker, "source_broker_code": broker,
+            })
+        daily = broker_footprint_features(rows, minimum_sessions=1)["security_features"]["NABIL"]["1D"]
+        self.assertEqual(daily["verified_net_amount"], "0")
+        self.assertEqual(daily["net_buyer_count"], 1)
+        self.assertEqual(daily["net_seller_count"], 1)
+        self.assertEqual(daily["score"], 50)
+
+    def test_broker_breadth_score_is_withheld_when_identity_coverage_fails(self):
+        rows = [
+            {"trade_date": "2026-11-24", "symbol": "NABIL", "side": "buy",
+             "amount": "100", "quantity": "1", "identity_status": "verified",
+             "broker_entity_id": "A", "source_broker_code": "11"},
+            {"trade_date": "2026-11-24", "symbol": "NABIL", "side": "sell",
+             "amount": "900", "quantity": "9", "identity_status": "unmapped",
+             "broker_entity_id": None, "source_broker_code": "99"},
+        ]
+        daily = broker_footprint_features(rows, minimum_sessions=1)["security_features"]["NABIL"]["1D"]
+        self.assertIsNone(daily["score"])
+        self.assertEqual(daily["status"], "insufficient_identity_coverage_or_history")
+
 if __name__ == "__main__":
     unittest.main()

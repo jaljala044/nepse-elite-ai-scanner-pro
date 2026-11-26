@@ -152,7 +152,7 @@ def score_scan(
         blockers.append("reward_risk_below_2R_or_unavailable")
     blockers.extend(f"hard_block:{item}" for item in hard_blocks)
 
-    if coverage_status == "insufficient" or stage1_quality == "LOW" or hard_blocks:
+    if coverage_status == "insufficient" or stage1_quality in {"LOW", "UNKNOWN"} or hard_blocks:
         action = "NO_TRADE"
     elif composite is not None and composite >= 80 and not blockers:
         action = "BUY"

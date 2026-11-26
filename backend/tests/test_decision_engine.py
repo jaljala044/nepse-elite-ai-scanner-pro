@@ -56,6 +56,30 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertEqual(results["SWING"]["action"], "BUY")
         self.assertNotEqual(results["T+2"]["action"], "BUY")
 
+
+    def test_targets_must_be_strictly_increasing(self):
+        bad_plan = dict(self.plan)
+        bad_plan["targets"] = {"t1": 114, "t2": 112, "t3": 130}
+        result = evaluate_horizon("TEST", "SWING", self.stage1, self.stage2,
+                                  bad_plan, ["ohlcv:1", "stage2:1"])
+        self.assertEqual(result["action"], "NO_TRADE")
+        self.assertIsNone(result["entry_zone"])
+
+    def test_malformed_level_evidence_reference_container_fails_closed(self):
+        bad_plan = dict(self.plan)
+        bad_plan["evidence_refs"] = "not-a-list"
+        result = evaluate_horizon("TEST", "SWING", self.stage1, self.stage2,
+                                  bad_plan, ["ohlcv:1", "stage2:1"])
+        self.assertEqual(result["action"], "NO_TRADE")
+        self.assertIn("evidence_backed_entry_stop_t1_and_level_references_required",
+                      result["reasons"])
+
+    def test_no_trade_does_not_report_high_confidence(self):
+        result = evaluate_horizon("TEST", "SWING", self.stage1, self.stage2,
+                                  self.plan, ["ohlcv:1", "stage2:1"])
+        self.assertEqual(result["action"], "NO_TRADE")
+        self.assertEqual(result["confidence"], "LOW")
+
     def test_distribution_triggers_sell_for_existing_holder(self):
         stage2 = dict(self.stage2)
         stage2["structure"] = {"distribution_confirmed": True}

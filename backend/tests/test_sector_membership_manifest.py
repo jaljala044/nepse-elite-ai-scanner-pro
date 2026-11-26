@@ -52,6 +52,22 @@ class SectorMembershipManifestTests(unittest.TestCase):
         self.assertEqual(result["as_of_date"], "2026-11-27")
         self.assertEqual(result["status"], "review_ready")
 
+    def test_non_string_record_symbol_is_rejected(self):
+        for invalid_symbol in (None, 123, [], {}):
+            manifest = fixture()
+            manifest["records"][0]["symbol"] = invalid_symbol
+            manifest["manifest_sha256"] = manifest_digest(manifest)
+            with self.subTest(symbol=invalid_symbol):
+                with self.assertRaisesRegex(ValueError, "membership_record_0_invalid_identity"):
+                    self.audit(manifest)
+
+    def test_blank_record_symbol_is_rejected(self):
+        manifest = fixture()
+        manifest["records"][0]["symbol"] = "   "
+        manifest["manifest_sha256"] = manifest_digest(manifest)
+        with self.assertRaisesRegex(ValueError, "membership_record_0_invalid_identity"):
+            self.audit(manifest)
+
     def test_invalid_expected_symbol_type_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "expected_symbols_must_be_unique_nonempty"):
             audit_sector_membership_manifest(

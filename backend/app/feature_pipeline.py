@@ -76,6 +76,39 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             broker_contract_failures.append({"row_index": index, "symbol": row.get("symbol"),
                 "trade_date": row.get("trade_date"), "reason": "session_or_complete_floorsheet_provenance_unverified"})
 
+    # Sector mappings must be effective-dated at the exact as-of session.
+    sector_membership_contract_ok = False
+    sector_membership_contract_reason = "verified_effective_dated_sector_membership_missing"
+    if valid_calendar and isinstance(sector_membership, dict) and isinstance(expected_sector_members, dict) and expected_sector_members:
+        as_of_session = normalized_calendar[-1]
+        required_members = [str(symbol).strip().upper()
+                            for members in expected_sector_members.values() for symbol in members]
+        sector_membership_contract_ok = bool(required_members)
+        for member in required_members:
+            record = sector_membership.get(member)
+            if not isinstance(record, dict):
+                sector_membership_contract_ok = False
+                break
+            try:
+                effective_from = date.fromisoformat(str(record.get("effective_from"))).isoformat()
+                effective_to_raw = record.get("effective_to")
+                effective_to = date.fromisoformat(str(effective_to_raw)).isoformat() if effective_to_raw else None
+            except (TypeError, ValueError):
+                sector_membership_contract_ok = False
+                break
+            if not (
+                record.get("status") == "verified"
+                and record.get("as_of_status") == "verified"
+                and effective_from <= as_of_session
+                and (effective_to is None or as_of_session <= effective_to)
+                and isinstance(record.get("source_id"), str) and bool(record["source_id"].strip())
+                and valid_digest(record.get("source_payload_sha256"))
+            ):
+                sector_membership_contract_ok = False
+                break
+        if sector_membership_contract_ok:
+            sector_membership_contract_reason = None
+
     # Keep raw point-in-time prices for descriptive diagnostics; the contract
     # gate below independently controls whether any component score is admitted.
     prices = raw_prices
@@ -88,6 +121,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
                   "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
                   "exclusions": broker_contract_failures},
+        "sector_membership": {"score_eligible": sector_membership_contract_ok,
+                              "reason": sector_membership_contract_reason},
     }
     by_symbol = {}
     for row in prices:
@@ -226,8 +261,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                           if not price_score_gate else liquidity_item),
             "sector": {
                 "status": (sector_item.get("score_status", "insufficient_evidence")
-                           if price_score_gate else "input_contract_unverified"),
-                "score": sector_item.get("score") if price_score_gate else None,
+                           if price_score_gate and sector_membership_contract_ok else "membership_validity_unverified"),
+                "score": sector_item.get("score") if price_score_gate and sector_membership_contract_ok else None,
                 "sector_code": sector_code,
                 "score_coverage_pct": sector_item.get("score_coverage_pct"),
             },

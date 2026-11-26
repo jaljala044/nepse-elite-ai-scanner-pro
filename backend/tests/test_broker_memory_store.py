@@ -64,6 +64,9 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(result["status"], "stored")
         self.assertEqual(result["features"]["security_features"]["NABIL"]["1D"]["status"], "observed")
         self.assertIn("1Y", result["features"]["security_features"]["NABIL"])
+        yearly = result["features"]["security_features"]["NABIL"]["1Y"]
+        self.assertEqual(yearly["expected_covered_sessions"], 5)
+        self.assertFalse(yearly["window_complete"])
         latest = get_latest_broker_memory(symbol="NABIL")
         self.assertEqual(latest["selected_symbol"], "NABIL")
         self.assertEqual(latest["features"]["security_features"]["NABIL"]["1W"]["observed_sessions"], 5)

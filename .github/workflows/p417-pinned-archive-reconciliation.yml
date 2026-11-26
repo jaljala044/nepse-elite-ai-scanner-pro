@@ -143,6 +143,9 @@ jobs:
               "one_sided_contract_count": report["one_sided_contract_count"],
               "scope_class_counts": report["scope_class_counts"],
               "date_summaries": report["date_summaries"],
+              "date_symbol_aggregates": report["date_symbol_aggregates"],
+              "scope_classification_basis": report["scope_classification_basis"],
+              "historical_security_identity_verified": False,
               "unknown_contract_count": sum(
                   row["scope_class"] in {"UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH", "UNCLASSIFIED_SECURITY_SNAPSHOT_ONLY"}
                   for row in report["one_sided_contracts"]

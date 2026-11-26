@@ -2209,3 +2209,18 @@ Classify the 19-Nov and 20-Nov one-sided records by dated instrument scope, comp
 ### P4.21 next
 
 Obtain historical effective-dated security identity/lifecycle evidence for the 19/20-Nov one-sided symbols; reconcile date-specific aggregate controls for all three dates using genuinely independent evidence; investigate the 20-Nov 39-contract / NPR 4.814m variance; then expand the pinned overlap window. Keep source rights, official session verification and per-security coverage fail-closed.
+
+## P4.21 — date-specific daily-control cross-check (initial review, 2026-11-26)
+
+- Added [P4.21 daily-control cross-check report](P4.21_DAILY_CONTROL_CROSSCHECK_2026-11-26.md) for 19, 20 and 24 November.
+- 19-Nov ShareSansar and HamroShare published counts align with SocrateAI (40,837 contracts / 9,437,842 shares); NepseAlpha's published turnover aligns exactly at NPR 3,877,645,728.62.
+- 20-Nov HamroShare and NepseTrading align with SocrateAI (39,966 contracts / 10,602,468 shares); NepseAlpha turnover aligns exactly at NPR 3,887,563,470.82. ShareSansar 20-Nov article repeats 19-Nov's share/transaction counts and is flagged as a likely stale/cross-date duplicate.
+- 20-Nov Nepse Decode publishes a conflicting summary (37,740 transactions / 9,998,302 shares / NPR 3,691,342,187.97). Raw payload, capture time and aggregation scope remain unverified; preserved as an unresolved exception.
+- 24-Nov ShareSansar/MeroLagani published controls and NepseAlpha turnover align numerically with SocrateAI, as previously recorded.
+- Numerical alignment is **not** proof of independent source lineage. No immutable raw official NEPSE daily-summary responses or complete per-security official controls were acquired. Source independence, session completeness, historical security identity and rights remain unverified.
+- **Disposition:** secondary-control comparison only, LOW CONFIDENCE for independence and completeness. No canonical promotion or coverage admission.
+
+### P4.21 remaining
+
+Acquire date-matched raw official NEPSE summary responses and per-security controls, establish publisher/source lineage, and resolve the Nepse Decode 20-Nov discrepancy. Continue historical lifecycle verification for one-sided instrument symbols before using any classification as historical fact.
+

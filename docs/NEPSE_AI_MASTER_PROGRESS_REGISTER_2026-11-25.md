@@ -1676,3 +1676,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Evidence report: https://github.com/jaljala044/nepse-smc-data/blob/main/reference/first_trade_boundary_reconciliation_2026-11-26.md (commit `7011860a405d2f047ff6c69af1053cd2e3ae094b`). Triage update `fb1384021a336d55e2faeb5b8b4e50994d3e6b42`; boundary review update `d8bca6a0b43135618ffe61587a48b1ad208e8712`.
 - All eight reviewed boundaries now match actual first-trade/debut observations on available secondary evidence. This does not establish full daily archive completeness or exchange-authenticated contract-level provenance. No raw OHLCV changed, no synthetic rows, no canonical/training promotion.
 - Next priority: dedicated UNL historical source-coverage audit, then reconcile remaining low-overlap symbols against symbol-specific executed-trade evidence and execute row-level OHLCV validation.
+
+
+### UNL historical coverage / alternate-source audit — 2026-11-26
+
+- Project UNL archive: 845 rows, 2024-03-05 to 2026-11-20. Alternate public dataset `binayabaral/nepal-market-data/data/nepse/UNL.csv`: 2,018 rows, 2011-03-28 to 2026-11-26; 1,467 rows predate the project archive start.
+- Shared-date comparison: 545 dates; all 545 have exact numeric OHLCV matches. This is consistency only, not independent corroboration (potential shared ShareSansar upstream lineage). 300 project rows are absent from alternate; 1,473 alternate rows absent from project.
+- Critical blocker: 362/2,018 alternate rows fail OHLC/volume invariants; 361/1,467 pre-2024 rows fail, chiefly Open > High. Example 2011-03-28 Open 6,000 while High/Low/Close are 5,880. No field swapping or synthetic repair permitted.
+- Added [UNL historical coverage and alternate-source audit](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/UNL_historical_coverage_alternate_source_audit_2026-11-26.md), commit `560ac404d6585f00fad4abbd4879def6c71de7ad`.
+- Disposition: historical source discovered, ingestion rejected pending source correction, independent validation and rights/provenance review. UNL remains historically incomplete; no raw data changed, no price splice, no canonical/training promotion.
+- Next: obtain independently documented valid daily OHLCV for UNL, then expand symbol-specific coverage reconciliation and run full row-level OHLCV validation across both archives.

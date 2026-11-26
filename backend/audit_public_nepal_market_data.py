@@ -182,6 +182,8 @@ def build_merged_official_history_root(
             raise ValueError(f"unexpected official history source in {report_path}")
         if capture.get("endpoint_path") != "/api/nots/market/history/security/{security_id}":
             raise ValueError(f"unexpected official history endpoint in {report_path}")
+        if capture.get("security_list_error") is not None:
+            raise ValueError(f"official security-list capture reported an error in {report_path}")
         start_date = capture.get("requested_start_date")
         end_date = capture.get("requested_end_date")
         date.fromisoformat(start_date)
@@ -192,7 +194,11 @@ def build_merged_official_history_root(
             parts = line.strip().split(None, 1)
             if len(parts) == 2:
                 manifest[parts[1].lstrip("* ").replace("\\", "/")] = parts[0].lower()
-        for event in capture.get("security_list_capture", []):
+        security_list_events = capture.get("security_list_capture")
+        if not isinstance(security_list_events, list) or not security_list_events:
+            raise ValueError(f"official security-list evidence missing in {report_path}")
+        for event in security_list_events:
+            parsed_security_url = urlparse(str(event.get("url", "")))
             relative = str(event.get("raw_file", "")).replace("\\", "/")
             raw_path = evidence_root / relative
             if not relative or not raw_path.is_file():
@@ -202,7 +208,10 @@ def build_merged_official_history_root(
             raw = raw_path.read_bytes()
             actual_sha = hashlib.sha256(raw).hexdigest()
             if (manifest.get(relative) != actual_sha or event.get("sha256") != actual_sha
-                    or event.get("status") != 200 or event.get("origin_verified") is not True):
+                    or event.get("status") != 200 or event.get("origin_verified") is not True
+                    or parsed_security_url.scheme != "https"
+                    or parsed_security_url.hostname not in {"nepalstock.com.np", "www.nepalstock.com.np", "newweb.nepalstock.com"}
+                    or parsed_security_url.path != "/api/nots/security"):
                 raw_hash_errors.append({"symbol": "__SECURITY_LIST__", "capture_start": start_date,
                                         "capture_end": end_date, "path": relative})
 

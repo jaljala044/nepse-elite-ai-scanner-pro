@@ -269,6 +269,7 @@ jobs:
           path: |
             artifacts/p417-floorsheet-pair-audit-2026-11-24.json
             artifacts/p418-floorsheet-symbol-scope-2026-11-24.json
-            artifacts/p419-three-date-floorsheet-audit.json\n            artifacts/p420-one-sided-instrument-scope.json
+            artifacts/p419-three-date-floorsheet-audit.json
+            artifacts/p420-one-sided-instrument-scope.json
           if-no-files-found: error
           retention-days: 30

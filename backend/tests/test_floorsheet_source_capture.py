@@ -68,6 +68,7 @@ class FloorsheetSourceCaptureTests(unittest.TestCase):
             url,
             policy=policy or self.policy,
             storage_root=self.tmp.name,
+            database_path=str(Path(self.tmp.name) / "evidence.duckdb"),
             fetch_id="fetch-001",
             opener=opener or FakeOpener(),
             clock=lambda: next(self.times),
@@ -81,6 +82,8 @@ class FloorsheetSourceCaptureTests(unittest.TestCase):
         self.assertEqual(len(result["payload_sha256"]), 64)
         self.assertFalse(result["canonical_eligible"])
         self.assertFalse(result["production_eligible"])
+        self.assertEqual(result["capture"]["status"], "stored_review_required")
+        self.assertEqual(result["capture"]["normalized_records"], 0)
         self.assertTrue(opener.response.closed)
         self.assertEqual(opener.calls[0][0].get_method(), "GET")
 
@@ -90,7 +93,8 @@ class FloorsheetSourceCaptureTests(unittest.TestCase):
         for _ in range(2):
             result = capture_public_floorsheet(
                 "https://example.test/api/floorsheet",
-                policy=self.policy, storage_root=self.tmp.name, fetch_id="fetch-001",
+                policy=self.policy, storage_root=self.tmp.name,
+                database_path=str(Path(self.tmp.name) / "evidence.duckdb"), fetch_id="fetch-001",
                 opener=FakeOpener(FakeResponse()),
                 clock=lambda: fixed,
             )

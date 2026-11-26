@@ -100,7 +100,7 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
             data = json.loads(args[0].read_text())
             data["symbols"][0]["rows"].pop()
             args[0].write_text(json.dumps(data))
-            report = audit_history_window(*args, expected_equity_count=2)
+            report = audit_history_window(*args[:5], expected_equity_count=2, lifecycle_path=args[5])
         day = report["date_reports"]["2026-11-20"]
         self.assertEqual(day["current_equity_candidate_rows_missing"], 1)
         self.assertEqual(day["explicit_zero_activity_rows"], 1)
@@ -133,7 +133,7 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
             data["response_sha256"] = "0" * 64
             args[2].write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, "hash/size"):
-                audit_history_window(*args, expected_equity_count=2)
+                audit_history_window(*args[:5], expected_equity_count=2, lifecycle_path=args[5])
 
     def test_duplicate_history_date_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -142,7 +142,7 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
             data["symbols"][0]["rows"].append(data["symbols"][0]["rows"][0])
             args[0].write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, "duplicate history row"):
-                audit_history_window(*args, expected_equity_count=2)
+                audit_history_window(*args[:5], expected_equity_count=2, lifecycle_path=args[5])
 
     def test_inconsistent_zero_activity_metrics_are_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -151,7 +151,7 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
             data["symbols"][0]["rows"][0]["volume"] = 0
             args[0].write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, "inconsistent"):
-                audit_history_window(*args, expected_equity_count=2)
+                audit_history_window(*args[:5], expected_equity_count=2, lifecycle_path=args[5])
 
 
 if __name__ == "__main__":

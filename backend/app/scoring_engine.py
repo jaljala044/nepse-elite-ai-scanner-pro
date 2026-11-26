@@ -79,8 +79,8 @@ def score_scan(
     unknown = sorted(set(components) - set(COMPONENT_WEIGHTS))
     if unknown:
         raise ValueError(f"unknown score components: {', '.join(unknown)}")
-    if stage1_quality not in {"HIGH", "MEDIUM", "LOW"}:
-        raise ValueError("stage1_quality must be HIGH, MEDIUM, or LOW")
+    if stage1_quality not in {"HIGH", "MEDIUM", "LOW", "UNKNOWN"}:
+        raise ValueError("stage1_quality must be HIGH, MEDIUM, LOW, or UNKNOWN")
     for name, flag in (
         ("structure_confirmed", structure_confirmed),
         ("liquidity_ok", liquidity_ok),

@@ -26,6 +26,21 @@ function renderBrokerMemory(data, symbol, code){
   const root=byId("broker-memory-results");root.replaceChildren();
   root.append(node("p","As of "+(data.as_of_trade_date||"unknown")+" · "+(data.status||"unknown"),"memory-asof"));
   root.append(node("p","Observed execution-channel activity only. This does not establish beneficial ownership, proprietary holdings or intent."));
+  const patterns=data.selected_early_patterns||[];
+  const patternCard=node("article",undefined,"memory-card");
+  patternCard.append(node("h3","Early entry / exit pattern review"));
+  if(!patterns.length){
+    patternCard.append(node("p","No stored candidate pattern for this filter. Verified NEPSE context and complete historical windows are required."));
+  }else{
+    for(const pattern of patterns){
+      const item=node("div");
+      item.append(node("strong",pattern.status+" · "+pattern.symbol+" · code "+pattern.execution_channel_code));
+      item.append(node("p",pattern.reason||"No reason supplied."));
+      item.append(node("p","Rule: "+(pattern.rule_id||"unknown")+" · "+(pattern.calibration_status||"uncalibrated")+" · Confidence: not calibrated"));
+      patternCard.append(item);
+    }
+  }
+  root.append(patternCard);
   if(code){
     const matches=data.execution_channel_matches||[];
     if(!matches.length){root.append(node("p","No matching execution-channel history."));return;}

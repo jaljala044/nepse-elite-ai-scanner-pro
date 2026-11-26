@@ -1958,3 +1958,27 @@ Latest commit validation:
 - Historical data integrity workflow: passed, [run 45842265882](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45842265882).
 
 **Limitations / next contract work:** the snapshot-wide OHLCV flag remains conservative for cross-sectional components such as sector rotation; per-symbol Wyckoff/trend/volume and broker scoring now have isolated eligibility. A separate independent date-level floorsheet coverage manifest is still required so an absent symbol/date can be distinguished from a genuinely complete zero-contract result. Broker input rows still need an independent date-level floorsheet coverage manifest so an absent symbol/date can be distinguished from a genuinely complete zero-contract result. Sector membership producers must populate the new effective-date/as-of fields. Canonical calendar authority and upstream source authenticity remain separate data-governance gates; these code checks do not prove source truth. No canonical data promotion or production BUY authorization is implied.
+
+
+### J. Date × security floorsheet coverage classifier — implemented; CI validated (2026-11-26)
+
+Code commits:
+- `ddb78c427d913ce7dbd46514a353d0325fdc3f2b` — `backend/app/floorsheet_coverage.py`
+- `551d31046782cb13fa1834c560322e4ef4971f44` — `backend/tests/test_floorsheet_coverage.py`
+
+Added a standalone evidence-gated classifier that produces one date × instrument cell with exactly one of:
+- `TRADED`: verified positive contract observation and all session, daily coverage and instrument lifecycle gates pass.
+- `NO_TRADE`: no contract observation, but the session is confirmed open, full daily capture is verified, daily controls reconcile, and the instrument is verified active on that date.
+- `UNKNOWN`: any required session, capture, control, provenance or lifecycle evidence is absent/ambiguous.
+
+Validation rules include unique session dates and instrument symbols, effective-dated instrument lifecycle, source IDs, SHA-256 payload digests, unique date × symbol observations, positive verified contract counts, and matching daily source-row/unique-contract controls. Output includes explicit reasons and evidence status per cell. Canonical promotion is hard-coded false.
+
+Regression coverage: seven tests cover confirmed trade vs zero, missing/partial capture, unverified session, inactive instrument, duplicate observations, invalid hashes and unverified contracts.
+
+CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
+- Backend tests: **783 passed**, [run 45842689286](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45842689286).
+- Backend contract tests: passed, [run 45842689315](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45842689315).
+- Integrated evidence audit: passed, [run 45842689356](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45842689356).
+- Historical data integrity: passed, [run 45842689311](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45842689311).
+
+**Important limitation:** this is a reusable classifier and schema contract, not a populated production coverage manifest. Existing public archives still lack proven full session coverage and independently verified daily exchange controls. The classifier is not yet connected to the live feature pipeline, and no real-world date × symbol cell is upgraded by this code alone. The broker scoring gate remains fail-closed. No zero-trade claims, canonical promotion, training or BUY authorization are inferred from these tests.

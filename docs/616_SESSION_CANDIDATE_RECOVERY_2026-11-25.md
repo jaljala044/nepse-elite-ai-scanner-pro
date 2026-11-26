@@ -90,3 +90,26 @@ A further search found additional same-date market reports for both dates absent
 Machine-readable additions are recorded in `data/evidence/candidates/nepse-session-secondary-report-crosscheck.csv` (commit `3b96c0783426fe776c20ba6decf0faefd4615e8a`).
 
 **Decision unchanged:** both dates remain `candidate_unverified`. Multiple secondary reports materially strengthen the case that the sessions occurred, but they do not meet the project's primary-source/date-by-date gate and do not prove exact identity with the original 616-date extraction input. Canonical calendar promotion remains zero; P2 training remains blocked.
+
+## Reproducible candidate-inventory audit gate — 2026-11-26
+
+Added `backend/app/session_candidate_audit.py` and the CLI
+`backend/audit_session_candidates.py`. The audit checks candidate CSV schema,
+ISO dates, duplicate dates, per-file Git blob SHA-1 and byte count, pinned
+source revision format, source lineage fields, documented weekday-regime
+consistency, and conflicts with explicitly verified calendar closures. It
+reports year/weekday distributions and any overlaps with already verified
+open dates.
+
+The audit is intentionally non-promoting: even a passing candidate-inventory
+gate cannot turn an EOD filename into a verified NEPSE session. Only
+independently reviewed, date-scoped evidence can support a later promotion.
+Five focused tests cover non-promotion, explicit closure conflicts, weekday
+violations, duplicate dates, and invalid source metadata.
+
+The historical data-integrity workflow now runs these tests and generates
+`data/reports/nepse-616-session-candidate-audit.json` as an artifact. The
+workflow configuration and code have been committed, but the corresponding
+GitHub Actions execution and artifact have not yet been observed. Therefore
+the 616 candidate dates remain unverified and the canonical calendar is
+unchanged.

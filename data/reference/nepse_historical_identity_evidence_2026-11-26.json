@@ -2,7 +2,7 @@
   "date": "2026-11-26",
   "base_review_blob": "8bd7ebe58b52c7e45cf312895d78d9d59452be91",
   "provider": "ShareSansar and NepseAlpha",
-  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates",
+  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates; added reported last-recorded-trade dates for JALPA, KLBSL and MKLB from secondary historical company records; not yet NEPSE-primary certified",
   "records": [
     {
       "symbol": "BPW",
@@ -33,7 +33,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2024-07-11",
       "date_basis": "27 Ashad 2081; merger effective and joint transaction under Matribhumi Laghubitta",
-      "additional_source": "https://www.merolagani.com/AnnouncementDetail.aspx?id=54224"
+      "additional_source": "https://www.merolagani.com/AnnouncementDetail.aspx?id=54224",
+      "last_recorded_trade_date": "2024-07-10",
+      "last_recorded_trade_source": "https://laganilab.com/nepse-company/JALPA/",
+      "last_recorded_trade_basis": "Laganilab historical company page explicitly reports last recorded trade 2024-07-10; secondary-source evidence, not exchange-certified."
     },
     {
       "symbol": "KLBSL",
@@ -47,7 +50,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2024-07-11",
       "date_basis": "27 Ashad 2081; merger effective and joint transaction under Matribhumi Laghubitta",
-      "additional_source": "https://www.merolagani.com/AnnouncementDetail.aspx?id=54224"
+      "additional_source": "https://www.merolagani.com/AnnouncementDetail.aspx?id=54224",
+      "last_recorded_trade_date": "2024-07-10",
+      "last_recorded_trade_source": "https://www.merolagani.com/CompanyDetail.aspx?symbol=KLBSL",
+      "last_recorded_trade_basis": "Merolagani company detail reports Last Traded On 2024/07/10 02:59:50; ShareSansar merger notice reports same-day closing price. Secondary-source evidence."
     },
     {
       "symbol": "MKLB",
@@ -61,7 +67,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2024-07-08",
       "date_basis": "24 Ashad 2081; joint transaction under Samata Gharelu Laghubitta",
-      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-acquisition-share-of-samata-gharelu-laghubitta-listed-in-nepse-2024-08-02"
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-acquisition-share-of-samata-gharelu-laghubitta-listed-in-nepse-2024-08-02",
+      "last_recorded_trade_date": "2024-07-07",
+      "last_recorded_trade_source": "https://laganilab.com/nepse-company/MKLB/",
+      "last_recorded_trade_basis": "Laganilab historical company page explicitly reports last recorded trade 2024-07-07; Merolagani company detail independently reports last traded 2024/07/07 02:59:35."
     },
     {
       "symbol": "MMFDB",

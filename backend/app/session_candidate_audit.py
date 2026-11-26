@@ -20,6 +20,8 @@ def audit_session_candidates(
     candidate_csv: str | Path,
     calendar_csv: str | Path,
     source_root: str | Path | None = None,
+    expected_source_repository: str | None = None,
+    expected_source_revision: str | None = None,
 ) -> dict[str, Any]:
     """Audit candidate inventory consistency without promoting any date."""
     rows: list[dict[str, str]] = []
@@ -52,6 +54,10 @@ def audit_session_candidates(
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "invalid_git_blob_sha1"})
             if len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision):
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "invalid_source_revision"})
+            if expected_source_repository and raw.get("source_repository") != expected_source_repository:
+                malformed.append({"line": line, "date": day.isoformat(), "reason": "unexpected_source_repository"})
+            if expected_source_revision and revision != expected_source_revision.lower():
+                malformed.append({"line": line, "date": day.isoformat(), "reason": "unexpected_source_revision"})
             if size <= 0:
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "invalid_source_bytes"})
             if raw.get("status") != "candidate_unverified":
@@ -61,8 +67,10 @@ def audit_session_candidates(
             candidate = {k: (v or "").strip() for k, v in raw.items()}
             rows.append(candidate)
             if source_root is not None and candidate.get("source_path"):
-                source_path = Path(source_root) / candidate["source_path"]
                 try:
+                    root_path = Path(source_root).resolve(strict=True)
+                    source_path = (root_path / candidate["source_path"]).resolve(strict=True)
+                    source_path.relative_to(root_path)
                     payload = source_path.read_bytes()
                     actual_size = len(payload)
                     actual_blob = hashlib.sha1(
@@ -74,6 +82,8 @@ def audit_session_candidates(
                         source_failures.append({"line": line, "date": day.isoformat(), "reason": "git_blob_sha1_mismatch", "expected": digest, "actual": actual_blob})
                     else:
                         source_verified += 1
+                except ValueError:
+                    source_failures.append({"line": line, "date": day.isoformat(), "reason": "source_path_outside_root", "path": candidate["source_path"]})
                 except OSError:
                     source_failures.append({"line": line, "date": day.isoformat(), "reason": "source_file_missing", "path": candidate["source_path"]})
 
@@ -109,6 +119,8 @@ def audit_session_candidates(
         "source_files_verified": source_verified,
         "source_file_failures": source_failures,
         "source_file_verification_required": source_root is not None,
+        "expected_source_repository": expected_source_repository,
+        "expected_source_revision": expected_source_revision,
         "date_window": {"first": expected_window[0], "last": expected_window[1]},
         "counts_by_year": {str(k): by_year[k] for k in sorted(by_year)},
         "counts_by_weekday": {k: by_weekday[k] for k in sorted(by_weekday)},

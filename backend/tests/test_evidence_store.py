@@ -68,6 +68,48 @@ class EvidenceStoreTests(unittest.TestCase):
         self.assertTrue(second["idempotent"])
         self.assertEqual(len(load_evidence_records(database_path=self.db)), 1)
 
+    def test_distinct_fetches_of_same_payload_preserve_separate_lineage(self):
+        second_manifest = build_capture_manifest(
+            self.payload,
+            source_id="secondary-example",
+            source_url="https://example.invalid/ohlcv.csv",
+            request_method="GET",
+            request_metadata={"fixture": True},
+            requested_at="2026-11-26T00:01:00Z",
+            received_at="2026-11-26T00:01:02Z",
+            claimed_session_date="2026-11-25",
+            fetch_id="fixture-fetch-002",
+            parser_version="ohlcv-csv-v1",
+            rights_status="unknown",
+        )
+        self.persist()
+        self.persist(manifest=second_manifest)
+        rows = load_evidence_records(database_path=self.db)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(
+            {row["fetch_id"] for row in rows},
+            {"fixture-fetch-001", "fixture-fetch-002"},
+        )
+        # Replaying either immutable fetch must not create a third row.
+        self.persist(manifest=second_manifest)
+        self.assertEqual(len(load_evidence_records(database_path=self.db)), 2)
+
+    def test_reimport_with_changed_normalized_content_is_rejected(self):
+        self.persist()
+        changed = [dict(self.records[0], close="501")]
+        with self.assertRaisesRegex(ValueError, "different immutable normalized record batch"):
+            self.persist(records=changed)
+        rows = load_evidence_records(database_path=self.db)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["close"], "500")
+
+    def test_reimport_with_changed_row_set_is_rejected(self):
+        self.persist()
+        with self.assertRaisesRegex(ValueError, "different immutable normalized record batch"):
+            self.persist(records=[])
+        rows = load_evidence_records(database_path=self.db)
+        self.assertEqual(len(rows), 1)
+
     def test_payload_hash_mismatch_rejected_before_storage(self):
         bad = dict(self.manifest)
         bad["payload_sha256"] = "0" * 64

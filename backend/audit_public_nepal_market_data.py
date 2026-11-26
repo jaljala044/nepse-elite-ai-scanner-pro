@@ -414,7 +414,7 @@ def main() -> None:
                     "match_rate_pct", "field_comparisons", "field_mismatches",
                     "mismatches_by_field", "missing_public_active_rows",
                     "missing_public_zero_activity_rows", "missing_public_symbol_files",
-                    "hash_or_parse_errors")
+                    "hash_or_parse_errors", "mismatch_examples")
     }, "gate": report["gate"]}, indent=2))
 
 

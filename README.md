@@ -4,7 +4,7 @@ Private, research-oriented NEPSE market analysis platform. This repository start
 
 ## Status
 - Foundation scaffold: initial implementation
-- Data ingestion: CSV OHLCV with validation and audit metadata
+- Data ingestion: CSV OHLCV with validation and audit metadata; API uploads and history now persist in a local DuckDB database (`backend/data/nepse-api.duckdb` by default)
 - Public datasets: Hugging Face inventory, bounded/resumable downloader, daily floorsheet and sector-index normalizers, and independent audit reports
 - Kaggle: safe local download/staging helper (requires your locally configured Kaggle CLI)
 - Scanner: transparent, rule-based technical feature extraction (not an institutional-flow detector)
@@ -103,7 +103,7 @@ non-sessions, calendar conflicts, unverified dates and undated files. It does
 not infer missing sessions. Symbol-level coverage and row-level acceptance
 remain separate follow-on gates.
 
-## CSV format
+## API persistence\n\nThe FastAPI upload/history store uses DuckDB and initializes its schema automatically. Set `NEPSE_API_DATABASE` to choose a persistent database path. The API database is separate from the source-separated historical research warehouse; an upload is not promoted to canonical market data and does not imply source rights or completeness.\n\n## CSV format
 Required columns: `symbol,date,open,high,low,close,volume`. Dates should be ISO `YYYY-MM-DD`; prices and volume must be positive (volume may be zero). One file may contain multiple symbols.
 
 Example:

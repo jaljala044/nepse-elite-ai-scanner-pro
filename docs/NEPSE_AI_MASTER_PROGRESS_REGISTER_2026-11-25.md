@@ -2140,6 +2140,6 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 
 - Extended `backend/capture_nepse_market_summary_history.py` to distinguish mere date-field presence from a validated activity record. A date is listed as activity-confirmed only when it has exactly one summary row and positive, parseable values for total turnover, traded shares, transaction count and traded scrip count.
 - Duplicate summary dates, missing/invalid/nonpositive activity metrics and invalid dates remain unverified. The report separately emits candidate dates with validated activity and dates without it. The canonical-calendar promotion flag remains hard-coded false.
-- Added regression tests for positive activity, zero-activity rows, duplicate-date rejection and missing activity metrics. The historical integrity and scheduled capture workflows now execute the focused parser tests before their other work.
-- Implementation commit: `eecb1aa`; tests: `1e90ea2`; workflow commits: `8c6cc03` and `6e1bf85`.
+- Added regression tests for positive activity, zero-activity rows, duplicate-date rejection, missing activity metrics and list payloads with no recognized date field. The historical integrity and scheduled capture workflows now execute the focused parser tests before their other work.
+- Implementation commits: `eecb1aa` and `68ddb3a`; test commits: `1e90ea2` and `b7f24a2`; workflow commits: `8c6cc03` and `6e1bf85`.
 - **Execution status:** tests and live official API capture have not yet been observed passing in this work session. No candidate date has been promoted. The 616-date inventory remains `candidate_unverified` until date-by-date source evidence and review are complete.

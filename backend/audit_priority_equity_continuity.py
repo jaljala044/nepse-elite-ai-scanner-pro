@@ -47,6 +47,7 @@ def main():
     p.add_argument("--sessions", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--skip", type=int, default=32)
+    p.add_argument("--group", choices=["priority_1", "exception_review"], default="priority_1")
     args=p.parse_args()
     with args.queue.open(newline="") as f:
         queue=list(csv.DictReader(f))
@@ -54,8 +55,9 @@ def main():
         dates=[r["date"] for r in csv.DictReader(f)]
     if len(dates)!=120 or len(set(dates))!=120 or len(queue)!=281 or len({r["symbol"] for r in queue})!=281:
         raise ValueError("unexpected universe or date count")
-    priority=[r for r in queue if r["review_priority"]=="priority_1"]
-    if len(priority)!=255 or not 0<=args.skip<=255:
+    priority=[r for r in queue if r["review_priority"]==args.group]
+    expected=255 if args.group=="priority_1" else 26
+    if len(priority)!=expected or not 0<=args.skip<=expected:
         raise ValueError("unexpected priority queue")
     if args.output.exists():
         raise FileExistsError(args.output)

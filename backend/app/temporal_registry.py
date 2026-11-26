@@ -18,16 +18,19 @@ ALLOWED_INSTRUMENT_TYPES = {
 ALLOWED_SECURITY_STATUSES = {
     "active", "suspended", "delisted", "inactive", "pending",
 }
+PRIMARY_SECURITY_EVIDENCE_TIERS = {"primary_nepse_notice", "primary_cdsc_record"}
 ALLOWED_SECURITY_EVIDENCE_TIERS = {
     "primary_nepse_notice",
+    "primary_cdsc_record",
     "secondary_notice",
     "secondary_first_trade_archive_match",
     "historical_archive_inference",
     "current_snapshot_only",
     "unverified",
 }
+PRIMARY_ACTION_EVIDENCE_TIERS = {"primary_nepse_notice", "cdsc_notice"}
 ALLOWED_ACTION_EVIDENCE_TIERS = {
-    "primary_nepse_notice", "secondary_notice", "secondary_archive", "unverified",
+    "primary_nepse_notice", "cdsc_notice", "secondary_notice", "secondary_archive", "unverified",
 }
 ALLOWED_ACTION_VERIFICATION_STATUSES = {
     "verified_primary", "verified_secondary", "unverified",
@@ -58,8 +61,8 @@ class SecurityMasterRecord:
             raise ValueError(f"unsupported security evidence tier: {self.evidence_tier}")
         if not isinstance(self.stable_id_verified, bool) or not isinstance(self.effective_date_verified, bool):
             raise ValueError("security identity verification flags must be boolean")
-        if (self.stable_id_verified or self.effective_date_verified) and self.evidence_tier != "primary_nepse_notice":
-            raise ValueError("historical identity verification requires primary NEPSE evidence")
+        if (self.stable_id_verified or self.effective_date_verified) and self.evidence_tier not in PRIMARY_SECURITY_EVIDENCE_TIERS:
+            raise ValueError("historical identity verification requires primary NEPSE or CDSC evidence")
         if not isinstance(self.valid_from, date) or (self.valid_to is not None and not isinstance(self.valid_to, date)):
             raise ValueError("security lifecycle dates must be date values")
         if self.symbol != self.symbol.strip().upper():
@@ -92,15 +95,15 @@ class CorporateActionRecord:
             raise ValueError(f"unsupported corporate-action evidence tier: {self.evidence_tier}")
         if self.verification_status not in ALLOWED_ACTION_VERIFICATION_STATUSES:
             raise ValueError(f"unsupported corporate-action verification status: {self.verification_status}")
-        if self.verification_status == "verified_primary" and self.evidence_tier != "primary_nepse_notice":
-            raise ValueError("primary-verified corporate action requires primary NEPSE evidence")
+        if self.verification_status == "verified_primary" and self.evidence_tier not in PRIMARY_ACTION_EVIDENCE_TIERS:
+            raise ValueError("primary-verified corporate action requires primary NEPSE or CDSC evidence")
         if self.verification_status == "verified_secondary" and self.evidence_tier not in {"secondary_notice", "secondary_archive"}:
             raise ValueError("secondary-verified corporate action requires a secondary evidence tier")
         if not isinstance(self.adjustment_factor_verified, bool):
             raise ValueError("adjustment_factor_verified must be boolean")
         if self.adjustment_factor_verified and (
             self.verification_status != "verified_primary"
-            or self.evidence_tier != "primary_nepse_notice"
+            or self.evidence_tier not in PRIMARY_ACTION_EVIDENCE_TIERS
             or self.factor is None
         ):
             raise ValueError("adjustment factor use requires a primary-verified factor")
@@ -156,7 +159,7 @@ def validate_security_master_snapshot(records: Iterable[SecurityMasterRecord]) -
                     raise ValueError(f"symbol {symbol} overlaps across distinct security IDs")
     primary_verified = sum(
         1 for row in materialized
-        if row.evidence_tier == "primary_nepse_notice"
+        if row.evidence_tier in PRIMARY_SECURITY_EVIDENCE_TIERS
         and row.stable_id_verified and row.effective_date_verified
     )
     return {
@@ -190,7 +193,7 @@ def security_as_of(records: Iterable[SecurityMasterRecord], on_date: date) -> di
                 "evidence_ids": sorted({r.evidence_id for r in matches})}
     eligible = [
         row for row in matches
-        if row.evidence_tier == "primary_nepse_notice"
+        if row.evidence_tier in PRIMARY_SECURITY_EVIDENCE_TIERS
         and row.stable_id_verified is True
         and row.effective_date_verified is True
     ]
@@ -227,7 +230,7 @@ def corporate_actions_as_of(records: Iterable[CorporateActionRecord],
     adjustment_actions = [
         action for action in verified
         if action.verification_status == "verified_primary"
-        and action.evidence_tier == "primary_nepse_notice"
+        and action.evidence_tier in PRIMARY_ACTION_EVIDENCE_TIERS
         and action.adjustment_factor_verified is True
         and action.factor is not None
     ]

@@ -335,6 +335,7 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         }
         result = compare_srijankarki_daily_csvs(official, daily)
         self.assertEqual(result["invalid_ohlc_rows"], 1)
+        self.assertEqual(result["invalid_ohlc_examples"][0]["reasons"], ["high_below_ohlc"])
         self.assertEqual(result["gate"], "FAIL")
 
     def test_srijankarki_archive_missing_zero_activity_row_is_not_active_gap(self):

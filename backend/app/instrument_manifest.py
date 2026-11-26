@@ -75,19 +75,19 @@ def validate_instrument_manifest(records: list[dict], *, as_of: str,
     # that could otherwise leak into point-in-time joins or price histories.
     overlapping_intervals = []
     dated = []
-    for row in lifecycle:
+    for row_index, row in enumerate(lifecycle):
         start = date.fromisoformat(row["valid_from"])
         end = date.fromisoformat(row["valid_to"]) if row.get("valid_to") is not None else date.max
-        dated.append((row, start, end))
-    for index, (left, left_start, left_end) in enumerate(dated):
-        for right, right_start, right_end in dated[index + 1:]:
+        dated.append((row_index, row, start, end))
+    for index, (left_index, left, left_start, left_end) in enumerate(dated):
+        for right_index, right, right_start, right_end in dated[index + 1:]:
             if left_start <= right_end and right_start <= left_end:
                 same_id = left["security_id"] == right["security_id"]
                 same_symbol = left["symbol"] == right["symbol"]
                 if same_id or same_symbol:
                     overlapping_intervals.append({
-                        "left_row": lifecycle.index(left),
-                        "right_row": lifecycle.index(right),
+                        "left_row": left_index,
+                        "right_row": right_index,
                         "security_id": left["security_id"] if same_id else None,
                         "symbol": left["symbol"] if same_symbol else None,
                     })

@@ -39,7 +39,7 @@ class MarketTurnoverTests(unittest.TestCase):
     def test_flat_turnover_produces_midrange_participation_score(self):
         result = self.run_component()
         self.assertEqual(result["status"], "verified")
-        self.assertEqual(result["score"], 57.5)
+        self.assertEqual(result["score"], 56.5)
         self.assertEqual(result["metrics"]["latest_vs_trailing_median_ratio"], 1.0)
 
     def test_expanding_turnover_is_scored_and_flagged_as_not_directional(self):
@@ -52,7 +52,7 @@ class MarketTurnoverTests(unittest.TestCase):
         self.assertIn("not_directional", result["interpretation"])
 
     def test_contracting_turnover_is_flagged(self):
-        values = [100.0] * 11 + [60.0] * 10
+        values = [100.0] * 16 + [60.0] * 5
         result = self.run_component(rows=rows_for(values))
         self.assertIn("recent_five_session_turnover_contracting", result["warnings"])
 

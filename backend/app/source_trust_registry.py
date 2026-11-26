@@ -169,7 +169,7 @@ def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bo
             policy_data = dict(item)
             for field in ("allowed_record_types", "canonical_record_types", "evidence_refs"):
                 value = policy_data.get(field)
-                if not isinstance(value, list):
+                if not isinstance(value, (list, tuple)):
                     return False
                 policy_data[field] = tuple(value)
             policy = SourcePolicy(**policy_data)

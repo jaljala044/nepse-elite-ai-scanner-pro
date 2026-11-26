@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
@@ -11,6 +12,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .broker_memory_store import broker_memory_status, get_latest_broker_memory, get_broker_memory_lineage
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -49,6 +51,8 @@ def research_readiness():
             "zone_lifecycle": "implemented_not_production_certified",
             "multitimeframe": "implemented_not_production_certified",
             "broker_confluence": "implemented_not_production_certified",
+            "broker_behaviour_memory": "durable_research_store_no_live_ingestion",
+            "broker_early_patterns": "uncalibrated_research_rule_requires_verified_nepse_context",
             "combined_strategy": "research_test_not_approved",
         },
         "missing_evidence_policy": "UNKNOWN",
@@ -80,6 +84,84 @@ def universe():
 @app.get("/v1/imports")
 def imports():
     return {"imports": IMPORTS[-100:]}
+
+@app.get("/v1/broker-memory/status")
+def broker_memory_readiness():
+    """Read-only status for the shared web/mobile broker-memory module."""
+    return broker_memory_status()
+
+
+@app.get("/v1/broker-memory/lineage")
+def broker_memory_lineage(symbol: str, broker_code: str | None = None,
+                          as_of: date | None = None, limit: int = 100,
+                          offset: int = 0):
+    """Paginated source-row evidence drill-down for a stock and optional code."""
+    try:
+        return get_broker_memory_lineage(
+            symbol=symbol,
+            broker_code=broker_code,
+            as_of=as_of.isoformat() if as_of else None,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/broker-memory/patterns")
+def broker_memory_patterns(symbol: str | None = None, broker_code: str | None = None,
+                           as_of: date | None = None):
+    """Read-only early-entry/exit research candidates from the latest stored snapshot."""
+    result = get_latest_broker_memory(
+        symbol=symbol.strip().upper() if symbol else None,
+        broker_code=broker_code.strip() if broker_code else None,
+        as_of=as_of.isoformat() if as_of else None,
+    )
+    if result is None:
+        return {
+            "status": "INSUFFICIENT_EVIDENCE",
+            "patterns": [],
+            "reason": "no_persisted_broker_memory_snapshot",
+            "production_recommendations_enabled": False,
+        }
+    return {
+        "status": result.get("early_pattern_status", "INSUFFICIENT_EVIDENCE"),
+        "as_of_trade_date": result.get("as_of_trade_date"),
+        "patterns": result.get("selected_early_patterns", result.get("early_patterns", [])),
+        "rule_config": result.get("early_pattern_rule_config"),
+        "production_recommendations_enabled": False,
+    }
+
+
+@app.get("/v1/broker-memory")
+def broker_memory(symbol: str | None = None, broker_entity_id: str | None = None,
+                  broker_code: str | None = None, as_of: date | None = None):
+    """Return the latest immutable broker profile available by the requested as-of date."""
+    if symbol is not None and (not symbol.strip() or len(symbol) > 20):
+        raise HTTPException(422, "symbol must be a nonblank NEPSE symbol")
+    if broker_entity_id is not None and (not broker_entity_id.strip() or len(broker_entity_id) > 128):
+        raise HTTPException(422, "broker_entity_id must be nonblank and at most 128 characters")
+    if broker_code is not None and (not broker_code.strip() or len(broker_code) > 32):
+        raise HTTPException(422, "broker_code must be nonblank and at most 32 characters")
+    result = get_latest_broker_memory(
+        symbol=symbol.strip().upper() if symbol else None,
+        broker_entity_id=broker_entity_id.strip() if broker_entity_id else None,
+        broker_code=broker_code.strip() if broker_code else None,
+        as_of=as_of.isoformat() if as_of else None,
+    )
+    if result is None:
+        return {
+            "status": "insufficient_evidence",
+            "symbol": symbol.strip().upper() if symbol else None,
+            "broker_entity_id": broker_entity_id.strip() if broker_entity_id else None,
+            "broker_code": broker_code.strip() if broker_code else None,
+            "as_of": as_of.isoformat() if as_of else None,
+            "message": "No eligible persisted broker-memory snapshot matches this query.",
+            "live_ingestion_connected": False,
+            "production_recommendations_enabled": False,
+        }
+    return result
+
 
 @app.post("/v1/ingest/csv")
 async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(default="user_upload")):
@@ -300,3 +382,9 @@ def history(symbol: str):
     if rows is None:
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
+
+# Serve the responsive web client from the same origin so its /v1 requests use
+# the same API without cross-origin configuration. API routes above take priority.
+_FRONTEND_PATH = Path(__file__).resolve().parents[2] / "frontend"
+if _FRONTEND_PATH.is_dir():
+    app.mount("/", StaticFiles(directory=str(_FRONTEND_PATH), html=True), name="frontend")

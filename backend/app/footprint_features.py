@@ -151,7 +151,8 @@ BROKER_WINDOWS = {
 
 
 def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: float = 0.80,
-                              minimum_sessions: int = 5) -> dict:
+                              minimum_sessions: int = 5,
+                              session_dates: list[str] | None = None) -> dict:
     """Build point-in-time broker footprint windows from normalized party rows.
 
     Required input grain is one buyer/seller party observation per contract,
@@ -209,8 +210,19 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
                 "input_rows": 0, "security_features": {}, "market_windows": {}, "score": None}
 
     all_dates = sorted({row["trade_date"] for row in normalized})
+    if session_dates is None:
+        calendar_dates = all_dates
+    else:
+        try:
+            calendar_dates = [date.fromisoformat(str(item)).isoformat() for item in session_dates]
+        except (TypeError, ValueError) as exc:
+            raise ValueError("session_dates must contain ISO YYYY-MM-DD dates") from exc
+        if calendar_dates != sorted(set(calendar_dates)):
+            raise ValueError("session_dates must be sorted and unique")
+        if not set(all_dates).issubset(set(calendar_dates)):
+            raise ValueError("broker observations fall outside the verified complete-session list")
 
-    def summarize(group_rows, window_name, session_count):
+    def summarize(group_rows, window_name, session_count, expected_dates):
         gross_all = sum((r["_amount"] for r in group_rows), Decimal("0"))
         gross_verified = sum((r["_amount"] for r in group_rows if r["identity_status"] == "verified"), Decimal("0"))
         verified_buy = sum((r["_amount"] for r in group_rows if r["identity_status"] == "verified" and r["side"] == "buy"), Decimal("0"))
@@ -270,8 +282,9 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
         score = max(0, min(100, round(50 + float(directional_ratio) * 100, 2))) if enough else None
         return {
             "window": window_name, "window_sessions": session_count,
+            "expected_covered_sessions": len(expected_dates),
             "observed_sessions": len({r["trade_date"] for r in group_rows}),
-            "window_complete": len({r["trade_date"] for r in group_rows}) >= session_count,
+            "window_complete": len(expected_dates) == session_count,
             "party_observation_count": len(group_rows),
             "verified_party_observation_count": sum(r["identity_status"] == "verified" for r in group_rows),
             "unresolved_party_observation_count": sum(r["identity_status"] != "verified" for r in group_rows),
@@ -297,10 +310,11 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
     def windows_for(group_rows):
         output = {}
         for name, count in BROKER_WINDOWS.items():
-            cutoff_index = max(0, len(all_dates) - count)
-            selected_dates = set(all_dates[cutoff_index:])
+            cutoff_index = max(0, len(calendar_dates) - count)
+            expected_dates = calendar_dates[cutoff_index:]
+            selected_dates = set(expected_dates)
             selected = [r for r in group_rows if r["trade_date"] in selected_dates]
-            output[name] = summarize(selected, name, count)
+            output[name] = summarize(selected, name, count, expected_dates)
         # Persistence labels require genuinely complete 1W/1M/3M windows;
         # partial histories are never promoted to multi-month accumulation.
         persistence_windows = ("1W", "1M", "3M")
@@ -346,9 +360,10 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
     overall_score = latest_market["score"]
     return {
         "status": "observed" if any(v["1D"]["status"] == "observed" for v in security_features.values()) else "insufficient_evidence",
-        "as_of_trade_date": all_dates[-1],
+        "as_of_trade_date": calendar_dates[-1],
         "input_party_observation_count": len(normalized),
         "observed_session_count": len(all_dates),
+        "covered_session_count": len(calendar_dates),
         "identity_coverage_policy": {
             "minimum_verified_amount_coverage_pct": minimum_amount_coverage * 100,
             "minimum_sessions": minimum_sessions,

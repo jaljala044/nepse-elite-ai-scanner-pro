@@ -8,7 +8,10 @@ Private, research-oriented NEPSE market analysis platform. This repository start
 - Public datasets: Hugging Face inventory, bounded/resumable downloader, daily floorsheet and sector-index normalizers, and independent audit reports
 - Kaggle: safe local download/staging helper (requires your locally configured Kaggle CLI)
 - Scanner: transparent, rule-based technical feature extraction (not an institutional-flow detector)
-- Live API feeds, paid broker integrations, web UI, Android app, authentication, deployment and scheduled automation: not yet connected or verified
+- Broker behaviour memory: first backend persistence/API foundation and responsive web explorer are implemented on PR #87; it stores only rows admitted by the verified evidence contract and is not connected to live floorsheet ingestion or a daily scheduler
+- Early entry/exit: an uncalibrated, fail-closed research-rule evaluator exists, but it is not yet wired to a verified market-context producer or production scanner/watchlist
+- Mobile app: no mobile client source tree is currently present in this repository; mobile implementation remains outstanding
+- Live API feeds, paid broker integrations, authentication, production deployment and scheduled automation: not yet connected or verified
 
 ## Quick start
 ```bash
@@ -18,7 +21,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-Open `http://127.0.0.1:8000/docs`.
+Open `http://127.0.0.1:8000/` for the responsive web dashboard and `http://127.0.0.1:8000/docs` for the API. The broker-memory explorer uses the same-origin read-only endpoints; it will show insufficient evidence until eligible broker observations are ingested through the authorized evidence pipeline.
 
 ## NEPSE data collection
 
@@ -130,4 +133,4 @@ GitHub Actions workflow: [backend-tests.yml](.github/workflows/backend-tests.yml
 - No automated order execution is included.
 - Do not enable scheduled scans until each data feed is tested, licensed/authorized where required, and reconciled against an authoritative exchange source.
 
-See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md), [docs/ANALYSIS_METHOD.md](docs/ANALYSIS_METHOD.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md), [docs/ANALYSIS_METHOD.md](docs/ANALYSIS_METHOD.md), [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BROKER_BEHAVIOUR_MEMORY_EARLY_ENTRY_EXIT.md](docs/BROKER_BEHAVIOUR_MEMORY_EARLY_ENTRY_EXIT.md).

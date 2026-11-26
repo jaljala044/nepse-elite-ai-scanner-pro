@@ -1,0 +1,63 @@
+name: Capture official NEPSE bulk daily security prices
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/capture_nepse_daily_security_prices.py"
+      - "backend/tests/test_nepse_daily_security_prices.py"
+      - ".github/workflows/capture-nepse-daily-security-prices.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nepse-official-bulk-daily-prices
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned NEPSE client
+        run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+      - name: Test bulk daily security price capture
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_nepse_daily_security_prices.py' -v
+      - name: Capture official daily price-volume rows for 19, 20 and 24 November
+        run: |
+          set -euo pipefail
+          python backend/capture_nepse_daily_security_prices.py \
+            --dates 2026-11-19 2026-11-20 2026-11-24 \
+            --output-dir evidence/nepse-daily-security-prices/2026-11-19_20_24
+      - name: Commit immutable official raw responses
+        run: |
+          set -euo pipefail
+          source_dir="evidence/nepse-daily-security-prices/2026-11-19_20_24"
+          target="data/evidence/raw/nepse/daily-security-prices/2026-11-19_20_24"
+          mkdir -p "$target"
+          cp -R "$source_dir/." "$target/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          if ! git diff --cached --quiet; then
+            git commit -m "data: archive official NEPSE daily security price responses"
+            git pull --rebase origin main
+            git push
+          fi
+      - name: Upload capture artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-official-daily-security-prices-${{ github.run_id }}
+          path: evidence/nepse-daily-security-prices/
+          if-no-files-found: warn
+          retention-days: 90

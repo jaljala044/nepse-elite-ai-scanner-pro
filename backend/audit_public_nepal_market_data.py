@@ -340,7 +340,12 @@ def build_merged_official_history_root(
     (output_root.parent / "SHA256SUMS").write_text("".join(manifest_lines), encoding="utf-8")
 
     expected_pairs = len(expected_dates) * len(merged)
-    missing_pairs = expected_pairs - total_rows
+    expected_date_set = set(expected_dates)
+    unexpected_dates = sorted(all_dates - expected_date_set)
+    missing_expected_dates = sorted(expected_date_set - all_dates)
+    missing_pairs = expected_pairs - sum(
+        1 for by_date in merged.values() for day in by_date if day in expected_date_set
+    )
     return {
         "status": "REVIEW_ONLY",
         "capture_windows": capture_windows,
@@ -350,6 +355,8 @@ def build_merged_official_history_root(
         "official_dates_present": len(all_dates),
         "official_first_date": min(all_dates) if all_dates else None,
         "official_last_date": max(all_dates) if all_dates else None,
+        "unexpected_dates": unexpected_dates,
+        "missing_expected_dates": missing_expected_dates,
         "official_rows_after_merge": total_rows,
         "expected_symbol_date_pairs": expected_pairs,
         "missing_symbol_date_pairs": missing_pairs,
@@ -366,7 +373,7 @@ def build_merged_official_history_root(
         "gate": "FAIL" if (
             raw_hash_errors or overlap_mismatch_rows or missing_unexplained
             or missing_pairs != missing_pre_valid
-            or len(all_dates) != len(expected_dates)
+            or unexpected_dates or missing_expected_dates
         ) else "RECONCILED_REVIEW_ONLY",
     }
 

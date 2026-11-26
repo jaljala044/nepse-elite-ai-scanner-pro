@@ -51,10 +51,23 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         symbol: wyckoff_event_features(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
     }
-    smc_features_by_symbol = {
-        symbol: smc_features(items)
-        for symbol, items in sorted(by_symbol.items()) if symbol
-    }
+    smc_features_by_symbol = {}
+    for symbol, items in sorted(by_symbol.items()):
+        if not symbol:
+            continue
+        required_smc_ohlc = ("session_date", "open", "high", "low", "close")
+        missing_smc_rows = [index for index, item in enumerate(items)
+                            if any(key not in item or item[key] is None for key in required_smc_ohlc)]
+        if missing_smc_rows:
+            smc_features_by_symbol[symbol] = {
+                "status": "insufficient_evidence",
+                "reason": "required_ohlc_fields_missing",
+                "missing_row_count": len(missing_smc_rows),
+                "history_sessions": len(items),
+                "timeframes": {}, "fvg": [], "liquidity_sweeps": [], "score": None,
+            }
+        else:
+            smc_features_by_symbol[symbol] = smc_features(items)
     component_candidates = {}
     for symbol in sorted(by_symbol):
         if not symbol:

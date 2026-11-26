@@ -99,6 +99,16 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertIn("sector", aggregate["missing_components"])
         self.assertEqual(aggregate["decision_status"], "research_only_fail_closed_stage2_preview")
 
+        bundle = result["component_feature_bundles"]["AAA"]
+        self.assertEqual(bundle["wyckoff"]["status"], "observed")
+        self.assertEqual(bundle["trend"]["status"], "observed")
+        self.assertEqual(bundle["smc"]["status"], "experimental_only")
+        self.assertIsNone(bundle["smc"]["score"])
+        self.assertEqual(aggregate["component_evidence_status"]["smc"], "experimental_only")
+        self.assertIn("smc", aggregate["missing_components"])
+        self.assertEqual(aggregate["scoring_source"], "observed_upstream_feature_outputs_only")
+
+
 
 
     def test_verified_nepse_benchmark_feeds_relative_strength_component(self):

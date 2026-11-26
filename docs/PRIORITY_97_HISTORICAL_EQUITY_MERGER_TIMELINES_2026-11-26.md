@@ -33,3 +33,24 @@ Accordingly, every affected JSON record continues to carry `stable_id: null` and
 - https://www.sharesansar.com/newsdetail/joint-trading-of-kisan-laghubitta-and-jalpa-samudayik-laghubitta-shares-transactions-suspended-2024-07-11
 - https://www.merolagani.com/AnnouncementDetail.aspx?id=54224
 - https://www.sharesansar.com/newsdetail/after-successful-acquisition-share-of-samata-gharelu-laghubitta-listed-in-nepse-2024-08-02
+
+## Additional merger timeline records — second batch
+
+Four more predecessor symbols now have sourced joint-operation start dates in the machine-readable evidence:
+
+| Predecessor symbol(s) | Successor | Joint-operation start | Evidence |
+|---|---|---:|---|
+| SABSL, SDLBSL | Sampada Laghubitta (SMPDA) | 2024-07-14 | ShareSansar completion/listing and merger notice |
+| SAMAJ | Grameen Bikas Laghubitta (GBLBS) | 2025-10-19 | Merolagani merger announcement |
+| SFCL | Pokhara Finance (PFL) | 2026-07-10 | ShareSansar unified-operation and NEPSE suspension reports |
+
+The Sampada sources specify 30 Ashadh 2081 (2024-07-14); the notice published on 2024-07-08 is a pre-event announcement, not the joint-operation date itself. The Grameen Bikas source specifies 2 Kartik 2082 (2025-10-19). The Pokhara Finance sources specify 26 Ashadh 2083 (2026-07-10), with trading suspension effective from the integration date.
+
+These remain corporate integration dates, not proof of exact last/first exchange trading dates or stable-ID intervals. All affected JSON rows continue to use `stable_id: null` and `effective_date_verified: false`. No price histories were spliced and no raw data changed.
+
+Additional source URLs:
+- https://www.sharesansar.com/index.php/newsdetail/after-successful-merger-between-sabsl-and-sdlbsl-shares-of-sampada-laghubitta-listed-in-nepse-2024-08-15
+- https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08
+- https://eng.merolagani.com/AnnouncementDetail.aspx?id=61940
+- https://www.sharesansar.com/index.php/newsdetail/pokhara-finance-and-samriddhi-finance-to-begin-unified-operations-from-ashadh-26-after-merger-approval-2026-06-26
+- https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09

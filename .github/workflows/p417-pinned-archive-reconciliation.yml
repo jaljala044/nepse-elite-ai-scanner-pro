@@ -64,6 +64,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          from decimal import Decimal
           from pathlib import Path
 
           report = json.loads(Path("artifacts/p417-floorsheet-pair-audit-2026-11-24.json").read_text())
@@ -97,6 +98,14 @@ jobs:
                   "left_only_count": len(comparison.get("left_only_contract_keys", [])),
                   "right_only_count": len(comparison.get("right_only_contract_keys", [])),
                   "conflict_examples": comparison.get("conflicts", [])[:10],
+                  "left_only_contracts": comparison.get("left_only_contracts", []),
+                  "right_only_contracts": comparison.get("right_only_contracts", []),
+                  "one_sided_totals": {
+                      "left_only_quantity": str(sum((Decimal(row["quantity"]) for row in comparison.get("left_only_contracts", [])), Decimal("0"))),
+                      "left_only_gross_amount": str(sum((Decimal(row["amount"]) for row in comparison.get("left_only_contracts", [])), Decimal("0"))),
+                      "right_only_quantity": str(sum((Decimal(row["quantity"]) for row in comparison.get("right_only_contracts", [])), Decimal("0"))),
+                      "right_only_gross_amount": str(sum((Decimal(row["amount"]) for row in comparison.get("right_only_contracts", [])), Decimal("0"))),
+                  },
               },
               "identity": {
                   "left_within_source_date_collisions": len(identity.get("left_within_source_date_collisions", [])),

@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from .database import connect
@@ -81,7 +82,8 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
     if sessions != sorted(set(sessions)):
         raise ValueError("session_dates must be sorted and unique")
     cutoff = _aware(decision_time, "decision_time")
-    allowed = set(sessions)
+    cutoff_session = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date().isoformat()
+    allowed = {item for item in sessions if item <= cutoff_session}
     seen = set()
     clean = []
     for index, source in enumerate(rows):
@@ -95,6 +97,8 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
             day = date.fromisoformat(str(row["trade_date"])).isoformat()
         except (TypeError, ValueError) as exc:
             raise ValueError(f"row {index} trade_date must be YYYY-MM-DD") from exc
+        if day > cutoff_session:
+            raise ValueError(f"row {index} trade_date is after the decision-time session")
         if day not in allowed:
             raise ValueError(f"row {index} trade_date is not in the supplied verified session calendar")
         if row["source_validation_status"] != "verified":
@@ -215,7 +219,10 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
     """
     clean = _validate_observations(rows, session_dates, decision_time)
     cutoff = _aware(decision_time, "decision_time")
-    allowed_sessions = {date.fromisoformat(str(item)).isoformat() for item in session_dates}
+    cutoff_session = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date().isoformat()
+    covered_sessions = [date.fromisoformat(str(item)).isoformat() for item in session_dates
+                        if date.fromisoformat(str(item)).isoformat() <= cutoff_session]
+    allowed_sessions = set(covered_sessions)
     con = connect()
     try:
         _ensure_tables(con)
@@ -257,17 +264,17 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             raise ValueError("no stored broker observations fall within the verified session calendar")
         features = broker_footprint_features(
             historical_rows, minimum_amount_coverage=minimum_amount_coverage,
-            minimum_sessions=minimum_sessions, session_dates=session_dates,
+            minimum_sessions=minimum_sessions, session_dates=covered_sessions,
         )
         channel_features = _execution_channel_features(
-            historical_rows, session_dates, minimum_amount_coverage
+            historical_rows, covered_sessions, minimum_amount_coverage
         )
         body = {
             "schema_version": 1,
             "feature_version": "broker-footprint-v1",
             "decision_time": cutoff.isoformat(),
             "as_of_trade_date": max(row["trade_date"] for row in historical_rows),
-            "session_calendar": session_dates,
+            "session_calendar": covered_sessions,
             "observation_count": len(historical_rows),
             "source_count": len({row["source_id"] for row in historical_rows}),
             "source_payload_hashes": sorted({row["source_payload_sha256"] for row in historical_rows}),

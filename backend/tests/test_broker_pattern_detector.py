@@ -16,6 +16,17 @@ def fixture_rows(direction="accumulation"):
         available = day + "T16:00:00Z"
         if direction == "accumulation":
             close = 100 + day_index * 0.3
+        else:
+            close = 100 - day_index * 0.8
+        if day_index < 2:
+            # Neutral broker breadth establishes a prior baseline.
+            trades = [
+                ("C1", "A", "C", "100"),
+                ("C2", "C", "A", "100"),
+                ("C3", "B", "C", "100"),
+                ("C4", "C", "B", "100"),
+            ]
+        elif direction == "accumulation":
             trades = [
                 ("C1", "A", "C", "100"),
                 ("C2", "B", "C", "100"),
@@ -23,7 +34,6 @@ def fixture_rows(direction="accumulation"):
                 ("C4", "C", "B", "20"),
             ]
         else:
-            close = 100 - day_index * 0.8
             trades = [
                 ("C1", "C", "A", "100"),
                 ("C2", "C", "B", "100"),

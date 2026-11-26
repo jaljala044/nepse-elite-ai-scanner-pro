@@ -468,7 +468,7 @@ the **data quality gate is FAIL**. These are separate statuses: successful
 automation means the audit completed and produced its report, not that the
 data passed. The per-symbol report is retained as the
 `public-nepse-secondary-archive-audit` GitHub Actions artifact for run
-45893777462:
+45894621663:
 https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45893777462
 
 The report's structural counts do not certify exchange correctness or
@@ -555,6 +555,6 @@ ADBL has 405 OHLC-bound violations and 112 positive-volume/zero-turnover rows in
 - Pinned official NEPSE capture: high 640, low 589.9, close 589.9, volume 307,576, turnover NPR 184,031,033.4.
 - The public close differs by NPR 46.1. The public row passes OHLC bounds but fails independent source reconciliation. Official history does not supply open, so open remains unverified.
 
-The audit now retains row-level diagnostic samples by defect type (including the date and relevant OHLC/volume/turnover values) in the full per-symbol artifact, capped at five samples per defect type per symbol. Aggregate counters still count every detected row. This allows a reviewer to inspect examples without inflating the artifact with every defective row.
+The audit now retains row-level diagnostic samples by defect type (including the date and relevant OHLC/volume/turnover values) in the full per-symbol artifact, capped at five samples per defect type per symbol. Aggregate counters still count every detected row. The updated artifact is run 45894621663: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45894621663. This allows a reviewer to inspect examples without inflating the artifact with every defective row.
 
 **Why these records remain unreviewed:** (1) the public publisher describes the archive as unofficial and sourced from third parties; (2) the full archive has widespread structural defects; (3) official overlap reveals at least one material close discrepancy; (4) official history does not independently verify open; (5) historical security lifecycle and corporate-action adjustment are not established for the complete archive; and (6) the repository's publication licence does not independently prove rights to sublicense underlying market data. No automatic correction, canonical promotion or trading use is allowed.

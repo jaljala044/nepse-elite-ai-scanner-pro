@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
-from app.footprint_features import market_breadth, security_footprint, broker_participation_summary
+from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
 from app.wyckoff_features import wyckoff_event_features
@@ -68,6 +68,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             }
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
+    broker_footprint = broker_footprint_features(broker_rows)
     component_candidates = {}
     for symbol in sorted(by_symbol):
         if not symbol:
@@ -76,7 +77,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             "wyckoff": wyckoff_features[symbol].get("score") if wyckoff_features[symbol].get("status") == "observed" else None,
             "trend": trend_features[symbol].get("score") if trend_features[symbol].get("status") == "observed" else None,
             "relative_strength": None,
-            "broker": None,
+            "broker": (broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("score")
+                       if broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("status") == "observed" else None),
             "volume": volume_features[symbol].get("score") if volume_features[symbol].get("status") == "observed" else None,
             "liquidity": None,
             "sector": None,
@@ -100,5 +102,6 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "smc_features": smc_features_by_symbol,
         "component_candidates": component_candidates,
         "broker_participation": broker_participation_summary(broker_rows),
+        "broker_footprint": broker_footprint,
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

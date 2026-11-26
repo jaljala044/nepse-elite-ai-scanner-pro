@@ -31,6 +31,7 @@ class BrokerEarlyPatternTests(unittest.TestCase):
             }
         self.context = {
             "status": "verified",
+            "symbol": "NABIL",
             "as_of_session": "2026-11-26",
             "available_at": "2026-11-26T15:00:00+05:45",
             "source_id": "verified-nepse-context",

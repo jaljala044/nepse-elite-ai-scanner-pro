@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: nepse-official-security-history-2026-11-19-24
+  group: nepse-official-security-history-365d
   cancel-in-progress: false
 
 jobs:
@@ -37,15 +37,15 @@ jobs:
           set -euo pipefail
           python backend/capture_nepse_security_history.py \
             --crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \
-            --output-dir evidence/nepse-security-history/2026-11-19_to_2026-11-24 \
-            --start-date 2026-11-19 \
-            --end-date 2026-11-24 \
+            --output-dir evidence/nepse-security-history/2025-11-26_to_2026-11-26 \
+            --start-date 2025-11-26 \
+            --end-date 2026-11-26 \
             --pause-seconds 0.15
       - name: Commit raw official per-security responses
         run: |
           set -euo pipefail
           source_dir="evidence/nepse-security-history/2026-11-19_to_2026-11-24"
-          target="data/evidence/raw/nepse/security-history/2026-11-19_to_2026-11-24"
+          target="data/evidence/raw/nepse/security-history/2025-11-26_to_2026-11-26"
           mkdir -p "$target"
           cp -R "$source_dir/." "$target/"
           git config user.name "github-actions[bot]"

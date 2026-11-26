@@ -72,8 +72,8 @@ el("scan-run").addEventListener("click",async()=>{
    throw Error("Unexpected market-wide scanner response");
   scanSummary=data;results=data.results;render();
   status(
-   data.results.length+" results · "+data.symbols_with_ohlcv+"/"+data.candidate_universe_count+
-   " with OHLCV ("+data.coverage_pct+"% coverage) · "+data.symbols_without_ohlcv+
+   data.results.length+" results · "+data.symbols_with_observations+"/"+data.candidate_universe_count+
+   " with OHLCV ("+data.observation_coverage_pct+"% observation coverage) · "+data.symbols_without_observations+
    " without observations · "+(data.as_of||"as-of unavailable")+
    " · rankings and recommendations disabled."
   );

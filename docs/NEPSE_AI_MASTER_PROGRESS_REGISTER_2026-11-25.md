@@ -1842,3 +1842,17 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added runbook and blank completeness-manifest template. Existing 500-row 2026-11-19/20 floorsheet files must remain incomplete; they may support positive contract observations only, not `NO_TRADE`.
 - Data repo commits: engine [3672a2e](https://github.com/jaljala044/nepse-smc-data/commit/3672a2e229b764ee818c22cb18dd6c33cbf5237b), test workflow [edc5b85](https://github.com/jaljala044/nepse-smc-data/commit/edc5b85199e8587bef5a34b8bd27c4a7ac4cb594), hardening [2e7c779](https://github.com/jaljala044/nepse-smc-data/commit/2e7c779a498f5baa7893d1caaa98352a75eb35c9), tests [6fd862e](https://github.com/jaljala044/nepse-smc-data/commit/6fd862e259c5b7a17dc86ce894c2d6bcabd600a3), runbook [72c54b4](https://github.com/jaljala044/nepse-smc-data/commit/72c54b4c6ebbba4b1fba9ae4e703507de6eb9d98).
 - Canonical promotion and model training remain blocked until complete, independently evidenced daily floorsheets and exchange session data are available and reconciled across the universe.
+
+## 2026-11-26 — UNKNOWN ranking and scan-output integration
+
+- Default /v1/scan now selects the complete active equity candidate universe, not only symbols with locally loaded OHLCV. This ensures missing-data candidates such as UNL remain visible as UNKNOWN on a default scan.
+- API responses retain the complete results list and additionally expose unknown_results, ranked_results, buy_candidates, out_of_scope_results, and research_only_results.
+- UNKNOWN results carry result_bucket=unknown_results, ranking_eligible=false, buy_list_eligible=false, and an explicit evidence-based exclusion reason. They cannot enter ranked or BUY buckets.
+- Out-of-scope symbols are explicitly separated. If the universe manifest is unavailable, the API returns a dedicated fail-closed universe_unavailable_results bucket and empty ranking/BUY buckets.
+- A security that passes the evidence gate but has only research observations is labeled research_only; its horizon actions are NOT_ASSESSED, not NO TRADE. It is not ranked or presented as a BUY because the scoring/recommendation engine is not authorized by this API path.
+- Added regression tests for default-universe UNL visibility, mixed UNKNOWN/out-of-scope responses, UNKNOWN exclusion from rankings/BUY candidates, and preservation of valid research-only observations.
+- Full backend suite: 765 tests passed on commit 33991baca6b74990c49d9e2131099a1d8e4182ec (run #1302: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45838083281).
+- Backend contract tests #759: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45838083286
+- Historical data integrity #163: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45838083343
+- Integrated evidence audit #270: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45838083385
+- This completes UNKNOWN ranking/output integration only. No securities are yet eligible for production ranking/BUY recommendations through this research-only endpoint; data and release gates remain open.

@@ -36,7 +36,16 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_nepse_security_history_capture.py' -v
           python -m unittest discover -s tests -p 'test_official_security_history_window.py' -v
+      - name: Reuse immutable history capture when already committed
+        if: hashFiles('data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/capture-report.json') != ''
+        run: |
+          set -euo pipefail
+          target="data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26"
+          source_dir="evidence/nepse-security-history/2026-10-05_to_2026-11-26"
+          mkdir -p "$source_dir"
+          cp -R "$target/." "$source_dir/"
       - name: Capture official per-security history for crosswalk universe
+        if: hashFiles('data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/capture-report.json') == ''
         run: |
           set -euo pipefail
           python backend/capture_nepse_security_history.py \
@@ -61,6 +70,10 @@ jobs:
           set -euo pipefail
           source_dir="evidence/nepse-security-history/2026-10-05_to_2026-11-26"
           target="data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26"
+          if [ -f "$target/capture-report.json" ]; then
+            echo "Immutable official history window already committed; preserving existing bytes."
+            exit 0
+          fi
           mkdir -p "$target"
           cp -R "$source_dir/." "$target/"
           git config user.name "github-actions[bot]"

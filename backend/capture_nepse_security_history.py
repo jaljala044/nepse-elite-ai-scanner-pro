@@ -126,6 +126,13 @@ def capture(crosswalk_path: Path, output_dir: Path, start_date: str, end_date: s
         except Exception as exc:
             security_map = {}
             security_map_error = {"type": type(exc).__name__, "message": str(exc)[:300]}
+        security_list_capture = []
+        for event_index, event in enumerate(response_events, start=1):
+            body = event.pop("body")
+            filename = f"security-list-response-{event_index:02d}.bin"
+            (output_dir / filename).write_bytes(body)
+            event["raw_file"] = filename
+            security_list_capture.append(event)
         for index, row in enumerate(rows, start=1):
             symbol = row["symbol"].strip().upper()
             expected_id = str(row.get("security_id", "")).strip()
@@ -211,6 +218,7 @@ def capture(crosswalk_path: Path, output_dir: Path, start_date: str, end_date: s
         "crosswalk_path": str(crosswalk_path),
         "crosswalk_row_count": len(rows),
         "security_list_error": security_map_error,
+        "security_list_capture": security_list_capture,
         "status_counts": status_counts,
         "response_event_count": len(response_events),
         "symbols": symbol_reports,
@@ -222,8 +230,13 @@ def capture(crosswalk_path: Path, output_dir: Path, start_date: str, end_date: s
     }
     (output_dir / "capture-report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (output_dir / "SHA256SUMS").write_text(
-        "".join(f"{item['response_sha256']}  {item['raw_file']}\n"
-                for symbol in symbol_reports for item in symbol["responses"] if item.get("response_sha256")),
+        "".join(
+            f"{item['sha256']}  {item['raw_file']}\n"
+            for item in security_list_capture if item.get("sha256")
+        ) + "".join(
+            f"{item['sha256']}  {item['raw_file']}\n"
+            for symbol in symbol_reports for item in symbol["responses"] if item.get("sha256")
+        ),
         encoding="utf-8",
     )
     return report

@@ -40,6 +40,33 @@ jobs:
           test -s public-build/vendor/NOTICE
       - name: Build deployable application image
         run: docker build -f backend/Dockerfile -t nepse-research:ci .
+      - name: Smoke-test packaged API and terminal routes
+        run: |
+          docker run -d --name nepse-terminal -p 8000:8000 nepse-research:ci
+          python - <<'PY'
+          import time
+          from urllib.request import urlopen
+          for attempt in range(30):
+              try:
+                  with urlopen("http://127.0.0.1:8000/health", timeout=2) as response:
+                      assert response.status == 200
+                  break
+              except Exception:
+                  if attempt == 29:
+                      raise
+                  time.sleep(2)
+          for path, expected in [
+              ("/terminal/", b"NEPSE SCANNER"),
+              ("/terminal/scanner.js", b"/v1/scan/market-wide"),
+          ]:
+              with urlopen("http://127.0.0.1:8000" + path, timeout=5) as response:
+                  body = response.read()
+                  assert response.status == 200 and expected in body, path
+          print("Container health, terminal HTML and market-wide scanner asset passed.")
+          PY
+      - name: Remove smoke-test container
+        if: always()
+        run: docker rm -f nepse-terminal || true
       - uses: actions/upload-artifact@v4
         with:
           name: nepse-research-terminal

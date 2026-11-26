@@ -91,8 +91,8 @@ def load_expected_market_dates(body_path: Path, capture_report_path: Path,
 
 def load_lifecycle_context(path: Path | None, symbols: list[dict], expected_count: int) -> tuple[dict, dict]:
     if path is None:
-        return {}, {"available": False, "verified_start_count": 0,
-                    "unverified_start_count": expected_count, "status_counts": {}}
+        return {}, {"available": False, "primary_start_evidence_count": 0, "secondary_start_evidence_count": 0,
+                    "undated_start_count": expected_count, "status_counts": {}}
     with path.open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         required = {"security_id", "symbol", "instrument_type", "valid_from",
@@ -106,7 +106,8 @@ def load_lifecycle_context(path: Path | None, symbols: list[dict], expected_coun
         raise ValueError(f"lifecycle input has {len(rows)} rows; expected {expected_count}")
     by_symbol = {}
     status_counts: Counter[str] = Counter()
-    verified = 0
+    primary_start_evidence = 0
+    secondary_start_evidence = 0
     for row in rows:
         symbol = row["symbol"].strip().upper()
         if not symbol or symbol in by_symbol:
@@ -120,9 +121,16 @@ def load_lifecycle_context(path: Path | None, symbols: list[dict], expected_coun
                 date.fromisoformat(row["valid_from"])
             except ValueError as exc:
                 raise ValueError(f"{symbol}: invalid lifecycle valid_from") from exc
-            if status == "unverified" or not row["valid_from_evidence_uri"] or not row["valid_from_evidence_note"]:
-                raise ValueError(f"{symbol}: dated lifecycle start lacks evidence status/URI/note")
-            verified += 1
+            if status not in {
+                "verified_primary_notice",
+                "verified_secondary_notice",
+                "verified_secondary_first_trade_archive_match",
+            } or not row["valid_from_evidence_uri"] or not row["valid_from_evidence_note"]:
+                raise ValueError(f"{symbol}: dated lifecycle start lacks an allowed evidence status/URI/note")
+            if status == "verified_primary_notice":
+                primary_start_evidence += 1
+            else:
+                secondary_start_evidence += 1
         elif status != "unverified" or row["valid_from_evidence_uri"]:
             raise ValueError(f"{symbol}: unverified lifecycle start must not carry a date or evidence URI")
         by_symbol[symbol] = row
@@ -136,10 +144,12 @@ def load_lifecycle_context(path: Path | None, symbols: list[dict], expected_coun
     return by_symbol, {
         "available": True,
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "verified_start_count": verified,
-        "unverified_start_count": len(rows) - verified,
+        "primary_start_evidence_count": primary_start_evidence,
+        "secondary_start_evidence_count": secondary_start_evidence,
+        "undated_start_count": len(rows) - primary_start_evidence - secondary_start_evidence,
         "status_counts": dict(sorted(status_counts.items())),
         "identity_basis": "current crosswalk ID only; not historical stable-ID proof",
+        "evidence_note": "secondary lifecycle dates are context only and do not establish exchange-primary effective dates",
     }
 
 def audit_history_window(history_report_path: Path, market_body_path: Path,

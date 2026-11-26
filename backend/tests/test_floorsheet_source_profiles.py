@@ -132,3 +132,62 @@ class SamirMerolaganiCaptureProfileTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SocrateAIFloorsheetSourceProfileTests(unittest.TestCase):
+    def test_exact_pinned_schema_and_unverified_lineage_status(self):
+        from app.floorsheet_source_profiles import (
+            SOCRATEAI_BLOB_SHA1, SOCRATEAI_CANONICAL_COLUMNS,
+            SOCRATEAI_DECLARED_HEADERS, SOCRATEAI_PINNED_COMMIT,
+            SOCRATEAI_RAW_SIZE_BYTES, review_socrateai_floorsheet_headers,
+        )
+        review = review_socrateai_floorsheet_headers(SOCRATEAI_DECLARED_HEADERS)
+        self.assertTrue(review.valid)
+        self.assertEqual(
+            review.evidence_status,
+            "pinned_header_profile_lineage_and_completeness_unverified",
+        )
+        self.assertEqual(SOCRATEAI_PINNED_COMMIT,
+                         "cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3")
+        self.assertEqual(SOCRATEAI_BLOB_SHA1,
+                         "e7150873219d66a21345df2dfbd78f6c5a4b1152")
+        self.assertEqual(SOCRATEAI_RAW_SIZE_BYTES, 3058892)
+        self.assertEqual(SOCRATEAI_CANONICAL_COLUMNS["contract_id"], "transaction")
+
+    def test_schema_mismatch_and_duplicate_headers_fail_closed(self):
+        from app.floorsheet_source_profiles import (
+            SOCRATEAI_DECLARED_HEADERS, review_socrateai_floorsheet_headers,
+        )
+        missing = review_socrateai_floorsheet_headers(SOCRATEAI_DECLARED_HEADERS[:-1])
+        self.assertFalse(missing.valid)
+        self.assertIn("date", missing.missing_headers)
+        duplicate = review_socrateai_floorsheet_headers(
+            SOCRATEAI_DECLARED_HEADERS + ("buyer",)
+        )
+        self.assertFalse(duplicate.valid)
+        self.assertEqual(duplicate.duplicate_headers, ("buyer",))
+
+    def test_pinned_schema_parses_without_promoting_source_trust(self):
+        from app.floorsheet_source_profiles import (
+            SOCRATEAI_PINNED_COMMIT, socrateai_floorsheet_mapping,
+        )
+        raw = (
+            "transaction,symbol,buyer,seller,quantity,rate,amount,date\\n"
+            "2026112405013267,BBC,58,11,10,3878.00,38780.00,2026-11-24\\n"
+        ).encode("utf-8")
+        parsed = parse_floorsheet_csv(
+            raw,
+            source_id="socrateai-official/nepse-open-data@"
+                      + SOCRATEAI_PINNED_COMMIT
+                      + "/floorsheet/floorsheet_2026-11-24.csv",
+            mapping=socrateai_floorsheet_mapping(),
+        )
+        self.assertEqual(parsed["parsed_rows"], 1)
+        self.assertEqual(parsed["rejected_rows"], 0)
+        self.assertFalse(parsed["source_specific_mapping_verified"])
+        row = parsed["rows"][0]
+        self.assertEqual(row.trade_date, "2026-11-24")
+        self.assertEqual(row.contract_id, "2026112405013267")
+        self.assertEqual(row.symbol, "BBC")
+        self.assertEqual(row.buyer_broker_code, "58")
+        self.assertEqual(str(row.amount), "38780.00")

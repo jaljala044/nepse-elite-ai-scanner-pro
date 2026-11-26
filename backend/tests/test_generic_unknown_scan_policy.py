@@ -48,5 +48,39 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
 
 
 
+    def test_valid_research_observations_are_not_mislabeled_no_trade_or_ranked(self):
+        from datetime import date
+        from contextlib import ExitStack
+        row = {"date": date(2025, 1, 1), "open": 10, "high": 12,
+               "low": 9, "close": 11, "volume": 100}
+        reviewed = {("ADBL", "2025-01-01"): dict(row, evidence_id="fixture")}
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(main, "DATA", {"ADBL": [row]}))
+            stack.enter_context(patch.object(main, "REVIEWED_ROWS", reviewed))
+            stack.enter_context(patch.object(main, "assess", return_value=[]))
+            stack.enter_context(patch.object(main, "analyze", return_value={"symbol": "ADBL", "status": "screened", "signals": [], "metrics": {}}))
+            stack.enter_context(patch.object(main, "detect_structure", return_value={"status": "observed", "bias": "neutral", "events": []}))
+            stack.enter_context(patch.object(main, "add_event_evidence"))
+            stack.enter_context(patch.object(main, "evaluate_idpat_v3", return_value={"status": "unavailable", "score": None}))
+            stack.enter_context(patch.object(main, "evaluate_provisional", return_value={"status": "unavailable", "score": None}))
+            stack.enter_context(patch.object(main, "evaluate_timeframes", return_value={"t_plus_2": {"recent_events": []}}))
+            stack.enter_context(patch.object(main, "evaluate_confluence", return_value={"status": "unavailable", "score": None}))
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan", json={"symbols": ["ADBL"]})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        result = payload["results"][0]
+        self.assertEqual(result["status"], "screened")
+        self.assertEqual(result["result_bucket"], "research_only")
+        self.assertEqual(result["horizon_actions"], {
+            "t_plus_2": "NOT_ASSESSED", "swing": "NOT_ASSESSED",
+            "positional": "NOT_ASSESSED", "investment": "NOT_ASSESSED",
+        })
+        self.assertFalse(result["ranking_eligible"])
+        self.assertFalse(result["buy_list_eligible"])
+        self.assertEqual(payload["unknown_results"], [])
+        self.assertEqual(payload["ranked_results"], [])
+        self.assertEqual(payload["buy_candidates"], [])
+
 if __name__ == "__main__":
     unittest.main()

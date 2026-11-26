@@ -86,6 +86,40 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
         self.assertEqual(payload["ranked_results"], [])
         self.assertEqual(payload["buy_candidates"], [])
 
+    def test_api_emits_bullish_research_confirmation_only_after_eligibility_gate(self):
+        from datetime import date, timedelta
+        from contextlib import ExitStack
+        rows = []
+        start = date(2025, 1, 1)
+        for i in range(60):
+            close = 100 + i
+            rows.append({"date": start + timedelta(days=i), "open": close - 1,
+                         "high": close + 1, "low": close - 2,
+                         "close": close, "volume": 1000})
+        rows[-1].update(open=159, high=165, low=158, close=164, volume=2500)
+        reviewed = {("ADBL", str(row["date"])): dict(row, evidence_id="synthetic-test")
+                    for row in rows}
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(main, "DATA", {"ADBL": rows}))
+            stack.enter_context(patch.object(main, "REVIEWED_ROWS", reviewed))
+            stack.enter_context(patch.object(main, "assess", return_value=[]))
+            stack.enter_context(patch.object(main, "analyze", return_value={"symbol": "ADBL", "status": "screened", "signals": [], "metrics": {}}))
+            stack.enter_context(patch.object(main, "detect_structure", return_value={"status": "observed", "bias": "neutral", "events": []}))
+            stack.enter_context(patch.object(main, "add_event_evidence"))
+            stack.enter_context(patch.object(main, "evaluate_idpat_v3", return_value={"status": "unavailable", "score": None}))
+            stack.enter_context(patch.object(main, "evaluate_provisional", return_value={"status": "unavailable", "score": None}))
+            stack.enter_context(patch.object(main, "evaluate_timeframes", return_value={"t_plus_2": {"recent_events": []}}))
+            stack.enter_context(patch.object(main, "evaluate_confluence", return_value={"status": "unavailable", "score": None}))
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan", json={"symbols": ["ADBL"]})
+        self.assertEqual(response.status_code, 200)
+        result = response.json()["results"][0]
+        self.assertEqual(result["signal_confirmation"]["classification"], "bullish_confirmation")
+        self.assertEqual(result["signal_confirmation"]["status"], "research_confirmed")
+        self.assertFalse(result["ranking_eligible"])
+        self.assertFalse(result["buy_list_eligible"])
+        self.assertEqual(result["result_bucket"], "research_only")
+
     def test_default_scan_includes_unloaded_candidate_unl_as_unknown(self):
         with patch.object(main, "DATA", {"ADBL": []}):
             with TestClient(main.app) as client:

@@ -165,16 +165,24 @@ class FeaturePipelineTests(unittest.TestCase):
 
 
     def test_unverified_input_contracts_withhold_weighted_scores(self):
-        rows = [{
-            "record_type": "ohlcv", "symbol": "AAA", "session_date": "2026-11-23",
-            "available_at": "2026-11-23T16:00:00Z", "open": 10, "high": 11,
-            "low": 9, "close": 10, "previous_close": 9, "volume": 100,
-        }]
-        result = build_feature_snapshot(rows, "2026-11-24T12:00:00Z", ["AAA"])
+        rows = [
+            {"record_type": "ohlcv", "symbol": "AAA", "session_date": "2026-11-23",
+             "available_at": "2026-11-23T16:00:00Z", "open": 10, "high": 11,
+             "low": 9, "close": 10, "previous_close": 9, "volume": 100,
+             "source_validation_status": "verified", "source_id": "ohlcv-test",
+             "source_payload_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+             "price_basis_status": "verified_unadjusted_no_actions", "corporate_action_status": "clear"},
+            {"record_type": "ohlcv", "symbol": "BBB", "session_date": "2026-11-23",
+             "available_at": "2026-11-23T16:00:00Z", "open": 10, "high": 11,
+             "low": 9, "close": 10, "previous_close": 9, "volume": 100},
+        ]
+        result = build_feature_snapshot(rows, "2026-11-24T12:00:00Z", ["AAA", "BBB"],
+                                         session_dates=["2026-11-23"])
         self.assertEqual(result["input_contracts"]["canonical_session_calendar"], "unavailable_or_invalid")
         self.assertFalse(result["input_contracts"]["ohlcv"]["score_eligible"])
-        self.assertEqual(result["component_feature_bundles"]["AAA"]["trend"]["status"], "input_contract_unverified")
-        self.assertIsNone(result["component_candidates"]["AAA"]["trend"])
+        self.assertNotEqual(result["component_feature_bundles"]["AAA"]["trend"]["status"], "input_contract_unverified")
+        self.assertEqual(result["component_feature_bundles"]["BBB"]["trend"]["status"], "input_contract_unverified")
+        self.assertIsNone(result["component_candidates"]["BBB"]["trend"])
         self.assertFalse(result["input_contracts"]["broker_floorsheet"]["score_eligible"])
         self.assertFalse(result["input_contracts"]["sector_membership"]["score_eligible"])
 

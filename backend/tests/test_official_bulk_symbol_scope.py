@@ -140,6 +140,48 @@ class OfficialBulkSymbolScopeTests(unittest.TestCase):
         self.assertEqual(counts["UNKNOWN_SECURITY_ID_MISMATCH"], 1)
         self.assertNotIn("OUT_OF_SCOPE_MUTUAL_FUND", counts)
 
+    def test_trailing_name_whitespace_is_preserved_but_not_misclassified(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = self._fixture(Path(tmp))
+            bulk_path, raw_dir = args[0], args[1]
+            bulk = json.loads(bulk_path.read_text())
+            date_item = bulk["date_reports"]["2026-11-19"]
+            row = date_item["analysis"]["rows"][0]
+            row["securityName"] = "Alpha "
+            raw_path = raw_dir / date_item["capture_event"]["raw_file"]
+            raw_rows = json.loads(raw_path.read_text())
+            raw_rows[0]["securityName"] = "Alpha "
+            raw_bytes = json.dumps(raw_rows).encode()
+            raw_path.write_bytes(raw_bytes)
+            date_item["capture_event"]["sha256"] = hashlib.sha256(raw_bytes).hexdigest()
+            date_item["response_bytes"] = len(raw_bytes)
+            bulk_path.write_text(json.dumps(bulk))
+            report = audit_bulk_scope(*args)
+        row = next(x for x in report["dates"]["2026-11-19"]["symbols"] if x["symbol"] == "ABC")
+        self.assertEqual(row["scope_class"], "IN_SCOPE_EQUITY_CANDIDATE")
+        self.assertFalse(row["bulk_snapshot_name_exact_match"])
+        self.assertTrue(row["bulk_snapshot_name_normalized_match"])
+
+    def test_semantic_security_name_mismatch_stays_unknown(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = self._fixture(Path(tmp))
+            bulk_path, raw_dir = args[0], args[1]
+            bulk = json.loads(bulk_path.read_text())
+            date_item = bulk["date_reports"]["2026-11-19"]
+            row = date_item["analysis"]["rows"][0]
+            row["securityName"] = "Alpha Holdings"
+            raw_path = raw_dir / date_item["capture_event"]["raw_file"]
+            raw_rows = json.loads(raw_path.read_text())
+            raw_rows[0]["securityName"] = "Alpha Holdings"
+            raw_bytes = json.dumps(raw_rows).encode()
+            raw_path.write_bytes(raw_bytes)
+            date_item["capture_event"]["sha256"] = hashlib.sha256(raw_bytes).hexdigest()
+            date_item["response_bytes"] = len(raw_bytes)
+            bulk_path.write_text(json.dumps(bulk))
+            report = audit_bulk_scope(*args)
+        counts = report["dates"]["2026-11-19"]["scope_class_counts"]
+        self.assertEqual(counts["UNKNOWN_SECURITY_NAME_MISMATCH"], 1)
+
     def test_snapshot_security_id_mismatch_remains_unknown(self):
         with tempfile.TemporaryDirectory() as tmp:
             args = self._fixture(Path(tmp))

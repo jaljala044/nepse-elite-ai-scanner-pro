@@ -436,3 +436,55 @@ would still be only a necessary, not sufficient, condition for research use.
 The full-universe run is pending the GitHub Actions execution on this PR. Until
 that report is available and independently reconciled, the previous ten-symbol
 spot-check findings remain the only completed local structural sample.
+
+#### Full-universe public archive audit result — 2026-11-27
+
+The new GitHub Actions audit completed successfully as an audit process on
+public archive commit
+`944bc95872e46b299625091f6c9f32f57010e71a`. The parser tests passed and all
+285 ordinary-listed symbol files in the publisher's reference master were
+downloaded and audited; there were no missing files or download errors.
+
+| Measure | Full-universe result |
+| --- | ---: |
+| Ordinary listed equity files expected / audited | 285 / 285 |
+| Rows inspected | 439,116 |
+| Structurally valid rows under the audit's strict checks | 402,234 |
+| Invalid OHLC-bound rows | 35,228 (8.02%) |
+| Positive-volume rows with zero turnover | 3,682 |
+| Invalid percentage-change values | 2 |
+| Duplicate dates | 0 |
+| Invalid dates | 0 |
+| Out-of-order transitions | 0 |
+| Malformed rows | 0 |
+| Blank/non-finite numeric fields | 0 |
+| Negative/fractional volume | 0 |
+| Negative turnover | 0 |
+| Symbols with at least one quality issue | 181 / 285 (63.51%) |
+| Observed coverage envelope | 1995-07-20 to 2026-11-26 |
+
+The archive audit workflow completed with a successful execution status, but
+the **data quality gate is FAIL**. These are separate statuses: successful
+automation means the audit completed and produced its report, not that the
+data passed. The per-symbol report is retained as the
+`public-nepse-secondary-archive-audit` GitHub Actions artifact for run
+45893777462:
+https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45893777462
+
+The report's structural counts do not certify exchange correctness or
+completeness. The publisher attributes its daily NEPSE prices to ShareSansar
+and historical backfill to Aabishkar2/nepse-data; the archive's MIT notice
+does not independently establish upstream data sublicensing rights. Prices
+are unadjusted for bonus issues, rights issues and splits. Accordingly:
+- Keep the complete archive quarantined from canonical reviewed rows.
+- Do not use its raw returns for backtesting or production signal ranking.
+- Do not repair the 35,228 OHLC exceptions by guessing which field is wrong.
+- Resolve zero-turnover and percentage-change anomalies with source evidence.
+- Reconcile any candidate records with independent official or otherwise
+  authorized evidence, including historical security identity and corporate
+  actions, before considering a narrow symbol/date subset for admission.
+
+The audit implementation also corrects the meaning of `valid_rows`: a row is
+counted valid only if all strict structural checks pass, including OHLC,
+volume, turnover and percentage-change rules. The repeat run after this fix
+reports 402,234 valid rows, not merely rows with parseable numeric fields.

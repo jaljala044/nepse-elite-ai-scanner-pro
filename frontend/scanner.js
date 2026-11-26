@@ -76,6 +76,7 @@ el("scan-run").addEventListener("click",async()=>{
    " with OHLCV ("+data.observation_coverage_pct+"% observation coverage) · "+data.symbols_without_observations+
    " without observations · "+(data.as_of||"as-of unavailable")+
    " · rankings and recommendations disabled. " +
+   ((data.candidate_universe_provenance?.warning || "Candidate-universe provenance unavailable.")+" ")+
    (data.coverage_basis === "at_least_one_stored_ohlcv_row_not_data_quality_or_session_validation"
     ? "Coverage counts symbols with at least one stored OHLCV row; it does not validate data quality or session completeness."
     : (data.disclaimer || "Coverage basis unavailable."))

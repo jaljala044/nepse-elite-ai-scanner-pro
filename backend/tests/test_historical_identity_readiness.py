@@ -132,7 +132,7 @@ class HistoricalIdentityReadinessTests(unittest.TestCase):
                 writer=csv.DictWriter(handle,fieldnames=rows[0].keys())
                 writer.writeheader()
                 writer.writerows(rows)
-            with self.assertRaisesRegex(ValueError,"dated start lacks evidence provenance"):
+            with self.assertRaisesRegex(ValueError,"primary lifecycle date must link"):
                 audit_historical_identity_readiness(*args,expected_equity_count=2)
 
 

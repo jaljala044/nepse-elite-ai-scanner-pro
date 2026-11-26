@@ -21,9 +21,12 @@ jobs:
       - name: Audit remaining priority equities
         run: |
           python backend/audit_priority_equity_continuity.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --output /tmp/audit/remaining_223.csv
+      - name: Audit exception equities
+        run: |
+          python backend/audit_priority_equity_continuity.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --group exception_review --skip 0 --output /tmp/audit/exception_26.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: remaining-223-equity-audit
-          path: /tmp/audit/remaining_223.csv
+          path: /tmp/audit/*.csv
           if-no-files-found: error

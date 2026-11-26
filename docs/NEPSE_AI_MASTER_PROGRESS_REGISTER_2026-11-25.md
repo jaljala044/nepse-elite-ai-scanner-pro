@@ -2256,3 +2256,22 @@ Extend the pinned floorsheet/EOD comparison to additional overlapping dates, pre
 
 Investigate official NEPSE `securityDailyTradeStat` historical date support and capture a raw, immutable date-specific response for 19/20/24-Nov if the endpoint permits. If it only returns current-session data or historical dates are rejected, preserve the exact response and keep per-security controls UNKNOWN. Compare symbol-level totals only after historical instrument identity and instrument-class scope are independently validated.
 
+## P4.22 — official per-security history and 281-equity reconciliation completed (2026-11-26)
+
+- Captured NEPSE bulk daily price-volume rows for 19/20/24-Nov via `/api/nots/nepse-data/today-price`: 347, 352 and 350 unique symbols respectively, one page each. These match official market-summary-history `tradedScrips` exactly.
+- Captured per-security history via `/api/nots/market/history/security/{security_id}` for all 281 equity crosswalk candidates over 19–24 Nov. **281/281** current security IDs match the 2026-11-25 crosswalk; all 281 symbols returned rows for 19, 20, 23 and 24 Nov, one page per symbol. Historical effective-dated identity remains unverified.
+- Reconciled all 281 current equity candidates against both pinned floorsheet archives:
+  - 19-Nov: 280 exact positive-activity matches + one official-zero/no-floorsheet row.
+  - 20-Nov: 279 exact positive-activity matches + two official-zero/no-floorsheet rows.
+  - 24-Nov: 279 exact positive-activity matches + two official-zero/no-floorsheet rows.
+  - Same counts for Samir and SocrateAI; no other per-symbol mismatches.
+- Official zero-activity symbols: NLO (all three dates) and BNL (20/24-Nov; positive activity 19-Nov). Status is `OFFICIAL_ZERO_ACTIVITY_NO_FLOORSHEET_ROW`, **not** `NO_TRADE`; full session and floorsheet completeness gates still apply.
+- Capture workflows succeeded: bulk daily rows [#45855624574](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45855624574), artifact `15135926661`; 281-symbol history [#45855303233](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45855303233), artifact `15134658233`.
+- Integrated three-date reconciliation [#45856360530](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45856360530) passed all steps, artifact `15135807711`. Full backend suite [#45856360382](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45856360382): **879 tests passed**.
+- Detailed report: [P4.22 official per-security history reconciliation](P4.22_OFFICIAL_PER_SECURITY_HISTORY_RECONCILIATION_2026-11-26.md).
+- **Disposition:** official per-security cross-check completed for 281 current equity candidates and three dates, review-only. Historical IDs, full session/floorsheet completeness, source lineage and rights remain unverified. No canonical promotion, coverage admission, broker scoring, training/backtest promotion or BUY authorization.
+
+### P4.23 next
+
+Extend official per-security history reconciliation to a wider date window; validate historical effective-dated security IDs and corporate-action transitions; reconcile remaining non-equity traded symbols from the official bulk endpoint. Preserve zero-activity rows as evidence only until open-session and complete-floorsheet gates are independently met.
+

@@ -53,3 +53,25 @@ These counts describe distinct securities traded on this one date, not the full 
 - Canonical data promotion: **not authorized**.
 
 No raw floorsheet rows or reference files were copied into the project repository by this audit. No model training or predictive claim is supported by this one-day mapping exercise.
+
+
+## Addendum — 2026-11-26 (four IDs resolved at dated snapshot level)
+
+The four IDs listed as unresolved above were subsequently matched against the project's dated 2026-11-25 security-ID snapshot:
+
+| Security ID | Symbol | Security name |
+|---:|---|---|
+| 8111 | HIDCLP | Hydorelectricity Investment and Development Company Limited Promoter |
+| 469 | NIMBPO | Nepal Investment Mega Bank Ltd. Promoter Share |
+| 700 | HEIP | Himalayan Everest Insurance Limited Promoter |
+| 661 | NMLBBLP | Nerude Mirmire Laghubitta Bittiya Sanstha Limited Promoter |
+
+All four are marked active and have OHLCV files in that snapshot, but all four names identify promoter-share instruments. Therefore they are resolved as security-ID-to-symbol matches, not approved as ordinary public-share target-universe members. The raw Yonepse floorsheet IDs and rows remain preserved.
+
+Detailed follow-up: [Priority 95 — four unmapped Yonepse IDs resolved](PRIORITY_95_UNMAPPED_YONEPSE_IDS_RESOLVED_2026-11-26.md).
+
+Revised acceptance:
+- Dated snapshot mapping: **350/350 traded stock IDs mapped** (346 prior mappings plus four snapshot matches).
+- Effective-dated historical identity and promoter-share universe policy: **open**.
+- Broker mapping: unchanged at 91/91 directory matches; historical legal identity remains unverified.
+- Canonical data promotion: **not authorized**.

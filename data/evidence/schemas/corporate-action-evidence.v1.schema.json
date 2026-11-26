@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/data/evidence/schemas/corporate-action-evidence.v1.schema.json",
+  "title": "NEPSE corporate-action evidence record",
+  "description": "Evidence-only record. This schema does not authorize historical identity joins or price adjustment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "action_id",
+    "symbol",
+    "security_id",
+    "isin",
+    "action_type",
+    "announced_at",
+    "available_at",
+    "last_trade_date",
+    "record_date",
+    "ex_date",
+    "allotment_distribution_date",
+    "ratio_or_terms",
+    "factor",
+    "factor_method",
+    "source_id",
+    "source_tier",
+    "evidence_uri",
+    "raw_evidence_path",
+    "raw_evidence_sha256",
+    "identity_status",
+    "review_status"
+  ],
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symbol": {
+      "type": "string",
+      "pattern": "^[A-Z0-9.-]{1,20}$"
+    },
+    "security_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "isin": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "action_type": {
+      "enum": [
+        "bonus",
+        "right",
+        "split",
+        "cash_dividend",
+        "merger",
+        "symbol_change",
+        "other"
+      ]
+    },
+    "announcement_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "announced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "available_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Earliest timestamp at which the evidence was publicly available to the system; timezone required."
+    },
+    "last_trade_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "record_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "ex_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "allotment_distribution_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "ratio_or_terms": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "factor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+    },
+    "factor_method": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_tier": {
+      "enum": [
+        "primary_nepse_notice",
+        "cdsc_notice",
+        "secondary_notice",
+        "secondary_archive",
+        "third_party",
+        "unknown"
+      ]
+    },
+    "evidence_uri": {
+      "type": "string",
+      "format": "uri"
+    },
+    "raw_evidence_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "raw_evidence_sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "identity_status": {
+      "enum": [
+        "verified_primary",
+        "verified_cdsc",
+        "current_snapshot_only",
+        "unresolved"
+      ]
+    },
+    "identity_evidence_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "review_status": {
+      "enum": [
+        "pending",
+        "independently_reviewed_confirmed",
+        "disputed",
+        "rejected"
+      ]
+    },
+    "reviewer_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reviewed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "identity_status": {
+            "enum": [
+              "verified_primary",
+              "verified_cdsc"
+            ]
+          }
+        },
+        "required": [
+          "identity_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "security_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "identity_evidence_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "review_status": {
+            "const": "independently_reviewed_confirmed"
+          }
+        },
+        "required": [
+          "review_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "reviewer_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  ]
+}

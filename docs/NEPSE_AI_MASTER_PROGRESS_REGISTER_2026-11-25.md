@@ -1531,3 +1531,8 @@ Successor series SLBSL, GBLBS and PFL already existed before the merger integrat
 ## Priority 97 follow-up — successor security-ID snapshot reconciliation (2026-11-26)
 
 Attached dated 2026-11-25 successor security-ID observations from `data/reference/nepse_security_id_snapshot_2026-11-25.csv`: SLBSL 2804, NMLBBL 396, MATRI 694, SMATA 2761, SMPDA 2896, GBLBS 583, PFL 236. These are current snapshot observations only and do not prove historical ID validity or continuity with predecessor instruments. Predecessor symbols remain unresolved in `nepse_unmatched_symbol_review_2026-11-26.csv`; no predecessor IDs inferred, no stable IDs populated, and no history splice or canonical/training promotion performed. See Priority 97 report and JSON evidence for details.
+
+
+## Priority 97 — historical security-ID recovery assessment (2026-11-26)
+
+Repository archive search did not locate dated historical security-master snapshots for predecessor symbols BPW, JALPA, KLBSL, MKLB, MMFDB, NLBBL, SABSL, SDLBSL, SAMAJ and SFCL. ShareHub documentation identifies a current stock-table `nepseSecurityId` field, but access requires a licensed authenticated account and IP allow-listing; its documented companies endpoint does not include a security ID in each company row. No authenticated response was acquired. Current successor IDs remain date-scoped observations only. Added acquisition-gap metadata and regression guard tests; no IDs inferred, no history splice, no canonical/training promotion. See `docs/PRIORITY_97_HISTORICAL_SECURITY_ID_RECOVERY_2026-11-26.md`.

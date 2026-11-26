@@ -10,7 +10,7 @@ def read(path):
     with Path(path).open(encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
 
-def classify(row, day, life, july):
+def classify(row, day, life, july, listing=None):
     if life and life["valid_from_evidence_status"] in {
         "verified_primary_notice", "verified_secondary_notice",
         "verified_secondary_first_trade_archive_match"
@@ -22,6 +22,8 @@ def classify(row, day, life, july):
             return "secondary_ohlcv_recovery_candidate", july["chart_evidence"]
         if july["floorsheet_volume"] and int(july["floorsheet_volume"]) > 0:
             return "positive_floorsheet_observation", july["floorsheet_evidence"]
+    if listing and date.fromisoformat(day) < date.fromisoformat(listing["scheduled_trading_start"]):
+        return "before_scheduled_commencement_candidate", listing["evidence_uri"]
     return "unresolved", ""
 
 def main():
@@ -29,6 +31,7 @@ def main():
     p.add_argument("--audits", nargs="+", required=True)
     p.add_argument("--lifecycle", required=True)
     p.add_argument("--july", required=True)
+    p.add_argument("--listing", required=True)
     p.add_argument("--output", required=True)
     a=p.parse_args()
     lifecycle=read(a.lifecycle)
@@ -37,6 +40,13 @@ def main():
     jmap={r["symbol"]:r for r in july}
     if len(lifecycle)!=281 or len(life)!=281 or len(july)!=281 or len(jmap)!=281 or set(life)!=set(jmap):
         raise ValueError("universe mismatch")
+    listing_rows=read(a.listing)
+    listings={r["symbol"]:r for r in listing_rows}
+    if len(listings)!=len(listing_rows) or not set(listings)<=set(life):
+        raise ValueError("invalid listing universe")
+    for r in listing_rows:
+        if not r["evidence_uri"].startswith("https://") or r["canonical_promotion_allowed"]!="false" or date.fromisoformat(r["scheduled_trading_start"])>date.fromisoformat(r["first_archived_date"]):
+            raise ValueError("invalid listing evidence")
     seen=set()
     counts=Counter()
     result=[]
@@ -53,7 +63,7 @@ def main():
                 raise ValueError("audit counts inconsistent")
             for day in days:
                 date.fromisoformat(day)
-                status,evidence=classify(r,day,life[s],jmap[s])
+                status,evidence=classify(r,day,life[s],jmap[s],listings.get(s))
                 counts[status]+=1
                 result.append([s,day,status,evidence,"false","false"])
     if seen!=set(life) or len(result)!=1030:

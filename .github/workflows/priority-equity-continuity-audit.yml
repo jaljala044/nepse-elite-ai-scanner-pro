@@ -17,6 +17,7 @@ on:
       - 'backend/build_corporate_action_review_queue.py'
       - 'backend/reconcile_extended_recovery_candidates.py'
       - 'backend/stage_additional_recovery.py'
+      - 'backend/diagnose_extended_source_exceptions.py'
       - 'backend/diagnose_remaining_recovery_exceptions.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
@@ -96,6 +97,9 @@ jobs:
       - name: Diagnose remaining historical recovery exceptions
         run: |
           python backend/diagnose_remaining_recovery_exceptions.py --reconciliation /tmp/audit/extended_recovery_reconciliation.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/remaining_exception_diagnostics.csv
+      - name: Diagnose remaining historical source exceptions
+        run: |
+          python backend/diagnose_extended_source_exceptions.py --reconciliation /tmp/audit/extended_recovery_reconciliation.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --secondary /tmp/secondary --secondary-revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/extended_source_exception_diagnostics.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

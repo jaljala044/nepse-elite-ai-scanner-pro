@@ -2320,3 +2320,13 @@ Build and validate the effective-dated security identity and corporate-action re
 - All three PR-triggered workflows passed on the latest head: backend tests run `45894165903`, backend contract tests run `45894165946`, frontend/deployment image checks run `45894165934`. The frontend job completed its build, deployable image, API/terminal smoke tests, private image and authentication-boundary smoke tests.
 - PR #112 remains open, draft and unmerged. GitHub reports mergeable=true, but the branch has diverged from current `main` (50 commits ahead, 24 behind; current main head observed as `8120e616aa887aaec9cacdbb4ca4b8a3ffc6992e`). This needs a deliberate rebase/merge reconciliation before merge; no force update or merge was performed.
 - Acceptance blockers remain: authoritative point-in-time ordinary-equity universe, nonempty reviewed-row evidence, deployment-wide OHLCV coverage and live deployed API/UI verification. Rankings and BUY output remain disabled; do not advance to 3A.02.
+
+### 3A.01 branch-status refresh — 2026-11-27
+
+- Rechecked PR #112 against the live GitHub refs. Feature branch: `feat/3a-smart-scanners-opportunity-detection`; current `main` head observed as `00a92fd23e924b1a3b28858e33baa578bf87ccfb`.
+- Current compare: **51 commits ahead / 25 commits behind**; merge base remains `80aa212351dfefc1b58d21d3e4f318c07d606260`. This supersedes the earlier 50-ahead / 24-behind observation.
+- GitHub currently reports PR #112 as open, draft, and mergeable. “Mergeable” is GitHub’s merge-conflict assessment; it is not authorization to merge and does not mean the branch has been reconciled or the feature accepted.
+- Updated PR description to remove the stale CI-pending statement and record the current divergence and CI results. No code, data, or branch history was rewritten.
+- The three CI workflows remain verified on application/test head `061581beb837601bbc6c47fca0316d8f30df8025`; the current PR head `a17d72512473b761e3164c7fa1320ab8760b8a5b` adds documentation only after that tested head.
+- **Next gate:** reconcile the feature branch with current `main` using a reviewed merge/rebase, then rerun all relevant CI on the reconciled head. Do not force-update or merge without explicit authorization.
+- 3A.01 acceptance blockers remain unchanged: authoritative point-in-time ordinary-equity universe, nonempty reviewed-row evidence, deployment-wide OHLCV coverage, and live deployed API/UI verification. Rankings/BUY output remain disabled; do not advance to 3A.02.

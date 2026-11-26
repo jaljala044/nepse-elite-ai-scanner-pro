@@ -53,7 +53,7 @@ class OfficialBulkSymbolScopeTests(unittest.TestCase):
         }))
         summary_body = root / "summary.json"
         summary_body.write_text(json.dumps([{
-            "businessDate": days[0], "totalTransactions": 7, "totalTradedShares": 65,
+            "businessDate": days[0], "totalTransactions": 8, "totalTradedShares": 65,
             "totalTurnover": 6500, "tradedScrips": 7,
         }]))
         summary_report = root / "summary-report.json"

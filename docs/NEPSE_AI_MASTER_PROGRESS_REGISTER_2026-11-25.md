@@ -2240,3 +2240,19 @@ Acquire date-matched raw official NEPSE summary responses and per-security contr
 ### P4.22 next
 
 Extend the pinned floorsheet/EOD comparison to additional overlapping dates, preferably a 20–30 session sample; add an effective-dated historical instrument registry rather than relying on current-snapshot hints; investigate whether the EOD and floorsheet datasets share upstream lineage; preserve official NEPSE raw daily controls where accessible. Continue to fail closed on source independence, rights and completeness.
+
+## P4.21 — official NEPSE aggregate capture and reconciliation completed (2026-11-26)
+
+- Strengthened `backend/capture_nepse_market_summary_history.py` to require HTTPS, approved NEPSE hostname, expected endpoint path and HTTP 200 before accepting a response as official. Added a negative-origin regression test. Capture workflow now triggers on capture-code/test/workflow changes and uses Nepal local date for the evidence directory.
+- Successful official capture: [workflow #45854574932](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45854574932), artifact ID `15134617498`. NEPSE endpoint returned HTTP 200; raw response 31,150 bytes; SHA-256 `74165b75b936a920f83ee1d3dc21955a50ef1afaac43e569c719d79d665fb95f`; 229 unique dated summary rows from 2025-11-26 to 2026-11-26, zero duplicate/invalid dates and 229 rows with positive daily activity metrics.
+- Immutable raw response and metadata committed at `data/evidence/raw/nepse/market-summary-history/2026-11-26/`, commit `043344174e7f048560a112c294d11a727289ac87`.
+- Added `backend/audit_official_market_summary_reconciliation.py` and tests. The audit verifies the raw response SHA-256 against its capture report, validates official endpoint host/path/status, and compares transaction count, shares, turnover and traded-scrip count for 19, 20 and 24 Nov.
+- **SocrateAI matches all 12/12 official aggregate controls exactly** across the three dates. Samir mismatches all four metrics on all three dates, with deficits matching the 19/39/18 one-sided contract variances already recorded. This is official daily aggregate corroboration only; it does not establish individual-contract accuracy, per-security completeness, source independence or historical instrument identity.
+- P4.17 reconciliation workflow [#45854828580](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45854828580) succeeded, including the new official aggregate comparison step. Artifact ID `15134937413`. Full backend suite [#45854828626](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45854828626): **864 tests passed**.
+- Detailed report: [P4.21 official NEPSE aggregate reconciliation](P4.21_OFFICIAL_NEPSE_AGGREGATE_RECONCILIATION_2026-11-26.md).
+- **Disposition:** official aggregate controls verified for these three dates. Per-security completeness, official full floorsheet, source rights and source lineage remain unverified. No canonical floorsheet promotion, coverage admission, broker scoring, training/backtest promotion or BUY authorization.
+
+### P4.22 next
+
+Investigate official NEPSE `securityDailyTradeStat` historical date support and capture a raw, immutable date-specific response for 19/20/24-Nov if the endpoint permits. If it only returns current-session data or historical dates are rejected, preserve the exact response and keep per-security controls UNKNOWN. Compare symbol-level totals only after historical instrument identity and instrument-class scope are independently validated.
+

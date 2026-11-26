@@ -45,7 +45,8 @@ def _available(record, cutoff, prefix):
 def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades,
                                        corporate_actions, price_rows_by_symbol,
                                        portfolio_sessions, as_of_date, evidence_cutoff,
-                                       benchmark_rows=None, benchmark_symbol=None):
+                                       benchmark_rows=None, benchmark_symbol=None,
+                                       risk_limits=None, sector_by_symbol=None):
     as_of = _day(as_of_date, "as_of_date")
     try:
         cutoff = datetime.fromisoformat(str(evidence_cutoff).replace("Z", "+00:00"))
@@ -55,6 +56,15 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         raise ValueError("evidence_cutoff_timezone_required")
     cash = _positive(initial_cash, "initial_cash", zero=True)
     starting_cash = cash
+    limits = risk_limits or {}
+    sectors = sector_by_symbol or {}
+    for key in ("max_position_pct", "max_sector_pct", "max_drawdown_pct", "risk_per_trade_pct"):
+        if key in limits and not 0 < _positive(limits[key], key) <= 1:
+            raise ValueError("invalid_" + key)
+    if "max_positions" in limits and (type(limits["max_positions"]) is not int or limits["max_positions"] < 1):
+        raise ValueError("invalid_max_positions")
+    peak_equity = None
+    circuit_breaker = False
     if not isinstance(portfolio_sessions, list) or len(portfolio_sessions) < 2:
         raise ValueError("verified_portfolio_sessions_required")
     days = [_day(x, "portfolio_session") for x in portfolio_sessions]
@@ -245,6 +255,38 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             symbol, qty = trade["symbol"], trade["_qty"]
             gross = qty * trade["_price"]
             if trade["side"] == "BUY":
+                if limits:
+                    if circuit_breaker:
+                        raise ValueError("portfolio_drawdown_circuit_breaker_active")
+                    if not curve:
+                        if any(p["quantity"] > 0 for p in positions.values()):
+                            raise ValueError("opening_risk_marks_required")
+                        sizing_equity = starting_cash
+                        exposure = {}
+                    else:
+                        sizing_equity = curve[-1]["equity"]
+                        previous = days[days.index(day) - 1]
+                        exposure = {}
+                        for sym in set(positions) | set(pending_buys):
+                            held = positions.get(sym, {}).get("quantity", 0) + pending_buys[sym]
+                            if held > 1e-8:
+                                if previous not in bars.get(sym, {}):
+                                    raise ValueError("prior_risk_mark_missing:" + sym)
+                                exposure[sym] = held * bars[sym][previous]
+                    if len(set(exposure) | {symbol}) > limits.get("max_positions", float("inf")):
+                        raise ValueError("max_positions_exceeded")
+                    if exposure.get(symbol, 0) + gross > sizing_equity * limits.get("max_position_pct", 1):
+                        raise ValueError("position_cap_exceeded")
+                    if "max_sector_pct" in limits:
+                        if any(not sectors.get(sym) for sym in set(exposure) | {symbol}):
+                            raise ValueError("sector_mapping_required")
+                        sector_value = sum(v for sym, v in exposure.items() if sectors[sym] == sectors[symbol])
+                        if sector_value + gross > sizing_equity * limits["max_sector_pct"]:
+                            raise ValueError("sector_cap_exceeded")
+                    if "risk_per_trade_pct" in limits:
+                        stop = _positive(trade.get("stop"), "trade_stop")
+                        if stop >= trade["_price"] or qty * (trade["_price"] - stop) + trade["_fees"] > sizing_equity * limits["risk_per_trade_pct"]:
+                            raise ValueError("trade_risk_budget_exceeded")
                 debit = gross + trade["_fees"]
                 if debit > cash + 1e-8:
                     raise ValueError("insufficient_cash_for_buy:" + trade["trade_id"])
@@ -292,7 +334,11 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         equity = cash + market_value + receivables + rights_paid
         if equity <= 0:
             raise ValueError("nonpositive_portfolio_equity")
-        curve.append({"date": day.isoformat(), "cash": round(cash, 8),
+        peak_equity = max(peak_equity or equity, equity, starting_cash)
+        drawdown = (peak_equity - equity) / peak_equity
+        if "max_drawdown_pct" in limits and drawdown >= limits["max_drawdown_pct"]:
+            circuit_breaker = True
+        curve.append({"drawdown_pct": drawdown * 100, "date": day.isoformat(), "cash": round(cash, 8),
                       "market_value": round(market_value, 8), "sale_receivables": round(receivables, 8), "rights_paid_at_cost": round(rights_paid, 8), "equity": round(equity, 8),
                       "holdings": {s: round(v["quantity"], 8) for s, v in positions.items() if v["quantity"] > 1e-8}})
     # Any pending event effective on/before as_of indicates a missing replay event/session.
@@ -330,6 +376,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         "as_of_date": as_of.isoformat(), "initial_cash": starting_cash,
         "ending_equity": curve[-1]["equity"], "equity_curve": curve,
         "benchmark_comparison": benchmark,
+        "risk_limits": limits, "circuit_breaker_triggered": circuit_breaker,
         "corporate_action_entitlements": [
             {"action_id": aid, "symbol": v["symbol"], "record_date": v["action"].get("record_date"),
              "entitlement_quantity": v.get("quantity"), "source_id": v["source_id"]}

@@ -154,3 +154,63 @@ def review_samir_merolagani_headers(headers: Iterable[str]) -> HeaderReview:
         profile_id=f"{SAMIR_REPO_ID}@{SAMIR_PINNED_COMMIT}:{SAMIR_FLOORSHEET_PATH}",
         evidence_status="raw_header_observed_capture_date_semantics_unverified",
     )
+
+
+# SocrateAI's pinned 2026-11-24 comparison file uses an explicit date column
+# and a transaction identifier. Its publisher/upstream acquisition lineage is
+# not independently established; this profile maps syntax only, not trust.
+SOCRATEAI_REPO_ID = "socrateai-official/nepse-open-data"
+SOCRATEAI_PINNED_COMMIT = "cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3"
+SOCRATEAI_FLOORSHEET_PATH = "floorsheet/floorsheet_2026-11-24.csv"
+SOCRATEAI_BLOB_SHA1 = "e7150873219d66a21345df2dfbd78f6c5a4b1152"
+SOCRATEAI_RAW_SIZE_BYTES = 3058892
+SOCRATEAI_DECLARED_HEADERS = (
+    "transaction", "symbol", "buyer", "seller",
+    "quantity", "rate", "amount", "date",
+)
+SOCRATEAI_CANONICAL_COLUMNS = {
+    "trade_date": "date",
+    "contract_id": "transaction",
+    "symbol": "symbol",
+    "buyer_broker_code": "buyer",
+    "seller_broker_code": "seller",
+    "quantity": "quantity",
+    "rate": "rate",
+    "amount": "amount",
+}
+SOCRATEAI_SOURCE_ONLY_HEADERS: tuple[str, ...] = ()
+
+
+def socrateai_floorsheet_mapping() -> CsvFloorsheetMapping:
+    """Map the pinned comparison CSV; date and lineage remain evidence-qualified."""
+    return CsvFloorsheetMapping(columns=dict(SOCRATEAI_CANONICAL_COLUMNS))
+
+
+def review_socrateai_floorsheet_headers(headers: Iterable[str]) -> HeaderReview:
+    """Compare an observed CSV header with the pinned publisher schema."""
+    if isinstance(headers, (str, bytes)):
+        raise ValueError("headers must be an iterable of header strings, not text")
+    observed = tuple(headers)
+    if any(not isinstance(item, str) or not item.strip() for item in observed):
+        raise ValueError("headers must contain only nonblank strings")
+    duplicates = tuple(sorted({item for item in observed if observed.count(item) > 1}))
+    expected = set(SOCRATEAI_DECLARED_HEADERS)
+    actual = set(observed)
+    missing = tuple(sorted(expected - actual))
+    unexpected = tuple(sorted(actual - expected))
+    valid = (
+        len(observed) == len(SOCRATEAI_DECLARED_HEADERS)
+        and not missing and not unexpected and not duplicates
+    )
+    return HeaderReview(
+        valid=valid,
+        missing_headers=missing,
+        unexpected_headers=unexpected,
+        duplicate_headers=duplicates,
+        observed_headers=observed,
+        profile_id=(
+            f"{SOCRATEAI_REPO_ID}@{SOCRATEAI_PINNED_COMMIT}:"
+            f"{SOCRATEAI_FLOORSHEET_PATH}"
+        ),
+        evidence_status="pinned_header_profile_lineage_and_completeness_unverified",
+    )

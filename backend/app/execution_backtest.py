@@ -133,8 +133,14 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
         slip = slip_bps / Decimal("10000")
         buy_price = _tick(raw_buy * (1 + slip), tick, buy=True)
         sell_price = _tick(raw_sell * (1 - slip), tick, buy=False)
+        entry_lower, entry_upper = _d(eband["lower"], "entry_band_lower"), _d(eband["upper"], "entry_band_upper")
+        exit_lower, exit_upper = _d(xband["lower"], "exit_band_lower"), _d(xband["upper"], "exit_band_upper")
         if buy_price <= 0 or sell_price <= 0:
             return {**base, "reason": "invalid_slippage_adjusted_price"}
+        if not entry_lower <= buy_price <= entry_upper:
+            return {**base, "reason": "slippage_adjusted_buy_price_outside_circuit_band"}
+        if not exit_lower <= sell_price <= exit_upper:
+            return {**base, "reason": "slippage_adjusted_sell_price_outside_circuit_band"}
     except (KeyError, TypeError, ValueError) as exc:
         return {**base, "reason": str(exc)}
 

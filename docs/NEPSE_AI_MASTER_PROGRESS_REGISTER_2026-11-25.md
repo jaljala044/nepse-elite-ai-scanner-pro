@@ -1810,3 +1810,14 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Corrected detailed report: [five-symbol archive reconciliation](https://github.com/jaljala044/nepse-smc-data/commit/75adc64db34029456a846bf5b001845d560fe5e0).
 - Corrected OHLCV file presence conclusion: all 281 current equities have files according to the dated inventory, with direct confirmation of the five previously disputed paths. Do not treat this as proof of valid trade history or session completeness.
 - Canonical promotion and training remain blocked.
+
+
+## 2026-11-26 — Generic UNKNOWN policy full-suite validation
+
+- Generic UNKNOWN handling remains fail-closed: missing or unvalidated evidence produces `UNKNOWN`, `NOT_RATED`, and UNKNOWN horizon actions; it is not converted to `NO_TRADE`.
+- Validated evidence with insufficient observation history remains `eligibility.eligible=true` while the scan result is `unknown_result`; verified market-structure observations are retained for research context, but ratings, metrics, and trade signals remain withheld.
+- UNL remains explicitly visible as `UNKNOWN` pending authoritative historical OHLCV and complete session-level floorsheet reconciliation.
+- Lifecycle validator now accepts `verified_secondary_first_trade_archive_match` as a distinct evidence status. Current 281-row input reports 9 verified starts and 272 unverified starts; this remains identity/lifecycle evidence only and does not authorize canonical promotion.
+- Full backend suite: **754 tests passed** on commit `c9c1adc5f771ec5931da2f85c9eec6a0bebfea6f` (GitHub Actions run [#1279](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45836505027)).
+- Backend contract tests, historical data integrity, and integrated evidence audit also succeeded on the same commit (runs [#?](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions)).
+- This closes the generic UNKNOWN policy regression-validation task only. Canonical data, full market calendar, floorsheet provenance/coverage, training, and production promotion gates remain open.

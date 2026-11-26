@@ -167,7 +167,7 @@ def nepse_market_turnover_component(
         warnings.append("single_session_turnover_at_least_2x_trailing_median_review_for_climax_or_event_effect")
     if trend_ratio < 0.75:
         warnings.append("recent_five_session_turnover_contracting")
-    if trend_ratio > 1.5:
+    if trend_ratio >= 1.5:
         warnings.append("recent_five_session_turnover_expanding_sharply_confirm_with_breadth_and_price")
 
     return {

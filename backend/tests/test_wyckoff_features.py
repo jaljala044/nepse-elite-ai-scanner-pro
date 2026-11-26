@@ -45,7 +45,7 @@ class WyckoffFeatureTests(unittest.TestCase):
         rows = flat_history()
         rows.append({
             "session_date": "2026-02-15", "open": 101.0, "high": 103.0,
-            "low": 100.5, "close": 102.0, "volume": 2000,
+            "low": 100.5, "close": 102.8, "volume": 2000,
         })
         result = wyckoff_event_features(rows)
         names = [e["event"] for e in result["events"]]
@@ -75,7 +75,7 @@ class WyckoffFeatureTests(unittest.TestCase):
 
     def test_invalid_ohlc_is_rejected(self):
         rows = flat_history()
-        rows[-1]["low"] = 101.5
+        rows[-1]["low"] = 100.5
         with self.assertRaisesRegex(ValueError, "inconsistent low"):
             wyckoff_event_features(rows)
 
@@ -83,7 +83,7 @@ class WyckoffFeatureTests(unittest.TestCase):
         rows = flat_history()
         rows.append({
             "session_date": "2026-02-15", "open": 99.0, "high": 99.5,
-            "low": 97.0, "close": 98.0, "volume": 2000,
+            "low": 97.0, "close": 97.5, "volume": 2000,
         })
         rows.append({
             "session_date": "2026-02-16", "open": 98.0, "high": 99.0,

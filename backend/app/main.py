@@ -160,6 +160,61 @@ def scan(request: ScanRequest):
             ]
         result["structure_timeframes"] = timeframes
         result["smc_confluence"] = evaluate_confluence(result["market_structure"], timeframes, eligible=not errors)
+
+        # Unknown is a first-class scan outcome for every equity whose evidence
+        # is incomplete, not a special case for UNL. A structurally plausible
+        # chart is not enough to authorize scoring when provenance/session/
+        # point-in-time review is absent, and short history is not a no-trade.
+        if errors or result.get("status") != "screened":
+            unknown_reasons = list(errors)
+            if result.get("status") == "data_quality_failed":
+                unknown_reasons.extend(result.get("limitations", []))
+            elif result.get("status") == "insufficient_data":
+                unknown_reasons.append("insufficient_validated_observation_history")
+            if not unknown_reasons:
+                unknown_reasons.append("validated_scan_evidence_unavailable")
+            result["status"] = "unknown_result"
+            result["data_status"] = "UNKNOWN"
+            result["data_quality"] = "LOW_CONFIDENCE"
+            result["overall_rating"] = "NOT_RATED"
+            result["horizon_actions"] = {
+                "t_plus_2": "UNKNOWN",
+                "swing": "UNKNOWN",
+                "positional": "UNKNOWN",
+                "investment": "UNKNOWN",
+            }
+            result["eligibility"] = {"eligible": False, "reasons": unknown_reasons}
+            result["signals"] = []
+            result["metrics"] = {}
+            result["market_structure"] = {
+                "status": "unknown", "bias": "unavailable", "events": []
+            }
+            result["idpat_v3"] = {"status": "unavailable", "score": None}
+            result["provisional_research"] = {"status": "unavailable", "score": None}
+            result["structure_timeframes"] = {
+                "status": "unavailable",
+                "t_plus_2": {"action": "UNKNOWN"},
+                "swing": {"action": "UNKNOWN"},
+                "positional": {"action": "UNKNOWN"},
+                "investment": {"action": "UNKNOWN"},
+            }
+            result["smc_confluence"] = {"status": "unavailable", "score": None}
+            result["scan_note"] = (
+                "Insufficient validated evidence: result is UNKNOWN, not BUY, SELL, "
+                "HOLD or NO_TRADE. No rating or horizon action is assigned. "
+                "NO_TRADE requires verified open-session status and complete "
+                "date-matched floorsheet coverage with zero contracts."
+            )
+        else:
+            result["data_status"] = "VALIDATED_FOR_RESEARCH_SCREEN"
+            result["data_quality"] = "MEDIUM_CONFIDENCE"
+            result["overall_rating"] = "NOT_RATED"
+            result["horizon_actions"] = {
+                "t_plus_2": "NO TRADE",
+                "swing": "NO TRADE",
+                "positional": "NO TRADE",
+                "investment": "NO TRADE",
+            }
         results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}

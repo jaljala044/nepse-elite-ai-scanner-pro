@@ -169,6 +169,15 @@ def smc_features(rows: list[dict]) -> dict:
                            "level": round(pivot_lows[-1], 4), "status": "candidate",
                            "invalidation": "subsequent close below swept level"})
 
+    bullish_structure = sum(1 for event in daily["events"] if event["direction"] == "bullish")
+    bearish_structure = sum(1 for event in daily["events"] if event["direction"] == "bearish")
+    bullish_sweeps = sum(1 for event in sweeps if event["event"] == "sell_side_liquidity_sweep")
+    bearish_sweeps = sum(1 for event in sweeps if event["event"] == "buy_side_liquidity_sweep")
+    bullish_gaps = sum(1 for gap in gaps if gap["direction"] == "bullish" and gap["status"] == "open")
+    bearish_gaps = sum(1 for gap in gaps if gap["direction"] == "bearish" and gap["status"] == "open")
+    # Explicit uncalibrated evidence heuristic; not a probability or trade signal.
+    directional_balance = (bullish_structure - bearish_structure) * 8 + (bullish_sweeps - bearish_sweeps) * 5 + (bullish_gaps - bearish_gaps) * 2
+    evidence_score = max(0, min(100, 50 + directional_balance))
     weekly_bars = _aggregate(bars, "weekly")
     monthly_bars = _aggregate(bars, "monthly")
     return {
@@ -183,7 +192,11 @@ def smc_features(rows: list[dict]) -> dict:
         },
         "fvg": gaps, "liquidity_sweeps": sweeps[-20:],
         "premium_discount": daily.get("dealing_range"),
-        "score": None,
+        "score": evidence_score,
+        "score_note": "uncalibrated directional evidence heuristic from daily structure, liquidity sweeps and open FVG; not a probability or standalone signal",
+        "evidence_counts": {"bullish_structure": bullish_structure, "bearish_structure": bearish_structure,
+                            "bullish_sweeps": bullish_sweeps, "bearish_sweeps": bearish_sweeps,
+                            "bullish_open_fvg": bullish_gaps, "bearish_open_fvg": bearish_gaps},
         "limitations": [
             "Pivots require two right-hand bars and are timestamped only when confirmed",
             "Weekly and monthly analysis excludes the latest calendar bucket to avoid partial-period confirmation",

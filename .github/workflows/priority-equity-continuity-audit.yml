@@ -4,6 +4,7 @@ on:
     paths:
       - 'backend/audit_priority_equity_continuity.py'
       - 'backend/classify_historical_continuity_gaps.py'
+      - 'backend/crosscheck_unresolved_equity_gaps.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -31,6 +32,11 @@ jobs:
         run: |
           python backend/validate_equity_lifecycle_input.py --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv
           python backend/classify_historical_continuity_gaps.py --audits data/reference/historical_continuity_batch_00*_2026-11-26.csv /tmp/audit/remaining_223.csv /tmp/audit/exception_26.csv --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --july data/reference/july24_separate_volume_observations_2026-11-26.csv --listing data/reference/historical_listing_evidence_candidates_2026-11-26.csv --suspension data/reference/pfl_suspension_evidence_2026-11-26.csv --output /tmp/audit/classified_gaps.csv
+      - name: Crosscheck unresolved observations
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/socrateai-official/nepse-open-data.git /tmp/secondary
+          git -C /tmp/secondary cat-file -e ffb4b0d4b348ed17d07236f914d3efbccac722f6^{commit}
+          python backend/crosscheck_unresolved_equity_gaps.py --gaps /tmp/audit/classified_gaps.csv --repo /tmp/secondary --revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/unresolved_crosscheck.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

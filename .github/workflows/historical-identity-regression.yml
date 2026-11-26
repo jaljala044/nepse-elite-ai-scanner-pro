@@ -12,6 +12,8 @@ on:
   pull_request:
     paths:
       - "backend/tests/test_historical_identity_regression.py"
+      - "backend/app/instrument_manifest.py"
+      - "backend/tests/test_instrument_manifest.py"
       - "data/reference/nepse_security_id_snapshot_2026-11-25.csv"
       - "data/reference/nepse_historical_identity_evidence_2026-11-26.json"
       - ".github/workflows/historical-identity-regression.yml"

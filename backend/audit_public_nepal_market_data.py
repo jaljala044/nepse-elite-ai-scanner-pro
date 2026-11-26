@@ -860,15 +860,6 @@ def compare_srijankarki_daily_csvs(official_rows: list[dict],
                     if difference > tolerance:
                         result["field_mismatches"] += 1
                         result["mismatches_by_field"][field] += 1
-                        stats = result["field_error_accumulators"][field]
-                        absolute = float(difference)
-                        relative_pct = float(difference / abs(right) * 100) if right else None
-                        stats["absolute_difference_sum"] += absolute
-                        stats["max_absolute_difference"] = max(stats["max_absolute_difference"], absolute)
-                        if relative_pct is not None:
-                            stats["max_relative_difference_pct"] = max(
-                                stats["max_relative_difference_pct"], relative_pct
-                            )
                         row_mismatches.append({
                             "field": field, "public": str(left), "official": str(right),
                         })

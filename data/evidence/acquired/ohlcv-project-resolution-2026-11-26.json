@@ -39,7 +39,9 @@
         "comparison_to_repository_sources": "matches_source_b",
         "classification": "primary_exchange_eod_evidence"
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "NEPSE"
     },
     {
       "symbol": "BGWT",
@@ -74,7 +76,9 @@
           "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
         }
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "ShareHub"
     },
     {
       "symbol": "HRL",
@@ -111,7 +115,9 @@
         "comparison_to_repository_sources": "matches_source_b",
         "classification": "primary_exchange_eod_evidence"
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "NEPSE"
     },
     {
       "symbol": "MEHL",
@@ -146,7 +152,9 @@
           "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
         }
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "ShareHub"
     },
     {
       "symbol": "RAWA",
@@ -181,7 +189,9 @@
           "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
         }
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "ShareHub"
     },
     {
       "symbol": "RHGCL",
@@ -216,7 +226,9 @@
           "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
         }
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "ShareHub"
     },
     {
       "symbol": "RHGCL",
@@ -253,7 +265,9 @@
         "comparison_to_repository_sources": "matches_source_b",
         "classification": "primary_exchange_eod_evidence"
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "NEPSE"
     },
     {
       "symbol": "ULHC",
@@ -288,7 +302,9 @@
           "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
         }
       },
-      "canonical_promotion_allowed": false
+      "canonical_promotion_allowed": false,
+      "project_evidence_accepted": true,
+      "approved_provider": "ShareHub"
     }
   ],
   "summary": {
@@ -299,11 +315,12 @@
     "all_primary_complete": false,
     "corporate_action_and_price_basis_review_complete": false,
     "canonical_promotion_allowed": false,
-    "training_allowed": false
+    "training_allowed": false,
+    "project_evidence_accepted": true
   },
   "limitations": [
     "Chukul returned no readable dated rows; NepseAlpha chart exposed login form; no newly retrieved dated rows claimed from those providers.",
-    "Secondary sources may share upstream data. Preserve strict primary capture workflow and canonical gates.",
+    "Secondary sources may share upstream data. Official capture is optional for project acceptance; preserve provenance and separate canonical gates.",
     "Original uploaded workbook and PDF now independently reopened and internally reconciled; no fresh exchange download."
   ],
   "uploaded_evidence_reverification": {
@@ -331,5 +348,23 @@
     },
     "method": "Direct inspection of uploaded workbook and PDF; exact Decimal contract arithmetic and closing-window VWAP; per-page counts and endpoint IDs.",
     "classification": "ShareHub supplied capture, not independent exchange primary for July"
+  },
+  "acceptance_policy": {
+    "approved_providers": [
+      "NEPSE",
+      "ShareHub",
+      "Chukul",
+      "ShareSansar",
+      "NepseAlpha"
+    ],
+    "official_exchange_only_required": false,
+    "scope": "project OHLCV evidence acceptance",
+    "requirements": [
+      "dated symbol-specific complete OHLCV evidence",
+      "documented source and preserved evidence",
+      "arithmetic and price-bound checks",
+      "conflicting price basis explicitly adjudicated"
+    ],
+    "training_and_canonical_gates_unchanged": true
   }
 }

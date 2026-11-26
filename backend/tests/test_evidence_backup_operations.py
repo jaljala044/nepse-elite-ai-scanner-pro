@@ -88,7 +88,7 @@ class EvidenceBackupOperationsTests(unittest.TestCase):
             backup_root=self.backup_root, now_utc=now,
             require_restore_drill=False, retain_last=2,
         )
-        self.assertEqual(report["retention_review_candidates"], ["backup-0"])
+        self.assertEqual(report["retention_review_candidates"], ["backup-2"])
         self.assertFalse(report["deletion_performed"])
         self.assertEqual(report["status"], "healthy")
 

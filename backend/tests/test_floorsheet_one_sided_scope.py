@@ -117,7 +117,8 @@ class OneSidedScopeTests(unittest.TestCase):
         report = classify_one_sided_contracts(
             audit, self.crosswalk, self.candidates, self.snapshot, "2026-11-25"
         )
-        self.assertEqual(report["one_sided_contracts"][0]["scope_class"], "OUT_OF_SCOPE_BOND")
+        bond_row = next(row for row in report["one_sided_contracts"] if row["symbol"] == "BOND")
+        self.assertEqual(bond_row["scope_class"], "OUT_OF_SCOPE_BOND")
 
     def test_bond_substring_without_word_boundary_is_not_a_bond_classification(self):
         audit = self._audit()
@@ -128,7 +129,8 @@ class OneSidedScopeTests(unittest.TestCase):
         report = classify_one_sided_contracts(
             audit, self.crosswalk, self.candidates, self.snapshot, "2026-11-25"
         )
-        self.assertEqual(report["one_sided_contracts"][0]["scope_class"],
+        bonded_row = next(row for row in report["one_sided_contracts"] if row["symbol"] == "BONDED")
+        self.assertEqual(bonded_row["scope_class"],
                          "UNCLASSIFIED_SECURITY_SNAPSHOT_ONLY")
 
     def test_snapshot_rows_must_match_expected_snapshot_date(self):

@@ -3,13 +3,13 @@ import unittest
 from app.sector_intelligence_confluence import build_sector_intelligence_confluence
 
 
-CUTOFF = "2026-11-26T18:00:00+05:45"
-CURRENT_DATES = ["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"]
+CUTOFF = "2026-11-26T14:30:00+05:45"
+CURRENT_DATES = ["2026-11-19", "2026-11-22", "2026-11-23", "2026-11-26", "2026-11-26"]
 
 
 def market_fixture():
     return {
-        "status": "observed", "as_of_session": "2026-11-27",
+        "status": "observed", "as_of_session": "2026-11-26",
         "source_ids": {"stocks": ["stock-source"], "benchmark": ["nepse-source"]},
         "sectors": {
             "BANK": {
@@ -37,9 +37,9 @@ def market_fixture():
 def broker_fixture():
     return {
         "status": "descriptive_only",
-        "as_of_date": "2026-11-27",
-        "as_of_timestamp": "2026-11-27T15:00:00+05:45",
-        "prior_complete_sessions": ["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20"],
+        "as_of_date": "2026-11-26",
+        "as_of_timestamp": "2026-11-26T14:00:00+05:45",
+        "prior_complete_sessions": ["2026-11-12", "2026-11-15", "2026-11-16", "2026-11-17", "2026-11-18"],
         "current_complete_sessions": CURRENT_DATES,
         "brokers": [
             {"broker_id": "broker-1", "sectors": [
@@ -81,7 +81,7 @@ class SectorIntelligenceConfluenceTests(unittest.TestCase):
 
     def test_future_broker_snapshot_withheld(self):
         broker = broker_fixture()
-        broker["as_of_timestamp"] = "2026-11-27T18:01:00+05:45"
+        broker["as_of_timestamp"] = "2026-11-26T14:31:00+05:45"
         result = build_sector_intelligence_confluence(
             market_fixture(), broker, decision_time=CUTOFF
         )
@@ -122,7 +122,7 @@ class SectorIntelligenceConfluenceTests(unittest.TestCase):
     def test_naive_decision_time_rejected(self):
         with self.assertRaisesRegex(ValueError, "timezone_aware"):
             build_sector_intelligence_confluence(
-                market_fixture(), broker_fixture(), decision_time="2026-11-27T18:00:00"
+                market_fixture(), broker_fixture(), decision_time="2026-11-26T14:30:00"
             )
 
 

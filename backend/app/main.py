@@ -94,6 +94,9 @@ def scan(request: ScanRequest):
             results.append({
                 "symbol": normalized_symbol,
                 "status": "out_of_scope",
+                "result_bucket": "out_of_scope",
+                "ranking_eligible": False,
+                "buy_list_eligible": False,
                 "eligibility": {"eligible": False, "reasons": ["not_in_active_equity_candidate_universe"]},
                 "signals": [],
                 "metrics": {},
@@ -104,6 +107,10 @@ def scan(request: ScanRequest):
             results.append({
                 "symbol": "UNL",
                 "status": "unknown_result",
+                "result_bucket": "unknown_results",
+                "ranking_eligible": False,
+                "buy_list_eligible": False,
+                "ranking_exclusion_reason": "insufficient_validated_evidence",
                 "eligibility": {
                     "eligible": False,
                     "reasons": [
@@ -181,6 +188,10 @@ def scan(request: ScanRequest):
             if not unknown_reasons:
                 unknown_reasons.append("validated_scan_evidence_unavailable")
             result["status"] = "unknown_result"
+            result["result_bucket"] = "unknown_results"
+            result["ranking_eligible"] = False
+            result["buy_list_eligible"] = False
+            result["ranking_exclusion_reason"] = "insufficient_validated_evidence"
             result["data_status"] = "UNKNOWN"
             result["data_quality"] = "LOW_CONFIDENCE"
             result["overall_rating"] = "NOT_RATED"
@@ -218,14 +229,36 @@ def scan(request: ScanRequest):
             result["data_quality"] = "MEDIUM_CONFIDENCE"
             result["overall_rating"] = "NOT_RATED"
             result["horizon_actions"] = {
-                "t_plus_2": "NO TRADE",
-                "swing": "NO TRADE",
-                "positional": "NO TRADE",
-                "investment": "NO TRADE",
+                "t_plus_2": "NOT_ASSESSED",
+                "swing": "NOT_ASSESSED",
+                "positional": "NOT_ASSESSED",
+                "investment": "NOT_ASSESSED",
             }
+            result["result_bucket"] = "research_only"
+            result["ranking_eligible"] = False
+            result["buy_list_eligible"] = False
+            result["ranking_exclusion_reason"] = "scoring_and_recommendation_engine_not_authorized"
         results.append(result)
-    return {"mode": "research_only", "results": results,
-            "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}
+    unknown_results = [item for item in results if item.get("status") == "unknown_result"]
+    ranked_results = [
+        item for item in results
+        if item.get("ranking_eligible") is True and item.get("overall_rating") != "NOT_RATED"
+    ]
+    buy_candidates = [
+        item for item in ranked_results
+        if item.get("buy_list_eligible") is True
+        and any(str(action).upper() == "BUY" for action in item.get("horizon_actions", {}).values())
+    ]
+    return {
+        "mode": "research_only",
+        "results": results,
+        "unknown_results": unknown_results,
+        "ranked_results": ranked_results,
+        "buy_candidates": buy_candidates,
+        "out_of_scope_results": [item for item in results if item.get("status") == "out_of_scope"],
+        "research_only_results": [item for item in results if item.get("result_bucket") == "research_only"],
+        "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal.",
+    }
 
 @app.get("/v1/data/{symbol}")
 def history(symbol: str):

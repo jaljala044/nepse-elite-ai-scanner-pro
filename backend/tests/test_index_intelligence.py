@@ -45,7 +45,7 @@ class IndexIntelligenceTests(unittest.TestCase):
     def test_verified_index_metrics_and_trend(self):
         from app.index_intelligence import build_verified_index_intelligence
         result = build_verified_index_intelligence(
-            self.verified_rows(), decision_time="2026-11-26T15:30:00+05:45"
+            self.verified_rows(), verified_session_dates=[r["session_date"] for r in self.verified_rows()], decision_time="2026-11-26T15:30:00+05:45"
         )
         self.assertEqual(result["status"], "observed")
         self.assertEqual(result["regime"], "strong_uptrend")
@@ -58,7 +58,7 @@ class IndexIntelligenceTests(unittest.TestCase):
     def test_short_history_exposes_partial_metrics_without_full_status(self):
         from app.index_intelligence import build_verified_index_intelligence
         result = build_verified_index_intelligence(
-            self.verified_rows(225), decision_time="2026-11-26T15:30:00+05:45"
+            self.verified_rows(225), verified_session_dates=[r["session_date"] for r in self.verified_rows(225)], decision_time="2026-11-26T15:30:00+05:45"
         )
         self.assertEqual(result["status"], "insufficient_evidence")
         self.assertIsNotNone(result["metrics"]["return_6m_pct"])
@@ -71,7 +71,7 @@ class IndexIntelligenceTests(unittest.TestCase):
         rows[0]["available_at"] = "2026-11-26T15:31:00+05:45"
         rows[1]["source_validation_status"] = "provisional"
         result = build_verified_index_intelligence(
-            rows, decision_time="2026-11-26T15:30:00+05:45"
+            rows, verified_session_dates=[r["session_date"] for r in self.verified_rows()], decision_time="2026-11-26T15:30:00+05:45"
         )
         self.assertEqual(result["excluded_rows"]["not_available_by_cutoff"], 1)
         self.assertEqual(result["excluded_rows"]["unverified_or_nonfinal"], 1)

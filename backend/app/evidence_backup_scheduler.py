@@ -206,7 +206,7 @@ def run_scheduled_backup(
             fcntl.flock(lock_fd, fcntl.LOCK_UN)
         finally:
             os.close(lock_fd)
-    finished = _utc()
+    finished = _utc(now_utc)
     event = {
         "schema_version": 1,
         "run_id": run_id,

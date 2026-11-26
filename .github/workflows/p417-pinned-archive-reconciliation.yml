@@ -148,9 +148,9 @@ jobs:
       - name: Reconcile floorsheet per-symbol aggregates with pinned EOD controls
         run: |
           set -euo pipefail
-          python backend/audit_floorsheet_eod_controls.py \\
-            --floorsheet-dir /tmp/pinned-window \\
-            --eod-dir /tmp/eod-controls \\
+          python backend/audit_floorsheet_eod_controls.py \
+            --floorsheet-dir /tmp/pinned-window \
+            --eod-dir /tmp/eod-controls \
             --output artifacts/p421-floorsheet-eod-controls.json
           python - <<'PY'
           import json

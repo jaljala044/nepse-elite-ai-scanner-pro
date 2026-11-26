@@ -87,9 +87,17 @@ class MarketStructureAPITests(unittest.TestCase):
         from app import main
         from app.scanner_eligibility import load_reviewed_rows
 
-        rows = bars([(10, 8, 9), (11, 8.5, 10), (13, 10, 12),
-                     (12, 9, 10), (11, 9.5, 10), (15, 11, 14)])
-        rows[3]["open"] = 11.5
+        prefix = [
+            dict(date=date(2024, 12, 17) + timedelta(days=i),
+                 open=8, high=9, low=7, close=8, volume=100)
+            for i in range(15)
+        ]
+        event_rows = bars([(10, 8, 9), (11, 8.5, 10), (13, 10, 12),
+                           (12, 9, 10), (11, 9.5, 10), (15, 11, 14)])
+        rows = prefix + event_rows
+        for i, candle in enumerate(event_rows):
+            candle["date"] = date(2025, 1, 1) + timedelta(days=i)
+        rows[18]["open"] = 11.5
         manifest = []
         for i, candle in enumerate(rows):
             day = candle["date"].isoformat()
@@ -101,7 +109,7 @@ class MarketStructureAPITests(unittest.TestCase):
                 lifecycle_evidence_id="fixture-lifecycle", session_evidence_id=f"fixture-session-{i}",
                 price_basis_reviewed=True, canonical_promotion_allowed=True,
             ))
-        manifest[1]["available_at"] = "2025-01-06T14:00:00Z"
+        manifest[16]["available_at"] = "2025-01-06T14:00:00Z"
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "rows.json"
             path.write_text(json.dumps({"schema_version": 1, "records": manifest}), encoding="utf-8")

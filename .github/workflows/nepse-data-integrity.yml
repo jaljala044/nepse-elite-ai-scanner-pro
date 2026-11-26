@@ -27,6 +27,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Checkout pinned candidate source archive
+        uses: actions/checkout@v4
+        with:
+          repository: srijankarki07/nepse-data
+          ref: e6e6fe77cd3378204c7938e66601cee2339a8b7a
+          path: external-nepse-data
+          persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -65,6 +72,7 @@ jobs:
           python audit_session_candidates.py \
             --candidates ../data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv \
             --calendar ../data/reference/nepse_session_calendar.csv \
+            --source-root ../external-nepse-data \
             --output ../data/reports/nepse-616-session-candidate-audit.json
       - name: Generate pinned Hugging Face inventory
         working-directory: backend

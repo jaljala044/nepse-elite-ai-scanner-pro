@@ -163,6 +163,8 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         daily = next(item for item in profile["execution_channel_matches"] if item["horizon"] == "1D")
         self.assertEqual(daily["prior_20_session_count"], 20)
         self.assertEqual(daily["latest_buy_vs_prior_20_avg_ratio"], 1.0)
+        self.assertEqual(len(daily["daily_activity"]), 21)
+        self.assertEqual(daily["daily_activity"][-1]["session_date"], sessions[-1])
         self.assertEqual(profile["selected_early_patterns"][0]["status"], "EARLY_ENTRY_CANDIDATE")
 
     def test_broker_filter_returns_observed_execution_channel_profile(self):

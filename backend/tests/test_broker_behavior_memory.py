@@ -2,7 +2,7 @@ import unittest
 from app.broker_behavior_memory import build_broker_behavior_memory
 
 
-def obs(day="2026-11-24", side="buy", amount="100", available="2026-11-24", **extra):
+def obs(day="2026-11-24", side="buy", amount="100", available="2026-11-24T12:00:00+05:45", **extra):
     row = {
         "trade_date": day, "available_at": available, "security_id": "SEC-1",
         "broker_entity_id": "BROKER-1", "identity_status": "verified",
@@ -26,7 +26,7 @@ class BrokerBehaviorMemoryTests(unittest.TestCase):
 
     def test_future_and_late_available_rows_are_excluded(self):
         result = build_broker_behavior_memory(
-            [obs(day="2026-11-25"), obs(available="2026-11-25")],
+            [obs(day="2026-11-25"), obs(available="2026-11-25T12:00:00+05:45")],
             as_of_date="2026-11-24"
         )
         self.assertEqual(result["admitted_observation_rows"], 0)

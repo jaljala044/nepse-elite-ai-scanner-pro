@@ -1,7 +1,7 @@
 """Cross-sectional relative-strength engine versus the NEPSE benchmark.
 
 The score is a percentile rank among the supplied eligible equity universe.
-It is not a probability. Stock and benchmark returns use common session dates.
+It is not a probability. All securities use the same latest benchmark session and every exact benchmark date in each horizon.
 """
 from __future__ import annotations
 
@@ -50,18 +50,22 @@ def relative_strength_universe(
         if not normalized_symbol:
             raise ValueError("security symbols cannot be blank")
         stock = _close_series(rows, normalized_symbol)
-        common = [d for d in benchmark_dates if d in stock]
-        if not common:
-            excluded[normalized_symbol] = "no_common_sessions_with_benchmark"
+        current_date = benchmark_dates[-1] if benchmark_dates else None
+        if current_date is None or current_date not in stock:
+            excluded[normalized_symbol] = "missing_latest_benchmark_session"
             continue
-        current_date = common[-1]
         metrics = {}
         missing = []
         for period, intervals in PERIODS.items():
-            if len(common) < intervals + 1:
+            required_dates = benchmark_dates[-(intervals + 1):]
+            if len(required_dates) < intervals + 1:
                 missing.append(period)
                 continue
-            start_date = common[-(intervals + 1)]
+            missing_dates = [day for day in required_dates if day not in stock]
+            if missing_dates:
+                missing.append(period + ":missing_exact_sessions=" + str(len(missing_dates)))
+                continue
+            start_date = required_dates[0]
             stock_return = (stock[current_date] / stock[start_date] - 1) * 100
             benchmark_return = (
                 benchmark[current_date] / benchmark[start_date] - 1
@@ -85,7 +89,7 @@ def relative_strength_universe(
             "periods": metrics,
             "weighted_excess_return_pct": round(weighted, 4),
             "as_of_session": current_date,
-            "common_sessions": len(common),
+            "common_sessions": len(benchmark_dates),
         }
 
     values = sorted(item["weighted_excess_return_pct"] for item in raw.values())

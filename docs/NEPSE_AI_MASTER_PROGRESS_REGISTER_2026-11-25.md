@@ -1743,3 +1743,15 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added [UNL low-liquidity chart and floorsheet review](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/UNL_low_liquidity_floorsheet_vs_chart_review_2026-11-26.md), commit `afd47e3c59dd8d554a0cd4b238dd1783c1424123`.
 - Revised disposition: do not flag repeated rows as invalid solely because they occur on exchange-open weekdays. Reconcile every date against complete floorsheet records and official session status. If the full floorsheet is complete and has no UNL contract, label `NO_UNL_TRADE_CONFIRMED`; otherwise `UNVERIFIED`.
 - No raw rows changed, no synthetic bars, no historical splicing, and no canonical/training promotion.
+
+
+### Equity lifecycle and OHLCV coverage hardening — 2026-11-26
+
+- Reconciled the 281-symbol equity candidate set against the 2026-11-25 security-ID snapshot: **281/281 symbol-ID matches**, all marked active in that snapshot; no mismatch.
+- Confirmed the original target candidate file contains 278 equity rows plus 47 mutual funds. The additional equities are NESDO, ULBSL and YMHL, supported by the Priority 94 classification evidence.
+- Added `data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv`, a 281-row crosswalk. All 281 rows indicate an OHLCV file is present; this does not establish valid or complete date coverage.
+- Hardened `backend/build_security_coverage_report.py`: missing lifecycle start dates no longer crash the report, fabricate expected-session denominators, or create false missing-session claims. Per-source lifecycle-unverified counts are reported. Ambiguous overlapping symbols with missing start dates fail closed.
+- Added regression tests for missing lifecycle starts and ambiguous symbol overlap.
+- Full backend CI passed on crosswalk commit: [run 45833462850](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45833462850) — **736 tests passed**.
+- Report: [EQUITY_SECURITY_ID_CROSSWALK_AND_LIFECYCLE_COVERAGE_2026-11-26.md](EQUITY_SECURITY_ID_CROSSWALK_AND_LIFECYCLE_COVERAGE_2026-11-26.md).
+- Remaining blockers: effective listing/trading-start and delisting/suspension intervals for the 281 equities; fully verified official trading calendar; OHLCV row-level exceptions and source provenance; corporate-action/price-basis review; source rights. No canonical promotion or model training.

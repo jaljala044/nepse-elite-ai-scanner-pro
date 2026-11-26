@@ -1470,3 +1470,27 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 
 - Follow-up to Priority 97: added joint-operation dates for SABSL/SDLBSL → SMPDA (2024-07-14), SAMAJ → GBLBS (2025-10-19), and SFCL → PFL (2026-07-10), with secondary evidence links. Data commit `c1f5129b7e9658698621fb866ed9a88036e12ae6`; report commit `18fde7c6f07d4b3237df2911c02b5aaf4f8dd1ad`.
 - Nine merger predecessor symbols now have documented joint-operation dates across the two Priority 97 batches. These remain corporate-operation dates, not verified exchange-trading boundaries or stable-ID intervals. `stable_id` remains null and `effective_date_verified` remains false; no raw history or canonical manifest changed.
+
+
+## Final closure review — 2026-11-26
+
+**Disposition: NOT CLOSED — release/production gates remain open.** This is an explicit closure assessment, not a claim that the whole NEPSE AI Scanner Pro is finished.
+
+### Completed in this work session
+- Priority 96 promoter-share classification guardrail committed; promoter-share records can be retained as non-target audit rows.
+- Priority 97 merger timeline evidence expanded for nine predecessor symbols. Joint-operation dates are recorded, but not treated as exchange trading boundaries or stable-ID intervals.
+- Automation safety containment committed to `jaljala044/nepse-automation` (`4b245c4db3dedc1603e676132060d1a45e2cda2d`): scheduled floorsheet writes removed; manual workflow is gated by repository variable `NEPSE_FLOORSHEET_PRODUCTION_ENABLED == 'true'`; Python upgraded to 3.11; unrelated `nepse-scraper` dependency replaced by pinned upstream client and import smoke test added. This is a fail-closed containment measure, not production readiness.
+
+### Still open — cannot honestly mark complete
+1. **CI validation:** Priority 96 tests have not been confirmed by a successful GitHub Actions run. The automation dependency PR #3 remains open and unmerged; its latest recorded diagnostic run failed without retrievable step logs.
+2. **Floorsheet collector safety:** `fetch_floorsheet.py` still clears the final worksheet before upload and writes directly to the destination. Staging/verification, immutable raw response/hash, idempotency, and response-session-date validation are not implemented. Production variable must remain unset.
+3. **Historical equity identity:** nine predecessor symbols have joint-operation dates, but exact last trading dates, successor first trading dates and effective-dated security IDs remain unresolved. The records retain `stable_id: null` and `effective_date_verified: false`.
+4. **Session calendar:** 616 candidate session dates remain unverified against a complete date-level primary exchange calendar; two more dates have secondary corroboration only.
+5. **Canonical universe:** exact 281-equity membership and full dated lifecycle evidence are not yet verified. Do not promote the candidate list to canonical.
+6. **Data quality and governance:** 1,331 invalid OHLC rows and eight cross-source conflicts remain quarantined; floorsheet provenance/coverage and data rights remain unresolved; no final point-in-time/no-lookahead release validation exists.
+
+### Closure rule
+Project may be marked closed only after each open gate has a committed evidence artifact, passing automated validation where applicable, an explicit disposition, and no unresolved production safety issue. Until then, status remains **engineering/evidence work in progress; production and model-training promotion blocked**.
+
+### Immediate safety instruction
+Keep `NEPSE_FLOORSHEET_PRODUCTION_ENABLED` unset. Do not merge automation PR #3 or enable unattended writes until the dependency check passes and the collector is made non-destructive and independently validated.

@@ -56,7 +56,17 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
         "fractional_volume": 0, "negative_turnover": 0,
         "zero_turnover_with_volume": 0, "invalid_per_change": 0,
         "first_date": None, "last_date": None, "row_errors": [],
+        "row_error_samples": {},
     }
+
+    def record_error(error: str, line_no: int, day_text: str | None = None, **details) -> None:
+        result["row_errors"].append({"line": line_no, "error": error, **(
+            {"date": day_text} if day_text else {}
+        ), **details})
+        samples = result["row_error_samples"].setdefault(error, [])
+        if len(samples) < 5:
+            samples.append({"line": line_no, **({"date": day_text} if day_text else {}), **details})
+
     if header != EXPECTED_HEADER:
         result["header_mismatch"] = {"expected": EXPECTED_HEADER, "actual": header}
         return result
@@ -68,7 +78,7 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
         result["rows"] += 1
         if None in row or any(row.get(k) is None for k in EXPECTED_HEADER):
             result["malformed_rows"] += 1
-            result["row_errors"].append({"line": line_no, "error": "column_count_mismatch"})
+            record_error("column_count_mismatch", line_no, day_text=(row.get("published_date") or "").strip())
             continue
         day_text = (row["published_date"] or "").strip()
         try:
@@ -77,11 +87,11 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
                 raise ValueError("date_not_canonical_iso")
         except ValueError:
             result["invalid_dates"] += 1
-            result["row_errors"].append({"line": line_no, "error": "invalid_date"})
+            record_error("invalid_date", line_no, day_text=day_text)
             continue
         if day_text in seen:
             result["duplicate_dates"] += 1
-            result["row_errors"].append({"line": line_no, "error": "duplicate_date", "date": day_text})
+            record_error("duplicate_date", line_no, day_text)
         seen.add(day_text)
         if previous is not None and day < previous:
             result["out_of_order_transitions"] += 1
@@ -94,37 +104,43 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
                 values[field] = _number(row[field])
         except ValueError as exc:
             result["nonfinite_or_blank_numeric"] += 1
-            result["row_errors"].append({"line": line_no, "error": str(exc)})
+            record_error("invalid_numeric", line_no, day_text, detail=str(exc))
             continue
         o, high, low, close = (values[k] for k in ("open", "high", "low", "close"))
         volume, turnover = values["traded_quantity"], values["traded_amount"]
         row_valid = True
         if min(o, high, low, close) <= 0 or high < max(o, low, close) or low > min(o, high, close):
             result["invalid_ohlc"] += 1
-            result["row_errors"].append({"line": line_no, "error": "invalid_ohlc_bounds"})
+            record_error("invalid_ohlc_bounds", line_no, day_text, open=o, high=high, low=low, close=close)
             row_valid = False
         if volume < 0:
             result["negative_volume"] += 1
+            record_error("negative_volume", line_no, day_text, volume=volume)
             row_valid = False
         if volume != int(volume):
             result["fractional_volume"] += 1
+            record_error("fractional_volume", line_no, day_text, volume=volume)
             row_valid = False
         if turnover < 0:
             result["negative_turnover"] += 1
+            record_error("negative_turnover", line_no, day_text, turnover=turnover)
             row_valid = False
         if volume > 0 and turnover == 0:
             result["zero_turnover_with_volume"] += 1
+            record_error("zero_turnover_with_volume", line_no, day_text, volume=volume, turnover=turnover)
             row_valid = False
         change = (row["per_change"] or "").strip().lower()
         if change in ("nan", ""):
             if result["rows"] != 1:
                 result["invalid_per_change"] += 1
+                record_error("invalid_per_change", line_no, day_text, per_change=change)
                 row_valid = False
         else:
             try:
                 _number(change)
             except ValueError:
                 result["invalid_per_change"] += 1
+                record_error("invalid_per_change", line_no, day_text, per_change=change)
                 row_valid = False
         if row_valid:
             result["valid_rows"] += 1

@@ -2,7 +2,7 @@
   "date": "2026-11-26",
   "base_review_blob": "8bd7ebe58b52c7e45cf312895d78d9d59452be91",
   "provider": "ShareSansar and NepseAlpha",
-  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates now documented, but exchange trading boundary, stable-ID and effective-date resolution remain unverified",
+  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified",
   "records": [
     {
       "symbol": "BPW",
@@ -97,7 +97,11 @@
       "successor_name": "Sampada Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-07-14",
+      "date_basis": "30 Ashadh 2081; joint transaction under Sampada Laghubitta",
+      "additional_source": "https://www.sharesansar.com/index.php/newsdetail/after-successful-merger-between-sabsl-and-sdlbsl-shares-of-sampada-laghubitta-listed-in-nepse-2024-08-15",
+      "additional_source_2": "https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08"
     },
     {
       "symbol": "SDLBSL",
@@ -108,7 +112,11 @@
       "successor_name": "Sampada Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-07-14",
+      "date_basis": "30 Ashadh 2081; joint transaction under Sampada Laghubitta",
+      "additional_source": "https://www.sharesansar.com/index.php/newsdetail/after-successful-merger-between-sabsl-and-sdlbsl-shares-of-sampada-laghubitta-listed-in-nepse-2024-08-15",
+      "additional_source_2": "https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08"
     },
     {
       "symbol": "SAMAJ",
@@ -119,7 +127,10 @@
       "successor_name": "Grameen Bikas Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2025-10-19",
+      "date_basis": "2 Kartik 2082; joint operations under Grameen Bikas Laghubitta",
+      "additional_source": "https://eng.merolagani.com/AnnouncementDetail.aspx?id=61940"
     },
     {
       "symbol": "SFCL",
@@ -130,7 +141,11 @@
       "successor_name": "Pokhara Finance",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2026-07-10",
+      "date_basis": "26 Ashadh 2083; joint operations under Pokhara Finance",
+      "additional_source": "https://www.sharesansar.com/index.php/newsdetail/pokhara-finance-and-samriddhi-finance-to-begin-unified-operations-from-ashadh-26-after-merger-approval-2026-06-26",
+      "additional_source_2": "https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09"
     },
     {
       "symbol": "CMF1",
@@ -356,6 +371,7 @@
     "Reported dates are publication dates, not verified trading cessation boundaries.",
     "No successor prices spliced or historical filenames overwritten.",
     "Stable historical security IDs and effective trading intervals still outstanding.",
-    "Joint-transaction start dates are corporate integration dates, not necessarily the last trading date, first trading date under successor ticker, or stable security-ID effective boundary."
+    "Joint-transaction start dates are corporate integration dates, not necessarily the last trading date, first trading date under successor ticker, or stable security-ID effective boundary.",
+    "Additional 2024–2026 merger dates are corporate joint-operation start dates; they must not be interpreted as predecessor last-trading dates or successor first-trading dates."
   ]
 }

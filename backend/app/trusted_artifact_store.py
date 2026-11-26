@@ -128,6 +128,7 @@ class TrustedArtifactStore:
                     "status": status,
                     "as_of_date": as_of.isoformat(),
                     "available_at": available_at.isoformat(),
+                    "session_calendar_id": entry.get("session_calendar_id"),
                     "source_ids": [source_id],
                     "evidence_ids": list(evidence_ids),
                     "coverage_ratio": float(coverage),

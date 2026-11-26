@@ -7,6 +7,7 @@ import hashlib
 import json
 from collections import Counter
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -15,6 +16,21 @@ SECONDARY_START_STATUSES = {
     "verified_secondary_first_trade_archive_match",
 }
 ALLOWED_START_STATUSES = SECONDARY_START_STATUSES | {"verified_primary_notice", "unverified"}
+
+
+def decimal_value(value) -> Decimal:
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(f"invalid numeric value in BENH history response: {value!r}") from exc
+    if not result.is_finite():
+        raise ValueError("non-finite BENH history metric")
+    return result
+
+
+def canonical_decimal(value) -> str:
+    result = decimal_value(value)
+    return format(result.normalize(), "f")
 
 
 def read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
@@ -146,16 +162,16 @@ def audit_historical_identity_readiness(
     zero, first_trade = by_day.get("2026-10-14"), by_day.get("2026-10-15")
     if zero is None or first_trade is None:
         raise ValueError("BENH 14/15-Oct official history rows missing")
-    if (str(zero.get("totalTrades")), str(zero.get("totalTradedQuantity")), str(zero.get("totalTradedValue"))) != ("0", "0", "0"):
+    if (decimal_value(zero.get("totalTrades")), decimal_value(zero.get("totalTradedQuantity")), decimal_value(zero.get("totalTradedValue"))) != (Decimal("0"), Decimal("0"), Decimal("0")):
         raise ValueError("BENH 14-Oct must remain explicit zero activity")
-    if (str(first_trade.get("totalTrades")), str(first_trade.get("totalTradedQuantity")), str(first_trade.get("totalTradedValue"))) != ("9", "90", "26634"):
+    if (decimal_value(first_trade.get("totalTrades")), decimal_value(first_trade.get("totalTradedQuantity")), decimal_value(first_trade.get("totalTradedValue"))) != (Decimal("9"), Decimal("90"), Decimal("26634")):
         raise ValueError("BENH 15-Oct first positive row changed")
     positive_dates = sorted(
         str(row.get("businessDate", ""))[:10]
         for row in history_rows
-        if float(row.get("totalTrades", 0) or 0) > 0
-        or float(row.get("totalTradedQuantity", 0) or 0) > 0
-        or float(row.get("totalTradedValue", 0) or 0) > 0
+        if decimal_value(row.get("totalTrades", 0) or 0) > 0
+        or decimal_value(row.get("totalTradedQuantity", 0) or 0) > 0
+        or decimal_value(row.get("totalTradedValue", 0) or 0) > 0
     )
     if not positive_dates or positive_dates[0] != "2026-10-15":
         raise ValueError("BENH first positive official history date changed")
@@ -208,8 +224,8 @@ def audit_historical_identity_readiness(
             "response_sha256": benh_hash,
             "response_row_count": len(history_rows),
             "first_positive_activity_date": positive_dates[0],
-            "2026-10-14": {"trades": "0", "shares": "0", "turnover": "0", "status": "EXPLICIT_ZERO_ACTIVITY"},
-            "2026-10-15": {"trades": "9", "shares": "90", "turnover": "26634", "status": "FIRST_POSITIVE_ACTIVITY_ROW"},
+            "2026-10-14": {"trades": canonical_decimal(zero.get("totalTrades")), "shares": canonical_decimal(zero.get("totalTradedQuantity")), "turnover": canonical_decimal(zero.get("totalTradedValue")), "status": "EXPLICIT_ZERO_ACTIVITY"},
+            "2026-10-15": {"trades": canonical_decimal(first_trade.get("totalTrades")), "shares": canonical_decimal(first_trade.get("totalTradedQuantity")), "turnover": canonical_decimal(first_trade.get("totalTradedValue")), "status": "FIRST_POSITIVE_ACTIVITY_ROW"},
             "lifecycle_valid_from": benh["valid_from"],
             "lifecycle_evidence_status": benh["valid_from_evidence_status"],
             "lifecycle_date_is_secondary": True,

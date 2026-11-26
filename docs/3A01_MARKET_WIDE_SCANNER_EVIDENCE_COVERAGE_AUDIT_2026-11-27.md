@@ -143,9 +143,9 @@ The matrix is an evidence index, not a reviewed-row manifest. It does not author
 
 The scanner integration has been re-ported additively onto the latest main snapshot in PR #142:
 - PR #142: [3A.01 latest-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/142).
-- Head: `9d47192c510eb304c93e9c3259501cc01d42d942`; base main: `bf5d16cdcaedaa85478526ae415dac791bf380e6`.
-- Branch is 8 commits ahead and 0 behind main; GitHub reports mergeable.
-- Backend unit tests, backend tests, and frontend syntax/build checks all passed on that exact head (runs 45897526464, 45897526457, 45897507478).
+- Latest head: `54ed2f264c54c93331a96c78d264d73d3a2efd7e`; PR base snapshot: `bf5d16cdcaedaa85478526ae415dac791bf380e6`.
+- The branch contains the scanner implementation plus a regression test rejecting noncanonical lowercase symbols. GitHub reports the PR mergeable. The branch is 8 commits ahead and 1 behind current `main`; the only intervening main commit (`77b55e3f456c94131b5ada75033e2dd88abe456d`) is a documentation-only sector-membership register update and does not overlap scanner source or tests.
+- Backend unit tests and backend contract tests passed on the latest head (runs 45898962052 and 45898962063). Frontend syntax/build passed on the preceding implementation head `9d47192c510eb304c93e9c3259501cc01d42d942` (run 45897507478); the latest follow-up changes only a backend test file.
 - The newer `/v1/market-health` route was verified preserved alongside `/v1/scan/market-wide`.
 - PR #142 remains draft and unmerged. No merge or deployment is claimed.
 

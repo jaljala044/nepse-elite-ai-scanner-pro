@@ -1802,3 +1802,11 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Existing archive comparison matches 276/281 current equities; missing files: NESDO, SYPNL, ULBSL, USLB and YMHL. Full workflow artifact still needs inspection.
 - Calendar remains incomplete for an expected-session denominator. Corporate-action register currently contains three adjustment events (LBBL, DORDI, BNHC); NLIC proposed split remains unverified and no split factor is applied.
 - Canonical promotion and model training remain blocked.
+
+
+### Correction — five-symbol OHLCV inventory, 2026-11-26
+- Direct repository checks found all five previously described as missing: NESDO, SYPNL, ULBSL, USLB and YMHL. The older rendered-company-list comparison is not a file inventory. It reports unmatched company-list rows or duplicate/multiple list entries, not absent OHLCV files.
+- Targeted audit found positive-volume rows and no duplicate dates or OHLC-bound violations for these five, but 81/76/81/81/3 rows respectively occur on dates marked verified-closed in the partial calendar; adjacent identical rows count 320/74/318/320/2. Trade validity remains unverified pending raw floorsheet reconciliation.
+- Corrected detailed report: [five-symbol archive reconciliation](https://github.com/jaljala044/nepse-smc-data/commit/75adc64db34029456a846bf5b001845d560fe5e0).
+- Corrected OHLCV file presence conclusion: all 281 current equities have files according to the dated inventory, with direct confirmation of the five previously disputed paths. Do not treat this as proof of valid trade history or session completeness.
+- Canonical promotion and training remain blocked.

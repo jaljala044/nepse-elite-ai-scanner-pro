@@ -96,10 +96,43 @@ def early_signals(request: EarlySignalRequest):
     The endpoint never places orders or claims confirmed fills.
     """
     try:
-        return generate_early_entry_exit_signals(
+        result = generate_early_entry_exit_signals(
             request.snapshot, as_of_date=request.as_of_date.isoformat(),
             as_of_timestamp=request.as_of_timestamp,
         )
+        # Freeze each horizon decision immediately so later outcome tracking
+        # cannot silently rewrite the original action, levels or evidence.
+        evidence = []
+        for name in ("market", "sector", "liquidity", "broker", "price_volume", "candidate"):
+            item = request.snapshot.get(name) or {}
+            available = item.get("available_at")
+            source_ids = item.get("source_ids") or ([item.get("source_id")] if item.get("source_id") else [])
+            if available:
+                evidence.extend({"evidence_id": sid, "available_at": available}
+                                for sid in source_ids if isinstance(sid, str) and sid.strip())
+        stored_signals = {}
+        for horizon in TRACKED_HORIZONS.intersection({"t_plus_2", "swing", "positional"}):
+            entry_plan = (result.get("horizons") or {}).get(horizon, {})
+            exit_review = (result.get("exit_reviews") or {}).get(horizon, {})
+            action = entry_plan.get("action", "NO_TRADE")
+            if exit_review.get("action") == "SELL_OR_REDUCE":
+                action = "SELL"
+            elif exit_review.get("action") == "HOLD_WITH_CAUTION" and action != "BUY":
+                action = "HOLD"
+            if action not in {"BUY", "SELL", "HOLD", "NO_TRADE"}:
+                action = "NO TRADE"
+            envelope = freeze_signal(
+                symbol=result.get("symbol", request.snapshot.get("symbol")),
+                decision_time=request.as_of_timestamp, horizon=horizon,
+                action=action, methodology=request.snapshot.get("methodology_version", "p4.41_v1"),
+                evidence=evidence,
+                details={"decision_date": request.as_of_date.isoformat(),
+                         "plan": entry_plan, "exit_review": exit_review,
+                         "common_reasons": result.get("common_reasons", [])},
+            )
+            stored_signals[horizon] = store_signal(envelope)
+        result["signal_tracking"] = stored_signals
+        return result
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
 

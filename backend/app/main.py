@@ -190,12 +190,13 @@ def scan(request: ScanRequest):
                 "positional": "UNKNOWN",
                 "investment": "UNKNOWN",
             }
-            result["eligibility"] = {"eligible": False, "reasons": unknown_reasons}
+            result["eligibility"] = {"eligible": not errors, "reasons": unknown_reasons}
             result["signals"] = []
             result["metrics"] = {}
-            result["market_structure"] = {
-                "status": "unknown", "bias": "unavailable", "events": []
-            }
+            if errors:
+                result["market_structure"] = {
+                    "status": "unknown", "bias": "unavailable", "events": []
+                }
             result["idpat_v3"] = {"status": "unavailable", "score": None}
             result["provisional_research"] = {"status": "unavailable", "score": None}
             result["structure_timeframes"] = {

@@ -9,6 +9,7 @@ on:
       - 'backend/build_historical_research_overlay.py'
       - 'backend/build_historical_eligibility_manifest.py'
       - 'backend/build_research_timeframes.py'
+      - 'backend/audit_indicator_warmup.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -54,6 +55,9 @@ jobs:
       - name: Build research-only weekly and monthly timeframes
         run: |
           python backend/build_research_timeframes.py --overlay /tmp/audit/research_overlay.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --weekly /tmp/audit/research_weekly.csv --monthly /tmp/audit/research_monthly.csv
+      - name: Audit indicator warmup availability
+        run: |
+          python backend/audit_indicator_warmup.py --overlay /tmp/audit/research_overlay.csv --weekly /tmp/audit/research_weekly.csv --monthly /tmp/audit/research_monthly.csv --manifest /tmp/audit/historical_eligibility_manifest.csv --output /tmp/audit/indicator_warmup.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

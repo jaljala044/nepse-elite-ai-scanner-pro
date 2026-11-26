@@ -5,6 +5,7 @@ on:
       - 'backend/audit_priority_equity_continuity.py'
       - 'backend/classify_historical_continuity_gaps.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
+      - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
   workflow_dispatch:
 permissions:
@@ -29,7 +30,7 @@ jobs:
       - name: Classify missing observations
         run: |
           python backend/validate_equity_lifecycle_input.py --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv
-          python backend/classify_historical_continuity_gaps.py --audits data/reference/historical_continuity_batch_00*_2026-11-26.csv /tmp/audit/remaining_223.csv /tmp/audit/exception_26.csv --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --july data/reference/july24_separate_volume_observations_2026-11-26.csv --listing data/reference/historical_listing_evidence_candidates_2026-11-26.csv --output /tmp/audit/classified_gaps.csv
+          python backend/classify_historical_continuity_gaps.py --audits data/reference/historical_continuity_batch_00*_2026-11-26.csv /tmp/audit/remaining_223.csv /tmp/audit/exception_26.csv --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --july data/reference/july24_separate_volume_observations_2026-11-26.csv --listing data/reference/historical_listing_evidence_candidates_2026-11-26.csv --suspension data/reference/pfl_suspension_evidence_2026-11-26.csv --output /tmp/audit/classified_gaps.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

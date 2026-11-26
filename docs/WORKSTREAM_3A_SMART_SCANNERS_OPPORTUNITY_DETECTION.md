@@ -128,7 +128,7 @@ The overall workstream is complete only when all 23 items pass their acceptance 
 - Added frontend build checks to pull-request CI and changed `backend/Dockerfile` to build and package the browser terminal at `/terminal`.
 - Included the dated candidate-universe CSV in the image at `/data/reference`, matching the API's runtime manifest path.
 - Extended container smoke tests to call `/v1/research/readiness`, `/v1/symbols` and the full `POST /v1/scan/market-wide` endpoint across all 281 candidate symbols.
-- Latest verified code CI head `6d830c58589118d515a5347ef80a9c329decfda5`: backend unit tests, backend contract tests, frontend syntax/build, generated assets, Docker image, terminal routes and the full-universe API smoke test all passed. In the clean CI container, the scanner correctly reported 281 candidate symbols, zero stored observations, 0% observation coverage and ranking disabled.
+- Latest verified CI head `e156325ba646d1047b1e94488a20bc902c0faed3`: backend unit tests (run `45891652840`), backend contract tests (run `45891652836`), and frontend build/deployment-image checks (run `45891652788`) all passed. The frontend workflow builds the production assets and Docker image, then smoke-tests `/health`, `/terminal/`, `/terminal/scanner.js`, readiness, symbol loading and the full 281-symbol market-wide scan. In the clean CI container, the scanner correctly reports 281 candidate symbols, zero stored observations, 0% observation coverage and ranking disabled. This is container/CI validation, not a live deployment test.
 
 
 ### Exchange-primary universe source investigation (2026-11-27)

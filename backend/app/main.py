@@ -2,6 +2,7 @@ from datetime import date
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .scanner import analyze
+from .market_structure import detect_structure
 from .storage import DATA, IMPORTS, store_rows, snapshot
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
@@ -43,7 +44,9 @@ def scan(request: ScanRequest):
         rows = DATA.get(symbol.upper(), [])
         if request.as_of:
             rows = [r for r in rows if r["date"] <= request.as_of]
-        results.append(analyze(symbol.upper(), rows))
+        result = analyze(symbol.upper(), rows)
+        result["market_structure"] = detect_structure(rows)
+        results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}
 

@@ -766,3 +766,32 @@ missing zero-activity rows are different: the publisher explicitly does not
 forward-fill or write rows for no-trade dates, so those absences are expected
 under its stated file policy. The 164 missing active rows are not explained
 by that policy and remain a completeness failure.
+#### Reproducible complete-window capture and signal-input handling — 2026-11-27
+
+A separate capture workflow now re-queries exactly `2025-11-26` through
+`2026-11-25`, avoiding the final 2026-11-26 date for which the market-summary
+archive reports activity but the per-security history endpoint returned no
+rows. The new 228-session capture reproduced the prior result:
+
+- 281/281 verified current security-ID crosswalk matches and HTTP 200
+  per-security responses.
+- 61,665 rows, 228 distinct official market-summary session dates, zero
+  duplicate symbol/session keys, and all 282 raw/manifest files passing
+  SHA-256 verification.
+- 474 explicit zero-volume rows; 61,191 positive-volume rows. No active row
+  had a nonpositive high/low/close or invalid H/L/C range.
+- 279 securities have at least 55 positive-volume observations. BENH has 20
+  and NLO has 7, so both remain insufficient for the default classifier.
+- 2,403 pre-lifecycle-start symbol/date pairs are contextualized by the
+  lifecycle register; zero unexplained missing pairs remain inside this
+  bounded window. The 2026-11-26 gap remains separately unresolved.
+
+The signal-confirmation validator now checks only high, low, close and volume,
+which are the fields the classifier actually uses; it does not invent an
+opening price. It excludes zero-volume rows from observation counts, moving
+averages, breakout lookback and relative-volume baselines. The existing
+server-side reviewed-source/session/point-in-time eligibility gate remains
+unchanged and fail-closed. These changes do not promote the captured data.
+
+Detailed report: [3B.01 official one-year history audit](3B_01_OFFICIAL_HISTORY_ONE_YEAR_AUDIT.md).
+Capture and artifact: [workflow run 45897905394](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45897905394).

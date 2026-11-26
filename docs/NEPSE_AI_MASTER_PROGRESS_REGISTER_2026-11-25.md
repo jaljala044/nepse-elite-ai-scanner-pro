@@ -1757,3 +1757,16 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Remaining blockers: effective listing/trading-start and delisting/suspension intervals for the 281 equities; fully verified official trading calendar; OHLCV row-level exceptions and source provenance; corporate-action/price-basis review; source rights. No canonical promotion or model training.
 
 - Added `data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv`: all 281 equities have explicit rows; YMHL first trading date 2026-06-22 is supported by its listing/trading notice, while the other 280 lifecycle starts remain blank/unverified rather than inferred.
+
+
+## UNL low-frequency execution review — 2026-11-26
+
+- Reviewed chart/history and available UNL-specific floorsheet summaries. UNL is thinly traded; recent sessions show sparse executed volume rather than a reliable continuous daily bar stream.
+- 2026-11-25: NepView reports 2 trades / 310 shares / NPR 1.48 crore and shows a 300-share broker-34/38 contract plus a 10-share broker-20 contract. NEPSE Quant's daily floorsheet page displays the 300-share contract; its UNL broker page summarizes 310 shares. Positive trading is established; the 300-vs-310 display reconciliation remains noted.
+- 2026-11-26: the accessible full-market floorsheet page excerpt does not expose a complete UNL-filtered contract set or auditable zero-result proof. UNL omission from a top-traded list is not evidence of no trade. Date-level result remains UNKNOWN.
+- Rule established: TRADED requires at least one valid contract in a complete date-matched floorsheet; NO_TRADE requires independently verified open session + complete floorsheet coverage + zero UNL contracts; otherwise UNKNOWN. Never infer no trade from flat charts, missing bars, top-N omission, or zero-volume rows alone.
+- Scanner API now returns UNL as `unknown_result`, `data_status=UNKNOWN`, `data_quality=LOW_CONFIDENCE`, with no scores/signals/metrics. This keeps UNL visible while excluding unsupported scoring.
+- Added focused API regression test: `backend/tests/test_unl_unknown_scan_policy.py`. Test execution/CI result is pending; do not claim it passed until workflow evidence is available.
+- Detailed evidence and acceptance criteria: [UNL low-frequency execution and unknown scan policy](UNL_LOW_FREQUENCY_EXECUTION_AND_UNKNOWN_SCAN_POLICY_2026-11-26.md).
+- Code commit: [8ac0403](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/8ac0403327d9fd230cbbab32260398a8ffbe4945); test commit: [7f7153c](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/7f7153c3456110ca7e37200d6926c317948b0b4f); evidence report commit: [268f3df](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/268f3fdfbecfd3ee2a56055af8800f3112508297).
+

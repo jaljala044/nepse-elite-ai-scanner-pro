@@ -90,7 +90,7 @@ class EvidenceBackupSchedulerTests(unittest.TestCase):
             lock_path=self.lock, run_id="run-001",
         )
         row = json.loads(self.receipts.read_text())
-        row["status"] = "backup_verified"
+        row["status"] = "tampered_status"
         self.receipts.write_text(json.dumps(row) + "\n")
         audit = audit_backup_schedule(self.receipts)
         self.assertEqual(audit["ledger_status"], "invalid")

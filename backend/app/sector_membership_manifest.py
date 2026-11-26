@@ -97,7 +97,10 @@ def audit_sector_membership_manifest(
     for index, row in enumerate(records):
         if not isinstance(row, dict):
             raise ValueError(f"membership_record_{index}_must_be_object")
-        symbol = str(row.get("symbol", "")).strip().upper()
+        raw_symbol = row.get("symbol")
+        if not isinstance(raw_symbol, str) or not raw_symbol.strip():
+            raise ValueError(f"membership_record_{index}_invalid_identity")
+        symbol = raw_symbol.strip().upper()
         sector = row.get("sector_code")
         record_id = row.get("record_id")
         if not symbol or not isinstance(sector, str) or sector not in allowed_sector_codes:

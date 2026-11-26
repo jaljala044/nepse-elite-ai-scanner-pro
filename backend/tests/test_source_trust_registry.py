@@ -87,6 +87,15 @@ class SourceTrustPromotionTests(unittest.TestCase):
         args.update(changes)
         return build_promotion_event(**args)
 
+
+    def test_checked_in_runtime_registry_is_valid_and_has_no_approved_sources(self):
+        registry_path = Path(__file__).resolve().parents[2] / "data" / "reference" / "source-trust-registry.v1.json"
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+        self.assertEqual(registry["sources"], [])
+        self.assertTrue(verify_source_registry(
+            registry, "8f6a17cf87aa05150ade5c6cc510b72e5d2a5098130021f6a2d2be53762e91fc"
+        ))
+
     def test_valid_signed_primary_evidence_can_be_promoted(self):
         event = self.event()
         self.assertTrue(event["accepted"])

@@ -1588,3 +1588,11 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 ## Priority 98 — historical security-master source audit (2026-11-26)
 
 **CLOSED — source-discovery task only. Historical ID recovery remains blocked and Priority 97 remains NOT CLOSED.** Searched available scanner, NEPSE SMC data, history-starter and automation repository archives/code for dated predecessor security-master snapshots and symbol-to-ID crosswalks. No dated historical security master for BPW, MMFDB, NLBBL, JALPA, KLBSL, MKLB, SABSL, SDLBSL, SAMAJ or SFCL was located. ShareHub's current API schema documents `nepseSecurityId` on its `/stocks` endpoint, but access requires a licensed Data API account, Bearer authentication and server-IP allow-listing; no authenticated payload was acquired. No IDs or validity intervals were inferred; no canonical assignments, price splices, raw-data edits or training promotion. Reopen only on receipt of dated provider/NEPSE security-master evidence and boundary corroboration. Full report: `docs/PRIORITY_98_HISTORICAL_SECURITY_MASTER_SOURCE_AUDIT_2026-11-26.md`.
+
+### Current successor-ID policy implementation — 2026-11-26
+
+- Added `docs/CURRENT_UNIVERSE_SUCCESSOR_ID_POLICY_2026-11-26.md` (commit `fe5bc0f926087d703e36d7be75047f678c724e11`) with the seven successor IDs and retired-alias rules.
+- Added the owner-scope clarification to the historical source audit (commit `60457339d3944748576a7c00eba12ca98f79c569`).
+- Added a regression test asserting all seven exact IDs, 2026-11-25 snapshot date, active status, OHLCV presence and absence of the ten former symbols from that snapshot (commit `95af5937646ae8eb5c572043b1fb2c9ed0030c53`).
+- Updated this register with the owner decision (commit `3dd1e0ea312a65400553daa9501c648e02181f2d`).
+- Test execution/CI result has **not** been confirmed in this work session. No price history was spliced and no canonical/training data was promoted.

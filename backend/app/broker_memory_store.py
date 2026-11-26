@@ -219,6 +219,16 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
                                   if len(prior_sell_values) == 20 else None)
                 latest_buy = daily_by_session[latest_session]["buy"] if latest_session else Decimal("0")
                 latest_sell = daily_by_session[latest_session]["sell"] if latest_session else Decimal("0")
+                daily_activity = [
+                    {
+                        "session_date": day,
+                        "buy_amount": str(daily_by_session[day]["buy"]),
+                        "sell_amount": str(daily_by_session[day]["sell"]),
+                        "net_amount": str(daily_by_session[day]["buy"] - daily_by_session[day]["sell"]),
+                        "gross_amount": str(daily_by_session[day]["buy"] + daily_by_session[day]["sell"]),
+                    }
+                    for day in baseline_sessions + ([latest_session] if latest_session else [])
+                ]
                 profiles.append({
                     "execution_channel_code": code,
                     "identity_status": "execution_channel_only",
@@ -237,6 +247,7 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
                     "prior_20_session_count": len(baseline_sessions),
                     "prior_20_avg_buy_amount": str(prior_buy_avg) if prior_buy_avg is not None else None,
                     "prior_20_avg_sell_amount": str(prior_sell_avg) if prior_sell_avg is not None else None,
+                    "daily_activity": daily_activity,
                     "latest_buy_vs_prior_20_avg_ratio": float(latest_buy / prior_buy_avg) if prior_buy_avg is not None and prior_buy_avg > 0 else None,
                     "latest_sell_vs_prior_20_avg_ratio": float(latest_sell / prior_sell_avg) if prior_sell_avg is not None and prior_sell_avg > 0 else None,
                     "flow_class": "net_buyer" if net > 0 else "net_seller" if net < 0 else "balanced",

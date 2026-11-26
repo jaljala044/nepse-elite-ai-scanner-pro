@@ -163,3 +163,11 @@ The repository does not currently expose a verified deployment target or deploym
 - The same provider page separately exposes a broader listed-security table with active and delisted rows; that table must not be conflated with actively traded equity membership.
 - The NEPSE primary stocklist page remains available only as an indexed snapshot dated 2026-10-15. No newer complete official active-equity snapshot or documented official API contract was located in this search.
 - Keep the dated 281-symbol file immutable as historical evidence. Do not silently append three securities, replace the candidate universe, or promote it to authoritative membership. Resolve symbol-level additions/removals against a date-aligned primary source before universe acceptance.
+
+### NEPSE API endpoint investigation (2026-11-27)
+
+- Found a third-party NEPSE client implementation that references the exchange-hosted paths `/api/nots/company/list` and `/api/nots/security?nonDelisted=true` (reference implementation: https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/data/API_ENDPOINTS.json).
+- The same client describes the company list as including delisted companies and the security list as non-delisted securities, including promoter shares. Therefore, even if retrieved successfully, the security endpoint is not automatically equivalent to the active ordinary-equity trading universe; instrument type and listing lifecycle still require explicit filtering and validation.
+- Direct unauthenticated retrieval of both exchange-hosted endpoints returned HTTP 401 in this check. The endpoint response schema, authentication requirements, effective-date semantics and complete symbol membership could not be independently verified.
+- This is a useful lead to an exchange-hosted API path, not an official published API contract or a validated dated universe snapshot. Do not use the third-party implementation as authority, bypass access controls, or promote its output to the candidate manifest.
+- The exchange-primary universe gate remains open. Continue using the immutable 281-symbol file only as a dated secondary-source candidate set until an accessible, date-aligned primary source and instrument classification are verified.

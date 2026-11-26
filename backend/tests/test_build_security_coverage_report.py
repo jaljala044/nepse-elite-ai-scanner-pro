@@ -156,6 +156,18 @@ class SecurityCoverageReportTests(unittest.TestCase):
             build_security_coverage_report(
                 self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
 
+    def test_duplicate_symbol_with_unknown_lifecycle_fails_closed(self):
+        self.write_inputs()
+        rows = list(csv.DictReader(self.universe.open(encoding="utf-8")))
+        rows[0]["valid_from"] = ""
+        rows.append({"security_id":"S3","symbol":"AAA","instrument_type":"equity",
+                     "valid_from":"2026-01-03","valid_to":"","target_in_scope":"true"})
+        self.write_csv(self.universe,
+            ["security_id", "symbol", "instrument_type", "valid_from", "valid_to", "target_in_scope"], rows)
+        with self.assertRaisesRegex(ValueError, "cannot verify lifecycle overlap"):
+            build_security_coverage_report(
+                self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+
     def test_unknown_instrument_type_fails_closed(self):
         self.write_inputs()
         rows = list(csv.DictReader(self.universe.open(encoding="utf-8")))

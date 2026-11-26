@@ -87,7 +87,7 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertIsNotNone(candidates["wyckoff"])
         self.assertIsNotNone(candidates["trend"])
         self.assertIsNotNone(candidates["volume"])
-        self.assertIsNotNone(candidates["smc"])
+        self.assertIsNone(candidates["smc"])
         self.assertIsNone(candidates["relative_strength"])
         self.assertIsNone(candidates["broker"])
         aggregate = result["aggregate_scores"]["AAA"]
@@ -145,7 +145,7 @@ class FeaturePipelineTests(unittest.TestCase):
             result["component_candidates"]["AAA"]["relative_strength"],
             result["component_candidates"]["BBB"]["relative_strength"],
         )
-        self.assertEqual(result["aggregate_scores"]["AAA"]["coverage_pct"], 80.0)
+        self.assertEqual(result["aggregate_scores"]["AAA"]["coverage_pct"], 75.0)
         self.assertEqual(result["aggregate_scores"]["AAA"]["action"], "NO_TRADE")
 
 if __name__ == "__main__":

@@ -53,3 +53,6 @@ This manifest is a dated **secondary-provider snapshot (NepseAlpha)**, not a raw
 - Fixed the existing market-structure API test fixture to declare its test symbol in the injected candidate universe.
 
 Latest full backend CI: [run 45832612455](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832612455) — **SUCCESS, 677 tests**.
+
+
+Final API hardening: the public `/v1/universe` response omits the server-local manifest path. Full backend CI passed again on that final change: [run 45832850787](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832850787) — SUCCESS.

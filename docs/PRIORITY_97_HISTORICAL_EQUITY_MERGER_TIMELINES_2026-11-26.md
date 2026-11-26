@@ -154,3 +154,25 @@ The dated 2026-11-25 security-ID snapshot (`data/reference/nepse_security_id_sna
 These are **current snapshot IDs only**. They are not backdated into predecessor periods and do not establish whether an ID was retained, replaced, or reassigned across a merger. The unmatched-symbol review still lists the predecessor symbols BPW, JALPA, KLBSL, MKLB, MMFDB, NLBBL, SABSL, SAMAJ, SDLBSL and SFCL as unresolved historical identities. No predecessor ID is inferred from ticker similarity, successor company name, or current ID.
 
 Disposition: successor snapshot IDs are attached as dated observations in the JSON evidence file; predecessor historical IDs, ID validity intervals, and legal continuity remain unresolved. No `stable_id` values are populated and no price history is linked or spliced.
+
+
+## Follow-up evidence expansion — BPW / MMFDB / NLBBL last-recorded-trade dates
+
+Three more predecessor records now have reported last-recorded-trade dates in secondary historical company records:
+
+| Predecessor | Reported last recorded trade | Evidence |
+|---|---:|---|
+| BPW | 2024-03-06 | Laganilab historical company page explicitly reports the last recorded trade on 6 March 2024; its archive OHLCV file also has a nonzero-volume row on that date. |
+| MMFDB | 2024-03-12 | Merolagani reports last traded at 14:58:52 on 12 March; ShareSansar's historical company page independently shows the 12 March close and volume. |
+| NLBBL | 2024-03-12 | Merolagani reports last traded at 14:59:57 on 12 March; ShareSansar's historical company page independently shows the 12 March close and volume. |
+
+The MMFDB/NLBBL dates are one calendar day before the reported 13 March 2024 suspension/joint-operation date. BPW's reported final trade and archive OHLCV row coincide with the reported suspension-effective date of 6 March 2024; this confirms why suspension date must not be substituted for the last-trade date without intraday chronology. These are secondary historical-source observations, not NEPSE-primary certified trade logs.
+
+Sources:
+- https://laganilab.com/nepse-company/BPW/
+- https://merolagani.com/CompanyDetail.aspx?symbol=MMFDB
+- https://merolagani.com/CompanyDetail.aspx?symbol=NLBBL
+- https://www.sharesansar.com/index.php/company/mmfdb
+- https://www.sharesansar.com/company/nlbbl
+
+No historical security IDs or validity intervals were inferred. `stable_id` remains null and `effective_date_verified` remains false; no price histories were spliced and no raw OHLCV/floorsheet files were modified.

@@ -104,10 +104,12 @@ class MarketStructureAPITests(unittest.TestCase):
             manifest.append(dict(
                 candle, symbol="TEST", date=day, instrument_type="equity",
                 security_status="active", session_status="verified_open",
-                source_id="sharehub", evidence_id=f"fixture-{i}",
+                source_id="sharehub", evidence_id=f"fixture-{i}", source_payload_sha256="a"*64,
                 available_at=f"{day}T11:00:00Z", security_id="fixture-security",
                 lifecycle_evidence_id="fixture-lifecycle", session_evidence_id=f"fixture-session-{i}",
-                price_basis_reviewed=True, canonical_promotion_allowed=True,
+                price_basis_reviewed=True, price_basis_status="verified_unadjusted_no_actions",
+                corporate_action_status="clear", corporate_action_evidence_id="fixture-action-review",
+                canonical_promotion_allowed=True,
             ))
         manifest[1]["available_at"] = "2025-01-06T12:00:00Z"
         with tempfile.TemporaryDirectory() as temp:

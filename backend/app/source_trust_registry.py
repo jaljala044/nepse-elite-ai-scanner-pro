@@ -255,9 +255,9 @@ def build_promotion_event(
     reasons = []
     if not verify_source_registry(registry, trusted_registry_sha256):
         reasons.append("source_registry_digest_not_trusted")
+    if not verify_reviewer_signature(validation, reviewer_keys):
+        reasons.append("reviewer_signature_invalid_or_untrusted")
     if action == "promote":
-        if not verify_reviewer_signature(validation, reviewer_keys):
-            reasons.append("reviewer_signature_invalid_or_untrusted")
         _, policy_reasons = resolve_source_policy(
             registry, source_id=record.get("source_id", ""),
             record_type=record.get("record_type", ""),

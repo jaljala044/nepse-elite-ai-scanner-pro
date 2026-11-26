@@ -271,6 +271,7 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
         return {
             "window": window_name, "window_sessions": session_count,
             "observed_sessions": len({r["trade_date"] for r in group_rows}),
+            "window_complete": len({r["trade_date"] for r in group_rows}) >= session_count,
             "party_observation_count": len(group_rows),
             "verified_party_observation_count": sum(r["identity_status"] == "verified" for r in group_rows),
             "unresolved_party_observation_count": sum(r["identity_status"] != "verified" for r in group_rows),
@@ -285,6 +286,7 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
             "top_net_buyers": [x for x in ranked if Decimal(x["net_amount"]) > 0][:10],
             "top_net_sellers": sorted([x for x in ranked if Decimal(x["net_amount"]) < 0],
                                       key=lambda x: Decimal(x["net_amount"]))[:10],
+            "broker_positions": ranked,
             "broker_count": len(ranked), "net_buyer_count": net_buyer_count,
             "net_seller_count": net_seller_count, "broker_breadth_balance": directional_ratio,
             "score": score,
@@ -299,6 +301,40 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
             selected_dates = set(all_dates[cutoff_index:])
             selected = [r for r in group_rows if r["trade_date"] in selected_dates]
             output[name] = summarize(selected, name, count)
+        # Persistence labels require genuinely complete 1W/1M/3M windows;
+        # partial histories are never promoted to multi-month accumulation.
+        persistence_windows = ("1W", "1M", "3M")
+        by_broker = {}
+        for name in persistence_windows:
+            window = output[name]
+            if window["status"] != "observed" or not window["window_complete"]:
+                continue
+            for position in window["broker_positions"]:
+                by_broker.setdefault(position["broker_entity_id"], {})[name] = position["flow_class"]
+        persistent = []
+        for broker_id, states in by_broker.items():
+            buyers = sum(states.get(name) == "net_buyer" for name in persistence_windows)
+            sellers = sum(states.get(name) == "net_seller" for name in persistence_windows)
+            if len(states) < 2:
+                label = "insufficient_history"
+            elif buyers == 3 and sellers == 0:
+                label = "strong_accumulation"
+            elif buyers >= 2 and sellers <= 1:
+                label = "moderate_accumulation"
+            elif sellers == 3 and buyers == 0:
+                label = "heavy_distribution"
+            elif sellers >= 2 and buyers <= 1:
+                label = "moderate_distribution"
+            elif buyers and sellers:
+                label = "mixed"
+            else:
+                label = "neutral"
+            persistent.append({"broker_entity_id": broker_id, "classification": label,
+                               "observed_complete_windows": sorted(states),
+                               "net_buyer_windows": buyers, "net_seller_windows": sellers})
+        output["persistent_broker_flow"] = sorted(
+            persistent, key=lambda x: (x["classification"], x["broker_entity_id"])
+        )
         return output
 
     security_features = {}

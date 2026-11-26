@@ -231,7 +231,7 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         bad[1]["side"] = bad[0]["side"]
         bad[1]["broker_entity_id"] = bad[0]["broker_entity_id"]
         bad[1]["source_broker_code"] = bad[0]["source_broker_code"]
-        with self.assertRaisesRegex(ValueError, "duplicate source lineage row"):
+        with self.assertRaisesRegex(ValueError, "duplicate party observation source lineage"):
             self.persist(rows=bad)
 
     def test_no_profile_returns_none_until_evidence_is_stored(self):

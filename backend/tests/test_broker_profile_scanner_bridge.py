@@ -54,7 +54,9 @@ class BrokerProfileScannerBridgeTests(unittest.TestCase):
         result = build_broker_profile_scanner_context(
             snapshot([row, profile("B2"), profile("B3")]),
             decision_time="2026-11-26T13:00:00+05:45", expected_security_ids=["SEC-1"])
-        self.assertEqual(result["securities"]["SEC-1"]["windows"]["weekly"]["status"],\n                         "insufficient_evidence")\n        self.assertEqual(result["rejected_profile_rows"], 1)
+        self.assertEqual(result["securities"]["SEC-1"]["windows"]["weekly"]["status"],
+                         "insufficient_evidence")
+        self.assertEqual(result["rejected_profile_rows"], 1)
 
     def test_duplicate_broker_profile_for_window_is_withheld(self):
         result = build_broker_profile_scanner_context(

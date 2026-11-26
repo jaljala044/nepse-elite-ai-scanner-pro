@@ -10,7 +10,7 @@ from audit_official_equity_candidate_history import reconcile
 class OfficialEquityCandidateHistoryTests(unittest.TestCase):
     def _fixture(self, root):
         capture = {
-            "source_id": "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME",
+            "source_id": "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME_HISTORY",
             "requested_start_date": "2026-11-19",
             "requested_end_date": "2026-11-24",
             "historical_security_identity_verified": False,

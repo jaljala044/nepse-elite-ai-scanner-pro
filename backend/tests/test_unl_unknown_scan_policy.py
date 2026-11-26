@@ -13,6 +13,11 @@ class UnlUnknownScanPolicyTests(unittest.TestCase):
         self.assertEqual(result["status"], "unknown_result")
         self.assertEqual(result["data_status"], "UNKNOWN")
         self.assertEqual(result["data_quality"], "LOW_CONFIDENCE")
+        self.assertEqual(result["overall_rating"], "NOT_RATED")
+        self.assertEqual(result["horizon_actions"], {
+            "t_plus_2": "UNKNOWN", "swing": "UNKNOWN",
+            "positional": "UNKNOWN", "investment": "UNKNOWN",
+        })
         self.assertFalse(result["eligibility"]["eligible"])
         self.assertEqual(result["signals"], [])
         self.assertEqual(result["metrics"], {})

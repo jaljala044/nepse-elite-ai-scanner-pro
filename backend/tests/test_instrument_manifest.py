@@ -41,6 +41,15 @@ class InstrumentManifestTests(unittest.TestCase):
         result = validate_instrument_manifest([r], as_of="2026-11-25")
         self.assertFalse(result["promotion_allowed"])
 
+    def test_promoter_share_is_retained_but_excluded_from_equity_targets(self):
+        r = row(900, "promoter_share")
+        r["symbol"] = "HIDCLP"
+        result = validate_instrument_manifest([r], as_of="2026-11-25")
+        self.assertEqual(result["valid_lifecycle_rows"], 1)
+        self.assertEqual(result["active_target_rows"], 0)
+        self.assertEqual(result["active_counts_by_type"], {})
+        self.assertFalse(result["promotion_allowed"])
+
     def test_non_object_record_is_reported_without_crashing(self):
         result = validate_instrument_manifest([None], as_of="2026-11-25")
         self.assertEqual(result["errors"][0]["error"], "record_must_be_object")

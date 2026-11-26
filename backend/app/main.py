@@ -141,12 +141,15 @@ def evaluate_research_signal(signal_id: str, request: EvaluateSignalOutcomeReque
             raise HTTPException(422, "ohlcv_history_unavailable")
         calendar = request.calendar_evidence
         cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
-        if (calendar.get("status") != "verified"
-                or not calendar.get("source_id")
-                or float(calendar.get("coverage", 0)) < 0.95):
+        try:
+            coverage = float(calendar.get("coverage"))
+            available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            raise HTTPException(422, "calendar_evidence_malformed")
+        if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+                or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0):
             raise HTTPException(422, "verified_calendar_evidence_required")
-        available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
-        if available.tzinfo is None or available > cutoff:
+        if available.tzinfo is None or available.utcoffset() is None or available > cutoff:
             raise HTTPException(422, "calendar_evidence_late_or_timezone_missing")
         rows = DATA[record["symbol"]]
         result = evaluate_signal_path(
@@ -181,6 +184,14 @@ def research_signal_performance(horizon: str | None = None, limit: int = 2000):
         outcomes = list_all_outcomes(horizon=horizon, limit=limit)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+    # Repeated as-of evaluations append snapshots. Use only the latest snapshot
+    # per frozen signal/horizon for descriptive hit-rate summaries.
+    latest = {}
+    for item in outcomes:
+        key = (item.get("signal_id"), item.get("horizon"))
+        if key not in latest or item.get("observed_at", "") > latest[key].get("observed_at", ""):
+            latest[key] = item
+    outcomes = list(latest.values())
     grouped = {}
     for item in outcomes:
         h = item.get("horizon")

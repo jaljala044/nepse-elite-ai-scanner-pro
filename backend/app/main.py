@@ -4,6 +4,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .storage import DATA, IMPORTS, store_rows, snapshot
 
@@ -66,6 +67,8 @@ def scan(request: ScanRequest):
             reviewed_rows = [REVIEWED_ROWS[(symbol.upper(), str(row["date"]))] for row in rows]
             add_event_evidence(structure, reviewed_rows)
             result["market_structure"] = structure
+        result["idpat_v3"] = evaluate_idpat_v3(rows, eligible=not errors)
+        result["provisional_research"] = evaluate_provisional(rows, eligible=not errors)
         results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}

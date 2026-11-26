@@ -404,6 +404,28 @@ async def private_deployment_gate(request: Request, call_next):
         response.headers["Cache-Control"]="no-store"
     return response
 
+
+@app.get("/v1/research/unified-coverage")
+def unified_coverage():
+    import json
+    import csv
+    root = Path(os.getenv("NEPSE_UNIFIED_RESEARCH_DIR", "/srv/private/unified-research"))
+    unavailable = {"status":"unavailable","production_eligible":False,"rows":[]}
+    try:
+        summary = json.loads((root/"summary.json").read_text())
+        if summary.get("production_eligible") is not False or summary.get("symbols") != 281:
+            return dict(unavailable,reason="invalid_research_summary")
+        with (root/"stock_coverage.csv").open(newline="") as f:
+            rows = list(csv.DictReader(f))
+        if len(rows)!=281 or len({r["symbol"] for r in rows})!=281 or any(r.get("production_score") or r.get("action")!="UNKNOWN" or r.get("as_of")!=summary.get("as_of") for r in rows):
+            return dict(unavailable,reason="invalid_research_rows")
+        fields=("symbol","as_of","historical_rows","contiguous_observed_rows","trend_status","wyckoff_status","volume_status","smc_status","broker_status","broker_net_buy_profiles","broker_net_sell_profiles","relative_strength_status","sector_status","liquidity_status")
+        return {"status":"archive_research_only","production_eligible":False,
+                "independent_validation":False,"summary":summary,
+                "rows":[{k:r.get(k) for k in fields} for r in rows]}
+    except (OSError,ValueError,TypeError,KeyError):
+        return dict(unavailable,reason="research_artifact_missing_or_invalid")
+
 # Mount only the built public frontend, never the repository or raw data.
 from fastapi.staticfiles import StaticFiles
 import os

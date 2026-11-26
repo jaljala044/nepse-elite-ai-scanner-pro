@@ -21,7 +21,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-Open `http://127.0.0.1:8000/docs`.
+Open `http://127.0.0.1:8000/` for the responsive web dashboard and `http://127.0.0.1:8000/docs` for the API. The broker-memory explorer uses the same-origin read-only endpoints; it will show insufficient evidence until eligible broker observations are ingested through the authorized evidence pipeline.
 
 ## NEPSE data collection
 

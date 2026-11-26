@@ -44,6 +44,34 @@ def setup(rows, controls=None, security_registry=None, **kwargs):
 
 
 class FloorsheetBrokerIngestionAdapterTests(unittest.TestCase):
+    def test_p443_held_sessions_rejected_before_aggregation(self):
+        for day in ("2024-08-14", "2024-08-18"):
+            with self.subTest(day=day):
+                rows = party_rows()
+                for row in rows:
+                    row["trade_date"] = day
+                with self.assertRaisesRegex(FloorsheetBrokerAdapterError, "p443_session_quarantined"):
+                    setup(rows)
+
+    def test_p443_archive_hash_rejected_even_with_different_session(self):
+        from app.floorsheet_broker_ingestion_adapter import P443_HELD_ARCHIVE_HASHES
+        self.assertEqual(len(P443_HELD_ARCHIVE_HASHES), 4)
+        for digest in P443_HELD_ARCHIVE_HASHES:
+            for field in ("source_payload_sha256", "source_archive_sha256"):
+                with self.subTest(digest=digest, field=field):
+                    rows = party_rows()
+                    rows[0][field] = digest.upper()
+                    with self.assertRaisesRegex(FloorsheetBrokerAdapterError, "p443_archive_quarantined"):
+                        setup(rows)
+
+    def test_p443_invalid_trade_dates_rejected(self):
+        for day in (None, "2026-02-30", "20261125", "2026-11-25T12:00:00"):
+            with self.subTest(day=day):
+                rows = party_rows()
+                rows[0]["trade_date"] = day
+                with self.assertRaisesRegex(FloorsheetBrokerAdapterError, "trade_date"):
+                    setup(rows)
+
     def test_verified_pairs_produce_memory_eligible_batch(self):
         result=setup(party_rows())
         self.assertTrue(result["memory_eligible"], repr(result["report"]))

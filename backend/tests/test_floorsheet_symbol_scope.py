@@ -50,7 +50,7 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             ["symbol","security_id","security_name","active_status","snapshot_date"], [
                 {"symbol":"EQ1","security_id":"1","security_name":"Example Equity","active_status":"A","snapshot_date":"2026-11-25"},
                 {"symbol":"PROM1","security_id":"3","security_name":"Example Company Promoter Share","active_status":"A","snapshot_date":"2026-11-25"},
-                {"symbol":"BOND1","security_id":"5","security_name":"Example Bank Energy Bond 2089","active_status":"A","snapshot_date":"2026-11-25"},
+                {"symbol":"BOND1","security_id":"5","security_name":"Example Bank Energy Bond, 2089","active_status":"A","snapshot_date":"2026-11-25"},
                 {"symbol":"DEB1","security_id":"4","security_name":"8% Example Debenture 2089","active_status":"A","snapshot_date":"2026-11-25"},
             ])
         report = audit_floorsheet_symbol_scope(

@@ -1732,3 +1732,14 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - 2022-06-16 schedule change has an official NEPSE-hosted notice located and visually reviewed, but original bytes/hash are not archived. 2026-04-06 Monday–Friday transition has multiple secondary reports, but the original NEPSE notice remains uncaptured.
 - No date-level session calendar promotion, no OHLCV changes, and no repeated-row reclassification. Next: deterministic raw-payload audit and official date-level market-session evidence acquisition.
 - Downloaded workflow artifact `15027700386` and independently verified ZIP SHA-256 against the manifest; all 2015–2025 annual raw response bodies match both their capture-report and SHA256SUMS hashes, and independently parsed JSON exactly matches each stored parsed-response file. Duplicate scan reproduced the sole duplicate date 2020-04-13. This verifies artifact integrity, not API completeness or session status. Detailed verification appended in the report, commit `dc771fca1517345d086ba78405f5b4d6b5499500`.
+
+
+### UNL low-liquidity / no-trade hypothesis review — 2026-11-26
+
+- Reviewed public UNL chart and floorsheet-derived summaries. NEPSE Quant's "last 20 sessions to 2026-11-25" page lists positive UNL activity on only 10 dates in its recent-session table (2026-11-05, 06, 13, 17, 18, 19, 20, 23, 24, 25). These are confirmed positive-trade dates in the provider's NEPSE floorsheet-derived summary; dates omitted from the table are candidate no-trade dates only, not yet certified zero.
+- Direct NEPSE floorsheet rendering for 2026-11-25 shows UNL contract quantity 300 at Rs 47,800 (brokers 34/38); the daily summary reports 310 shares.
+- Punji reports 40 UNL shares on 2026-11-26; separate broker activity rendering shows five brokers / eight trade count entries. Third-party exchange-data representations, not project-captured raw official response.
+- NEPSE Analysis describes UNL settled daily bars; NEPSEDATA's datewise series is sparse. This supports the hypothesis that UNL's low-liquidity/no-trade sessions may explain some repeated project OHLCV rows. It does not prove every repeated row is a carry-forward.
+- Added [UNL low-liquidity chart and floorsheet review](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/UNL_low_liquidity_floorsheet_vs_chart_review_2026-11-26.md), commit `afd47e3c59dd8d554a0cd4b238dd1783c1424123`.
+- Revised disposition: do not flag repeated rows as invalid solely because they occur on exchange-open weekdays. Reconcile every date against complete floorsheet records and official session status. If the full floorsheet is complete and has no UNL contract, label `NO_UNL_TRADE_CONFIRMED`; otherwise `UNVERIFIED`.
+- No raw rows changed, no synthetic bars, no historical splicing, and no canonical/training promotion.

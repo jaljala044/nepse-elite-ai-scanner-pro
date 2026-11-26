@@ -14,6 +14,17 @@ def rising_rows(count=60):
     return rows
 
 
+def declining_rows(count=60):
+    start = date(2025, 1, 1)
+    rows = []
+    for i in range(count):
+        close = 160 - i
+        rows.append({"date": start + timedelta(days=i), "open": close + 1,
+                     "high": close + 2, "low": close - 2,
+                     "close": close, "volume": 1000})
+    return rows
+
+
 class SignalConfirmationTests(unittest.TestCase):
     def test_blocks_unreviewed_data(self):
         result = confirm_signal(rising_rows(), eligible=False)
@@ -35,10 +46,11 @@ class SignalConfirmationTests(unittest.TestCase):
         self.assertNotIn("probability", result)
 
     def test_bearish_breakdown_requires_strictly_below_both_averages(self):
-        rows = rising_rows()
-        rows[-1].update(open=105, high=110, low=98, close=99, volume=2500)
+        rows = declining_rows()
+        rows[-1].update(open=100, high=103, low=98, close=99, volume=2500)
         result = confirm_signal(rows, eligible=True)
         self.assertEqual(result["classification"], "bearish_warning")
+        self.assertTrue(result["checks"]["breakdown_below_prior_low"])
         self.assertTrue(result["checks"]["close_below_sma20"])
         self.assertTrue(result["checks"]["close_below_sma50"])
         self.assertTrue(result["checks"]["sma20_below_sma50"])

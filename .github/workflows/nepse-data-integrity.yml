@@ -7,6 +7,8 @@ on:
       - "backend/app/hf_dataset_collector.py"
       - "backend/app/coverage_matrix.py"
       - "backend/app/session_candidate_audit.py"
+      - "backend/capture_nepse_market_summary_history.py"
+      - "backend/tests/test_nepse_market_summary_history_capture.py"
       - "backend/audit_session_candidates.py"
       - "data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv"
       - "data/reference/nepse_session_calendar.csv"
@@ -63,6 +65,9 @@ jobs:
             --expected-rows 40818 \
             --party-output ../artifacts/broker-derivation-2026-11-19/broker-party-observations.csv \
             --aggregate-output ../artifacts/broker-derivation-2026-11-19/broker-aggregates.json
+      - name: Test official NEPSE market-summary activity validation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_nepse_market_summary_history_capture.py' -v
       - name: Test NEPSE session candidate audit
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_session_candidate_audit.py' -v

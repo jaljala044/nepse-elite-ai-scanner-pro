@@ -11,6 +11,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .evidence_readiness import build_evidence_readiness
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -30,6 +31,11 @@ class ScanRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
+
+@app.get("/v1/evidence-readiness")
+def evidence_readiness():
+    """Return configuration and integrity status only; never expose source data or secrets."""
+    return build_evidence_readiness()
 
 @app.get("/v1/symbols")
 def symbols():

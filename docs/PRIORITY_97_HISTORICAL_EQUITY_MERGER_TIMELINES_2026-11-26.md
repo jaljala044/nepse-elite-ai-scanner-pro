@@ -214,3 +214,31 @@ Sources:
 - https://www.sharesansar.com/index.php/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09
 
 Only MATRI has a secondary report explicitly saying trading commenced that day; this is not yet validated against first non-zero daily OHLCV/floorsheet rows. All other first_trading_date fields remain null. No stable IDs or historical validity intervals inferred; no price histories spliced and no canonical/training promotion authorized.
+
+
+## Project OHLCV cross-check — first post-listing / resumption sessions
+
+The following observations were checked directly against the symbol CSVs in `jaljala044/nepse-smc-data/03_stock_charts_ohlcv`. Each row has non-zero volume. They are useful first-session candidates, but the archive is not a contract-level floorsheet and is not independent of the project's historical data pipeline; therefore `first_trading_date_verified` remains false pending floorsheet corroboration.
+
+| Symbol | First post-listing / resumption OHLCV date | Volume | Boundary evidence |
+|---|---:|---:|---|
+| SLBSL | 2024-05-19 | 722 | Last pre-suspension row 2024-03-06; first subsequent row 19 May |
+| NMLBBL | 2024-05-19 | 864 | First row in successor series; agrees with company operation date |
+| MATRI | 2024-08-13 | 1,391 | First row in successor series; agrees with NepseAlpha 'trading from today' report |
+| SMPDA | 2024-08-18 | 5,314 | First row in successor series after 15 Aug listing |
+| GBLBS | 2025-12-23 | 51,250 | Last pre-suspension row 16 Oct 2025; first subsequent row one session after 22 Dec listing |
+| PFL | 2026-09-16 | 33,240 | Last pre-suspension row 9 Jul 2026; first subsequent row one session after 15 Sep listing |
+
+SMATA is not assigned a new first-trade date for the acquisition share addition. Its symbol series was already active by 20 July 2024 and continued trading before and after the 2 August additional-share listing; this is a corporate-action addition to an existing series, not a new symbol launch.
+
+### Archive row provenance
+
+All rows below are exact CSV rows; blob SHAs are stored in the evidence JSON:
+- SLBSL: `2024-05-19,901.60,972.30,901.60,972.30,722` (blob `2aa78a66c27b26b7d84ae2448a2f69227adb42ed`)
+- NMLBBL: `2024-05-19,599.60,646.60,599.60,646.60,864` (blob `8dd19774b8409d0d67c94f9976fc079a5518d770`)
+- MATRI: `2024-08-13,1303.90,1406.20,1303.90,1406.20,1391` (blob `fc6c9f1acb505a866bd64c76ccf83fb11c0201d7`)
+- SMPDA: `2024-08-18,1078.10,1162.70,1078.10,1162.70,5314` (blob `044d6f823b0d93c64c0906edfe00e284945fbc6f`)
+- GBLBS: `2025-12-23,805.00,853.00,805.00,852.00,51250` (blob `0213813001421eb7d74e7cb3fb1d02bbdc6f3f34`)
+- PFL: `2026-09-16,374.10,386.00,372.00,373.00,33240` (blob `ace0983a96ecc90cc888c96b1d600894b4b22557`)
+
+Caution: some archive dates carry forward identical OHLCV values, so a date's presence alone is not proof of a trade. These six boundary rows have positive volume and were checked against the gap/suspension context, but the exact trade-level count/turnover still needs floorsheet corroboration. No stable IDs, validity intervals or legal identity boundaries are inferred. No raw price file was modified, no series was spliced and no canonical/training promotion is authorized.

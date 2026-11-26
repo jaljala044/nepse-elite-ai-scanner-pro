@@ -61,7 +61,18 @@ This register distinguishes code that exists, work submitted in open pull reques
 **Completed on main.** Broker memory/profile/sector-rotation/candidate/dashboard/early-signal code is integrated through PR #121. The five-component market-health pipeline and fail-closed readiness endpoint were ported from the old PR #55 and merged through PR #132 (`b917507ac2fd702205a5adfa224800dc04488767`). The older PR #55 is superseded; its original branch is not the canonical integration.
 
 ### P2.02 — Connect primary NEPSE index intelligence data
-The calculator and research endpoint are merged. The official NEPSE market-summary capture is independently hash/origin validated by PR #133, but its rows remain review-only because finality and exact session coverage are not yet attested. No official historical index/sub-index endpoint has been independently verified in the repository; the index-history path cited by a third-party mirror is not accepted as an official source. Next: locate and preserve an official NEPSE index history response before building a collector. Keep unavailable sub-indices explicit.
+The calculator and research endpoint are merged. The official NEPSE market-summary capture is independently hash/origin validated by PR #133, but its rows remain review-only because finality and exact session coverage are not yet attested.
+
+**Endpoint discovery update — 2026-11-27:** a community-maintained reverse-engineered client documents candidate POST routes on the `https://www.nepalstock.com` host:
+- `/api/nots/graph/index/58` — NEPSE index graph;
+- `/api/nots/graph/index/57` — Sensitive;
+- `/api/nots/graph/index/62` — Float;
+- `/api/nots/graph/index/63` — Sensitive Float;
+- IDs 51–67 are mapped by that client to sector/sub-index graph methods.
+
+The same client describes Salter authorization and a generated JSON `id` body. This is **third-party reverse-engineered evidence only**; it is not an official NEPSE API specification and no first-party response has yet been captured or validated. The route map is discovery evidence, not a production data source. Tracking issue: #134.
+
+**Next gate:** inspect the first-party NEPSE frontend/network contract or capture a direct official response with TLS verification enabled; preserve request metadata and raw bytes/hash; validate schema, index identity, dates, duplicates, ordering and session coverage against an independently verified calendar. Keep all sub-indices unavailable until each one independently passes. Do not build or enable a collector around undocumented assumptions.
 
 ### P2.03 — Connect primary sector rotation data
 The calculator, API endpoint and broker confluence layer are merged. Remaining work is trusted ingestion of verified stock/index rows and effective-dated official sector membership. Publish leadership only when membership and price coverage pass.
@@ -70,7 +81,7 @@ The calculator, API endpoint and broker confluence layer are merged. Remaining w
 **Merged in PR #128** (`00a92fd23e924b1a3b28858e33baa578bf87ccfb`). The server-side artifact store loads only deployment-pinned payload paths and SHA-256 hashes, checks source validation/finality, freshness and point-in-time availability, and fails closed on missing evidence. It additionally requires an exchange calendar identity, corporate-action status for price-derived modules, effective-dated sector-membership versioning for sector modules, and verified broker-code mapping plus coverage for broker modules. This is an adapter foundation only: no deployment registry or live NEPSE source feed has yet been provisioned.
 
 ### P2.05 — Integration and regression acceptance
-In progress in the current branch: require a common as-of date and consistent exchange-calendar identity across admitted modules; reject incoherent snapshots; test missing/stale/future evidence, hash mismatch, corporate-action status, sector membership, broker-code coverage and Nepal-local cutoff handling. Production scores and trade actions remain disabled.
+**Merged and accepted in PR #130.** Cross-module snapshots require a common as-of date and consistent exchange-calendar identity; missing or mismatched calendar identity marks evidence partial and prevents full research status. Regression coverage includes as-of mismatch, missing/inconsistent calendar identity, conflicting calendar versions and Nepal-local cutoff handling. Deployment registry quality gates require calendar identity, verified corporate-action status for price modules, verified effective-dated sector membership and verified broker-code mapping/coverage. Production scores and trade actions remain disabled.
 
 ## Acceptance criteria for Part 2
 
@@ -84,3 +95,11 @@ Part 2 is complete only when:
 - production scoring/trading remains disabled until separate strategy validation and backtesting gates are passed.
 
 **Current overall status:** Partially implemented. The trusted artifact-store foundation is merged and cross-module alignment gates are being added. Protected deployment storage, verified live source ingestion, market-health integration and independent strategy/backtest validation remain incomplete.
+
+## P2.02 endpoint discovery evidence and limitations
+
+- Candidate route map reference: `basic-bgnr/NepseUnofficialApi`, `nepse/data/API_ENDPOINTS.json` and `nepse/NepseLib.py` (community-maintained, reverse-engineered).
+- The client identifies its base URL as `https://www.nepalstock.com` and sends POST requests to graph endpoints using an authorization token and generated request ID.
+- This does not independently prove that the route remains active, that the returned payload is final, that the response is complete, or that the date series covers every exchange session.
+- No candidate response has been admitted to the trusted artifact store. No index history has been promoted, backfilled, forward-filled or used to calculate market health.
+- Issue #134 records the required first-party capture, TLS, hash, schema, session-calendar and per-index acceptance gates.

@@ -374,7 +374,9 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "symbols_with_any_quality_issue": len(set(bad_symbols)),
         "symbol_results": audited,
         "official_history_crosscheck": official_crosscheck,
-        "gate": "FAIL" if quality_failed or official_crosscheck.get("field_mismatches", 0)
+        "gate": "FAIL" if quality_failed
+                or official_crosscheck.get("status") != "COMPLETED"
+                or official_crosscheck.get("field_mismatches", 0)
                 or official_crosscheck.get("missing_public_active_rows", 0)
                 or official_crosscheck.get("hash_or_parse_errors")
                 or official_crosscheck.get("missing_public_symbol_files")
@@ -403,8 +405,17 @@ def main() -> None:
     print(json.dumps({k: report[k] for k in (
         "source_commit", "ordinary_listed_symbols_expected",
         "ordinary_listed_files_audited", "missing_files", "download_errors",
-        "date_range", "totals", "symbols_with_any_quality_issue", "gate",
+        "date_range", "totals", "symbols_with_any_quality_issue",
     )}, indent=2))
+    print(json.dumps({"official_history_crosscheck": {
+        key: report["official_history_crosscheck"].get(key)
+        for key in ("status", "official_symbols_found", "official_rows",
+                    "public_rows_matched_by_date", "fully_matching_rows",
+                    "match_rate_pct", "field_comparisons", "field_mismatches",
+                    "mismatches_by_field", "missing_public_active_rows",
+                    "missing_public_zero_activity_rows", "missing_public_symbol_files",
+                    "hash_or_parse_errors")
+    }, "gate": report["gate"]}, indent=2))
 
 
 if __name__ == "__main__":

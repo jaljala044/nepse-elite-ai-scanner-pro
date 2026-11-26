@@ -58,6 +58,21 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         self.assertEqual(result["symbols_without_ohlcv"], 1)
         self.assertEqual(result["status_counts"]["insufficient_data"], 1)
 
+    def test_calendar_age_is_reported_without_session_staleness_claim(self):
+        result = run_market_scan(
+            ["AAA"],
+            {"AAA": [{"date": "2026-01-01"}]},
+            as_of=date(2026, 1, 5),
+            scan_symbol=lambda *args: {"status": "screened"},
+        )
+        row = result["results"][0]
+        self.assertEqual(row["latest_observation_calendar_age_days"], 4)
+        self.assertEqual(
+            row["freshness_status"],
+            "calendar_age_only_session_status_unverified",
+        )
+        self.assertIn("no stale-session judgment", result["disclaimer"])
+
     def test_duplicate_or_noncanonical_universe_is_rejected(self):
         for symbols in (["AAA", "AAA"], ["aaa"], [""]):
             with self.subTest(symbols=symbols):

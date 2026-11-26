@@ -1430,3 +1430,17 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 - Added verbose dependency-install diagnostics, runner version capture, pinned-commit reachability check, package metadata/import checks, and an always-uploaded 14-day diagnostics artifact in automation commit `323c7c1e9906e26a8418ed47ca4a0fbce7ea9d94`.
 - Posted the diagnostic follow-up to [automation PR #3](https://github.com/jaljala044/nepse-automation/pull/3). The new commit has not yet produced a visible workflow run in the available PR-run query. Do not mark dependency validation passed or merge the PR.
 - Collector remains blocked from production scheduling: replace-in-place sheet writes, date validation against returned records, immutable raw response retention/hash, and live end-to-end verification are still required.
+
+
+## Work-session update — 2026-11-26 (Priority 95: four Yonepse IDs resolved)
+
+- Resolved all four previously unmapped stock IDs from the dated 2026-11-25 security-ID snapshot:
+  - 8111 → HIDCLP — Hydorelectricity Investment and Development Company Limited Promoter
+  - 469 → NIMBPO — Nepal Investment Mega Bank Ltd. Promoter Share
+  - 700 → HEIP — Himalayan Everest Insurance Limited Promoter
+  - 661 → NMLBBLP — Nerude Mirmire Laghubitta Bittiya Sanstha Limited Promoter
+- All four are marked active in the snapshot and have OHLCV files, but their security names explicitly identify promoter/promoter-share instruments. Do not silently treat them as ordinary public-share universe members.
+- Mapping coverage for the four previously unmapped IDs is now 4/4 at the 2026-11-25 snapshot level. Effective-dated historical identity and promoter-share inclusion policy remain open.
+- Detailed report: [Priority 95 unmapped Yonepse IDs resolved](docs/PRIORITY_95_UNMAPPED_YONEPSE_IDS_RESOLVED_2026-11-26.md), commit `cd08a1c4af0b7196f2fd76e464886df84c38509b`.
+- No raw floorsheet/OHLCV records changed; no canonical target-universe or training-data promotion.
+

@@ -42,7 +42,7 @@ class MarketWideScannerAPITests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["scanner_id"], "3A.01")
         self.assertEqual(payload["candidate_universe_count"], 1)
-        self.assertEqual(payload["symbols_without_ohlcv"], 1)
+        self.assertEqual(payload["symbols_without_observations"], 1)
         self.assertEqual(payload["results"][0]["status"], "insufficient_data")
         self.assertFalse(payload["ranking_enabled"])
         self.assertFalse(payload["results"][0]["buy_list_eligible"])

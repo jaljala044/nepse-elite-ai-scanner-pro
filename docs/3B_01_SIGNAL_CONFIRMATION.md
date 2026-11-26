@@ -633,3 +633,18 @@ not supply open or turnover in this captured endpoint. No source data is
 promoted. Despite the MIT-style dataset licence, upstream provenance and
 sublicensing authority remain unverified, and the repository does not provide
 the advertised symbol-master CSV or documented adjustment methodology.
+
+The discrepancy-magnitude pass (same pinned source and official window,
+artifact run 45895238713) shows the mismatches are not all trivial rounding:
+
+| Field | Mismatches | Mean absolute difference | Maximum absolute difference | Maximum relative difference |
+| --- | ---: | ---: | ---: | ---: |
+| High | 217 | NPR 6.180184 | NPR 190 | 8.080505% |
+| Low | 130 | NPR 3.043077 | NPR 45 | 3.088183% |
+| Close | 12 | NPR 3.35 | NPR 15.9 | 1.576846% |
+| Volume | 4,283 | 15.325 shares | 1,884 shares | 45.16129% |
+
+Volume differences are often small in absolute terms but include material
+relative exceptions. The high/low/close exceptions also include large price
+differences. Therefore, this is not simply a decimal-format issue and the
+archive cannot be treated as interchangeable with official NEPSE history.

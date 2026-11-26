@@ -172,6 +172,28 @@ class SourceTrustPromotionTests(unittest.TestCase):
         self.assertFalse(event["accepted"])
         self.assertIn("record_payload_digest_mismatch", event["reasons"])
 
+
+    def test_invalid_revocation_signature_cannot_revoke(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "promotion.jsonl"
+            append_promotion_event(path, self.event())
+            revoke_validation = {
+                "validation_id": "revocation-invalid", "reviewer": "reviewer-1",
+                "validated_at": "2026-11-26T12:01:00Z",
+                "evidence_refs": {"revocation": ["evidence://revocation-case"]},
+                "signature": "invalid",
+            }
+            revoked = build_promotion_event(
+                decision_id="decision-revoke-invalid", action="revoke", record=self.record,
+                registry=self.registry, raw_payload_sha256=self.digest,
+                validation=revoke_validation, decision_time="2026-11-26T12:02:00Z",
+                trusted_registry_sha256=self.registry["registry_sha256"],
+                reviewer_keys=self.keys,
+            )
+            self.assertFalse(revoked["accepted"])
+            append_promotion_event(path, revoked)
+            self.assertEqual(active_promoted_record_ids(path), {"record-001"})
+
     def test_ledger_chain_append_idempotency_revocation_and_tamper_detection(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "promotion.jsonl"

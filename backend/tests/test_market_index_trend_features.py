@@ -43,7 +43,7 @@ class MarketIndexTrendTests(unittest.TestCase):
         self.assertEqual(result["status"], "verified")
         self.assertEqual(result["score"], 100)
         self.assertEqual(result["as_of_session"], rows[-1]["session_date"])
-        self.assertTrue(result["metrics"]["sma200_rising_over_20_sessions"])
+        self.assertTrue(result["metrics"]["checks"]["sma200_rising_over_20_sessions"])
         self.assertEqual(result["source_id"], rows[-1]["source_id"])
 
     def test_insufficient_history_returns_null_score(self):

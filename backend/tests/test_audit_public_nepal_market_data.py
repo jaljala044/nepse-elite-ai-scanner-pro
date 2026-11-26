@@ -41,6 +41,21 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         self.assertEqual(result["invalid_ohlc"], 1)
         self.assertEqual(result["fractional_volume"], 1)
         self.assertEqual(result["valid_rows"], 0)
+        sample = result["row_error_samples"]["invalid_ohlc_bounds"][0]
+        self.assertEqual(sample["date"], "2024-01-02")
+        self.assertEqual(sample["open"], 10)
+        self.assertEqual(sample["high"], 9)
+        self.assertEqual(sample["low"], 8)
+        self.assertEqual(sample["close"], 10)
+
+    def test_zero_turnover_with_volume_has_auditable_row_sample(self):
+        data = HEADER + b"2024-01-02,10,11,9,10,nan,100,0,A\\n"
+        result = audit_symbol_csv(data, "TEST", "data/nepse/TEST.csv")
+        self.assertEqual(result["zero_turnover_with_volume"], 1)
+        sample = result["row_error_samples"]["zero_turnover_with_volume"][0]
+        self.assertEqual(sample["date"], "2024-01-02")
+        self.assertEqual(sample["volume"], 100)
+        self.assertEqual(sample["turnover"], 0)
 
     def test_header_mismatch_fails_closed(self):
         result = audit_symbol_csv(

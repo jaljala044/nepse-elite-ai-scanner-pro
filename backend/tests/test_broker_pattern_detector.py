@@ -98,6 +98,17 @@ class BrokerPatternDetectorTests(unittest.TestCase):
         self.assertEqual(result["pattern"], "EARLY_DISTRIBUTION_CANDIDATE")
         self.assertEqual(result["trading_action"], "NONE")
 
+    def test_calendar_cutoff_uses_nepal_local_date(self):
+        sessions, brokers, prices, context = fixture_rows()
+        # 00:30 Nepal time is still the same local exchange date, although UTC
+        # is the prior calendar date. The function must not reject this session.
+        result = detect_broker_patterns(
+            "TEST", brokers, prices, context,
+            expected_sessions=sessions, complete_broker_sessions=sessions,
+            decision_at=sessions[-1] + "T00:30:00+05:45",
+        )
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+
     def test_incomplete_broker_inventory_fails_closed(self):
         sessions, brokers, prices, context = fixture_rows()
         result = detect_broker_patterns(

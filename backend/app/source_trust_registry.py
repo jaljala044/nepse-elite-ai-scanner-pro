@@ -302,6 +302,8 @@ def build_promotion_event(
         "record_id": record.get("record_id"), "source_id": record.get("source_id"),
         "record_type": record.get("record_type"),
         "source_payload_sha256": record.get("source_payload_sha256"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
         "decision_time": _utc(decision_time, "decision_time").isoformat().replace("+00:00", "Z"),
         "validation_id": validation.get("validation_id"),
         "reviewer": validation.get("reviewer"),
@@ -434,5 +436,7 @@ def active_promoted_record_ids(
         elif event["action"] == "revoke":
             if not attestation.get("evidence_refs") or not attestation.get("reviewer"):
                 raise ValueError("promotion ledger contains an unsupported revocation")
+            if _utc(attestation.get("validated_at"), "validated_at") > _utc(event.get("decision_time"), "decision_time"):
+                raise ValueError("promotion ledger revocation is not point-in-time valid")
             state[record_id] = False
     return {record_id for record_id, active in state.items() if active}

@@ -145,6 +145,12 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         result = compare_socrateai_daily_csvs(official, daily)
         self.assertEqual(result["field_mismatches"], 1)
         self.assertEqual(result["mismatches_by_field"]["volume"], 1)
+        self.assertEqual(result["field_error_stats"]["volume"]["max_absolute_difference"], 9)
+        self.assertAlmostEqual(
+            result["field_error_stats"]["volume"]["max_relative_difference_pct"],
+            9 / 307576 * 100,
+            places=6,
+        )
 
     def test_socrateai_daily_archive_missing_active_row_is_counted(self):
         official = [{

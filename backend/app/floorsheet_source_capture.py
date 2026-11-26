@@ -135,10 +135,13 @@ def capture_public_floorsheet(
             declared_length = headers.get("Content-Length")
             if declared_length is not None:
                 try:
-                    if int(declared_length) > policy.max_response_bytes:
-                        raise FloorsheetCaptureRejected("response_exceeds_size_limit")
-                except ValueError:
+                    parsed_length = int(declared_length)
+                except (TypeError, ValueError):
                     raise FloorsheetCaptureRejected("invalid_content_length") from None
+                if parsed_length < 0:
+                    raise FloorsheetCaptureRejected("invalid_content_length")
+                if parsed_length > policy.max_response_bytes:
+                    raise FloorsheetCaptureRejected("response_exceeds_size_limit")
             content_type = headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if content_type not in {x.lower() for x in policy.allowed_content_types}:
                 raise FloorsheetCaptureRejected("content_type_not_allowlisted")

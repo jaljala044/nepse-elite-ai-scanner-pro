@@ -116,13 +116,16 @@ def persist_capture(root: str | Path, payload: bytes, manifest: dict[str, Any]) 
     if manifest.get("payload_bytes") != len(payload):
         raise ValueError("manifest payload_bytes does not match exact payload bytes")
     source = str(manifest["source_id"])
+    fetch_id = str(manifest.get("fetch_id", ""))
     session = manifest.get("verified_session_date") or manifest.get("claimed_session_date") or "unknown-date"
-    if any(part in {"", ".", ".."} or "/" in part or "\\" in part for part in (source, session)):
-        raise ValueError("unsafe source/date path component")
+    if any(part in {"", ".", ".."} or "/" in part or "\\" in part for part in (source, session, fetch_id)):
+        raise ValueError("unsafe source/date/fetch path component")
 
     directory = Path(root) / source / session / digest
     payload_path = directory / "payload.bin"
-    manifest_path = directory / "manifest.json"
+    # One payload object may have multiple independent fetch events. Keep a
+    # separate immutable manifest for each fetch so lineage is never overwritten.
+    manifest_path = directory / "captures" / f"{fetch_id}.json"
     created = _atomic_create(payload_path, payload)
     if not created and payload_path.read_bytes() != payload:
         raise CaptureConflictError("existing content-addressed payload differs")

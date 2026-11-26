@@ -1926,3 +1926,12 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Tested code commit: `2898dcaf686fe828309c882fbebd9f22053b0617`.
 - This remains a research feature pipeline, not a production scan recommendation path. The top-level `/v1/scan` is still fail-closed/research-only because market-regime, Stage-1 data gates, execution liquidity, horizon trade geometry and complete canonical input assembly are not connected. No BUY, ranked results or probability claims are enabled.
 - Next: harden feature-input contracts (especially calendar alignment, exact session coverage and provenance for OHLCV/broker rows), then wire the research pipeline into an explicitly separate scan-preview endpoint without changing production ranking eligibility.
+
+
+### Date-specific archive recovery — 2026-11-20 partition located
+
+- Live Hugging Face repository tree inspection found `floorsheet/business_date=2026-11-20/part-0.parquet` in `AnkitSanjyal/nepse-market-data`.
+- File size 840,136 bytes; tree OID `0f58264637283ce959ed54837fd92518a5534cfa`; LFS SHA-256 `7f52d0004418a7aa82a5930e84438968022a14e3acf94ac9e3e51c431ccbc480`.
+- This confirms a date-specific partition exists, not that its contents or completeness have been verified. The dataset viewer's default tabular config is minute bars and does not expose this floorsheet parquet as its rows endpoint.
+- Binary retrieval/decoding was not completed in this environment; browser automation could not start because its external wallet was out of funds. No retry was made. Data-repo audit updated: https://github.com/jaljala044/nepse-smc-data/commit/4866c9cedfaea5e9e329ccbe4757a14fbce80487
+- Next: retrieve/decode this exact parquet file; compare contract IDs and normalized transaction fields against the 39,966-row SocrateAI file and 500-row local extract; then reconcile count, shares, turnover, distinct symbols and any upstream totalElements evidence. Current classification remains `INDEPENDENT_ARCHIVE_PARTITION_LOCATED_NOT_RECONCILED`; NO_TRADE, canonical promotion and broker scoring remain disabled.

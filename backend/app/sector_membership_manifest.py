@@ -10,6 +10,9 @@ from datetime import date, datetime, timezone
 from hashlib import sha256
 import json
 from typing import Any
+from zoneinfo import ZoneInfo
+
+NEPAL_TZ = ZoneInfo("Asia/Kathmandu")
 
 
 def _iso_date(value: Any, field: str) -> date:
@@ -79,10 +82,13 @@ def audit_sector_membership_manifest(
         raise ValueError("manifest_sha256_mismatch")
     if not isinstance(expected_symbols, list) or not expected_symbols:
         raise ValueError("expected_symbols_required")
-    expected = [str(item).strip().upper() for item in expected_symbols]
-    if any(not item for item in expected) or len(expected) != len(set(expected)):
+    if any(not isinstance(item, str) or not item.strip() for item in expected_symbols):
         raise ValueError("expected_symbols_must_be_unique_nonempty")
-    if not isinstance(allowed_sector_codes, set) or not allowed_sector_codes:
+    expected = [item.strip().upper() for item in expected_symbols]
+    if len(expected) != len(set(expected)):
+        raise ValueError("expected_symbols_must_be_unique_nonempty")
+    if (not isinstance(allowed_sector_codes, set) or not allowed_sector_codes
+            or any(not isinstance(code, str) or not code.strip() for code in allowed_sector_codes)):
         raise ValueError("allowed_sector_codes_required")
 
     normalized = []
@@ -121,7 +127,10 @@ def audit_sector_membership_manifest(
             if previous[1] is None or current[0] <= previous[1]:
                 raise ValueError(f"overlapping_effective_intervals:{symbol}")
 
-    as_of = cutoff.astimezone(timezone.utc).date()
+    # NEPSE sessions and effective dates use Nepal local calendar dates.
+    # Converting the cutoff to UTC first can shift an evening Nepal cutoff
+    # into the previous UTC date and select the wrong membership snapshot.
+    as_of = cutoff.astimezone(NEPAL_TZ).date()
     active: dict[str, list[str]] = {}
     for row in normalized:
         if row["effective_from"] <= as_of and (row["effective_to"] is None or as_of <= row["effective_to"]):

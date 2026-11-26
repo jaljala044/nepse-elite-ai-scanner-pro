@@ -31,6 +31,55 @@ The 3A.01 scanner must therefore remain **research-only**. Candidate discovery m
 4. **The bulk endpoint is all-instrument scope.** Across the three captured dates, the 1,049 symbol-date rows include 838 ordinary-equity candidate rows, 132 mutual-fund rows, 65 debenture rows, 12 promoter-share rows and 2 bond rows. These are current-snapshot classifications, not historical lifecycle proof.
 5. **Runtime promotion is a separate gate.** The current canonical reviewed-row manifest is empty. Runtime eligibility requires dated identity, lifecycle, verified open-session evidence, source hashes, price-basis review, corporate-action clearance, point-in-time availability and exact OHLCV value binding.
 
+## Repository OHLCV archive inventory — 2026-11-27
+
+A further read-only inventory was performed against the owner-controlled `jaljala044/nepse-smc-data` repository.
+
+### Raw archive inventory
+
+- Inspected repository tree commit: `56362fb4f65b91fdcca8f50b50e53ad80e703649` (tree SHA; recursive tree complete, not truncated).
+- `03_stock_charts_ohlcv/`: 525 CSV files and 525 unique filename stems.
+- Exact filename match against the 281-symbol candidate equity manifest: **281/281 files present**.
+- The remaining 244 file stems are outside the current 281 candidate list. They are not automatically classified as equities; they may include other instrument classes or unresolved aliases.
+- Only one of the 281 candidate files is under 1 KB: BENH (783 bytes). File size is an inventory clue, not a row-count or quality verdict.
+
+This is stronger than a manifest-only file-presence assertion, but it still does not prove each file contains complete expected-session history.
+
+### Derived official-EOD v2 archive
+
+Pinned release branch: `derived/ohlcv-v2-official-eod`  
+Pinned release commit: `4255cc293a347857ac77c04a947beb784203062f`
+
+The derived v2 manifest was independently parsed from the pinned branch:
+- 281 symbol entries and 246,238 total derived rows.
+- Per-symbol row counts range from 17 to 3,780; median 936. Different history lengths are material and must not be represented as uniform coverage.
+- All 281 raw source Git blob hashes are recorded and verified by the release integrity audit.
+- 599 official NEPSE EOD rows were applied across 254 symbols and six business dates.
+- Derived-only corrections: 490 date shifts, 109 inserted rows and 112 field corrections. Raw source files were not modified.
+- This is a derived release, not a fully session-clean canonical dataset.
+
+### Integrity and contamination evidence
+
+The full v2 integrity audit reports:
+- 1,329 unique invalid OHLCV rows across 13 symbols (1,379 invariant flags); no automatic repair.
+- 71,806 adjacent identical OHLCV rows across 256 symbols.
+- 18,910 repeats are candidates on dates explicitly verified closed; 52,891 are outside the calendar evidence window and remain UNKNOWN; five open-session repeat pairs remain UNKNOWN pending symbol/date floorsheet checks.
+- Corporate-action coverage remains partial: three recorded events, 278/281 symbols without an action record, and one NLIC split proposal with unverified effective date.
+
+A separate official EOD parity sample across 24 active securities and 12 sectors (5,472 official rows) found:
+- 1,455 canonical-only HLCV rows across 19 securities on 81 verified-closed dates, exactly matching another official EOD date's HLCV tuple.
+- 36 official-only rows also match canonical tuples placed on verified-closed dates.
+- Three exact-date HLCV mismatches remain unresolved (AHPC 2026-07-17, CFCL 2026-11-18, HDL 2026-07-17).
+- No canonical source file was changed.
+
+The 24-security parity sample and the 281-symbol integrity audit have different scopes; their repeat counts must not be added together. The observed contamination is sufficient to prohibit treating raw ShareSansar-derived calendar-date rows as clean trading-session bars without the derived quarantine logic and verified calendar.
+
+### Scanner impact
+
+The repository contains an extensive 281-symbol historical archive and a derived v2 candidate input. However, row presence and total row count are not scanner-ready coverage. Until the complete session calendar, per-symbol date mapping, OHLC invariant flags, repeated-candle dispositions, corporate actions, source rights and deployment import are resolved, v2 can only be evaluated as a research/quarantine dataset. The app's canonical reviewed-row manifest remains empty; no new rows are eligible for runtime scoring.
+
+**Source reports:** `nepse-smc-data/reference/derived_ohlcv_v2_release_2026-11-26.md`, `derived_ohlcv_v2_integrity_audit_2026-11-26.md`, `reference/p437_cross_sector_date_contamination_audit_2026-11-26.md`, and `reference/equity_ohlcv_inventory_readiness_audit_2026-11-26.md`.
+
 ## 3A.01 acceptance matrix
 
 | Acceptance gate | Status | Evidence / blocker |

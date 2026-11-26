@@ -750,16 +750,12 @@ def compare_srijankarki_daily_csvs(official_rows: list[dict],
         "duplicate_symbol_rows": 0,
         "malformed_rows": 0,
         "invalid_ohlc_rows": 0,
+        "invalid_ohlc_examples": [],
         "official_rows_matched_by_date": 0,
         "fully_matching_rows": 0,
         "field_comparisons": 0,
         "field_mismatches": 0,
         "mismatches_by_field": {key: 0 for key in fields},
-        "field_error_accumulators": {
-            key: {"absolute_difference_sum": 0.0, "max_absolute_difference": 0.0,
-                  "max_relative_difference_pct": 0.0}
-            for key in fields
-        },
         "missing_public_active_rows": 0,
         "missing_public_zero_activity_rows": 0,
         "mismatch_examples": [],

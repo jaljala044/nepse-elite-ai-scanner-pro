@@ -2003,3 +2003,12 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - **UNL on 2026-11-20: TRADED** — 4 contracts, 50 shares, NPR 2,408,700.00 turnover. Contract rows are recorded in the data-repo audit and machine-readable manifest. This does not resolve UNL on 2026-11-26 or other dates.
 - Date status: `VERIFIED_COMPLETE_BY_INDEPENDENT_UPSTREAM_CAPTURE`. Caveat: pipeline raw bronze repository was not configured for that run, so raw page replay is unavailable. Scope is one date only; other dates in the 281-equity completeness project remain to be audited. No global canonical promotion or model training.
 - Data audit report/manifest commit: https://github.com/jaljala044/nepse-smc-data/commit/53fbed2fee581c97822a6e3b90322719aacb656d and manifest commit 3de09c870c8d2f2618898072c2e029ff1f541743.
+
+
+### Reproducible Nov 20 cross-source audit merged
+
+- Added `tools/reconcile_nov20_independent_floorsheet.py` and extended the existing floorsheet CI workflow to download the independent Parquet + SocrateAI CSV, compare normalized trade multisets, report local partial-extract identity/amount deltas, emit per-symbol metrics and UNL contract detail, and upload the JSON artifact.
+- Clean PR #16 merged after both CI jobs passed: https://github.com/jaljala044/nepse-smc-data/pull/16
+- CI run: https://github.com/jaljala044/nepse-smc-data/actions/runs/45843631263 (audit job and existing reconciliation tests both SUCCESS).
+- Merge commit: `57ee5507bef77e457bdbbb75a0963c25786cdc25`.
+- Superseded stale PR #15 closed; no duplicate open implementation remains.

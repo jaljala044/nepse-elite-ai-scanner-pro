@@ -5,7 +5,7 @@ These are descriptive aggregates, not evidence of beneficial ownership or intent
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import re
 
@@ -16,6 +16,7 @@ DEFAULT_WINDOWS = {"daily": 1, "weekly": 5, "monthly": 21, "yearly": 252}
 def build_broker_behavior_memory(
     observations: list[dict], *, as_of_date: str,
     windows: dict[str, int] | None = None,
+    available_by: datetime | str | None = None,
 ) -> dict:
     """Build as-of broker/security descriptors from verified daily observations.
 
@@ -29,6 +30,16 @@ def build_broker_behavior_memory(
         raise ValueError("as_of_date must be an ISO date") from exc
     if not isinstance(observations, list):
         raise ValueError("observations must be a list")
+    if isinstance(available_by, str):
+        try:
+            available_by = datetime.fromisoformat(available_by.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("available_by must be a timezone-aware ISO timestamp") from exc
+    if available_by is not None and (
+        not isinstance(available_by, datetime) or
+        available_by.tzinfo is None or available_by.utcoffset() is None
+    ):
+        raise ValueError("available_by must be a timezone-aware timestamp")
     windows = DEFAULT_WINDOWS if windows is None else windows
     if not isinstance(windows, dict) or not windows:
         raise ValueError("windows must be a non-empty mapping")
@@ -54,7 +65,9 @@ def build_broker_behavior_memory(
         else:
             try:
                 event_date = date.fromisoformat(row["trade_date"])
-                available_date = date.fromisoformat(row["available_at"][:10])
+                available_timestamp = datetime.fromisoformat(row["available_at"].replace("Z", "+00:00"))
+                if available_timestamp.tzinfo is None or available_timestamp.utcoffset() is None:
+                    raise ValueError("available_at_must_be_timezone_aware")
                 amount = Decimal(str(row["amount"]))
                 quantity = Decimal(str(row["quantity"]))
                 coverage = Decimal(str(row["coverage_ratio"]))
@@ -63,7 +76,9 @@ def build_broker_behavior_memory(
             else:
                 if event_date > cutoff:
                     reason = "future_event"
-                elif available_date > cutoff:
+                elif available_timestamp.date() > cutoff or (
+                    available_by is not None and available_timestamp > available_by
+                ):
                     reason = "not_yet_available_as_of"
                 elif row.get("side") not in {"buy", "sell"}:
                     reason = "invalid_side"
@@ -78,7 +93,7 @@ def build_broker_behavior_memory(
         else:
             admitted.append({
                 "security_id": row["security_id"], "broker_entity_id": row["broker_entity_id"],
-                "trade_date": event_date, "available_at": available_date,
+                "trade_date": event_date, "available_at": available_timestamp,
                 "side": row["side"], "amount": amount, "quantity": quantity,
                 "coverage_ratio": coverage, "source_id": row["source_id"],
                 "evidence_id": row["evidence_id"], "source_payload_sha256": row["source_payload_sha256"].lower(),

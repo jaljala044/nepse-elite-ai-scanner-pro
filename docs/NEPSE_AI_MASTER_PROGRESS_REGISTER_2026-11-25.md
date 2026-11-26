@@ -2191,3 +2191,20 @@ Reconcile the 279 observed equity candidates against independently verified 2026
 ### P4.20 next
 
 Classify the 19-Nov and 20-Nov one-sided records by dated instrument scope, compare them with independent date-specific controls, and expand the overlap sample without treating any source-only row as a missing equity trade until its instrument class and source lineage are established.
+
+
+## P4.20 — one-sided archive instrument-scope classification completed (2026-11-26)
+
+- Added `backend/audit_floorsheet_one_sided_scope.py` and focused tests; integrated the classification into the pinned three-date archive workflow.
+- Reconciled all **76 SocrateAI-only contracts** from 2026-11-19, 2026-11-20 and 2026-11-24 against the dated 2026-11-25 security snapshot, 2026-11-26 equity crosswalk and target-universe candidate registry.
+- Classification: **59 mutual-fund**, **11 promoter-share**, **6 debenture** contracts; **0 ordinary-equity candidates**, **0 unclassified snapshot-only**, **0 unknown** under the current snapshot scope hints.
+- Date partitions: 19-Nov = 19 mutual fund (RSY2); 20-Nov = 24 mutual fund, 10 promoter share, 5 debenture (symbols ICFCD89, ILBSP, NBLD87, RSY2); 24-Nov = 16 mutual fund, 1 promoter share, 1 debenture (RSY2, NMLBBLP, ICFCD89).
+- The 76 records total 50,231 shares and NPR 6,187,165.01. The 20-Nov one-sided variance is largest: 39,950 shares / NPR 4,814,040.21.
+- Latest successful workflow: [#45853295414](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45853295414), artifact ID `15135204819`; latest focused scope suite ran **6 tests, all passed**.
+- Detailed report: [P4.20 one-sided floorsheet scope classification](docs/P4.20_ONE_SIDED_FLOORSHEET_SCOPE_CLASSIFICATION_2026-11-26.md).
+- **Important limitation:** the 2026-11-25 registry is a current snapshot used as a scope hint, not an effective-dated historical instrument master for 19/20-Nov. The report sets historical identity verification false for every contract. This classification does not prove source independence, daily completeness, official session status or rights.
+- **Disposition:** current-snapshot scope classification passed, review-only. No canonical coverage admission, broker scoring, training promotion or BUY authorization.
+
+### P4.21 next
+
+Obtain historical effective-dated security identity/lifecycle evidence for the 19/20-Nov one-sided symbols; reconcile date-specific aggregate controls for all three dates; investigate the 20-Nov 39-contract / NPR 4.814m variance; then expand the pinned overlap window. Keep source rights, official session verification and per-security coverage fail-closed.

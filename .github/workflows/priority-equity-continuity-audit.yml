@@ -19,6 +19,7 @@ on:
       - 'backend/stage_additional_recovery.py'
       - 'backend/diagnose_extended_source_exceptions.py'
       - 'backend/audit_disputed_opening_prices.py'
+      - 'backend/crosscheck_company_price_exceptions.py'
       - 'backend/diagnose_remaining_recovery_exceptions.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
@@ -104,6 +105,9 @@ jobs:
       - name: Audit disputed opening prices
         run: |
           python backend/audit_disputed_opening_prices.py --diagnostics /tmp/audit/extended_source_exception_diagnostics.csv --overlay /tmp/audit/extended_research.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --secondary /tmp/secondary --secondary-revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/disputed_opening_prices.csv
+      - name: Crosscheck company-wise historical prices
+        run: |
+          python backend/crosscheck_company_price_exceptions.py --diagnostics /tmp/audit/extended_source_exception_diagnostics.csv --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --output /tmp/audit/company_price_exception_crosscheck.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

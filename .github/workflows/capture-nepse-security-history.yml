@@ -61,6 +61,7 @@ jobs:
             --history-report evidence/nepse-security-history/2026-10-05_to_2026-11-26/capture-report.json \
             --market-summary-body data/evidence/raw/nepse/market-summary-history/2026-11-26/response-body.bin \
             --market-summary-capture-report data/evidence/raw/nepse/market-summary-history/2026-11-26/capture-report.json \
+            --lifecycle-input data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv \
             --start-date 2026-10-05 \
             --end-date 2026-11-26 \
             --output evidence/nepse-security-history/2026-10-05_to_2026-11-26/window-audit.json

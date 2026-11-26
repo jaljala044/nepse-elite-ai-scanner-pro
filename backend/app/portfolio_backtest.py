@@ -25,7 +25,7 @@ def _finite(value, name):
 
 
 def _equity(cash, positions, receivables, mark_date, rows_by_symbol):
-    value = cash + sum(float(x[\"amount\"]) for x in receivables)
+    value = cash + sum(float(x["amount"]) for x in receivables)
     for position in positions:
         bars = {str(x["date"]): x for x in rows_by_symbol[position["symbol"]]}
         bar = bars.get(mark_date)

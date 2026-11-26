@@ -123,14 +123,32 @@ class BrokerMemoryStoreTests(unittest.TestCase):
                     "floorsheet_coverage_status": "verified_complete",
                 },
             ])
+        context = {
+            "status": "verified",
+            "symbol": "NABIL",
+            "as_of_session": sessions[-1],
+            "available_at": sessions[-1] + "T15:00:00+05:45",
+            "source_id": "verified-nepse-context",
+            "source_payload_sha256": "c" * 64,
+            "price_extension_status": "not_extended",
+            "component_statuses": {
+                "price": "verified", "nepse_index": "verified",
+                "sector_index": "verified", "market_breadth": "verified",
+                "turnover_liquidity": "verified", "circuit_context": "verified",
+                "corporate_actions": "verified",
+            },
+        }
         persist_broker_memory(
             rows, session_dates=sessions,
             decision_time=sessions[-1] + "T16:00:00+05:45",
+            market_context_by_symbol={"NABIL": context},
+            minimum_daily_flow_multiple=0.5,
         )
         profile = get_latest_broker_memory(symbol="NABIL", broker_code="11")
         daily = next(item for item in profile["execution_channel_matches"] if item["horizon"] == "1D")
         self.assertEqual(daily["prior_20_session_count"], 20)
         self.assertEqual(daily["latest_buy_vs_prior_20_avg_ratio"], 1.0)
+        self.assertEqual(profile["selected_early_patterns"][0]["status"], "EARLY_ENTRY_CANDIDATE")
 
     def test_broker_filter_returns_observed_execution_channel_profile(self):
         self.persist()

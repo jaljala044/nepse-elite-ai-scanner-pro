@@ -188,3 +188,12 @@ The repository does not currently expose a verified deployment target or deploym
 - The scanner UI displays the warning beside the scan coverage summary. This prevents the 281-row secondary snapshot from appearing to be an official or point-in-time NEPSE active-equity universe.
 - API regression coverage asserts the provenance flags and warning are present.
 - This is a transparency/contract improvement only. It does not resolve official-universe membership, reviewed OHLCV, live data coverage or deployment acceptance gates.
+
+
+### Additional universe-source lead: licensed company API (2026-11-27)
+
+- Located ShareHub's published NEPSE Data API documentation: `https://sharehubnepal.com/data/nepse-data-documentation/`.
+- Its documented `GET /data/api/v1/nepse-data/companies` response includes `symbol`, `activeStatus` and `instrumentType`, which are useful fields for reconciling ordinary active equities against the current secondary-provider snapshot.
+- The documentation states that requests require a ShareHub-issued Bearer token, an allow-listed server IP and an enabled licence/service. No credentials or licensed access are available in this repository context, so no authenticated data was retrieved and no membership rows were inferred from the documentation.
+- This is a potential licensed cross-check, not NEPSE-primary evidence. It does not replace the exchange's official stocklist or prove point-in-time membership. Do not promote or alter the candidate manifest from this source alone.
+- Latest scanner application commit `d8dfa5ae53dba67402a2379ffe383b55cafb26da` passed all three CI workflows: backend tests `45892760417`, backend contract tests `45892760653`, and frontend/deployment image checks `45892760396`.

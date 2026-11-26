@@ -20,7 +20,7 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         self.assertEqual(called, ["AAA", "ZZZ"])
         self.assertEqual([row["symbol"] for row in result["results"]], ["AAA", "ZZZ"])
         self.assertEqual(result["candidate_universe_count"], 2)
-        self.assertEqual(result["coverage_pct"], 100.0)
+        self.assertEqual(result["observation_coverage_pct"], 100.0)
         self.assertFalse(result["ranking_enabled"])
 
     def test_as_of_excludes_future_rows_before_scanner_callback(self):
@@ -57,7 +57,7 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         self.assertEqual(missing["freshness_status"], "no_observation")
         self.assertIsNone(missing["latest_observation_calendar_age_days"])
         self.assertFalse(missing["ranking_eligible"])
-        self.assertEqual(result["symbols_without_ohlcv"], 1)
+        self.assertEqual(result["symbols_without_observations"], 1)
         self.assertEqual(result["status_counts"]["insufficient_data"], 1)
 
     def test_calendar_age_is_reported_without_session_staleness_claim(self):

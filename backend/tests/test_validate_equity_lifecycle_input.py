@@ -20,7 +20,7 @@ class EquityLifecycleInputTests(unittest.TestCase):
         self.assertEqual(report["verified_start_symbols"], [
             "APHL", "BJHL", "HFIN", "KHPL", "RSML", "SABBL", "SKHL", "SOHL", "YMHL"
         ])
-        self.assertEqual(report["unverified_start_count"], 280)
+        self.assertEqual(report["unverified_start_count"], 272)
         self.assertFalse(report["promotion_allowed"])
         self.assertEqual(report["errors"], [])
 

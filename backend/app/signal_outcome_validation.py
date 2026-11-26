@@ -3,6 +3,8 @@
 These are price-reference observations, never exchange fills or executable returns.
 Same-session stop/target ambiguity is resolved against the strategy (stop first).
 """
+import hashlib
+import json
 from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
@@ -31,7 +33,7 @@ def evaluate_signal_path(signal, rows, verified_sessions, *, evaluation_date, re
     details must include a horizon plan with entry, stop and optional T1-T3.
     """
     reviewed = REVIEWED_ROWS if reviewed is None else reviewed
-    if not isinstance(signal, dict) or signal.get("classification") != "research_only":
+    if not isinstance(signal, dict) or signal.get("classification") != "research_only_not_execution":
         raise ValueError("research_only_signal_required")
     if signal.get("action") != "BUY":
         return {"status": "not_applicable", "classification": "research_reference_not_execution",
@@ -125,9 +127,11 @@ def evaluate_signal_path(signal, rows, verified_sessions, *, evaluation_date, re
     last_close = _d(by_day[window[-1]]["close"], "last_close")
     mark = exit_reference if exit_reference is not None else (last_close if entered else None)
     return_pct = None if not entered else str((mark / entry - 1) * 100)
-    return {"status": "observed" if len(window) == HORIZON_SESSIONS[horizon] or end >= window[-1] else "partial",
+    complete_window = len(future) >= HORIZON_SESSIONS[horizon]
+    record_json = json.dumps(signal, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return {"status": "observed" if complete_window else "partial",
             "classification": "research_reference_not_execution",
-            "signal_id": __import__("hashlib").sha256(str(signal).encode()).hexdigest(),
+            "signal_id": hashlib.sha256(record_json.encode()).hexdigest(),
             "symbol": signal["symbol"], "horizon": horizon,
             "decision_date": decision_day.isoformat(), "evaluation_date": end.isoformat(),
             "sessions_observed": len(window), "entry_reference": str(entry),

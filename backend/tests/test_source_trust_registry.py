@@ -226,7 +226,7 @@ class SourceTrustPromotionTests(unittest.TestCase):
             first = append_promotion_event(path, promoted)
             self.assertFalse(first["idempotent"])
             self.assertTrue(append_promotion_event(path, promoted)["idempotent"])
-            self.assertEqual(active_promoted_record_ids(path), {"record-001"})
+            self.assertEqual(self.active(path), {"record-001"})
             audit = verify_promotion_ledger(path)
             self.assertTrue(audit["valid"])
             revoke_validation = {
@@ -253,13 +253,13 @@ class SourceTrustPromotionTests(unittest.TestCase):
             )
             self.assertTrue(revoked["accepted"])
             append_promotion_event(path, revoked)
-            self.assertEqual(active_promoted_record_ids(path), set())
+            self.assertEqual(self.active(path), set())
             lines = path.read_text().splitlines()
             lines[0] = lines[0].replace("record-001", "record-999")
             path.write_text("\n".join(lines) + "\n")
             self.assertFalse(verify_promotion_ledger(path)["valid"])
             with self.assertRaisesRegex(ValueError, "integrity check"):
-                active_promoted_record_ids(path)
+                self.active(path)
 
 
 if __name__ == "__main__":

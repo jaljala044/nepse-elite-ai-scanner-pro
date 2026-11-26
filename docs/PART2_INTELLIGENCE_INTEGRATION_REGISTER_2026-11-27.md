@@ -131,3 +131,10 @@ Third-party directories remain discovery/corroboration only. No sector mapping w
 PR #148 (`c8b64f59d750846209bbff4a11852665741fbb7e`) rejects non-string and blank `records[].symbol` values rather than coercing malformed values into synthetic identifiers. Regression tests cover null, numeric, list, object and whitespace-only symbols. Both `backend-tests` and `Backend contract tests` passed on the exact reviewed head `9088b71394c9b5c3e1bb017f29086c2667513a67` before squash merge.
 
 This is structural validation hardening only. It does not authenticate the source or enable membership admission. Official sector membership and effective dates remain blocked on primary-source evidence tracked in issue #146.
+
+
+### P2.03 canonical sector-code validation — PR #151 merged 2026-11-27
+
+PR #151 (`4257cd95b0402102421992457738a5926e076019`) rejects configured allowed-sector-code values with leading or trailing whitespace and adds a regression test. Both `backend-tests` and `Backend contract tests` passed on exact head `248e69867c430fa176fc7b19ab38aaafc67986cf` before squash merge.
+
+Structural validation only: no official sector membership source is authenticated; `verified=false` and `admission_allowed=false` remain in force. Primary-source acquisition remains blocked and tracked in issue #146.

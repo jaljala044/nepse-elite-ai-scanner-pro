@@ -31,4 +31,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run historical identity regression tests
-        run: python -m unittest backend.tests.test_historical_identity_regression backend.tests.test_instrument_manifest -v
+        run: |
+          python -m unittest discover -s tests -p "test_historical_identity_regression.py" -v
+          python -m unittest discover -s tests -p "test_instrument_manifest.py" -v
+        working-directory: backend

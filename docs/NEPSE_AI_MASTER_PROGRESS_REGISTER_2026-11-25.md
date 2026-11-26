@@ -1910,3 +1910,19 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Updated data-repo audit: https://github.com/jaljala044/nepse-smc-data/commit/65e8ac1e285934477938894c63fe0087bcae49cd
 - Still unresolved: 500-row vs 39,966-row extract mismatch; date-specific independent completeness proof; broader 281-equity floorsheet/OHLCV reconciliation. Keep absent symbols UNKNOWN and keep NO_TRADE, canonical promotion, broker-flow scoring and training disabled until evidence is recovered.
 - Next recovery attempt: obtain the Hugging Face 2026-11-20 floorsheet partition and compare normalized contract IDs/rows against both local extracts, then recover date-specific upstream totalElements and page-level bronze evidence.
+
+
+## 2026-11-26 — Per-symbol point-in-time feature bundles wired to V3 research scoring
+
+- Updated `backend/app/feature_pipeline.py` to retain an evidence-bearing feature bundle for every symbol and pass that bundle through `score_feature_bundle()` rather than passing naked scalar values to the legacy scorer.
+- Bundles now carry the upstream feature status, score, and selected provenance/context fields for Wyckoff, Minervini trend, relative strength, broker footprint (1W window), volume/VSA, liquidity, sector strength and SMC.
+- The adapter only admits `status="observed"` plus a valid numeric score. Missing or non-observed feature outputs remain unavailable and are reflected in component coverage.
+- **SMC score excluded intentionally:** current SMC feature output describes its score as an uncalibrated directional heuristic. The feature observations remain visible, but the weighted SMC component is marked `experimental_only` with no score until a reviewed/calibrated mapping exists. This corrected prior over-crediting of the SMC heuristic.
+- Added regression assertions for bundle retention, component evidence status, SMC exclusion and recalculated coverage.
+- Backend suite: **775 tests passed**, [run #45840667564](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45840667564).
+- Backend contract tests passed: [run #45840667450](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45840667450).
+- Integrated evidence audit passed: [run #45840668902](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45840668902).
+- Historical data integrity passed: [run #45840667505](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45840667505).
+- Tested code commit: `2898dcaf686fe828309c882fbebd9f22053b0617`.
+- This remains a research feature pipeline, not a production scan recommendation path. The top-level `/v1/scan` is still fail-closed/research-only because market-regime, Stage-1 data gates, execution liquidity, horizon trade geometry and complete canonical input assembly are not connected. No BUY, ranked results or probability claims are enabled.
+- Next: harden feature-input contracts (especially calendar alignment, exact session coverage and provenance for OHLCV/broker rows), then wire the research pipeline into an explicitly separate scan-preview endpoint without changing production ranking eligibility.

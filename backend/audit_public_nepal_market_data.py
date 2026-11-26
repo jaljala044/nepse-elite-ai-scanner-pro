@@ -97,24 +97,36 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
             continue
         o, high, low, close = (values[k] for k in ("open", "high", "low", "close"))
         volume, turnover = values["traded_quantity"], values["traded_amount"]
+        row_valid = True
         if min(o, high, low, close) <= 0 or high < max(o, low, close) or low > min(o, high, close):
             result["invalid_ohlc"] += 1
             result["row_errors"].append({"line": line_no, "error": "invalid_ohlc_bounds"})
+            row_valid = False
         if volume < 0:
             result["negative_volume"] += 1
+            row_valid = False
         if volume != int(volume):
             result["fractional_volume"] += 1
+            row_valid = False
         if turnover < 0:
             result["negative_turnover"] += 1
+            row_valid = False
         if volume > 0 and turnover == 0:
             result["zero_turnover_with_volume"] += 1
+            row_valid = False
         change = (row["per_change"] or "").strip().lower()
-        if change not in ("nan", ""):
+        if change in ("nan", ""):
+            if result["rows"] != 1:
+                result["invalid_per_change"] += 1
+                row_valid = False
+        else:
             try:
                 _number(change)
             except ValueError:
                 result["invalid_per_change"] += 1
-        result["valid_rows"] += 1
+                row_valid = False
+        if row_valid:
+            result["valid_rows"] += 1
 
     if valid_dates:
         result["first_date"], result["last_date"] = min(valid_dates), max(valid_dates)

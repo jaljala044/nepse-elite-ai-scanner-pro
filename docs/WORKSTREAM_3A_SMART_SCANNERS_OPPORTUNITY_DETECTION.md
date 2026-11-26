@@ -130,6 +130,14 @@ The overall workstream is complete only when all 23 items pass their acceptance 
 - Extended container smoke tests to call `/v1/research/readiness`, `/v1/symbols` and the full `POST /v1/scan/market-wide` endpoint across all 281 candidate symbols.
 - Latest verified code CI head `6d830c58589118d515a5347ef80a9c329decfda5`: backend unit tests, backend contract tests, frontend syntax/build, generated assets, Docker image, terminal routes and the full-universe API smoke test all passed. In the clean CI container, the scanner correctly reported 281 candidate symbols, zero stored observations, 0% observation coverage and ranking disabled.
 
+
+### Exchange-primary universe source investigation (2026-11-27)
+
+- Located the official NEPSE [stocklist page](https://www.nepalstock.com.np/stocklist). Its indexed page content is timestamped **2026-10-15 15:00** and exposes a live traded-stock list, making it a primary-source cross-check candidate.
+- The repository candidate manifest is dated **2026-11-26** and sourced from NepseAlpha. The available official page snapshot is older by six weeks; it cannot establish the full active-equity membership or effective dates as of the manifest date.
+- NEPSE notice PDFs found in search are for restricted subsets (for example, margin-trading eligible securities), not the complete listed-equity universe. They must not be substituted for the full universe.
+- Therefore the exchange-primary reconciliation gate remains **open**. Do not promote the 281-symbol secondary snapshot or enable production ranking on the basis of this older page snapshot.
+
 ### Outstanding acceptance gates
 
 3A.01 is **implemented in the repository but not production-verified**. Do not mark it fully complete until:

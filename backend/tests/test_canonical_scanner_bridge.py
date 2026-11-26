@@ -111,6 +111,7 @@ class CanonicalScannerBridgeTests(unittest.TestCase):
             database_path=self.db, ledger_path=self.ledger, registry=self.registry,
             trusted_registry_sha256=self.registry["registry_sha256"],
             reviewer_keys=self.reviewer_keys, calendar_path=self.calendar,
+            trusted_calendar_sha256=hashlib.sha256(self.calendar.read_bytes()).hexdigest(),
             decision_time=self.decision_time, expected_symbols=["AAA"],
         )
         self.assertEqual(result["status"], "ready")

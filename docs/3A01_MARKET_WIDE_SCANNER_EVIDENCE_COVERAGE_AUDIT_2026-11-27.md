@@ -136,3 +136,12 @@ A companion CSV matrix is published at [3A01_281_SYMBOL_OHLCV_IMPACT_MATRIX_2026
 **Important limits:** P4.30 publishes the 18,910 verified-closed repeat candidates and 52,891 outside-calendar UNKNOWN repeats as dataset-level totals, not a per-symbol allocation. The matrix therefore deliberately marks per-symbol closed-repeat and unresolved-repeat counts as NOT_PUBLISHED_PER_SYMBOL; it does not invent allocations. Similarly, absence from the partial corporate-action file is not proof that no action occurred. Per-symbol min/max dates and deployment-store coverage are not derived from the manifest and remain outside this matrix.
 
 The matrix is an evidence index, not a reviewed-row manifest. It does not authorize technical-indicator eligibility, ranking, BUY-list inclusion, backtesting, or production promotion. The canonical reviewed-row manifest remains empty.
+
+
+## Integration status refresh
+
+After publishing the matrix, branch comparisons against current main show:
+- PR #136 evidence branch: 4 commits ahead, 2 behind; GitHub reports mergeable. It remains draft and unmerged. This latest matrix/report documentation commit has not been independently CI-validated.
+- PR #131 scanner implementation branch: 10 commits ahead, 8 behind; GitHub reports not mergeable. Its implementation still requires safe reconciliation against current main and fresh CI on the reconciled head.
+
+No pull request was merged. No deployment verification was performed.

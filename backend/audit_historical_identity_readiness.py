@@ -76,6 +76,8 @@ def audit_historical_identity_readiness(
             date.fromisoformat(life["valid_from"])
             if status == "unverified" or not life["valid_from_evidence_uri"] or not life["valid_from_evidence_note"]:
                 raise ValueError(f"{symbol}: dated start lacks evidence provenance")
+            if status == "verified_primary_notice" and urlparse(life["valid_from_evidence_uri"]).hostname not in {"nepalstock.com.np", "www.nepalstock.com", "cdsc.com.np"}:
+                raise ValueError(f"{symbol}: primary lifecycle date must link to NEPSE or CDSC evidence")
         elif status != "unverified" or life["valid_from_evidence_uri"]:
             raise ValueError(f"{symbol}: undated start must remain unverified")
 

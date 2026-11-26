@@ -53,6 +53,13 @@ class CorporateActionAdjustmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "lookahead"):
             self.adjust(action)
 
+
+    def test_out_of_order_ohlcv_rejected(self):
+        with self.assertRaisesRegex(ValueError, "unique_and_ordered"):
+            adjust_ohlcv_for_corporate_actions(
+                rows=list(reversed(self.rows)), actions=[],
+                as_of_date="2025-01-03", evidence_cutoff="2025-01-03T15:00:00+05:45")
+
     def test_duplicate_ohlcv_dates_rejected(self):
         with self.assertRaisesRegex(ValueError, "unique_and_ordered"):
             adjust_ohlcv_for_corporate_actions(

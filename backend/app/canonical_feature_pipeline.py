@@ -1,19 +1,24 @@
 """Connect verified canonical evidence to the descriptive feature pipeline."""
 from __future__ import annotations
 from datetime import datetime
+import hashlib
 from pathlib import Path
 from typing import Any
 from .canonical_evidence import load_canonical_evidence_records
 from .feature_pipeline import build_feature_snapshot
 from .session_calendar import load_calendar
 
-def build_canonical_feature_snapshot(*, database_path: str | Path | None, ledger_path: str | Path, registry: dict[str, Any], trusted_registry_sha256: str, reviewer_keys: dict[str, bytes], calendar_path: str | Path, decision_time: str, expected_symbols: list[str] | None = None, sector_membership: dict | None = None, expected_sector_members: dict | None = None) -> dict[str, Any]:
+def build_canonical_feature_snapshot(*, database_path: str | Path | None, ledger_path: str | Path, registry: dict[str, Any], trusted_registry_sha256: str, reviewer_keys: dict[str, bytes], calendar_path: str | Path, trusted_calendar_sha256: str, decision_time: str, expected_symbols: list[str] | None = None, sector_membership: dict | None = None, expected_sector_members: dict | None = None) -> dict[str, Any]:
     """Only promoted records and evidence-backed open sessions reach features."""
     try:
         cutoff = datetime.fromisoformat(decision_time.replace("Z", "+00:00"))
         if cutoff.tzinfo is None or cutoff.utcoffset() is None:
             raise ValueError("decision_time must be timezone-aware")
         canonical = load_canonical_evidence_records(database_path=database_path, ledger_path=ledger_path, registry=registry, trusted_registry_sha256=trusted_registry_sha256, reviewer_keys=reviewer_keys, decision_time=decision_time)
+        calendar_bytes = Path(calendar_path).read_bytes()
+        actual_calendar_sha256 = hashlib.sha256(calendar_bytes).hexdigest()
+        if actual_calendar_sha256 != trusted_calendar_sha256.lower():
+            raise ValueError("session calendar digest does not match trusted deployment pin")
         calendar = load_calendar(calendar_path)
         session_dates = []
         for day, evidence in sorted(calendar.items()):

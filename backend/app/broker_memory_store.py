@@ -156,7 +156,16 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
             except (InvalidOperation, TypeError) as exc:
                 raise ValueError("broker execution-channel amounts must be valid decimals") from exc
             coverage = gross_coded / gross_all if gross_all else None
-            totals = {}
+            totals = {
+                code: {
+                    "buy_amount": Decimal("0"), "sell_amount": Decimal("0"),
+                    "buy_quantity": Decimal("0"), "sell_quantity": Decimal("0"),
+                    "active_sessions": set(), "party_observation_count": 0,
+                }
+                for code in sorted({str(row["source_broker_code"]).strip()
+                                    for row in scope_rows
+                                    if row.get("source_broker_code") not in (None, "")})
+            }
             for row in coded:
                 code = str(row["source_broker_code"]).strip()
                 if not code:

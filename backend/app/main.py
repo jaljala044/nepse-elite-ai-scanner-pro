@@ -101,6 +101,12 @@ def scan_market_wide(request: ScanRequest):
     if EQUITY_UNIVERSE is None:
         raise HTTPException(503, "Equity candidate universe unavailable; scanner is fail-closed")
     selected = request.symbols or EQUITY_UNIVERSE["symbols"]
+    candidate_symbols = set(EQUITY_UNIVERSE["symbols"])
+    if len(set(selected)) != len(selected):
+        raise HTTPException(422, "Duplicate symbols are not allowed")
+    invalid_symbols = sorted(set(selected) - candidate_symbols)
+    if invalid_symbols:
+        raise HTTPException(422, "Symbols outside the candidate equity universe: " + ", ".join(invalid_symbols))
     cutoff = datetime.now(timezone.utc)
     if request.as_of:
         cutoff = min(
@@ -113,7 +119,8 @@ def scan_market_wide(request: ScanRequest):
         errors = assess(symbol, rows, cutoff.isoformat(), REVIEWED_ROWS)
         result["eligibility"] = {"eligible": not errors, "reasons": errors}
         if errors:
-            result["status"] = "eligibility_unverified"
+            if result.get("status") != "data_quality_failed":
+                result["status"] = "eligibility_unverified"
             result["signals"] = []
             result["metrics"] = {}
             result["ranking_eligible"] = False

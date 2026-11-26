@@ -1,0 +1,14 @@
+symbol,scheduled_trading_start,first_archived_date,evidence_uri,observed_dates_before_scheduled_start,review_status,canonical_promotion_allowed
+RLEL,2026-03-26,2026-03-29,https://hamroshare.com.np/disclosure/208658/rlel-ipo-listing-2026-03-25,0,scheduled_start_precedes_first_archive,false
+SKHEL,2026-03-29,2026-03-29,https://www.nepsealpha.com/announcement/listing-ipo-share-of-suryakunda-hydro-electric-limited-skhel-np-news-alert-skhel2026-03-29,0,scheduled_start_matches_first_archive,false
+PCIL,2026-04-10,2026-04-10,https://www.sharesansar.com/eventdetail/listing-ipo-share-of-palpa-cement-industries-limited-pcil-2026-04-09,0,scheduled_start_matches_first_archive,false
+SIPD,2026-04-10,2026-04-10,https://www.sharesansar.com/index.php/eventdetail/listing-ipo-share-of-shikhar-power-development-limited-sipd-2026-04-09,0,scheduled_start_matches_first_archive,false
+SOPL,2026-06-08,2026-06-08,https://www.sharesansar.com/eventdetail/listing-ipo-share-of-sopan-pharmaceuticals-limited-sopl-2026-06-05,16,scheduled_start_matches_first_archive,false
+TPKHL,2026-06-22,2026-06-22,https://www.sharesansar.com/index.php/eventdetail/listing-ipo-share-of-taksar-pikhuwa-khola-hydropower-limited-tpkhl-2026-06-19,26,scheduled_start_matches_first_archive,false
+SNORL,2026-06-26,2026-06-26,https://www.sharesansar.com/eventdetail/listing-ipo-share-of-snow-rivers-limited-snorl-2026-06-25,30,scheduled_start_matches_first_archive,false
+KAHL,2026-07-02,2026-07-02,https://www.sharesansar.com/index.php/eventdetail/listing-ipo-share-of-kalanga-hydro-limited-kahl-2026-07-01,34,scheduled_start_matches_first_archive,false
+SGHL,2026-07-02,2026-07-02,https://www.sharesansar.com/eventdetail/listing-ipo-share-of-sanigad-hydro-limited-sghl-2026-07-01,34,scheduled_start_matches_first_archive,false
+ECL,2026-07-17,2026-07-17,https://www.sharesansar.com/index.php/eventdetail/listing-ipo-share-of-everest-colour-limited-ecl-2026-07-16,45,scheduled_start_matches_first_archive,false
+MEPDL,2026-08-12,2026-08-12,https://www.sharesansar.com/eventdetail/listing-ipo-share-of-mount-everest-power-development-limited-mepdl-2026-08-11,63,scheduled_start_matches_first_archive,false
+SAPIL,2026-08-13,2026-08-13,https://www.sharesansar.com/eventdetail/listing-ipo-share-of-sarvottam-paints-industries-limited-sapil-2026-08-12,64,scheduled_start_matches_first_archive,false
+BENH,2026-10-14,2026-10-15,https://www.sharesansar.com/index.php/eventdetail/listing-ipo-share-of-beni-hydropower-project-limited-benh-2026-10-13,103,scheduled_start_precedes_first_archive,false

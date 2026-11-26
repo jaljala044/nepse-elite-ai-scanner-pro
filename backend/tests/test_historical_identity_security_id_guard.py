@@ -46,11 +46,13 @@ class HistoricalIdentitySecurityIdGuardTests(unittest.TestCase):
             "current-security-snapshot-2026-11-25",
             "current_snapshot_only", False, False,
         )
-        result = security_as_of([row], date(2026, 10, 15))
-        self.assertEqual(result["status"], "unverified_identity")
-        self.assertIsNone(result["record"])
-        self.assertFalse(result["stable_id_verified"])
-        self.assertFalse(result["effective_date_verified"])
+        historical = security_as_of([row], date(2026, 10, 15))
+        self.assertEqual(historical["status"], "not_found")
+        current = security_as_of([row], date(2026, 11, 25))
+        self.assertEqual(current["status"], "unverified_identity")
+        self.assertIsNone(current["record"])
+        self.assertFalse(current["stable_id_verified"])
+        self.assertFalse(current["effective_date_verified"])
 
     def test_secondary_first_trade_date_does_not_prove_historical_security_id(self):
         row = SecurityMasterRecord(

@@ -176,3 +176,17 @@ Sources:
 - https://www.sharesansar.com/company/nlbbl
 
 No historical security IDs or validity intervals were inferred. `stable_id` remains null and `effective_date_verified` remains false; no price histories were spliced and no raw OHLCV/floorsheet files were modified.
+
+
+## Successor-side listing evidence — SLBSL / NMLBBL
+
+ShareSansar's 17 May 2024 report states that 256,050 post-merger SLBSL shares and 13,977,643 post-merger NMLBBL shares were listed in NEPSE. It gives opening price ranges for the first transactions (SLBSL Rs 883.97; NMLBBL Rs 587.86). This establishes a reported listing date, but not the first date on which a trade actually executed. NMLBBL's ShareSansar company profile separately records an operation date of 2024-05-19; an operational date is not a first-trade date.
+
+Accordingly, first_trading_date remains null for both successors. The evidence JSON records the 2024-05-17 listing report and explicitly separates listing, company operation and first executed trade. Further daily price/floorsheet evidence or an explicit first-trading notice is needed before assigning a first-trade date.
+
+Sources:
+- https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17
+- https://www.sharesansar.com/company/nmlbbl
+- https://www.sharesansar.com/announcementdetail/nerude-laghubitta-bittiya-sanstha-limited-and-mirmire-laghubitta-bittiya-sanstha-limited-after-the-successful-merger-to-commence-its-joint-transactions-in-the-name-of-nerude-mirmire-laghubitta-bittiya-sanstha-limited-from-30th-falgun-2080-2024-03-06
+
+No stable IDs or historical validity intervals are inferred. Listing is not treated as proof of a trade; no history is spliced and no canonical/training promotion is authorized.

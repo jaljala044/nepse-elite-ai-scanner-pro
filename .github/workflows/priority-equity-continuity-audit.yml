@@ -14,6 +14,7 @@ on:
       - 'backend/build_extended_research_inventory.py'
       - 'backend/classify_extended_history_gaps.py'
       - 'backend/inventory_corporate_action_sources.py'
+      - 'backend/build_corporate_action_review_queue.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -80,6 +81,9 @@ jobs:
         run: |
           python backend/crosscheck_unresolved_equity_gaps.py --gaps /tmp/audit/extended_gap_classification.csv --repo /tmp/secondary --revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/extended_secondary_crosscheck.csv
           python backend/crosscheck_sharesansar_no_trade.py --gaps /tmp/audit/extended_secondary_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/extended_sharesansar_crosscheck.csv
+      - name: Build corporate action event review queue
+        run: |
+          python backend/build_corporate_action_review_queue.py --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --inventory /tmp/audit/corporate_action_inventory.csv --output /tmp/audit/corporate_action_review_queue.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

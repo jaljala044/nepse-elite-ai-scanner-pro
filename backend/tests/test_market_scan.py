@@ -54,6 +54,8 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         missing = result["results"][1]
         self.assertEqual(missing["symbol"], "BBB")
         self.assertEqual(missing["status"], "insufficient_data")
+        self.assertEqual(missing["freshness_status"], "no_observation")
+        self.assertIsNone(missing["latest_observation_calendar_age_days"])
         self.assertFalse(missing["ranking_eligible"])
         self.assertEqual(result["symbols_without_ohlcv"], 1)
         self.assertEqual(result["status_counts"]["insufficient_data"], 1)

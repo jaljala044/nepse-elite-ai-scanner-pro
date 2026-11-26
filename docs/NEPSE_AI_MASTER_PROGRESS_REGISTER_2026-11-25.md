@@ -1897,3 +1897,6 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Existing 500-row floorsheet extract for 2026-11-20 has no exact tuple overlap with the third-party candidate under symbol/buyer/seller/quantity/rate. This is unresolved source discrepancy; do not merge the files.
 - Detailed report: [third-party full-session floorsheet candidate audit](https://github.com/jaljala044/nepse-smc-data/commit/55ab5aca4b59c7581a4c085da78aca7ad0075a32).
 - Decision: candidate source may support cautiously validated positive trades, but absent symbols remain UNKNOWN. No NO_TRADE, canonical promotion, broker-flow scoring or model training from this source until source completeness and provenance are independently established.
+
+
+- Added and merged a third-party floorsheet CSV adapter after CI initially exposed a regex defect; corrected it and reran. PR #12 merged as `91cf082b53cb2ed3564d06c85cc08a7964a5eaee`. CI run [45839623070](https://github.com/jaljala044/nepse-smc-data/actions/runs/45839623070) passed all 16 tests. It accepts the alternate lower-case schema, parses K/lakh/crore display amounts with precision-aware tolerance, and rejects quantity × rate mismatches. Detailed source audit updated in [commit cf083be](https://github.com/jaljala044/nepse-smc-data/commit/cf083be7698d6c2c0704ff1cd506487f783398bc).

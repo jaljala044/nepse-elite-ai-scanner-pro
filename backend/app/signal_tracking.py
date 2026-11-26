@@ -16,8 +16,8 @@ def freeze_signal(*,symbol,decision_time,horizon,action,methodology,evidence,det
     cutoff=_timestamp(decision_time)
     if not symbol or not methodology or horizon not in HORIZONS or action not in ACTIONS:
         raise ValueError("invalid signal identity")
-    if action!="NO TRADE":
-        raise ValueError("production recommendations are not authorized")
+    if action not in ACTIONS:
+        raise ValueError("unsupported research action")
     if not isinstance(evidence,list) or not isinstance(details,dict):
         raise ValueError("invalid evidence or details")
     for item in evidence:

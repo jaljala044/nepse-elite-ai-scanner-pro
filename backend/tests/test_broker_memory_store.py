@@ -77,6 +77,17 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(broker_memory_status()["observation_count"], 10)
         self.assertEqual(broker_memory_status()["snapshot_count"], 1)
 
+    def test_memory_rebuilds_from_prior_sessions_not_only_latest_batch(self):
+        first_rows = [row for row in self.rows if row["trade_date"] in self.sessions[:3]]
+        later_rows = [row for row in self.rows if row["trade_date"] in self.sessions[3:]]
+        first = self.persist(rows=first_rows, decision_time=self.sessions[2] + "T16:00:00+05:45")
+        second = self.persist(rows=later_rows, decision_time=self.sessions[4] + "T16:00:00+05:45")
+        self.assertEqual(first["observation_count"], 6)
+        self.assertEqual(second["observation_count"], 10)
+        self.assertEqual(broker_memory_status()["observation_count"], 10)
+        latest = get_latest_broker_memory(symbol="NABIL")
+        self.assertEqual(latest["features"]["security_features"]["NABIL"]["1W"]["observed_sessions"], 5)
+
     def test_broker_filter_returns_observed_execution_channel_profile(self):
         self.persist()
         profile = get_latest_broker_memory(broker_entity_id="BROKER-A")

@@ -128,12 +128,12 @@ jobs:
       - name: Classify one-sided contracts against dated instrument registry
         run: |
           set -euo pipefail
-          python backend/audit_floorsheet_one_sided_scope.py \\
-            --audit artifacts/p419-three-date-floorsheet-audit.json \\
-            --equity-crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \\
-            --target-candidates data/reference/nepse_target_universe_candidates_2026-11-26.csv \\
-            --security-snapshot data/reference/nepse_security_id_snapshot_2026-11-25.csv \\
-            --expected-snapshot-date 2026-11-25 \\
+          python backend/audit_floorsheet_one_sided_scope.py \
+            --audit artifacts/p419-three-date-floorsheet-audit.json \
+            --equity-crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \
+            --target-candidates data/reference/nepse_target_universe_candidates_2026-11-26.csv \
+            --security-snapshot data/reference/nepse_security_id_snapshot_2026-11-25.csv \
+            --expected-snapshot-date 2026-11-25 \
             --output artifacts/p420-one-sided-instrument-scope.json
           python - <<'PY'
           import json

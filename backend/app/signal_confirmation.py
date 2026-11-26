@@ -25,8 +25,8 @@ def confirm_signal(rows, *, eligible=False, min_observations=55,
     if not isinstance(rows, list) or quality_errors(rows):
         base["limitations"].append("OHLCV input is empty or failed structural validation.")
         return base
-    if (not isinstance(min_observations, int) or min_observations < 51
-            or not isinstance(breakout_lookback, int) or breakout_lookback < 5
+    if (not isinstance(min_observations, int) or isinstance(min_observations, bool) or min_observations < 51
+            or not isinstance(breakout_lookback, int) or isinstance(breakout_lookback, bool) or breakout_lookback < 5
             or not isfinite(float(volume_multiple)) or volume_multiple <= 0):
         raise ValueError("invalid signal confirmation configuration")
     ordered = sorted(rows, key=lambda row: str(row["date"]))
@@ -52,7 +52,10 @@ def confirm_signal(rows, *, eligible=False, min_observations=55,
         "breakdown_below_prior_low": closes[-1] < prior_low,
         "close_above_sma20": closes[-1] > sma20,
         "close_above_sma50": closes[-1] > sma50,
+        "close_below_sma20": closes[-1] < sma20,
+        "close_below_sma50": closes[-1] < sma50,
         "sma20_above_sma50": sma20 > sma50,
+        "sma20_below_sma50": sma20 < sma50,
         "volume_expansion": relative_volume is not None and relative_volume >= volume_multiple,
         "strong_close": close_location is not None and close_location >= 0.75,
         "weak_close": close_location is not None and close_location <= 0.25,
@@ -60,10 +63,9 @@ def confirm_signal(rows, *, eligible=False, min_observations=55,
     bullish = all(checks[k] for k in (
         "breakout_above_prior_high", "close_above_sma20", "close_above_sma50",
         "sma20_above_sma50", "volume_expansion", "strong_close"))
-    bearish = (checks["breakdown_below_prior_low"] and
-               not checks["close_above_sma20"] and not checks["close_above_sma50"] and
-               not checks["sma20_above_sma50"] and checks["volume_expansion"] and
-               checks["weak_close"])
+    bearish = all(checks[k] for k in (
+        "breakdown_below_prior_low", "close_below_sma20", "close_below_sma50",
+        "sma20_below_sma50", "volume_expansion", "weak_close"))
     classification = "bullish_confirmation" if bullish else (
         "bearish_warning" if bearish else "no_confirmation")
     return {

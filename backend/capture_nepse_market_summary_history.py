@@ -107,6 +107,7 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
 def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     attempts: list[dict] = []
+    request_errors: list[dict] = []
     successful_payload = None
     successful_url = None
     successful_headers: dict = {}
@@ -157,6 +158,8 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
             "request_error": request_error,
         }
         attempts.append(attempt)
+        if request_error is not None:
+            request_errors.append({"attempt_number": attempt_number, **request_error})
         if body:
             prefix = f"attempt-{attempt_number:02d}"
             (output_dir / f"{prefix}-response-body.bin").write_bytes(body)
@@ -185,6 +188,7 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
         "source_url": successful_url or attempts[-1]["source_url"],
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "attempts": attempts,
+        "request_errors": request_errors,
         "selected_attempt_number": next(
             (item["attempt_number"] for item in attempts if item["http_status"] == 200 and item["response_preserved"]),
             None,
@@ -246,7 +250,7 @@ def main() -> int:
         "response_bytes": report["response_bytes"],
         "response_sha256": report["response_sha256"],
         "response_preserved": report["response_preserved"],
-        "request_error": report["request_error"],
+        "request_errors": report["request_errors"],
         "payload_analysis": report.get("payload_analysis"),
         "calendar_claims_promoted": False,
     }, indent=2))

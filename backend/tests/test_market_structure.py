@@ -116,7 +116,7 @@ class MarketStructureAPITests(unittest.TestCase):
                 available = client.post("/v1/scan", json={"symbols": ["TEST"], "as_of": "2025-01-06"})
                 self.assertEqual(available.status_code, 200)
                 result = available.json()["results"][0]
-                self.assertTrue(result["eligibility"]["eligible"])
+                self.assertTrue(result["eligibility"]["eligible"], result["eligibility"]["reasons"])
                 events = result["market_structure"]["events"]
                 swing = next(e for e in events if e["type"] == "swing_high")
                 self.assertEqual(swing["date"], "2025-01-05")

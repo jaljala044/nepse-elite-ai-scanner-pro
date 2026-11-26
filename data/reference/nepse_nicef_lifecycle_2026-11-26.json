@@ -1,0 +1,19 @@
+{
+  "symbol": "NICEF",
+  "security_id": "9357",
+  "isin": "NPE349A35038",
+  "instrument_type": "closed_end_mutual_fund",
+  "listing_date": "2026-11-04",
+  "expected_first_trade_date": "2026-11-05",
+  "actual_first_trade_date": null,
+  "listed_units": 100000000,
+  "face_value_npr": 10,
+  "history_status": "no_readable_ohlcv_obtained",
+  "sources": [
+    "https://www.sharesansar.com/newsdetail/nic-asia-equity-opportunity-fund-have-been-listed-on-nepse-2026-11-04",
+    "https://cdsc.com.np/mutualfunds",
+    "https://www.merolagani.com/AnnouncementDetail.aspx?id=68146&ntf=true",
+    "https://www.arthakendra.com/stock-market/company/NICEF/price-history"
+  ],
+  "policy": "Exclude pre-listing dates from coverage expectations; do not infer no trading or manufacture zero-price candles. Actual first trade remains unverified."
+}

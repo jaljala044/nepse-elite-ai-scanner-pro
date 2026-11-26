@@ -63,5 +63,16 @@ class ImmutableSignalStoreTests(unittest.TestCase):
                           outcome={"return_pct": float("nan")})
 
 
+
+    def test_buy_research_signal_can_be_stored_without_execution(self):
+        buy = freeze_signal(
+            symbol="TEST", decision_time="2025-01-02T12:00:00Z",
+            horizon="swing", action="BUY", methodology="research_v1",
+            evidence=[{"evidence_id":"fixture","available_at":"2025-01-02T11:00:00Z"}],
+            details={"plan":{"entry":"100","stop":"95","targets":["110"]}},
+        )
+        self.assertEqual(store_signal(buy)["status"], "stored")
+        self.assertEqual(get_signal(buy["signal_id"])["action"], "BUY")
+
 if __name__ == "__main__":
     unittest.main()

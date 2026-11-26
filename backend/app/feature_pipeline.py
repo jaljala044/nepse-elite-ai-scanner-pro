@@ -4,6 +4,7 @@ from __future__ import annotations
 from app.point_in_time import build_as_of_snapshot
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary
 from app.trend_features import minervini_trend_template
+from app.volume_vsa_features import volume_vsa_features
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
@@ -40,6 +41,10 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             }
         else:
             trend_features[symbol] = minervini_trend_template(items)
+    volume_features = {
+        symbol: volume_vsa_features(items)
+        for symbol, items in sorted(by_symbol.items()) if symbol
+    }
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
@@ -53,6 +58,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "market_breadth": market_breadth(latest_by_symbol, expected_symbols),
         "security_features": security_features,
         "trend_features": trend_features,
+        "volume_features": volume_features,
         "broker_participation": broker_participation_summary(broker_rows),
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

@@ -30,6 +30,42 @@ class NepseMarketSummaryHistoryCaptureTests(unittest.TestCase):
         self.assertEqual(result["date_comparison"]["primary_summary_dates_outside_candidate_set"], ["2024-03-05"])
         self.assertFalse(result["canonical_calendar_promotion_allowed"])
 
+
+    def test_only_unique_rows_with_positive_official_activity_metrics_are_confirmed(self):
+        payload = [
+            {"businessDate": "2026-11-24", "totalTurnover": 1000, "totalTradedShares": 500,
+             "totalTransactions": 20, "tradedScrips": 12},
+            {"businessDate": "2026-11-25", "totalTurnover": 0, "totalTradedShares": 0,
+             "totalTransactions": 0, "tradedScrips": 0},
+            {"businessDate": "2026-11-26", "totalTurnover": 100, "totalTradedShares": 10,
+             "totalTransactions": 1, "tradedScrips": 1},
+        ]
+        result = analyze_payload(payload, {"2026-11-24", "2026-11-25", "2026-11-26"})
+        self.assertEqual(result["activity_confirmed_dates"], ["2026-11-24", "2026-11-26"])
+        self.assertEqual(result["activity_confirmed_date_count"], 2)
+        self.assertEqual(result["activity_unverified_rows"][0]["date"], "2026-11-25")
+        self.assertEqual(result["date_comparison"]["candidate_dates_with_validated_activity"],
+                         ["2026-11-24", "2026-11-26"])
+        self.assertFalse(result["canonical_calendar_promotion_allowed"])
+
+    def test_duplicate_summary_dates_are_not_activity_confirmed(self):
+        row = {"businessDate": "2026-11-24", "totalTurnover": 1000, "totalTradedShares": 500,
+               "totalTransactions": 20, "tradedScrips": 12}
+        result = analyze_payload([row, dict(row)], {"2026-11-24"})
+        self.assertEqual(result["activity_confirmed_dates"], [])
+        self.assertEqual(result["activity_duplicate_dates"], ["2026-11-24"])
+        self.assertEqual(result["date_comparison"]["candidate_dates_without_validated_activity"],
+                         ["2026-11-24"])
+
+    def test_missing_activity_metrics_do_not_confirm_session(self):
+        result = analyze_payload(
+            [{"businessDate": "2026-11-24", "totalTurnover": 1000}],
+            {"2026-11-24"},
+        )
+        self.assertEqual(result["activity_confirmed_date_count"], 0)
+        self.assertEqual(result["activity_unverified_rows"][0]["fields"],
+                         ["total_traded_shares", "total_transactions", "traded_scrips"])
+
     def test_capture_preserves_request_errors_in_top_level_report(self):
         class OfflineClient:
             def __init__(self, timeout):

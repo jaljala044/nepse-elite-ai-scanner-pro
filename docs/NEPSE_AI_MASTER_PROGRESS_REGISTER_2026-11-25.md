@@ -2224,3 +2224,19 @@ Obtain historical effective-dated security identity/lifecycle evidence for the 1
 
 Acquire date-matched raw official NEPSE summary responses and per-security controls, establish publisher/source lineage, and resolve the Nepse Decode 20-Nov discrepancy. Continue historical lifecycle verification for one-sided instrument symbols before using any classification as historical fact.
 
+
+
+## P4.21 — three-date per-symbol floorsheet/EOD controls completed (2026-11-26)
+
+- Added `backend/audit_floorsheet_eod_controls.py` and focused tests; integrated pinned EOD retrieval and reconciliation into the P4.17 archive workflow.
+- Compared SocrateAI transaction-level floorsheet aggregates against pinned EOD volume and turnover from `srijankarki07/nepse-data@688d59c03915dcee73ecad4230d2083a41c61764`.
+- Results: **1,049 / 1,049 symbol-date pairs exact** — 347 on 19-Nov, 352 on 20-Nov and 350 on 24-Nov. Zero mismatches, zero floorsheet-only symbols, zero EOD-only symbols; total volume and turnover differences were exactly zero on each date.
+- Date-level totals: 19-Nov 9,437,842 shares / NPR 3,877,645,728.62; 20-Nov 10,602,468 / NPR 3,887,563,470.82; 24-Nov 14,670,177 / NPR 5,553,019,249.46.
+- This independently validates arithmetic agreement between transaction aggregates and a pinned third-party EOD dataset for the three observed dates. It does **not** prove source independence, exchange authority or daily completeness; the source chains may share upstream data.
+- Successful workflow: [#45854170918](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45854170918), artifact ID `15136360063`; focused EOD control suite **5 tests passed**.
+- Detailed report: [P4.21 three-date floorsheet/EOD control reconciliation](docs/P4.21_THREE_DATE_FLOORSHEET_EOD_CONTROL_RECONCILIATION_2026-11-26.md).
+- **Disposition:** exact third-party arithmetic control, review-only. No canonical promotion, broker scoring, training admission or BUY authorization.
+
+### P4.22 next
+
+Extend the pinned floorsheet/EOD comparison to additional overlapping dates, preferably a 20–30 session sample; add an effective-dated historical instrument registry rather than relying on current-snapshot hints; investigate whether the EOD and floorsheet datasets share upstream lineage; preserve official NEPSE raw daily controls where accessible. Continue to fail closed on source independence, rights and completeness.

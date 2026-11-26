@@ -89,6 +89,57 @@ jobs:
       - name: Remove smoke-test container
         if: always()
         run: docker rm -f nepse-terminal || true
+      - name: Build private research deployment image
+        run: docker build -f Dockerfile.research -t nepse-research-private:ci .
+      - name: Smoke-test private deployment authentication boundary
+        env:
+          NEPSE_PROXY_SECRET: ci-only-secret-value-at-least-32-characters-long
+        run: |
+          docker run -d --name nepse-private-terminal -p 8001:8000 \
+            -e NEPSE_DEPLOYMENT_MODE=private \
+            -e NEPSE_PROXY_SECRET="$NEPSE_PROXY_SECRET" \
+            nepse-research-private:ci
+          python - <<'PY'
+          import time
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+
+          base = "http://127.0.0.1:8001"
+          secret = "ci-only-secret-value-at-least-32-characters-long"
+
+          def request(path, headers=None, expected=200):
+              req = Request(base + path, headers=headers or {})
+              try:
+                  with urlopen(req, timeout=5) as response:
+                      status = response.status
+              except HTTPError as exc:
+                  status = exc.code
+              assert status == expected, (path, status, expected)
+
+          for attempt in range(30):
+              try:
+                  request("/health")
+                  break
+              except Exception:
+                  if attempt == 29:
+                      raise
+                  time.sleep(2)
+
+          request("/health", expected=200)
+          request("/v1/research/readiness", expected=401)
+          request("/terminal/", expected=401)
+          request("/v1/research/readiness", {"X-NEPSE-Subject": "forged-user"}, expected=401)
+          trusted = {
+              "X-NEPSE-Subject": "ci-verified-user",
+              "X-NEPSE-Proxy-Secret": secret,
+          }
+          request("/v1/research/readiness", trusted, expected=200)
+          request("/terminal/", trusted, expected=200)
+          print("Private image health exception, unauthenticated denial and trusted-proxy access passed.")
+          PY
+      - name: Remove private smoke-test container
+        if: always()
+        run: docker rm -f nepse-private-terminal || true
       - uses: actions/upload-artifact@v4
         with:
           name: nepse-research-terminal

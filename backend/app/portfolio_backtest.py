@@ -218,10 +218,11 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 continue
             buy_cash = float(scenario["buy_cash"])
             sell_cash = float(scenario["sell_cash"])
-            cash_settlement = settlement_date(scenario["exit_session"], symbol_sessions)
-            if cash_settlement is None:
+            cash_settlement_day = settlement_date(scenario["exit_session"], symbol_sessions)
+            if cash_settlement_day is None:
                 withheld.append({"signal_id": candidate["signal_id"], "reason": "exit_cash_settlement_not_proven"})
                 continue
+            cash_settlement = cash_settlement_day.isoformat()
             if buy_cash > cash + 1e-8:
                 withheld.append({"signal_id": candidate["signal_id"], "reason": "cash_budget_exceeded_after_costs"})
                 continue

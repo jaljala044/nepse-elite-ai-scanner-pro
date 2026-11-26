@@ -2291,3 +2291,22 @@ Extend official per-security history reconciliation to a wider date window; vali
 ### P4.24 next
 
 Build the effective-dated security identity/corporate-action registry and investigate BENH's missing early-window rows using official listing evidence. In parallel, classify all non-equity symbols in the official bulk daily endpoint against dated instrument records; keep unmatched symbols UNKNOWN and preserve the no-promotion gate.
+
+
+## P4.24 — official bulk traded-symbol scope reconciliation completed (2026-11-26)
+
+- Added `backend/audit_official_bulk_symbol_scope.py` and seven focused tests; integrated raw official bulk-response verification and dated instrument-scope classification into the P4.17 workflow.
+- Verified pinned official NEPSE bulk response bodies and capture manifest for 19/20/24-Nov against the official market-summary response. Raw/parsed symbol sets, transaction count, quantity, turnover and traded-scrip count match exactly on all three dates.
+- Classified **1,049 / 1,049 symbol-date rows** against the 2026-11-25 security snapshot, 2026-11-26 equity crosswalk and target-candidate registry:
+  - 19-Nov: 347 = 280 ordinary-equity candidates + 44 mutual funds + 20 debentures + 2 promoter shares + 1 bond.
+  - 20-Nov: 352 = 279 ordinary-equity candidates + 45 mutual funds + 22 debentures + 6 promoter shares.
+  - 24-Nov: 350 = 279 ordinary-equity candidates + 43 mutual funds + 23 debentures + 4 promoter shares + 1 bond.
+  - Aggregate: 838 equity, 132 mutual fund, 65 debenture, 12 promoter-share and 2 bond symbol-date rows; **zero UNKNOWN after normalized name checks**.
+- The bulk endpoint has trailing whitespace in security names for eight symbols (CKHL, GMLI, MLBSL, NWCL, PBLD84, SGHC, TVCL, VLUCL), producing 22 exact-string differences across the three dates. All 1,049 names match the dated snapshot after trimming leading/trailing whitespace. Raw names and exact-match flags remain preserved; semantic name mismatches remain UNKNOWN.
+- Successful integrated workflow [#45860171569](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45860171569), artifact ID `15137896520`. Backend suite [#45860172219](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45860172219): **891 tests passed**.
+- Detailed report: [P4.24 official bulk symbol-scope reconciliation](docs/P4.24_OFFICIAL_BULK_SYMBOL_SCOPE_RECONCILIATION_2026-11-26.md).
+- **Disposition:** current-snapshot instrument scope classification is review-only. Effective-dated historical identity, corporate actions, full session completeness, source independence and rights remain unverified. No canonical promotion, coverage admission, broker scoring, training/backtest promotion or BUY authorization.
+
+### P4.25 next
+
+Build the effective-dated security identity and corporate-action registry. Resolve BENH's missing 2026-10-05 to 2026-10-13 history rows using official dated listing evidence; do not infer listing date from the first returned history row. Validate symbol/ID changes, mergers, delistings, bonus/rights, splits and instrument-class transitions before historical joins or scanner admission.

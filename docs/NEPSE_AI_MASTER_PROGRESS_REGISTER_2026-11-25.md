@@ -1886,3 +1886,14 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Integrated evidence audit and historical integrity workflows were still running at the time of this register update.
 - This is an adapter milestone, **not live scanner integration**. `/v1/scan` remains research-only; no production feature bundle is currently assembled from canonical point-in-time inputs. No Top 20, Top 10, BUY, probabilities or live ranking are enabled by this change.
 - Next: construct and test a per-symbol, point-in-time feature bundle from canonical reviewed inputs; wire it into scan only after market regime, corporate-action, broker identity, liquidity execution and reward/risk gates are themselves evidence-backed. Until then keep ranked and BUY arrays empty.
+
+
+### Floorsheet reconciliation CI verified and third-party source audit — 2026-11-26
+
+- Cleared the previously unverified CI gate. Added `pull_request` path triggering to `.github/workflows/floorsheet-reconciliation-tests.yml` via [PR #11](https://github.com/jaljala044/nepse-smc-data/pull/11), merged as `ebcbab60df19c84e00afa4d8de9e6cc85e2a7fff`.
+- GitHub Actions run [45839148076](https://github.com/jaljala044/nepse-smc-data/actions/runs/45839148076) completed `success`. Job `test` ran 13 unittest regression tests; logs show `Ran 13 tests` and `OK`. This verifies the floorsheet reconciliation test suite at PR head `4576d71096c3f0315e2f643bdacb5d541fe391ca`; it does not verify upstream data completeness.
+- Investigated public candidate `socrateai-official/nepse-open-data`. Its 2026-11-20 floorsheet contains 39,966 rows, 352 symbols, zero duplicate transaction IDs, zero date/quantity/rate/amount-identity failures, 10,602,468 shares and NPR 3,887,563,470.82 turnover. Repository lacks a per-date upstream total/pagination completeness manifest, so classification remains third-party candidate, not verified complete.
+- Cross-check against existing local OHLCV for NESDO, SYPNL, ULBSL, USLB and YMHL found exact share-volume matches: 1,521; 32,947; 504; 1,595; 5,951 respectively (608 contracts, 42,518 shares). Positive corroboration only for those five symbol/date pairs.
+- Existing 500-row floorsheet extract for 2026-11-20 has no exact tuple overlap with the third-party candidate under symbol/buyer/seller/quantity/rate. This is unresolved source discrepancy; do not merge the files.
+- Detailed report: [third-party full-session floorsheet candidate audit](https://github.com/jaljala044/nepse-smc-data/commit/55ab5aca4b59c7581a4c085da78aca7ad0075a32).
+- Decision: candidate source may support cautiously validated positive trades, but absent symbols remain UNKNOWN. No NO_TRADE, canonical promotion, broker-flow scoring or model training from this source until source completeness and provenance are independently established.

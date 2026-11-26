@@ -1718,6 +1718,7 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Existing row-level reviewed-source, session, price-basis and point-in-time gates remain mandatory. Candidate-universe membership alone does not authorize a signal.
 - Added API regression tests and updated the market-structure API test fixture.
 - Latest full backend CI: [run 45832612455](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832612455), **SUCCESS — 677 tests**.
+- Final API response hardening (no server-local manifest path exposure) also passed full backend CI: [run 45832850787](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832850787).
 - Evidence/report: [EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md](EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md).
 - Remaining: primary-source membership/effective-dated lifecycle, official session calendar, OHLCV exceptions, corporate-action review, source rights and per-equity coverage remain separate data-promotion gates.
 

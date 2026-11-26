@@ -123,6 +123,39 @@ class NepseMarketSummaryHistoryCaptureTests(unittest.TestCase):
             self.assertEqual(report["request_errors"], [])
             self.assertEqual((Path(tmp) / "response-body.bin").read_bytes(), body)
 
+    def test_http_200_from_non_nepse_origin_is_not_accepted_as_official(self):
+        body = b'[{"businessDate":"2026-11-25","totalTurnover":100}]'
+
+        class Response:
+            url = "https://example.invalid/api/nots/market-summary-history"
+            status_code = 200
+            content = body
+            headers = {"content-type": "application/json"}
+
+            def read(self):
+                return self.content
+
+        class UntrustedOriginClient:
+            def __init__(self, timeout):
+                self.headers = {}
+                self.client = SimpleNamespace(event_hooks={"response": []})
+
+            def requestGETAPI(self, path):
+                response = Response()
+                for hook in self.client.event_hooks["response"]:
+                    hook(response)
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(sys.modules, {"nepse_client": SimpleNamespace(NepseClient=UntrustedOriginClient)}):
+                report = capture(Path(tmp))
+        self.assertIsNone(report["selected_attempt_number"])
+        self.assertFalse(report["response_origin_verified"])
+        self.assertFalse(report["response_preserved"])
+        self.assertTrue((Path(tmp) / "attempt-01-response-body.bin").exists())
+
     def test_non_list_payload_is_preserved_as_unknown_shape(self):
         result = analyze_payload({"error": "unauthorized"}, {"2024-03-04"})
         self.assertEqual(result["payload_type"], "dict")

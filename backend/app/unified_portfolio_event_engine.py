@@ -130,6 +130,8 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         if kind in ("bonus", "split"):
             effective = _day(action.get("listing_date"), "listing_date")
             factor = _positive(action.get("ratio"), "corporate_action_ratio")
+            if kind == "split":
+                raise ValueError("split_requires_effective_date_position_conversion_not_record_date_credit")
             event = ("shares", effective, factor)
         elif kind == "dividend":
             effective = _day(action.get("payment_date"), "payment_date")

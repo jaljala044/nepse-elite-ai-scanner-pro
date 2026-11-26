@@ -20,7 +20,7 @@ class CandidateTests(unittest.TestCase):
  def test_late_data_withheld(self):
   s=snap(); s["price_volume"]["available_at"]="2026-11-27T10:00:00+05:45"; self.assertEqual(self.runit(s)["status"],"withheld")
  def test_duplicate_source_diversity_withheld(self):
-  s=snap(); s["sector"]["source_id"]="OHLCV"; self.assertEqual(self.runit(s)["reason"],"insufficient_independent_source_diversity")
+  s=snap(); s["sector"]["source_id"]="OHLCV"; s["relative_strength"]["source_id"]="OHLCV"; self.assertEqual(self.runit(s)["reason"],"insufficient_independent_source_diversity")
  def test_distribution_candidate(self):
   s=snap(); s["broker"].update(net_amount="-700",positive_net_session_ratio="0.2")
   s["price_volume"].update(structure="bearish_bos",volume_demand_supply="supply_absorption",close_position_20d_range="0.2")

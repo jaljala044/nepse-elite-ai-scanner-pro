@@ -5,6 +5,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .market_scan import run_market_scan
 from .structure_timeframes import evaluate_timeframes
 from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
@@ -93,6 +94,45 @@ async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(
     except (ValueError, UnicodeDecodeError) as exc:
         raise HTTPException(422, str(exc)) from exc
     return result
+
+@app.post("/v1/scan/market-wide")
+def scan_market_wide(request: ScanRequest):
+    """Run the 3A.01 candidate-universe pass without authorizing rankings."""
+    if EQUITY_UNIVERSE is None:
+        raise HTTPException(503, "Equity candidate universe unavailable; scanner is fail-closed")
+    selected = request.symbols or EQUITY_UNIVERSE["symbols"]
+    cutoff = datetime.now(timezone.utc)
+    if request.as_of:
+        cutoff = min(
+            cutoff,
+            datetime.combine(request.as_of, time.max, ZoneInfo("Asia/Kathmandu")),
+        )
+
+    def scan_one(symbol, rows, as_of):
+        result = analyze(symbol, rows)
+        errors = assess(symbol, rows, cutoff.isoformat(), REVIEWED_ROWS)
+        result["eligibility"] = {"eligible": not errors, "reasons": errors}
+        if errors:
+            result["status"] = "eligibility_unverified"
+            result["signals"] = []
+            result["metrics"] = {}
+            result["ranking_eligible"] = False
+            result["buy_list_eligible"] = False
+            result["result_bucket"] = "unknown_results"
+            result["limitations"] = list(result.get("limitations", [])) + errors
+        else:
+            result["result_bucket"] = "research_only"
+            result["ranking_eligible"] = False
+            result["buy_list_eligible"] = False
+        return result
+
+    return run_market_scan(
+        selected,
+        DATA,
+        as_of=request.as_of,
+        scan_symbol=scan_one,
+    )
+
 
 @app.post("/v1/scan")
 def scan(request: ScanRequest):

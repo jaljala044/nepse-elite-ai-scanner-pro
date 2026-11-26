@@ -124,3 +124,10 @@ This is a structural correctness fix only. Manifest status remains `review_ready
 A further discovery pass checked the official NEPSE stock-list URL (`https://www.nepalstock.com.np/stocklist`) and SEBON annual-report material. Search indexing exposed a current stock-list snapshot, but not a sector membership export with effective dates; direct retrieval of the NEPSE page timed out in this pass, so no raw first-party response, TLS validation report or response hash was captured. The surfaced SEBON annual-report material is FY 2015/16 and contains aggregate historical sector counts, not a current security-level effective-dated mapping.
 
 Third-party directories remain discovery/corroboration only. No sector mapping was inferred, backdated or promoted. Issue #146 records this acquisition result and the exact next gate: first-party capture containing security identity, classification and effective-date/current-snapshot semantics, with raw bytes and provenance preserved. Until that evidence is obtained and independently reviewed, official sector membership, sector leadership and market-health sector participation remain unavailable.
+
+
+### P2.03 validator hardening — PR #148 merged 2026-11-27
+
+PR #148 (`c8b64f59d750846209bbff4a11852665741fbb7e`) rejects non-string and blank `records[].symbol` values rather than coercing malformed values into synthetic identifiers. Regression tests cover null, numeric, list, object and whitespace-only symbols. Both `backend-tests` and `Backend contract tests` passed on the exact reviewed head `9088b71394c9b5c3e1bb017f29086c2667513a67` before squash merge.
+
+This is structural validation hardening only. It does not authenticate the source or enable membership admission. Official sector membership and effective dates remain blocked on primary-source evidence tracked in issue #146.

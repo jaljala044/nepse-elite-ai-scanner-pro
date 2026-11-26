@@ -1,11 +1,11 @@
 """Fail-closed canonical projection of promoted bronze evidence."""
 from __future__ import annotations
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from .evidence_store import load_evidence_record_details
-from .source_trust_registry import resolve_source_policy, validate_promotion_evidence, verify_promotion_ledger, verify_reviewer_signature, verify_source_registry
+from .source_trust_registry import resolve_source_policy, validate_promotion_evidence, verify_promotion_ledger, validate_revocation_attestation, verify_reviewer_signature, verify_source_registry
 
 def load_canonical_evidence_records(*, database_path: str | Path | None, ledger_path: str | Path, registry: dict[str, Any], trusted_registry_sha256: str, reviewer_keys: dict[str, bytes], decision_time: str, record_type: str | None = None) -> dict[str, Any]:
     """Read only currently promoted rows after rechecking every trust boundary."""
@@ -14,6 +14,9 @@ def load_canonical_evidence_records(*, database_path: str | Path | None, ledger_
     audit = verify_promotion_ledger(ledger_path)
     if not audit["valid"]:
         raise ValueError("promotion ledger integrity check failed")
+    cutoff = datetime.fromisoformat(decision_time.replace("Z", "+00:00"))
+    if cutoff.tzinfo is None or cutoff.utcoffset() is None:
+        raise ValueError("decision_time must be timezone-aware")
     rows = load_evidence_record_details(database_path=database_path, record_type=record_type)
     by_id = {row["record_id"]: row for row in rows}
     state: dict[str, dict[str, Any]] = {}
@@ -21,14 +24,28 @@ def load_canonical_evidence_records(*, database_path: str | Path | None, ledger_
         action, record_id = event.get("action"), event.get("record_id")
         if not record_id or action not in {"promote", "revoke"} or event.get("accepted") is not True:
             continue
+        event_time = datetime.fromisoformat(str(event.get("decision_time", "")).replace("Z", "+00:00"))
+        if event_time.tzinfo is None or event_time.utcoffset() is None:
+            raise ValueError("ledger decision time must be timezone-aware")
+        if event_time > cutoff:
+            continue
         attestation = event.get("validation_attestation")
         if not isinstance(attestation, dict) or not verify_reviewer_signature(attestation, reviewer_keys):
             raise ValueError("accepted ledger event has no valid reviewer attestation")
         if event.get("registry_sha256") != registry.get("registry_sha256"):
             raise ValueError("ledger event is bound to a different source registry")
+        if event.get("reviewer") != attestation.get("reviewer") or event.get("validation_id") != attestation.get("validation_id"):
+            raise ValueError("ledger event reviewer metadata does not match signed attestation")
+        row = by_id.get(record_id)
+        if row is None:
+            raise ValueError("ledger decision references a record absent from bronze evidence")
+        for field in ("source_id", "record_type", "source_payload_sha256", "session_date", "available_at"):
+            if row.get(field) != event.get(field):
+                raise ValueError(f"bronze row and ledger decision mismatch: {field}")
         if action == "revoke":
-            if not event.get("reviewer") or not event.get("validation_id") or not event.get("evidence_refs"):
-                raise ValueError("accepted revocation lacks reviewer or evidence")
+            revoke_reasons = validate_revocation_attestation(attestation, event["decision_time"])
+            if revoke_reasons:
+                raise ValueError("accepted revocation attestation failed: " + ",".join(revoke_reasons))
         state[record_id] = {"action": action, "event": event}
     canonical = []
     for record_id, current in sorted(state.items()):

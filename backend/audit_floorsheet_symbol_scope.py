@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from datetime import date
 from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -62,7 +63,15 @@ def audit_floorsheet_symbol_scope(
     equity_crosswalk_path: str | Path,
     target_candidates_path: str | Path,
     security_snapshot_path: str | Path,
+    expected_trade_date: str,
+    expected_snapshot_date: str,
 ) -> dict:
+    try:
+        expected_trade_date = date.fromisoformat(expected_trade_date).isoformat()
+        expected_snapshot_date = date.fromisoformat(expected_snapshot_date).isoformat()
+    except ValueError as exc:
+        raise ValueError("expected trade/snapshot dates must be ISO YYYY-MM-DD") from exc
+
     samir = _read_csv(Path(samir_path), SAMIR_HEADERS)
     socrateai = _read_csv(Path(socrateai_path), SOCRATEAI_HEADERS)
     crosswalk_rows = _read_csv(Path(equity_crosswalk_path), {
@@ -94,6 +103,17 @@ def audit_floorsheet_symbol_scope(
     crosswalk = unique_index(crosswalk_rows, "equity crosswalk")
     candidates = unique_index(candidate_rows, "target candidates")
     snapshot = unique_index(snapshot_rows, "security snapshot")
+    for symbol, row in crosswalk.items():
+        security = snapshot.get(symbol)
+        if row["snapshot_date"] != expected_snapshot_date or row["active_status"] != "A" or row["crosswalk_status"] != "snapshot_id_match_active_status_A":
+            raise ValueError(f"equity crosswalk row for {symbol} is not a verified active row for {expected_snapshot_date}")
+        if security is None:
+            raise ValueError(f"equity crosswalk symbol {symbol} missing from dated security snapshot")
+        if (row["security_id"] != security["security_id"]
+                or row["active_status"] != security["active_status"]
+                or row["snapshot_date"] != security["snapshot_date"]
+                or row["security_name"] != security["security_name"]):
+            raise ValueError(f"equity crosswalk/security snapshot conflict for {symbol}")
 
     observed = defaultdict(lambda: {
         "samir_contracts": 0, "socrateai_contracts": 0,
@@ -109,6 +129,12 @@ def audit_floorsheet_symbol_scope(
             trade_date = row["date"]
             if not symbol or not contract_id or not trade_date:
                 raise ValueError(f"{source} row {line} missing date, contract or symbol")
+            try:
+                parsed_trade_date = date.fromisoformat(trade_date).isoformat()
+            except ValueError as exc:
+                raise ValueError(f"{source} row {line} has invalid ISO trade date: {trade_date!r}") from exc
+            if parsed_trade_date != expected_trade_date:
+                raise ValueError(f"{source} row {line} trade date {parsed_trade_date} differs from expected {expected_trade_date}")
             key = (trade_date, contract_id)
             if key in seen:
                 raise ValueError(f"{source} duplicate date/contract key at row {line}: {key}")
@@ -178,7 +204,9 @@ def audit_floorsheet_symbol_scope(
         })
 
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
+        "expected_trade_date": expected_trade_date,
+        "expected_security_snapshot_date": expected_snapshot_date,
         "audit_status": "review_only_symbol_scope_reconciliation",
         "source_rows": {
             "samir": len(samir),
@@ -212,11 +240,14 @@ def main():
     parser.add_argument("--equity-crosswalk", type=Path, required=True)
     parser.add_argument("--target-candidates", type=Path, required=True)
     parser.add_argument("--security-snapshot", type=Path, required=True)
+    parser.add_argument("--expected-trade-date", required=True)
+    parser.add_argument("--expected-snapshot-date", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     report = audit_floorsheet_symbol_scope(
         args.samir, args.socrateai, args.equity_crosswalk,
         args.target_candidates, args.security_snapshot,
+        args.expected_trade_date, args.expected_snapshot_date,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

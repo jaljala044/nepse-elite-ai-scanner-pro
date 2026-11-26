@@ -42,6 +42,9 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertEqual(trend["status"], "observed")
         self.assertEqual(trend["score"], 100)
         self.assertEqual(trend["history_sessions"], 260)
+        volume = result["volume_features"]["AAA"]
+        self.assertEqual(volume["status"], "observed")
+        self.assertEqual(volume["relative_volume"], 1.0)
 
 
 if __name__ == "__main__":

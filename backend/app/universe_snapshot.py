@@ -75,7 +75,7 @@ def validate_universe_snapshot(snapshot: dict, *, expected_equities: int = 281,
             raise ValueError(f"record {index}: symbol must already be trimmed and uppercase")
         if not isinstance(kind, str) or kind not in {
             "equity", "mutual_fund", "convertible_debenture",
-            "non_convertible_debenture", "preference_share", "other",
+            "non_convertible_debenture", "preference_share", "promoter_share", "other",
         }:
             raise ValueError(f"record {index}: unknown instrument_type {kind!r}")
         if not isinstance(status, str) or status not in {

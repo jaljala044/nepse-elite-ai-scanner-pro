@@ -72,7 +72,16 @@ jobs:
           source_dir="evidence/nepse-security-history/2026-10-05_to_2026-11-26"
           target="data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26"
           if [ -f "$target/capture-report.json" ]; then
-            echo "Immutable official history window already committed; preserving existing bytes."
+            echo "Immutable raw capture already committed; updating only the derived audit report."
+            cp "$source_dir/window-audit.json" "$target/window-audit.json"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$target/window-audit.json"
+            if ! git diff --cached --quiet; then
+              git commit -m "docs: update derived NEPSE history window audit"
+              git pull --rebase origin main
+              git push
+            fi
             exit 0
           fi
           mkdir -p "$target"

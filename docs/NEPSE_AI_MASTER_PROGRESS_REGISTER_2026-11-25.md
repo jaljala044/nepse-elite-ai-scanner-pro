@@ -1564,3 +1564,12 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added successor-side listing records for MATRI, SMATA, SMPDA, GBLBS and PFL to the evidence JSON. MATRI: NepseAlpha dated 2024-08-13 explicitly says trading from today; retained as a secondary-reported first-trading date pending OHLCV/floorsheet confirmation. SMATA: 2.6m acquisition shares listed 2024-08-02, exact first execution unknown. SMPDA: 7,008,584 shares listed 2024-08-15, exact first execution unknown. GBLBS: 10,053,500 shares listed 2025-12-22. PFL: 19,014,680 shares listed 2026-09-15.
 - Flagged date contradictions: GBLBS listing report's Ashwin 23, 2082 joint-transaction date conflicts with 17 Oct 2025 suspension report's Kartik 2, 2082 effective date. PFL listing report also states Ashwin 23, 2082, conflicting with 9 Jul 2026 suspension/integration report. Dates remain separate source observations, not normalized.
 - First-trading dates for SMATA/SMPDA/GBLBS/PFL remain null. No stable IDs/validity intervals inferred; no price splice or canonical/training promotion. Priority 97 remains open.
+
+
+### Priority 97 — project OHLCV first-session cross-check (2026-11-26)
+
+- Inspected exact symbol CSVs in `jaljala044/nepse-smc-data/03_stock_charts_ohlcv` and captured blob SHAs plus nonzero-volume boundary rows.
+- First post-listing/resumption session candidates: SLBSL 2024-05-19 (722 shares), NMLBBL 2024-05-19 (864), MATRI 2024-08-13 (1,391), SMPDA 2024-08-18 (5,314), GBLBS 2025-12-23 (51,250), PFL 2026-09-16 (33,240).
+- SMATA's acquisition share addition is explicitly not treated as a new ticker first-trade event: the symbol already had active OHLCV rows by 2024-07-20, before the 2024-08-02 additional listing.
+- These are project archive OHLCV observations, not independent trade-level verification. Exact floor-sheet contract corroboration is still required; first_trading_date_verified remains false. Repeated carry-forward OHLCV rows are a known caveat.
+- No stable IDs/validity intervals inferred, no price series modified/spliced, no canonical or training promotion. Priority 97 remains open.

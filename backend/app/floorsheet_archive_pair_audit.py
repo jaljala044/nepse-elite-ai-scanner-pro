@@ -44,10 +44,15 @@ def audit_floorsheet_archive_pair(
     left_rec = reconcile_floorsheet_rows(left["rows"]) if left["rows"] else None
     right_rec = reconcile_floorsheet_rows(right["rows"]) if right["rows"] else None
     duplicate_count = 0
+    amount_exception_count = 0
     if left_rec and right_rec:
         duplicate_count = sum(
             left_rec["counts"][key] + right_rec["counts"][key]
             for key in ("exact_duplicate", "conflicting_duplicate")
+        )
+        amount_exception_count = (
+            left_rec["counts"]["amount_reconciliation_exception"]
+            + right_rec["counts"]["amount_reconciliation_exception"]
         )
 
     if not left["rows"] or not right["rows"]:
@@ -68,6 +73,15 @@ def audit_floorsheet_archive_pair(
         comparison = {
             "comparison_status": "not_run_duplicate_keys_require_adjudication",
             "duplicate_rows": duplicate_count,
+            "source_independence_verified": False,
+            "canonical_promotion_allowed": False,
+            "coverage_admission_allowed": False,
+        }
+        identity = audit_contract_date_identity(left["rows"], right["rows"])
+    elif amount_exception_count:
+        comparison = {
+            "comparison_status": "not_run_amount_reconciliation_exceptions_require_adjudication",
+            "amount_reconciliation_exception_rows": amount_exception_count,
             "source_independence_verified": False,
             "canonical_promotion_allowed": False,
             "coverage_admission_allowed": False,

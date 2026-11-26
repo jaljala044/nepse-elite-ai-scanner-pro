@@ -134,7 +134,7 @@ proof of entitlement.
 ### Acceptance decision
 
 - Implementation and synthetic unit/API tests: complete.
-- Latest verified code CI (commit `cee143bcc407eccacc7231e46e8f771f382656b7`): backend unit tests, backend contract tests, and full public archive audit passed; all five commit check-runs concluded successfully.
+- Latest verified code CI (commit `6e122f1585699dfc506dd3bf2c989563bbfd851d`): backend unit tests, backend contract tests, and full public archive audit passed.
 - Subsequent commits changed documentation/PR evidence only; the tested application/audit code is unchanged.
 - Production-reviewed historical rows: unavailable.
 - Real-market backtest and out-of-sample calibration: not performed.

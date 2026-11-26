@@ -44,6 +44,8 @@ class BrokerMemoryStoreTests(unittest.TestCase):
                     "evidence_id": "evidence-sell-" + day,
                     "available_at": day + "T15:00:00+05:45",
                     "source_validation_status": "verified",
+                    "source_rights_status": "research_only",
+                    "rights_evidence_id": "rights-review-floorsheet",
                     "session_calendar_status": "confirmed_open",
                     "floorsheet_coverage_status": "verified_complete",
                 },

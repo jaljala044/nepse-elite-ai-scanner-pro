@@ -1,0 +1,10 @@
+{
+  "name": "nepse-research-frontend",
+  "private": true,
+  "scripts": {
+    "vendor": "node vendor.mjs"
+  },
+  "dependencies": {
+    "lightweight-charts": "5.0.0"
+  }
+}

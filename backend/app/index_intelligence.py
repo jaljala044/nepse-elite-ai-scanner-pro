@@ -84,27 +84,46 @@ def _sha256(value):
     return len(text) == 64 and all(ch in "0123456789abcdef" for ch in text)
 
 
-def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time):
-    """Calculate point-in-time returns, moving averages and volatility.
+def build_verified_index_intelligence(rows, *, verified_session_dates, index_code="NEPSE", decision_time):
+    """Calculate exact-session point-in-time index returns and trend metrics.
 
-    Admits only verified final index_ohlcv rows available by decision_time.
-    The function is descriptive only: it does not infer missing sessions,
-    produce a score/probability, or authorize a trade.
+    The caller must supply an independently verified, ascending NEPSE session
+    calendar. Every horizon is measured on that calendar, never by row count
+    alone. Missing observations remain missing; no forward-fill is performed.
     """
     if not isinstance(index_code, str) or not index_code.strip():
         raise ValueError("index_code_required")
     cutoff = _aware_utc(decision_time, "decision_time")
+    if not isinstance(verified_session_dates, list):
+        raise ValueError("verified_session_dates_must_be_a_list")
+    calendar = []
+    for value in verified_session_dates:
+        try:
+            parsed = date.fromisoformat(str(value)).isoformat()
+        except (TypeError, ValueError):
+            raise ValueError("verified_session_dates_must_be_iso_dates") from None
+        if parsed != value:
+            raise ValueError("verified_session_dates_must_use_yyyy_mm_dd")
+        calendar.append(parsed)
+    if not calendar or calendar != sorted(set(calendar)):
+        raise ValueError("verified_session_dates_must_be_unique_ascending")
+    decision_day = cutoff.astimezone(timezone(timedelta(hours=5, minutes=45))).date().isoformat()
+    calendar = [day for day in calendar if day <= decision_day]
+    if not calendar:
+        raise ValueError("no_verified_sessions_at_or_before_decision_date")
+
     if not isinstance(rows, list):
         raise ValueError("rows_must_be_a_list")
-
     accepted = {}
     excluded = {
         "wrong_index_or_record_type": 0,
         "unverified_or_nonfinal": 0,
         "invalid_provenance": 0,
         "not_available_by_cutoff": 0,
+        "outside_verified_session_calendar": 0,
     }
     source_ids = set()
+    calendar_set = set(calendar)
     for i, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError(f"row_{i}_must_be_an_object")
@@ -133,20 +152,29 @@ def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time
             raise ValueError(f"row_{i}_invalid_session_or_close") from None
         if isinstance(row.get("close"), bool) or not math.isfinite(close) or close <= 0:
             raise ValueError(f"row_{i}_invalid_session_or_close")
+        if session not in calendar_set:
+            excluded["outside_verified_session_calendar"] += 1
+            continue
         if session in accepted:
             raise ValueError(f"duplicate_index_session:{session}")
         accepted[session] = close
         source_ids.add(source_id)
 
-    dates = sorted(accepted)
-    closes = [accepted[day] for day in dates]
-    count = len(closes)
+    # Metrics are calculated against exact calendar slices. A missing session
+    # invalidates only metrics whose required slice contains that session.
+    def values_for(days):
+        if any(day not in accepted for day in days):
+            return None
+        return [accepted[day] for day in days]
+
     metrics = {}
     missing = []
     for name, intervals in _VERIFIED_RETURN_WINDOWS.items():
-        if count > intervals:
-            metrics[f"return_{name}_pct"] = round((closes[-1] / closes[-intervals-1] - 1) * 100, 4)
-            metrics[f"return_{name}_start_session"] = dates[-intervals-1]
+        window = calendar[-(intervals + 1):]
+        vals = values_for(window) if len(window) == intervals + 1 else None
+        if vals is not None:
+            metrics[f"return_{name}_pct"] = round((vals[-1] / vals[0] - 1) * 100, 4)
+            metrics[f"return_{name}_start_session"] = window[0]
         else:
             metrics[f"return_{name}_pct"] = None
             metrics[f"return_{name}_start_session"] = None
@@ -154,15 +182,22 @@ def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time
 
     averages = {}
     for window in _VERIFIED_SMA_WINDOWS:
+        days = calendar[-window:]
+        vals = values_for(days) if len(days) == window else None
         key = f"sma_{window}"
-        averages[key] = round(sum(closes[-window:]) / window, 4) if count >= window else None
+        averages[key] = round(sum(vals) / window, 4) if vals is not None else None
         if averages[key] is None:
             missing.append(key)
     metrics["moving_averages"] = averages
 
-    if count >= 220:
-        current_200 = sum(closes[-200:]) / 200
-        prior_200 = sum(closes[-220:-20]) / 200
+    if len(calendar) >= 220:
+        current_vals = values_for(calendar[-200:])
+        prior_vals = values_for(calendar[-220:-20])
+    else:
+        current_vals = prior_vals = None
+    if current_vals is not None and prior_vals is not None:
+        current_200 = sum(current_vals) / 200
+        prior_200 = sum(prior_vals) / 200
         metrics["sma_200_slope_20_sessions_pct"] = round((current_200 / prior_200 - 1) * 100, 4)
         metrics["sma_200_rising"] = current_200 > prior_200
     else:
@@ -170,17 +205,20 @@ def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time
         metrics["sma_200_rising"] = None
         missing.append("sma_200_slope")
 
-    if count >= _VERIFIED_FULL_HISTORY:
-        high = max(closes[-_VERIFIED_FULL_HISTORY:])
+    high_values = values_for(calendar[-_VERIFIED_FULL_HISTORY:]) if len(calendar) >= _VERIFIED_FULL_HISTORY else None
+    if high_values is not None:
+        high = max(high_values)
+        latest = high_values[-1]
         metrics["high_52w"] = round(high, 4)
-        metrics["distance_from_52w_high_pct"] = round((closes[-1] / high - 1) * 100, 4)
+        metrics["distance_from_52w_high_pct"] = round((latest / high - 1) * 100, 4)
     else:
         metrics["high_52w"] = None
         metrics["distance_from_52w_high_pct"] = None
         missing.append("52w_high")
 
-    if count >= 21:
-        daily_returns = [closes[i] / closes[i - 1] - 1 for i in range(count - 20, count)]
+    vol_values = values_for(calendar[-21:]) if len(calendar) >= 21 else None
+    if vol_values is not None:
+        daily_returns = [vol_values[i] / vol_values[i - 1] - 1 for i in range(1, len(vol_values))]
         daily_vol = stdev(daily_returns)
         metrics["volatility_20d_pct"] = round(daily_vol * 100, 4)
         metrics["volatility_20d_annualized_pct"] = round(daily_vol * math.sqrt(250) * 100, 4)
@@ -189,7 +227,8 @@ def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time
         metrics["volatility_20d_annualized_pct"] = None
         missing.append("volatility_20d")
 
-    current = closes[-1] if closes else None
+    latest_day = calendar[-1]
+    current = accepted.get(latest_day)
     sma = averages
     if current is None or sma["sma_50"] is None or sma["sma_150"] is None or sma["sma_200"] is None:
         regime = "unknown"
@@ -200,17 +239,20 @@ def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time
     else:
         regime = "mixed_or_sideways"
 
-    complete = count >= _VERIFIED_FULL_HISTORY and not missing
+    complete = len(calendar) >= _VERIFIED_FULL_HISTORY and not missing
+    missing_sessions = [day for day in calendar[-_VERIFIED_FULL_HISTORY:] if day not in accepted]
     return {
         "status": "observed" if complete else "insufficient_evidence",
         "mode": "descriptive_only",
         "index_code": index_code,
-        "as_of_session": dates[-1] if dates else None,
+        "as_of_session": latest_day,
         "decision_time": cutoff.isoformat(),
-        "history_sessions": count,
+        "history_sessions": len(calendar),
+        "observed_sessions": len(accepted),
+        "missing_sessions": missing_sessions,
         "source_ids": sorted(source_ids),
         "excluded_rows": excluded,
-        "current_close": closes[-1] if closes else None,
+        "current_close": current,
         "regime": regime,
         "metrics": metrics,
         "missing_metrics": sorted(set(missing)),
@@ -218,8 +260,9 @@ def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time
         "probability": None,
         "action": "NOT_EVALUATED",
         "limitations": [
-            "A 253-session verified history is required for complete 52-week index context.",
-            "Missing sessions are not interpolated or forward-filled.",
+            "Session horizons use the caller-supplied independently verified exchange calendar.",
+            "A 253-session verified calendar and complete index observations are required for full 52-week context.",
+            "Missing observations are not interpolated or forward-filled.",
             "Index regime is descriptive, not a forecast or trade signal.",
             "Sub-indices require separately verified index identities and records.",
         ],

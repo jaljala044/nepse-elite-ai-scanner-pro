@@ -71,12 +71,21 @@ el("scan-run").addEventListener("click",async()=>{
   if(data.mode!=="research_only"||data.scanner_id!=="3A.01"||!Array.isArray(data.results))
    throw Error("Unexpected market-wide scanner response");
   scanSummary=data;results=data.results;render();
+  const provenance=data.candidate_universe_provenance||{};
+  const snapshotHash=typeof provenance.source_snapshot_sha256==="string"
+   ? provenance.source_snapshot_sha256.slice(0,12)+"…" : "hash unavailable";
+  const provenanceSummary=[
+   "Universe source: "+(provenance.source||"unknown"),
+   "observed: "+(provenance.observed_on||"unknown"),
+   "evidence: "+(provenance.evidence_tier||"unverified"),
+   "SHA-256: "+snapshotHash
+  ].join(" · ");
   status(
    data.results.length+" results · "+data.symbols_with_observations+"/"+data.candidate_universe_count+
    " with OHLCV ("+data.observation_coverage_pct+"% observation coverage) · "+data.symbols_without_observations+
    " without observations · "+(data.as_of||"as-of unavailable")+
-   " · rankings and recommendations disabled. " +
-   ((data.candidate_universe_provenance?.warning || "Candidate-universe provenance unavailable.")+" ")+
+   " · rankings and recommendations disabled. "+provenanceSummary+". "+
+   ((provenance.warning || "Candidate-universe provenance unavailable.")+" ")+
    (data.coverage_basis === "at_least_one_stored_ohlcv_row_not_data_quality_or_session_validation"
     ? "Coverage counts symbols with at least one stored OHLCV row; it does not validate data quality or session completeness."
     : (data.disclaimer || "Coverage basis unavailable."))

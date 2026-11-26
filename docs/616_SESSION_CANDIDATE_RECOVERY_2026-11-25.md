@@ -78,3 +78,15 @@ These reports strengthen the two dates as session candidates, but neither is pri
 All 616 candidate dates were checked against the documented NEPSE schedule-regime weekday candidates. Result: **zero weekday-regime violations** and zero Saturday dates. The weekday distribution is Sunday 96, Monday 118, Tuesday 128, Wednesday 127, Thursday 120, Friday 27, Saturday 0. The 27 Friday dates are in the Monday-Friday regime after 2026-04-06; no Friday candidate falls in the earlier Sunday-Thursday regime.
 
 This check detects impossible weekday assignments under the documented schedule but does not establish that every candidate date was actually open; holidays and exceptional suspensions still require date-specific evidence.
+
+
+## Additional independent secondary-source corroboration — 2026-11-26
+
+A further search found additional same-date market reports for both dates absent from the pinned SocrateAI index-file inventory:
+
+- **2025-04-03:** HimalPress reports the completed Thursday session, including 69,089 transactions and 15.50 million shares traded. Expert Nepal's historical NEPSE index table separately records 2025-04-03 OHLC, close 2,703.39 and turnover NPR 7,844,642,487.27. Kathmandu Post had already reported the same day's index close and trading activity. These are multiple secondary publishers, not a primary exchange record.
+- **2026-11-20:** NepseIQ and ShareSansar had already reported the completed Friday session. A separate Nepse Decode daily summary labels the snapshot as sourced from NEPSE and reports 352 scrips traded; NepseTrading also publishes a date-specific close report. These are additional secondary records, but common upstream market-data lineage cannot be ruled out.
+
+Machine-readable additions are recorded in `data/evidence/candidates/nepse-session-secondary-report-crosscheck.csv` (commit `3b96c0783426fe776c20ba6decf0faefd4615e8a`).
+
+**Decision unchanged:** both dates remain `candidate_unverified`. Multiple secondary reports materially strengthen the case that the sessions occurred, but they do not meet the project's primary-source/date-by-date gate and do not prove exact identity with the original 616-date extraction input. Canonical calendar promotion remains zero; P2 training remains blocked.

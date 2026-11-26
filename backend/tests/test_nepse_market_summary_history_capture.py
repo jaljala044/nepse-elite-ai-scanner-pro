@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from capture_nepse_market_summary_history import analyze_payload, capture
+from capture_nepse_market_summary_history import analyze_payload, capture, main
 
 
 class NepseMarketSummaryHistoryCaptureTests(unittest.TestCase):
@@ -72,12 +75,17 @@ class NepseMarketSummaryHistoryCaptureTests(unittest.TestCase):
                 pass
 
         with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
             with patch.dict(sys.modules, {"nepse_client": SimpleNamespace(NepseClient=OnlineClient)}):
-                report = capture(Path(tmp))
+                with patch.object(sys, "argv", ["capture", "--output-dir", tmp]):
+                    with redirect_stdout(output):
+                        exit_code = main()
+            report = json.loads(output.getvalue())
+            self.assertEqual(exit_code, 0)
             self.assertTrue(report["response_preserved"])
             self.assertEqual(report["payload_analysis"]["unique_date_count"], 1)
-            self.assertEqual((Path(tmp) / "response-body.bin").read_bytes(), body)
             self.assertEqual(report["request_errors"], [])
+            self.assertEqual((Path(tmp) / "response-body.bin").read_bytes(), body)
 
     def test_non_list_payload_is_preserved_as_unknown_shape(self):
         result = analyze_payload({"error": "unauthorized"}, {"2024-03-04"})

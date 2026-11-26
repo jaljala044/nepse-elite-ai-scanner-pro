@@ -1,0 +1,50 @@
+{
+  "totalAmount": 5117615393.86,
+  "totalQty": 13736062,
+  "floorsheets": {
+    "content": [
+      {
+        "contractId": 2026112604012382,
+        "stockSymbol": "HDHPC",
+        "buyerMemberId": null,
+        "sellerMemberId": null,
+        "contractQuantity": 500,
+        "contractRate": 212.0,
+        "contractAmount": 106000.0,
+        "businessDate": "2026-11-26",
+        "tradeBookId": 202879187,
+        "stockId": 2880,
+        "buyerBrokerName": null,
+        "sellerBrokerName": null,
+        "tradeTime": "2026-11-26T14:55:00.450874",
+        "securityName": "Himal Dolakha Hydropower Company Limited"
+      }
+    ],
+    "pageable": {
+      "sort": {
+        "sorted": true,
+        "unsorted": false,
+        "empty": false
+      },
+      "pageSize": 1,
+      "pageNumber": 0,
+      "offset": 0,
+      "paged": true,
+      "unpaged": false
+    },
+    "totalPages": 46396,
+    "totalElements": 46396,
+    "last": false,
+    "number": 0,
+    "size": 1,
+    "numberOfElements": 1,
+    "sort": {
+      "sorted": true,
+      "unsorted": false,
+      "empty": false
+    },
+    "first": true,
+    "empty": false
+  },
+  "totalTrades": 46396
+}

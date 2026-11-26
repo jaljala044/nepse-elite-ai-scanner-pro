@@ -116,3 +116,22 @@ For all 17 merger-set CSV paths found in both repositories (BPW, GBLBS, JALPA, K
 - No raw OHLCV files were changed.
 - `stable_id` remains null and `effective_date_verified` remains false for affected records.
 - No canonical universe promotion, model-training promotion, or synthetic boundary row was created.
+
+
+## Additional predecessor OHLCV boundary observations
+
+The read-only review was extended to BPW, MMFDB, NLBBL, SAMAJ, SFCL, SABSL and SDLBSL. Exact file blobs are shared by both repositories, as described above.
+
+| Predecessor | Last file row / distinct OHLCV observation | Interpretation |
+|---|---|---|
+| BPW | 2024-03-06, volume 1,900 | The file contains a nonzero-volume row on the reported suspension-effective date. Exact notice timing must be checked before calling it the final trade. |
+| MMFDB | 2024-03-12, volume 25,868 | File ends one day before reported 2024-03-13 suspension. |
+| NLBBL | 2024-03-12, volume 20,276 | File ends one day before reported 2024-03-13 suspension. |
+| SAMAJ | Last distinct row 2025-10-16, volume 2,893; file continues through 2025-10-18 | 17 and 18 October repeat the 16 October OHLCV exactly; these are forward-filled rows, not evidence of additional trading sessions. |
+| SFCL | 2026-07-09, volume 5,290 | File ends one day before reported 2026-07-10 suspension/integration. |
+| SABSL | Last distinct row 2024-07-11, volume 10,540; file continues through 2024-07-13 | 12 and 13 July repeat the 11 July OHLCV exactly. |
+| SDLBSL | Last distinct row 2024-07-11, volume 15,863; file continues through 2024-07-13 | 12 and 13 July repeat the 11 July OHLCV exactly. |
+
+Successor files show that SLBSL, GBLBS and PFL already had OHLCV histories before the respective integration events; they are not cleanly newly-started successor series in these archives. NMLBBL's first file row is 2024-05-19; SMPDA's first file row is 2024-08-18. The file start is not automatically the legal first-trading date. All these boundary checks remain repository observations, not exchange-primary certification.
+
+**Data-quality guardrail:** a repeated OHLCV row with nonzero volume can be a carried-forward value in these files. The terminal row date alone is therefore not a safe proxy for last trade. Distinct row/signature analysis and source trading calendar evidence are required before promoting last-trade dates.

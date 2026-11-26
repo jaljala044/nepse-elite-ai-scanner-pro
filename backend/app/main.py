@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
@@ -364,3 +365,9 @@ def history(symbol: str):
     if rows is None:
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
+
+# Serve the responsive web client from the same origin so its /v1 requests use
+# the same API without cross-origin configuration. API routes above take priority.
+_FRONTEND_PATH = Path(__file__).resolve().parents[2] / "frontend"
+if _FRONTEND_PATH.is_dir():
+    app.mount("/", StaticFiles(directory=str(_FRONTEND_PATH), html=True), name="frontend")

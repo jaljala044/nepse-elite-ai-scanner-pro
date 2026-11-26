@@ -590,7 +590,17 @@
       "raw_history_preserved": true,
       "listed_shares": 256050,
       "listing_report_basis": "ShareSansar reports 256,050 post-merger SLBSL shares listed in NEPSE on 17 May 2024 and states opening price range Rs 883.97 for first transactions; listing evidence is not proof of first executed trade date.",
-      "first_trading_date": null
+      "first_trading_date": "2024-05-19",
+      "first_trading_date_basis": "First nonzero-volume row after predecessor's 2024-03-06 final pre-suspension row; first post-merger/resumption session candidate.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/SLBSL_OHLCV.csv",
+        "blob_sha": "2aa78a66c27b26b7d84ae2448a2f69227adb42ed",
+        "row": "2024-05-19,901.60,972.30,901.60,972.30,722",
+        "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
+        "confidence": "medium"
+      },
+      "first_trading_date_verified": false
     },
     {
       "symbol": "NMLBBL",
@@ -606,7 +616,17 @@
       "listing_report_basis": "ShareSansar reports 13,977,643 post-merger NMLBBL shares listed in NEPSE on 17 May 2024 and states opening price range Rs 587.86 for first transactions; listing evidence is not proof of first executed trade date.",
       "company_operation_date": "2024-05-19",
       "company_operation_date_source": "https://www.sharesansar.com/company/nmlbbl",
-      "first_trading_date": null
+      "first_trading_date": "2024-05-19",
+      "first_trading_date_basis": "First row in successor OHLCV series; nonzero volume, matches company operation date 2024-05-19.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/NMLBBL_OHLCV.csv",
+        "blob_sha": "8dd19774b8409d0d67c94f9976fc079a5518d770",
+        "row": "2024-05-19,599.60,646.60,599.60,646.60,864",
+        "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
+        "confidence": "medium"
+      },
+      "first_trading_date_verified": false
     },
     {
       "symbol": "MATRI",
@@ -622,7 +642,16 @@
       "listed_shares": 6283573.37,
       "listing_date": "2024-08-12",
       "first_trading_date": "2024-08-13",
-      "first_trading_date_basis": "NepseAlpha report dated 2024-08-13 explicitly says trading from today and describes NEPSE's opening range and MATRI code; secondary-source confirmation, not exchange-primary tape."
+      "first_trading_date_basis": "First row in successor OHLCV series; nonzero volume; matches NepseAlpha report explicitly saying trading from today.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/MATRI_OHLCV.csv",
+        "blob_sha": "fc6c9f1acb505a866bd64c76ccf83fb11c0201d7",
+        "row": "2024-08-13,1303.90,1406.20,1303.90,1406.20,1391",
+        "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
+        "confidence": "medium"
+      },
+      "first_trading_date_verified": false
     },
     {
       "symbol": "SMATA",
@@ -636,7 +665,19 @@
       "raw_history_preserved": true,
       "additional_shares_listed": 2600000,
       "listing_report_basis": "ShareSansar reports 2,600,000 additional SMATA shares listed after acquisition of MKLB and says listed shares will start trading under SMATA; exact first executed trade date not stated.",
-      "first_trading_date": null
+      "first_trading_date": null,
+      "first_trading_date_basis": "Not applicable to the acquisition share addition: SMATA was already actively trading before the 2024-08-02 additional-share listing. Its OHLCV series predates the acquisition; this event did not create a new ticker series.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/SMATA_OHLCV.csv",
+        "blob_sha": "09c11f751108336a9843b586b1c3621a53d02dac",
+        "pre_event_rows": [
+          "2024-07-20,1010.00,1060.00,1010.00,1015.00,19728",
+          "2024-08-01,1115.00,1137.00,1100.00,1111.00,6808"
+        ],
+        "source_class": "project OHLCV archive",
+        "confidence": "high for pre-existing ticker trading"
+      }
     },
     {
       "symbol": "SMPDA",
@@ -650,7 +691,17 @@
       "raw_history_preserved": true,
       "listed_shares": 7008584,
       "listing_report_basis": "ShareSansar reports 7,008,584 post-merger SMPDA shares listed and gives Rs 1,057 opening price range for first transactions; does not establish first executed trading date.",
-      "first_trading_date": null
+      "first_trading_date": "2024-08-18",
+      "first_trading_date_basis": "First row in successor OHLCV series after 2024-08-15 listing; nonzero volume.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/SMPDA_OHLCV.csv",
+        "blob_sha": "044d6f823b0d93c64c0906edfe00e284945fbc6f",
+        "row": "2024-08-18,1078.10,1162.70,1078.10,1162.70,5314",
+        "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
+        "confidence": "medium"
+      },
+      "first_trading_date_verified": false
     },
     {
       "symbol": "GBLBS",
@@ -665,7 +716,17 @@
       "raw_history_preserved": true,
       "listed_shares": 10053500,
       "listing_report_basis": "ShareSansar reports 10,053,500 shares listed on 2025-12-22 and opening range Rs 804.91. Separate 2025-10-17 suspension report says integrated operations and suspension effective Kartik 2, 2082 (2025-10-19), while listing report states joint transaction from Ashwin 23, 2082; conflicting date descriptions are not reconciled.",
-      "first_trading_date": null
+      "first_trading_date": "2025-12-23",
+      "first_trading_date_basis": "First row after last pre-suspension row 2025-10-16; nonzero volume, one session after reported 2025-12-22 listing.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/GBLBS_OHLCV.csv",
+        "blob_sha": "0213813001421eb7d74e7cb3fb1d02bbdc6f3f34",
+        "row": "2025-12-23,805.00,853.00,805.00,852.00,51250",
+        "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
+        "confidence": "medium"
+      },
+      "first_trading_date_verified": false
     },
     {
       "symbol": "PFL",
@@ -680,7 +741,17 @@
       "raw_history_preserved": true,
       "listed_shares": 19014680,
       "listing_report_basis": "ShareSansar reports 19,014,680 shares listed on 2026-09-15 and opening range Rs 366.58. Its stated joint-transaction date Ashwin 23, 2082 conflicts with the earlier July 2026 suspension/integration date in a separate ShareSansar report; no timeline inference made.",
-      "first_trading_date": null
+      "first_trading_date": "2026-09-16",
+      "first_trading_date_basis": "First row after last pre-suspension row 2026-07-09; nonzero volume, one session after reported 2026-09-15 merger listing.",
+      "first_trading_date_evidence": {
+        "repository": "jaljala044/nepse-smc-data",
+        "path": "03_stock_charts_ohlcv/PFL_OHLCV.csv",
+        "blob_sha": "ace0983a96ecc90cc888c96b1d600894b4b22557",
+        "row": "2026-09-16,374.10,386.00,372.00,373.00,33240",
+        "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
+        "confidence": "medium"
+      },
+      "first_trading_date_verified": false
     }
   ],
   "remaining_without_provider_evidence": [],

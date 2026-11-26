@@ -72,6 +72,33 @@ class MarketWideScannerAPITests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["results"][0]["requested_as_of"], payload["as_of"])
 
+    def test_explicit_future_as_of_is_clamped_to_today(self):
+        rows = [
+            {"date": date(2026, 1, 1), "open": 10, "high": 12,
+             "low": 9, "close": 11, "volume": 100},
+            {"date": date(2099, 1, 1), "open": 10, "high": 12,
+             "low": 9, "close": 11, "volume": 100},
+        ]
+        seen = []
+
+        def analyze(symbol, selected_rows):
+            seen.extend(row["date"] for row in selected_rows)
+            return {"status": "screened", "signals": [], "metrics": {}}
+
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(main, "EQUITY_UNIVERSE", {"symbols": ["ADBL"]}))
+            stack.enter_context(patch.object(main, "DATA", {"ADBL": rows}))
+            stack.enter_context(patch.object(main, "REVIEWED_ROWS", {}))
+            stack.enter_context(patch.object(main, "analyze", side_effect=analyze))
+            with TestClient(main.app) as client:
+                response = client.post(
+                    "/v1/scan/market-wide",
+                    json={"as_of": "2099-01-01"},
+                )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(seen, [date(2026, 1, 1)])
+        self.assertNotEqual(response.json()["as_of"], "2099-01-01")
+
     def test_unreviewed_rows_cannot_emit_signals_or_metrics(self):
         rows = [{"date": date(2026, 1, 1), "open": 10, "high": 12,
                  "low": 9, "close": 11, "volume": 100}]

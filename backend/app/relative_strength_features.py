@@ -1,7 +1,7 @@
 """Cross-sectional relative-strength engine versus the NEPSE benchmark.
 
 The score is a percentile rank among the supplied eligible equity universe.
-It is not a probability. Stock and benchmark returns use common session dates.
+It is not a probability. All securities use the same latest benchmark session and every exact benchmark date in each horizon.
 """
 from __future__ import annotations
 

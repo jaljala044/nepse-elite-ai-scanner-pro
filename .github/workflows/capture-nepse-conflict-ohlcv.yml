@@ -1,4 +1,4 @@
-name: Capture official NEPSE conflict OHLCV history
+name: Capture NEPSE and validate approved-provider OHLCV evidence
 
 on:
   workflow_dispatch:
@@ -79,10 +79,6 @@ jobs:
           path: evidence/nepse-conflict-ohlcv/
           if-no-files-found: warn
           retention-days: 90
-      - name: Require all conflict dates to have a primary match
+      - name: Validate approved-provider project evidence
         if: always()
-        run: |
-          if [ "${{ steps.capture.outputs.capture_exit_code }}" != "0" ]; then
-            echo "Primary capture is partial or unresolved; inspect the preserved artifact."
-            exit 1
-          fi
+        run: python backend/validate_project_ohlcv_evidence.py

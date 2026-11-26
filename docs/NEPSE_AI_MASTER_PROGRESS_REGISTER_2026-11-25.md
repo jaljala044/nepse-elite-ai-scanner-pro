@@ -2121,3 +2121,7 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - SocrateAI totals match the indexed MeroLagani 2026-11-24 quantity and gross-amount controls exactly. This is same-day arithmetic/set consistency, not independent source-lineage or exchange completeness proof: Samir's scraper is MeroLagani-derived and SocrateAI's upstream capture route remains unverified.
 - **Disposition:** high-confidence one-day transaction-set consistency; LOW CONFIDENCE for source independence and daily completeness; review-only. Source rights, official session completeness, effective-dated 281-equity master, coverage admission, broker scoring and production BUY authorization remain blocked.
 - Detailed report: [P4.17 pinned floorsheet archive reconciliation](docs/P4.17_PINNED_FLOORSHEET_ARCHIVE_RECONCILIATION_2026-11-26.md).
+
+
+- Follow-up scope caveat: 52,369 is the cross-source shared-contract count, **not** a verified ordinary-equity contract count. The complete 52,369 shared rows have not yet been joined to the effective-dated 281-equity register; other shared records may also be out of scope. The 18 one-sided rows alone have been classified from the dated snapshot.
+- CI after the P4.17 report/progress commits: backend unit tests **836 passed** (run 45849859966; log inspected). P4.17 pinned archive workflow itself completed successfully (run 45849142578) and uploaded the JSON artifact.

@@ -38,6 +38,27 @@ class SectorMembershipManifestTests(unittest.TestCase):
             allowed_sector_codes={"BANK", "HYDRO"}, decision_time=CUTOFF, **kwargs
         )
 
+    def test_nepal_local_cutoff_date_controls_effective_membership(self):
+        manifest = fixture()
+        manifest["records"][0]["effective_from"] = "2026-11-27"
+        manifest["records"][1]["effective_from"] = "2026-11-27"
+        manifest["manifest_sha256"] = manifest_digest(manifest)
+        # 2026-11-27 00:15 in Nepal is still 2026-11-26 in UTC.
+        result = audit_sector_membership_manifest(
+            manifest, expected_symbols=["AAA", "BBB"],
+            allowed_sector_codes={"BANK", "HYDRO"},
+            decision_time="2026-11-27T00:15:00+05:45",
+        )
+        self.assertEqual(result["as_of_date"], "2026-11-27")
+        self.assertEqual(result["status"], "review_ready")
+
+    def test_invalid_expected_symbol_type_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "expected_symbols_must_be_unique_nonempty"):
+            audit_sector_membership_manifest(
+                fixture(), expected_symbols=[None], allowed_sector_codes={"BANK"},
+                decision_time=CUTOFF,
+            )
+
     def test_valid_manifest_is_review_ready_not_verified(self):
         result = self.audit()
         self.assertEqual(result["status"], "review_ready")

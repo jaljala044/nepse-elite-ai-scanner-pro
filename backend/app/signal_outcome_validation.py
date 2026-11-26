@@ -54,7 +54,11 @@ def evaluate_signal_path(signal, rows, verified_sessions, *, evaluation_date, re
     if not isinstance(verified_sessions, list) or not verified_sessions:
         return {"status": "data_unavailable", "classification": "research_reference_not_execution",
                 "reason": "verified_session_calendar_missing"}
-    sessions = sorted({date.fromisoformat(str(x)) for x in verified_sessions})
+    parsed_sessions = [date.fromisoformat(str(x)) for x in verified_sessions]
+    if len(parsed_sessions) != len(set(parsed_sessions)):
+        return {"status": "data_unavailable", "classification": "research_reference_not_execution",
+                "reason": "duplicate_verified_calendar_sessions"}
+    sessions = sorted(parsed_sessions)
     if decision_day not in sessions:
         return {"status": "data_unavailable", "classification": "research_reference_not_execution",
                 "reason": "decision_session_not_verified"}
@@ -91,8 +95,8 @@ def evaluate_signal_path(signal, rows, verified_sessions, *, evaluation_date, re
     for item in targets_raw[:3]:
         value = item.get("price") if isinstance(item, dict) else item
         target = _d(value, "target")
-        if target <= entry:
-            raise ValueError("invalid_signal_target")
+        if target <= entry or (targets and target <= targets[-1]):
+            raise ValueError("invalid_or_unsorted_signal_target")
         targets.append(target)
     entered = False
     entry_date = None
@@ -112,6 +116,7 @@ def evaluate_signal_path(signal, rows, verified_sessions, *, evaluation_date, re
                 continue
         stop_touched = lo <= stop
         newly_hit = [i + 1 for i, target in enumerate(targets) if hi >= target and i + 1 not in target_hits]
+        target_hits.extend(newly_hit)
         if stop_touched and newly_hit:
             ambiguous_sessions.append(d.isoformat())
             exit_reference = min(op, stop)
@@ -123,7 +128,6 @@ def evaluate_signal_path(signal, rows, verified_sessions, *, evaluation_date, re
             exit_date = d
             exit_reason = "stop_reference_touched"
             break
-        target_hits.extend(newly_hit)
     last_close = _d(by_day[window[-1]]["close"], "last_close")
     mark = exit_reference if exit_reference is not None else (last_close if entered else None)
     return_pct = None if not entered else str((mark / entry - 1) * 100)

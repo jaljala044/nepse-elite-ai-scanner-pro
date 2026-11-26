@@ -271,7 +271,8 @@ jobs:
               day: {
                   source: {
                       "status_counts": item["status_counts"],
-                      "equity_candidate_count": item["equity_candidate_count"],
+                      "exact_match_count": item["exact_match_count"],
+                      "official_symbol_count": item["official_symbol_count"],
                       "floorsheet_symbol_count": item["floorsheet_symbol_count"],
                       "exception_examples": [
                           {"symbol": row["symbol"], "status": row["status"]}

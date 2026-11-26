@@ -1503,3 +1503,10 @@ Keep `NEPSE_FLOORSHEET_PRODUCTION_ENABLED` unset. Do not merge automation PR #3 
 - Report update: `a3f626dcd4f5396a9e57e029dd0abf20d274bbcb`.
 - Evidence: ShareSansar notices dated 2024-03-06, 2024-03-12, 2025-10-17 and 2026-07-09 respectively.
 - JALPA/KLBSL and MKLB/SAMATA suspension-effective dates remain unresolved. Last actual trade dates, successor first trade dates and effective-dated security IDs remain open for all affected merger groups. No stable IDs or canonical mappings were promoted.
+
+
+## Priority 97 follow-up — predecessor last-trade evidence (2026-11-26)
+
+Added secondary historical last-recorded-trade evidence for JALPA (2024-07-10), KLBSL (2024-07-10), and MKLB (2024-07-07) to `data/reference/nepse_historical_identity_evidence_2026-11-26.json`. JALPA/KLBSL successor MATRI shares were reported listed 2024-08-12 and available for trading 2024-08-13. Sources include Laganilab, Merolagani, and NepseAlpha; the detailed evidence and interpretation are in `docs/PRIORITY_97_HISTORICAL_EQUITY_MERGER_TIMELINES_2026-11-26.md`.
+
+These are secondary-source observations, not exchange-primary certified lifecycle intervals. No stable IDs were populated, no price history was spliced, and no raw OHLCV/floorsheet data changed. Priority 97 remains open pending dated security-ID validity evidence, raw history boundary checks, and equivalent last-trade evidence for remaining predecessor groups.

@@ -122,6 +122,8 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
         row["trade_date"] = day
         row["symbol"] = str(row["symbol"]).strip().upper()
         row["source_payload_sha256"] = digest
+        if row["source_broker_code"] is not None:
+            row["source_broker_code"] = str(row["source_broker_code"]).strip()
         if not row["symbol"]:
             raise ValueError(f"row {index} symbol is required")
         key = (row["source_id"], digest, row_number)

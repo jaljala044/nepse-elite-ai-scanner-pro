@@ -214,7 +214,7 @@ def run_scheduled_backup(
         "finished_at_utc": finished.isoformat().replace("+00:00", "Z"),
         "status": status,
         "quiesce_succeeded": pre_ok,
-        "resume_succeeded": resume_ok if pre_ok else None,
+        "resume_succeeded": resume_ok if pre_attempted else None,
         "backup_stdout_sha256": output_digest,
         "issue": issue,
         "production_eligible": False,

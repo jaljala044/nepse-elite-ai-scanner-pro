@@ -117,6 +117,13 @@ def scan(request: ScanRequest):
                 "metrics": {},
                 "data_quality": "LOW_CONFIDENCE",
                 "data_status": "UNKNOWN",
+                "overall_rating": "NOT_RATED",
+                "horizon_actions": {
+                    "t_plus_2": "UNKNOWN",
+                    "swing": "UNKNOWN",
+                    "positional": "UNKNOWN",
+                    "investment": "UNKNOWN",
+                },
                 "scan_note": (
                     "UNL is retained in scan output as UNKNOWN, not excluded and not "
                     "treated as a no-trade security. A session is a verified no-trade "

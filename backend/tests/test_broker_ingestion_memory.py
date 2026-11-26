@@ -69,7 +69,7 @@ class BrokerIngestionMemoryBridgeTests(unittest.TestCase):
 
     def test_intraday_late_availability_never_writes_memory(self):
         result = self.run_batch(
-            available_by=datetime(2026, 11, 26, 8, tzinfo=timezone.utc)
+            available_by=datetime(2026, 11, 26, 2, tzinfo=timezone.utc)
         )
         self.assertEqual(result["status"], "memory_admission_rejected")
         self.assertIsNone(result["persistence"])

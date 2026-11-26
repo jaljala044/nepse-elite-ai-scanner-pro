@@ -145,7 +145,7 @@ def broker_participation_summary(rows: list[dict]) -> dict:
 
 
 BROKER_WINDOWS = {
-    "1D": 1, "1W": 5, "1M": 21, "3M": 63,
+    "1D": 1, "1W": 5, "1M": 21, "3M": 63, "1Y": 252,
     "6M": 126, "1Y": 252, "2Y": 504,
 }
 

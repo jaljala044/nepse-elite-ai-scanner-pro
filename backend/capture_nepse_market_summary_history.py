@@ -9,6 +9,7 @@ import json
 import logging
 from collections import Counter
 from datetime import date, datetime, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -38,6 +39,25 @@ def load_candidate_dates(path: Path | None) -> set[str] | None:
         }
 
 
+SUMMARY_METRIC_FIELDS = {
+    "total_turnover": ("totalTurnover", "total_turnover"),
+    "total_traded_shares": ("totalTradedShares", "total_traded_shares"),
+    "total_transactions": ("totalTransactions", "total_transactions", "totalTransaction"),
+    "traded_scrips": ("tradedScrips", "traded_scrips"),
+}
+
+
+def _positive_decimal(row: dict, aliases: tuple[str, ...]) -> Decimal | None:
+    value = next((row[key] for key in aliases if key in row), None)
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    return number if number.is_finite() and number > 0 else None
+
+
 def analyze_payload(payload: object, candidate_dates: set[str] | None = None) -> dict:
     if not isinstance(payload, list):
         return {
@@ -49,6 +69,11 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
             "invalid_date_row_count": 0,
             "date_comparison": None,
             "canonical_calendar_promotion_allowed": False,
+            "activity_validated_record_count": 0,
+            "activity_confirmed_date_count": 0,
+            "activity_confirmed_dates": [],
+            "activity_unverified_rows": [],
+            "activity_duplicate_dates": [],
         }
 
     date_field = None
@@ -75,6 +100,24 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
     dates = [value for value in parsed_values if value is not None]
     counts = Counter(dates)
     unique_dates = set(dates)
+    activity_by_date: dict[str, list[tuple[Decimal, ...]]] = {}
+    activity_unverified_rows: list[dict] = []
+    for index, row in enumerate(payload):
+        day = parsed_values[index]
+        if day is None or not isinstance(row, dict):
+            activity_unverified_rows.append({"row_index": index, "date": day, "reason": "invalid_date_or_row_shape"})
+            continue
+        metrics = tuple(_positive_decimal(row, aliases) for aliases in SUMMARY_METRIC_FIELDS.values())
+        if any(value is None for value in metrics):
+            missing = [name for (name, _), value in zip(SUMMARY_METRIC_FIELDS.items(), metrics) if value is None]
+            activity_unverified_rows.append({"row_index": index, "date": day, "reason": "missing_invalid_or_nonpositive_activity_metrics", "fields": missing})
+            continue
+        activity_by_date.setdefault(day, []).append(tuple(value for value in metrics if value is not None))
+    activity_duplicate_dates = sorted(day for day, rows_for_day in activity_by_date.items() if counts[day] > 1)
+    activity_confirmed_dates = sorted(
+        day for day, rows_for_day in activity_by_date.items()
+        if counts[day] == 1 and len(rows_for_day) == 1
+    )
     comparison = None
     if candidate_dates is not None:
         comparison = {
@@ -82,6 +125,8 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
             "primary_summary_unique_date_count": len(unique_dates),
             "candidate_dates_with_primary_summary": len(candidate_dates & unique_dates),
             "candidate_dates_without_primary_summary": sorted(candidate_dates - unique_dates),
+            "candidate_dates_with_validated_activity": sorted(candidate_dates & set(activity_confirmed_dates)),
+            "candidate_dates_without_validated_activity": sorted(candidate_dates - set(activity_confirmed_dates)),
             "primary_summary_dates_outside_candidate_set": sorted(unique_dates - candidate_dates),
         }
 
@@ -97,6 +142,12 @@ def analyze_payload(payload: object, candidate_dates: set[str] | None = None) ->
             for day, count in sorted(counts.items()) if count > 1
         ],
         "invalid_date_row_count": len(payload) - len(dates),
+        "activity_metric_fields": {name: list(aliases) for name, aliases in SUMMARY_METRIC_FIELDS.items()},
+        "activity_validated_record_count": sum(len(rows_for_day) for rows_for_day in activity_by_date.values()),
+        "activity_confirmed_date_count": len(activity_confirmed_dates),
+        "activity_confirmed_dates": activity_confirmed_dates,
+        "activity_unverified_rows": activity_unverified_rows,
+        "activity_duplicate_dates": activity_duplicate_dates,
         "first_date": min(unique_dates) if unique_dates else None,
         "last_date": max(unique_dates) if unique_dates else None,
         "date_comparison": comparison,

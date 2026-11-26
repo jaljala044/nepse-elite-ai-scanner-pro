@@ -44,7 +44,8 @@ The numeric IDs, names, active status, snapshot date and OHLCV-presence flags ab
 - Former ticker current-universe inclusion: **excluded**.
 - Historical predecessor ID recovery: **not required for current scanning; unresolved for historical research**.
 - Historical price/floorsheet splicing: **not authorized**.
-- Canonical/training promotion: **not implied**; all existing integrity, calendar, provenance, rights and test gates remain in force.
+- Regression validation: **PASS** — 14 focused tests, 603 full backend tests, backend contract tests and integrated evidence audit all passed on commit `c8ee30754e586f704886e9ed7bdd554928ed6384`.
+- Canonical/training promotion: **not implied**; all existing integrity, calendar, provenance, rights and production release gates remain in force.
 
 ## Provenance and limitations
 
@@ -55,3 +56,11 @@ The snapshot is a point-in-time third-party/current catalogue artifact already r
 - Historical merger/lifecycle evidence: `data/reference/nepse_historical_identity_evidence_2026-11-26.json`
 - Historical security-ID source audit: `docs/PRIORITY_98_HISTORICAL_SECURITY_MASTER_SOURCE_AUDIT_2026-11-26.md`
 - Progress register: `docs/NEPSE_AI_MASTER_PROGRESS_REGISTER_2026-11-25.md`
+
+## CI evidence
+
+- Focused identity regression: [run 45824348509](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824348509) — 14/14 tests passed.
+- Full backend tests: [run 45824451318](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824451318) — 603 tests, success.
+- Backend contract tests: [run 45824451415](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824451415) — success.
+- Integrated evidence audit: [run 45824451368](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824451368) — success.
+- Dependency fix: `backend/requirements.txt` now includes `pytz>=2024.1`, commit `c8ee30754e586f704886e9ed7bdd554928ed6384`.

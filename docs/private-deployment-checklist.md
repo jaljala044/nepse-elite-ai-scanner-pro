@@ -1,0 +1,5 @@
+# Private research deployment gate
+
+Do not publish the service directly on the internet. Build from repository root with Dockerfile.research. Bind the container only to a private proxy network, or publish to loopback for local testing. Configure a trusted OIDC authentication proxy that strips client-supplied X-NEPSE-Subject and X-NEPSE-Proxy-Secret headers and injects the verified subject and a server-side random secret of at least 32 characters. Never expose that secret to browser JavaScript. Use TLS, secure cookies, CSRF controls, rate limiting, and explicit admin subjects. Mount persistent private storage at /srv/private. Back up and test restore before service launch. Do not promote shared uploaded OHLCV to canonical data. All AI recommendations remain disabled.
+
+Release blockers: successful backend CI, browser regression, independently audited proxy/authentication configuration, account isolation and migration, licensed data and complete evidence manifests, restore drill, security testing. No production deployment is claimed by this container definition.

@@ -12,7 +12,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
-from .broker_memory_store import broker_memory_status, get_latest_broker_memory
+from .broker_memory_store import broker_memory_status, get_latest_broker_memory, get_broker_memory_lineage
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -89,6 +89,23 @@ def imports():
 def broker_memory_readiness():
     """Read-only status for the shared web/mobile broker-memory module."""
     return broker_memory_status()
+
+
+@app.get("/v1/broker-memory/lineage")
+def broker_memory_lineage(symbol: str, broker_code: str | None = None,
+                          as_of: date | None = None, limit: int = 100,
+                          offset: int = 0):
+    """Paginated source-row evidence drill-down for a stock and optional code."""
+    try:
+        return get_broker_memory_lineage(
+            symbol=symbol,
+            broker_code=broker_code,
+            as_of=as_of.isoformat() if as_of else None,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @app.get("/v1/broker-memory/patterns")

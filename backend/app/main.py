@@ -91,15 +91,18 @@ def broker_memory_readiness():
 
 @app.get("/v1/broker-memory")
 def broker_memory(symbol: str | None = None, broker_entity_id: str | None = None,
-                  as_of: date | None = None):
+                  broker_code: str | None = None, as_of: date | None = None):
     """Return the latest immutable broker profile available by the requested as-of date."""
     if symbol is not None and (not symbol.strip() or len(symbol) > 20):
         raise HTTPException(422, "symbol must be a nonblank NEPSE symbol")
     if broker_entity_id is not None and (not broker_entity_id.strip() or len(broker_entity_id) > 128):
         raise HTTPException(422, "broker_entity_id must be nonblank and at most 128 characters")
+    if broker_code is not None and (not broker_code.strip() or len(broker_code) > 32):
+        raise HTTPException(422, "broker_code must be nonblank and at most 32 characters")
     result = get_latest_broker_memory(
         symbol=symbol.strip().upper() if symbol else None,
         broker_entity_id=broker_entity_id.strip() if broker_entity_id else None,
+        broker_code=broker_code.strip() if broker_code else None,
         as_of=as_of.isoformat() if as_of else None,
     )
     if result is None:
@@ -107,6 +110,7 @@ def broker_memory(symbol: str | None = None, broker_entity_id: str | None = None
             "status": "insufficient_evidence",
             "symbol": symbol.strip().upper() if symbol else None,
             "broker_entity_id": broker_entity_id.strip() if broker_entity_id else None,
+            "broker_code": broker_code.strip() if broker_code else None,
             "as_of": as_of.isoformat() if as_of else None,
             "message": "No eligible persisted broker-memory snapshot matches this query.",
             "live_ingestion_connected": False,

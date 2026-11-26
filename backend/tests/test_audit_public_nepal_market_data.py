@@ -36,6 +36,7 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         result = audit_symbol_csv(data, "TEST", "data/nepse/TEST.csv")
         self.assertEqual(result["invalid_ohlc"], 1)
         self.assertEqual(result["fractional_volume"], 1)
+        self.assertEqual(result["valid_rows"], 0)
 
     def test_header_mismatch_fails_closed(self):
         result = audit_symbol_csv(

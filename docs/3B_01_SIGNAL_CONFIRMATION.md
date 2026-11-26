@@ -177,3 +177,25 @@ have the same rows and values in the returned sample. That is expected for
 same-day prices but does not validate the historical adjustment factors or
 corporate-action treatment. No files were downloaded into this project,
 reconciled as an acceptance dataset, or promoted to the canonical manifest.
+
+
+### Controlled overlap sample — BGWT (2026-11-27)
+
+A read-only comparison was performed between the project's captured official
+NEPSE per-security history response for BGWT (2026-10-05 through 2026-11-26)
+and the corresponding 29 daily rows in SocrateAI's unadjusted stock CSVs.
+This is a bounded one-security sample, not a market-wide acceptance audit.
+
+- High, low and close: **29/29 exact matches**.
+- Volume: **14/29 exact matches**.
+- The other 15 volume values in the SocrateAI files were lower than the
+  official NEPSE quantity by 1–17 shares.
+- Open: not independently comparable because the official per-security
+  response captured in this project does not expose an open field.
+
+The result is mixed: it supports the sampled high/low/close values, but it
+demonstrates a repeatable volume discrepancy and cannot validate the open,
+other securities, historical dates, corporate actions, or the publisher's
+rights. The source remains quarantined and is **not eligible** for canonical
+promotion or signal testing. The 29 rows must not be generalized to the
+archive as a whole.

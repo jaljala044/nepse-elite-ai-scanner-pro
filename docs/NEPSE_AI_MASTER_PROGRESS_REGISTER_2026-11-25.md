@@ -1422,3 +1422,11 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 - NESDO and ULBSL are microfinance-sector equities, not mutual funds; YMHL is a hydropower equity. Listing dates are NESDO 2022-03-27, ULBSL 2022-05-26, YMHL 2026-06-19. First trading dates recorded as 2022-03-28, 2022-05-27 and 2026-06-22 respectively.
 - Their security IDs (8041, 8063, 9342) are supported by the 2026-11-25 snapshot and 2026-11-19 OHLCV capture. This does not prove unbroken historical stable-ID continuity or complete 281-member membership.
 - No raw OHLCV data or owner-finalized historical records changed; canonical manifest promotion remains blocked pending complete dated universe reconciliation and source-provenance gates.
+
+
+## Work-session update — 2026-11-26 (collector CI diagnostics)
+
+- Automation PR #3 remains open and unmerged. Its dependency-check run `45803065619` and rerun both concluded failure; the available GitHub job-step/log endpoints returned no diagnostic content, so the failing step remains unknown.
+- Added verbose dependency-install diagnostics, runner version capture, pinned-commit reachability check, package metadata/import checks, and an always-uploaded 14-day diagnostics artifact in automation commit `323c7c1e9906e26a8418ed47ca4a0fbce7ea9d94`.
+- Posted the diagnostic follow-up to [automation PR #3](https://github.com/jaljala044/nepse-automation/pull/3). The new commit has not yet produced a visible workflow run in the available PR-run query. Do not mark dependency validation passed or merge the PR.
+- Collector remains blocked from production scheduling: replace-in-place sheet writes, date validation against returned records, immutable raw response retention/hash, and live end-to-end verification are still required.

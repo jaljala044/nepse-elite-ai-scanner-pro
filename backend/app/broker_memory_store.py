@@ -23,6 +23,7 @@ REQUIRED = (
     "identity_status", "broker_entity_id", "source_broker_code",
     "source_id", "source_payload_sha256", "source_row_number",
     "evidence_id", "available_at", "source_validation_status",
+    "source_rights_status", "rights_evidence_id",
     "session_calendar_status", "floorsheet_coverage_status",
 )
 
@@ -108,6 +109,13 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
             raise ValueError(f"row {index} session is not confirmed open")
         if row["floorsheet_coverage_status"] != "verified_complete":
             raise ValueError(f"row {index} floorsheet coverage is not verified complete")
+        rights_status = row["source_rights_status"]
+        if rights_status not in {"research_only", "internal_use", "redistribution_permitted"}:
+            raise ValueError(f"row {index} source rights are not cleared for research use")
+        if rights_status == "redistribution_permitted" and (
+            not isinstance(row["rights_evidence_id"], str) or not row["rights_evidence_id"].strip()
+        ):
+            raise ValueError(f"row {index} redistribution permission requires rights evidence")
         for key in ("source_id", "evidence_id"):
             if not isinstance(row[key], str) or not row[key].strip():
                 raise ValueError(f"row {index} {key} must be nonblank")

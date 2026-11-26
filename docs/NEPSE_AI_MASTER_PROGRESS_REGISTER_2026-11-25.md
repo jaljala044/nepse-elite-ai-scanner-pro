@@ -1755,3 +1755,5 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Full backend CI passed on crosswalk commit: [run 45833462850](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45833462850) — **736 tests passed**.
 - Report: [EQUITY_SECURITY_ID_CROSSWALK_AND_LIFECYCLE_COVERAGE_2026-11-26.md](EQUITY_SECURITY_ID_CROSSWALK_AND_LIFECYCLE_COVERAGE_2026-11-26.md).
 - Remaining blockers: effective listing/trading-start and delisting/suspension intervals for the 281 equities; fully verified official trading calendar; OHLCV row-level exceptions and source provenance; corporate-action/price-basis review; source rights. No canonical promotion or model training.
+
+- Added `data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv`: all 281 equities have explicit rows; YMHL first trading date 2026-06-22 is supported by its listing/trading notice, while the other 280 lifecycle starts remain blank/unverified rather than inferred.

@@ -387,3 +387,25 @@ sample does not establish accuracy, source independence, corporate-action
 correctness, or licensing. The dataset remains quarantined as a whole; any
 future symbol-level research subset must preserve source lineage and undergo
 independent reconciliation before it can be admitted.
+
+#### Research-only engine-rule smoke check on clean public samples
+
+For a narrow smoke check, the engine's published 20-session breakout,
+SMA20/SMA50, 1.5x relative-volume and candle-close rules were independently
+recomputed against the three sample files that passed the preceding OHLC
+spot check. This was not a server API call and did not set
+`eligible=True`.
+
+| Symbol | Observations | As of | Relative volume | Rule result |
+| --- | ---: | --- | ---: | --- |
+| MEHL | 717 | 2026-11-26 | 1.79x | no_confirmation |
+| RHGCL | 962 | 2026-11-26 | 3.75x | no_confirmation |
+| ULHC | 717 | 2026-11-26 | 0.87x | no_confirmation |
+
+All three had zero structural OHLCV errors under the scanner's current
+basic rules in this sample. None met the full bullish or bearish conjunction
+on the last available session. These are descriptive outputs from an
+unverified, unadjusted secondary dataset—not validated signals, investment
+advice, or evidence of predictive performance. The server-reviewed manifest
+remains empty, so the production/API engine must continue to return UNKNOWN
+for these records.

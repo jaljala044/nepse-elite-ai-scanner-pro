@@ -120,6 +120,12 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
         if scenario.get("status") != "scenario_completed":
             withheld.append({"signal_id": sid, "reason": scenario.get("reason", "scenario_unavailable")})
             continue
+        if not isinstance(sector_by_symbol[symbol], str) or not sector_by_symbol[symbol].strip():
+            withheld.append({"signal_id": sid, "reason": "sector_mapping_invalid"})
+            continue
+        if scenario["entry_session"] not in days or scenario["exit_session"] not in days:
+            withheld.append({"signal_id": sid, "reason": "entry_or_exit_outside_portfolio_calendar"})
+            continue
         candidates.append({"signal_id": sid, "signal": signal, "symbol": symbol,
                            "sector": sector_by_symbol[symbol], "probe": scenario,
                            "entry_date": scenario["entry_session"],
@@ -154,6 +160,9 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
             if len(open_positions) >= max_positions:
                 withheld.append({"signal_id": candidate["signal_id"], "reason": "max_open_positions_reached"})
                 continue
+            if any(p["symbol"] == candidate["symbol"] for p in open_positions):
+                withheld.append({"signal_id": candidate["signal_id"], "reason": "same_symbol_position_already_open"})
+                continue
             probe = candidate["probe"]
             symbol, sector = candidate["symbol"], candidate["sector"]
             entry_price = float(probe["buy_scenario_price"])
@@ -187,11 +196,7 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 withheld.append({"signal_id": candidate["signal_id"],
                                  "reason": scenario.get("reason", "sized_scenario_unavailable")})
                 continue
-            buy_cash = float(scenario["net_pnl"]) + float(scenario["sell_cash"]) if "sell_cash" in scenario else None
-            if buy_cash is None:
-                # Cost calculator's buy cash is invested capital; reconstruct from
-                # scenario net P&L and net sell proceeds, both fee-inclusive.
-                buy_cash = float(scenario["net_pnl"]) + float(scenario["sell_cash"])
+            buy_cash = float(scenario["buy_cash"])
             if buy_cash > cash + 1e-8:
                 withheld.append({"signal_id": candidate["signal_id"], "reason": "cash_budget_exceeded_after_costs"})
                 continue

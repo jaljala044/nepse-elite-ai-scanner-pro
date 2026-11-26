@@ -577,6 +577,36 @@
       "stable_id": null,
       "effective_date_verified": false,
       "raw_history_preserved": true
+    },
+    {
+      "symbol": "SLBSL",
+      "instrument_class": "equity",
+      "event": "post-merger successor shares listed; first trading session not established",
+      "reported_on": "2024-05-17",
+      "source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
+      "successor_name": null,
+      "stable_id": null,
+      "effective_date_verified": false,
+      "raw_history_preserved": true,
+      "listed_shares": 256050,
+      "listing_report_basis": "ShareSansar reports 256,050 post-merger SLBSL shares listed in NEPSE on 17 May 2024 and states opening price range Rs 883.97 for first transactions; listing evidence is not proof of first executed trade date.",
+      "first_trading_date": null
+    },
+    {
+      "symbol": "NMLBBL",
+      "instrument_class": "equity",
+      "event": "post-merger successor shares listed; first trading session not established",
+      "reported_on": "2024-05-17",
+      "source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
+      "successor_name": null,
+      "stable_id": null,
+      "effective_date_verified": false,
+      "raw_history_preserved": true,
+      "listed_shares": 13977643,
+      "listing_report_basis": "ShareSansar reports 13,977,643 post-merger NMLBBL shares listed in NEPSE on 17 May 2024 and states opening price range Rs 587.86 for first transactions; listing evidence is not proof of first executed trade date.",
+      "company_operation_date": "2024-05-19",
+      "company_operation_date_source": "https://www.sharesansar.com/company/nmlbbl",
+      "first_trading_date": null
     }
   ],
   "remaining_without_provider_evidence": [],

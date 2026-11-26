@@ -229,7 +229,48 @@ def restore_evidence_backup(
         )
         if restored_audit["status"] != "integrity_ok":
             raise ValueError("restored evidence store failed post-restore integrity audit")
+        # Publishing the isolated directory changes its absolute path. Rebind
+        # catalog paths one final time to the published destination, then audit.
         os.replace(staging, destination)
+        published_db = destination / DATABASE_NAME
+        published_root = destination / RAW_DIRECTORY
+        con = duckdb.connect(str(published_db))
+        transaction_started = False
+        try:
+            published_objects = con.execute(
+                "SELECT source_id, payload_sha256, payload_path FROM raw_source_objects"
+            ).fetchall()
+            published_captures = con.execute(
+                "SELECT fetch_id, manifest_path FROM source_captures"
+            ).fetchall()
+            con.execute("BEGIN TRANSACTION")
+            transaction_started = True
+            for source_id, digest, old_path in published_objects:
+                relative = Path(old_path).relative_to(staging / RAW_DIRECTORY)
+                con.execute(
+                    "UPDATE raw_source_objects SET payload_path = ? WHERE source_id = ? AND payload_sha256 = ?",
+                    [str(published_root / relative), source_id, digest],
+                )
+            for fetch_id, old_path in published_captures:
+                relative = Path(old_path).relative_to(staging / RAW_DIRECTORY)
+                con.execute(
+                    "UPDATE source_captures SET manifest_path = ? WHERE fetch_id = ?",
+                    [str(published_root / relative), fetch_id],
+                )
+            con.execute("COMMIT")
+            transaction_started = False
+            con.execute("CHECKPOINT")
+        except Exception:
+            if transaction_started:
+                con.execute("ROLLBACK")
+            raise
+        finally:
+            con.close()
+        restored_audit = audit_evidence_store(
+            database_path=published_db, storage_root=published_root
+        )
+        if restored_audit["status"] != "integrity_ok":
+            raise ValueError("published restore failed final path and integrity audit")
     except Exception:
         # Keep staging intact for diagnosis; do not silently discard evidence.
         raise

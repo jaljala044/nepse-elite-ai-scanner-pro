@@ -6,6 +6,7 @@ UNKNOWN; explicit zero-activity rows remain evidence, not NO_TRADE authorization
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 from collections import Counter
@@ -87,9 +88,64 @@ def load_expected_market_dates(body_path: Path, capture_report_path: Path,
     }
 
 
+
+def load_lifecycle_context(path: Path | None, symbols: list[dict], expected_count: int) -> tuple[dict, dict]:
+    if path is None:
+        return {}, {"available": False, "verified_start_count": 0,
+                    "unverified_start_count": expected_count, "status_counts": {}}
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        required = {"security_id", "symbol", "instrument_type", "valid_from",
+                    "target_in_scope", "valid_from_evidence_status",
+                    "valid_from_evidence_uri", "valid_from_evidence_note"}
+        missing = required - set(reader.fieldnames or [])
+        if missing:
+            raise ValueError(f"lifecycle input missing columns: {sorted(missing)}")
+        rows = [{key: (value or "").strip() for key, value in row.items()} for row in reader]
+    if len(rows) != expected_count:
+        raise ValueError(f"lifecycle input has {len(rows)} rows; expected {expected_count}")
+    by_symbol = {}
+    status_counts: Counter[str] = Counter()
+    verified = 0
+    for row in rows:
+        symbol = row["symbol"].strip().upper()
+        if not symbol or symbol in by_symbol:
+            raise ValueError("lifecycle input contains blank or duplicate symbols")
+        if row["instrument_type"] != "equity" or row["target_in_scope"].lower() != "true":
+            raise ValueError(f"{symbol}: lifecycle row is not an in-scope equity")
+        status = row["valid_from_evidence_status"]
+        status_counts[status] += 1
+        if row["valid_from"]:
+            try:
+                date.fromisoformat(row["valid_from"])
+            except ValueError as exc:
+                raise ValueError(f"{symbol}: invalid lifecycle valid_from") from exc
+            if status == "unverified" or not row["valid_from_evidence_uri"] or not row["valid_from_evidence_note"]:
+                raise ValueError(f"{symbol}: dated lifecycle start lacks evidence status/URI/note")
+            verified += 1
+        elif status != "unverified" or row["valid_from_evidence_uri"]:
+            raise ValueError(f"{symbol}: unverified lifecycle start must not carry a date or evidence URI")
+        by_symbol[symbol] = row
+    capture_by_symbol = {str(item.get("symbol", "")).strip().upper(): item for item in symbols}
+    if set(by_symbol) != set(capture_by_symbol):
+        raise ValueError("lifecycle symbol universe does not match history crosswalk universe")
+    for symbol, row in by_symbol.items():
+        expected_id = str(capture_by_symbol[symbol].get("crosswalk_security_id", "")).strip()
+        if not expected_id or row["security_id"] != expected_id:
+            raise ValueError(f"{symbol}: lifecycle security ID does not match history crosswalk")
+    return by_symbol, {
+        "available": True,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "verified_start_count": verified,
+        "unverified_start_count": len(rows) - verified,
+        "status_counts": dict(sorted(status_counts.items())),
+        "identity_basis": "current crosswalk ID only; not historical stable-ID proof",
+    }
+
 def audit_history_window(history_report_path: Path, market_body_path: Path,
                          market_capture_report_path: Path, start_date: str,
-                         end_date: str, expected_equity_count: int = 281) -> dict:
+                         end_date: str, expected_equity_count: int = 281,
+                         lifecycle_path: Path | None = None) -> dict:
     date.fromisoformat(start_date)
     date.fromisoformat(end_date)
     if start_date > end_date:
@@ -118,13 +174,17 @@ def audit_history_window(history_report_path: Path, market_body_path: Path,
     symbols = capture.get("symbols")
     if not isinstance(symbols, list) or len(symbols) != expected_equity_count:
         raise ValueError(f"expected {expected_equity_count} current equity candidates")
+    lifecycle_by_symbol, lifecycle_identity = load_lifecycle_context(
+        lifecycle_path, symbols, expected_equity_count
+    )
     seen_symbols = set()
     daily = {
         day: {
             "returned_symbol_rows": 0, "missing_symbol_rows": 0,
             "explicit_zero_activity_rows": 0, "positive_activity_rows": 0,
             "trades": Decimal("0"), "volume": Decimal("0"), "turnover": Decimal("0"),
-            "missing_symbols": [],
+            "missing_symbols": [], "pre_valid_from_missing_symbols": [],
+            "unexplained_missing_symbols": [],
         } for day in expected_dates
     }
     status_counts: Counter[str] = Counter()
@@ -181,6 +241,17 @@ def audit_history_window(history_report_path: Path, market_body_path: Path,
             if day not in by_date:
                 target["missing_symbol_rows"] += 1
                 target["missing_symbols"].append(symbol)
+                lifecycle = lifecycle_by_symbol.get(symbol, {})
+                valid_from = lifecycle.get("valid_from", "")
+                evidence_status = lifecycle.get("valid_from_evidence_status", "unverified")
+                if valid_from and evidence_status != "unverified" and day < valid_from:
+                    target["pre_valid_from_missing_symbols"].append({
+                        "symbol": symbol, "valid_from": valid_from,
+                        "valid_from_evidence_status": evidence_status,
+                        "valid_from_evidence_uri": lifecycle.get("valid_from_evidence_uri"),
+                    })
+                else:
+                    target["unexplained_missing_symbols"].append(symbol)
                 continue
             trades, volume, turnover = by_date[day]
             target["returned_symbol_rows"] += 1
@@ -218,6 +289,10 @@ def audit_history_window(history_report_path: Path, market_body_path: Path,
             "explicit_zero_activity_rows": item["explicit_zero_activity_rows"],
             "positive_activity_rows": item["positive_activity_rows"],
             "missing_symbols": item["missing_symbols"],
+            "pre_valid_from_missing_rows": len(item["pre_valid_from_missing_symbols"]),
+            "pre_valid_from_missing_symbols": item["pre_valid_from_missing_symbols"],
+            "unexplained_missing_rows": len(item["unexplained_missing_symbols"]),
+            "unexplained_missing_symbols": item["unexplained_missing_symbols"],
             "current_equity_history_totals": {key: str(value) for key, value in equity_totals.items()},
             "official_all_instrument_market_totals": {key: str(value) for key, value in totals.items()},
             "equity_subset_is_not_full_market_universe": True,
@@ -234,6 +309,9 @@ def audit_history_window(history_report_path: Path, market_body_path: Path,
         "current_security_id_crosswalk_matches": id_matches,
         "official_history_response_count": response_count,
         "history_status_counts": dict(sorted(status_counts.items())),
+        "lifecycle_context": lifecycle_identity,
+        "pre_valid_from_missing_rows": sum(item["pre_valid_from_missing_rows"] for item in date_reports.values()),
+        "unexplained_missing_rows": sum(item["unexplained_missing_rows"] for item in date_reports.values()),
         "date_reports": date_reports,
         "historical_security_identity_verified": False,
         "official_session_calendar_verified": False,
@@ -243,7 +321,7 @@ def audit_history_window(history_report_path: Path, market_body_path: Path,
         "source_rights_verified": False,
         "coverage_admission_allowed": False,
         "canonical_promotion_allowed": False,
-        "policy": "current_equity_candidate_history_only_missing_rows_unknown_zero_activity_not_no_trade",
+        "policy": "current_equity_candidate_history_only_pre_valid_from_missing_rows_contextualized_by_labeled_lifecycle_evidence_unexplained_missing_rows_unknown_zero_activity_not_no_trade",
     }
 
 
@@ -252,6 +330,7 @@ def main() -> None:
     parser.add_argument("--history-report", type=Path, required=True)
     parser.add_argument("--market-summary-body", type=Path, required=True)
     parser.add_argument("--market-summary-capture-report", type=Path, required=True)
+    parser.add_argument("--lifecycle-input", type=Path, required=True)
     parser.add_argument("--start-date", required=True)
     parser.add_argument("--end-date", required=True)
     parser.add_argument("--expected-equity-count", type=int, default=281)
@@ -260,7 +339,7 @@ def main() -> None:
     report = audit_history_window(
         args.history_report, args.market_summary_body,
         args.market_summary_capture_report, args.start_date, args.end_date,
-        args.expected_equity_count,
+        args.expected_equity_count, args.lifecycle_input,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -270,10 +349,15 @@ def main() -> None:
         "equity_candidate_count": report["equity_candidate_count"],
         "current_security_id_crosswalk_matches": report["current_security_id_crosswalk_matches"],
         "official_history_response_count": report["official_history_response_count"],
+        "lifecycle_context": report["lifecycle_context"],
+        "pre_valid_from_missing_rows": report["pre_valid_from_missing_rows"],
+        "unexplained_missing_rows": report["unexplained_missing_rows"],
         "date_reports": {
             day: {
                 "returned": item["current_equity_candidate_rows_returned"],
                 "missing": item["current_equity_candidate_rows_missing"],
+                "pre_valid_from_missing": item["pre_valid_from_missing_rows"],
+                "unexplained_missing": item["unexplained_missing_rows"],
                 "zero_activity": item["explicit_zero_activity_rows"],
                 "positive_activity": item["positive_activity_rows"],
             } for day, item in report["date_reports"].items()

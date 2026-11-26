@@ -14,7 +14,7 @@ class EquityLifecycleInputTests(unittest.TestCase):
 
     def test_current_281_row_input_is_valid_but_not_promotable(self):
         report = validate_equity_lifecycle_input(self.lifecycle, self.crosswalk)
-        self.assertEqual(report["status"], "valid_input_with_unverified_lifecycle")
+        self.assertEqual(report["status"], "valid_input_with_unverified_lifecycle", report["errors"])
         self.assertEqual(report["lifecycle_row_count"], 281)
         self.assertEqual(report["verified_start_count"], 9)
         self.assertEqual(report["verified_start_symbols"],

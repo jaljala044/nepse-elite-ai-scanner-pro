@@ -61,6 +61,40 @@ zero records. The ShareSansar archive is secondary evidence and its own
 manifest prohibits promotion/training. Neither source may be used to bypass
 the server eligibility gate.
 
+### Additional source investigation (2026-11-27)
+
+A public NEPSE data-pipeline project reports that NEPSE's per-security EOD
+history API returns complete daily OHLCV but is server-limited to a rolling
+365-day window. Its published research dataset keeps this official-source
+table separate from a longer ShareSansar-derived history; the project reports
+a 226-day overlap with 75,671 matched rows and exact volume agreement, but
+explicitly says the pre-2025 history is not independently verified. This is
+a promising lead, not evidence admitted to this repository:
+https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data
+
+The same pipeline documents a WASM-derived token/access-control mechanism and
+describes the legality of working around it as uncertain. We will not copy
+that authentication workaround, scrape around access controls, or import its
+third-party data as canonical reviewed evidence. Any future use must be through
+an authorized NEPSE access method, with source terms and the right to store,
+analyze, and use the data for this application documented first. Its own
+dataset notice says commercial redistribution may require a NEPSE licence.
+
+A separate commercial API vendor, Share Hub, documents an all-time per-stock
+daily OHLCV history service, but requires a vendor-issued API account, an
+allow-listed server IP, and the relevant licensed package:
+https://sharehubnepal.com/data/nepse-data-documentation/
+This is a legitimate procurement/integration lead, not a currently available
+source or an approval to ingest. No credentials, licence, or rights grant are
+present in this project.
+
+Therefore, neither lead changes the current evidence decision. The public
+365-day official-history claim needs to be independently reproduced using an
+authorized direct source capture and reviewed against row counts, dates,
+symbol identity, corporate actions, and the existing evidence chain. The
+secondary history remains research-only and quarantined from canonical
+promotion.
+
 ### Acceptance decision
 
 - Implementation and synthetic unit/API tests: complete.

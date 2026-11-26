@@ -1510,3 +1510,12 @@ Keep `NEPSE_FLOORSHEET_PRODUCTION_ENABLED` unset. Do not merge automation PR #3 
 Added secondary historical last-recorded-trade evidence for JALPA (2024-07-10), KLBSL (2024-07-10), and MKLB (2024-07-07) to `data/reference/nepse_historical_identity_evidence_2026-11-26.json`. JALPA/KLBSL successor MATRI shares were reported listed 2024-08-12 and available for trading 2024-08-13. Sources include Laganilab, Merolagani, and NepseAlpha; the detailed evidence and interpretation are in `docs/PRIORITY_97_HISTORICAL_EQUITY_MERGER_TIMELINES_2026-11-26.md`.
 
 These are secondary-source observations, not exchange-primary certified lifecycle intervals. No stable IDs were populated, no price history was spliced, and no raw OHLCV/floorsheet data changed. Priority 97 remains open pending dated security-ID validity evidence, raw history boundary checks, and equivalent last-trade evidence for remaining predecessor groups.
+
+
+## Priority 97 follow-up — OHLCV boundary validation (2026-11-26)
+
+Read-only OHLCV boundary inspection completed for JALPA, KLBSL, MATRI, MKLB and SMATA in `nepse-smc-data` and `nepse-history-starter`. All 17 merger-set CSV blobs present in both repositories have identical SHA-1 blob IDs and file sizes; the archives therefore replicate the same files and do not constitute independent source confirmation.
+
+Observed: JALPA and KLBSL end on 2024-07-10; MATRI begins 2024-08-13. MKLB ends 2024-07-07, while SMATA's existing series begins 2024-03-04, predating the acquisition integration. This confirms the acquisition case is not a simple predecessor-to-new-successor concatenation. Detailed rows, hashes and dispositions are in `docs/PRIORITY_97_HISTORICAL_EQUITY_MERGER_TIMELINES_2026-11-26.md`; JSON observations are in `data/reference/nepse_historical_identity_evidence_2026-11-26.json`.
+
+No raw OHLCV data was modified. The boundary check validates the archive contents only; it does not certify NEPSE-origin data, security-ID continuity, or effective-dated legal identity. `stable_id` remains null and `effective_date_verified` false. No history splice or canonical/training promotion is authorized.

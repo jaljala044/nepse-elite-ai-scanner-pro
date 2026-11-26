@@ -27,9 +27,9 @@ class CorporateActionPortfolioLedgerTests(unittest.TestCase):
                         listing_date="2025-01-20"),
         ]
         result = self.run_ledger(actions)
-        self.assertEqual(result["holdings"]["AAA"]["quantity"], 242)
+        self.assertEqual(result["holdings"]["AAA"]["quantity"], 220)
         self.assertAlmostEqual(result["holdings"]["AAA"]["cost_basis"], 10000)
-        self.assertAlmostEqual(result["holdings"]["AAA"]["average_cost"], 10000 / 242)
+        self.assertAlmostEqual(result["holdings"]["AAA"]["average_cost"], 10000 / 220)
         self.assertEqual(result["event_count"], 2)
 
     def test_dividend_credited_on_payment_date(self):

@@ -61,6 +61,15 @@ class SignalConfirmationTests(unittest.TestCase):
         result = confirm_signal(rows, eligible=True)
         self.assertEqual(result["classification"], "no_confirmation")
 
+    def test_official_history_fields_without_open_are_supported(self):
+        rows = rising_rows()
+        for row in rows:
+            row.pop("open")
+        rows[-1].update(high=165, low=158, close=164, volume=2500)
+        result = confirm_signal(rows, eligible=True)
+        self.assertEqual(result["classification"], "bullish_confirmation")
+        self.assertEqual(result["status"], "research_confirmed")
+
     def test_invalid_ohlcv_is_unknown(self):
         rows = rising_rows()
         rows[-1]["high"] = 1

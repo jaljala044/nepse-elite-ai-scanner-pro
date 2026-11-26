@@ -26,6 +26,15 @@ class ExecutionScenarioAPITests(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 404)
 
+    def test_duplicate_batch_signal_ids_rejected(self):
+        response = self.client.post("/v1/research/backtest/execution-batch", json={
+            "signal_ids": ["abc", "abc"], "evaluation_date": "2025-01-31",
+            "quantity_by_signal": {}, "verified_sessions_by_symbol": {},
+            "calendar_evidence_by_symbol": {}, "cost_assumptions_by_symbol": {},
+            "execution_config_by_symbol": {}
+        })
+        self.assertEqual(response.status_code, 422)
+
 
 if __name__ == "__main__":
     unittest.main()

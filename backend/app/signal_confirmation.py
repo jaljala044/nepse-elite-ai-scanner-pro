@@ -1,9 +1,36 @@
 """Conservative signal confirmation primitives (research-only, no orders)."""
 from __future__ import annotations
+from datetime import date, datetime
 from math import isfinite
 from statistics import mean
-from .scanner import quality_errors
 
+
+
+def _signal_input_errors(rows):
+    """Validate only fields consumed by this classifier; NEPSE history has no open."""
+    errors = []
+    seen = set()
+    if not isinstance(rows, list):
+        return ["rows_not_a_list"]
+    for index, row in enumerate(rows):
+        try:
+            raw_date = row["date"]
+            if isinstance(raw_date, datetime):
+                raise ValueError("datetime_not_session_date")
+            session_date = raw_date if isinstance(raw_date, date) else date.fromisoformat(str(raw_date))
+            if session_date in seen:
+                errors.append(f"duplicate_date:{session_date}")
+            seen.add(session_date)
+            high, low, close, volume = (float(row[key]) for key in ("high", "low", "close", "volume"))
+            if not all(isfinite(value) for value in (high, low, close, volume)):
+                raise ValueError("non_finite_signal_input")
+            if min(high, low, close) <= 0 or volume < 0 or not volume.is_integer():
+                errors.append(f"invalid_signal_values:{index}")
+            if high < max(low, close) or low > min(high, close):
+                errors.append(f"invalid_signal_range:{index}")
+        except (KeyError, ValueError, TypeError, OverflowError):
+            errors.append(f"malformed_signal_row:{index}")
+    return errors
 
 def confirm_signal(rows, *, eligible=False, min_observations=55,
                    breakout_lookback=20, volume_multiple=1.5):
@@ -22,8 +49,8 @@ def confirm_signal(rows, *, eligible=False, min_observations=55,
     if not eligible:
         base["limitations"].append("Server-reviewed source, session and point-in-time eligibility was not supplied.")
         return base
-    if not isinstance(rows, list) or quality_errors(rows):
-        base["limitations"].append("OHLCV input is empty or failed structural validation.")
+    if not isinstance(rows, list) or not rows or _signal_input_errors(rows):
+        base["limitations"].append("Required high/low/close/volume input is empty or failed structural validation.")
         return base
     valid_volume_multiple = (
         isinstance(volume_multiple, (int, float))

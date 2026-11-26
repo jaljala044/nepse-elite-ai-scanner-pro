@@ -52,7 +52,7 @@ def store_signal(envelope: dict) -> dict:
     if not isinstance(envelope, dict) or not verify_signal(envelope):
         raise ValueError("signal envelope hash verification failed")
     record = envelope["record"]
-    if record.get("classification") != "research_only":
+    if record.get("classification") != "research_only_not_execution":
         raise ValueError("only research-only signal records may be stored")
     if record.get("action") != "NO TRADE":
         raise ValueError("production recommendations are not authorized")

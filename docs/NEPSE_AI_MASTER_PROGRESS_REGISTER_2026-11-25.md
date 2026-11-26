@@ -1,3 +1,5 @@
+> **2026-11-26 owner decision — current-universe merger identity:** Use the 2026-11-25 current snapshot IDs for surviving successor equities; former merger/acquisition tickers are retired aliases and excluded from current scans. Seven successor mappings are recorded in [the current-universe successor ID policy](CURRENT_UNIVERSE_SUCCESSOR_ID_POLICY_2026-11-26.md): SLBSL/2804, NMLBBL/396, MATRI/694, SMATA/2761, SMPDA/2896, GBLBS/583 and PFL/236. Historical predecessor IDs and validity intervals are **not required for current-universe scanning**; they remain unresolved only for historical research. This does not authorize price-history splicing, cross-boundary indicators/backtests, or training. All other data-integrity, calendar, provenance, licensing and CI gates remain unchanged.
+
 # NEPSE AI — Master Progress, Evidence and Roadmap Register
 **Report date:** 2026-11-25  
 **Project:** NEPSE AI / broker-and-stock footprint intelligence  

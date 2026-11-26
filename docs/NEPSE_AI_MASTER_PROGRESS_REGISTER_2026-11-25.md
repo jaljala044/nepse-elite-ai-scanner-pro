@@ -1982,3 +1982,14 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - Historical data integrity: passed, [run 45842689311](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45842689311).
 
 **Important limitation:** this is a reusable classifier and schema contract, not a populated production coverage manifest. Existing public archives still lack proven full session coverage and independently verified daily exchange controls. The classifier is not yet connected to the live feature pipeline, and no real-world date × symbol cell is upgraded by this code alone. The broker scoring gate remains fail-closed. No zero-trade claims, canonical promotion, training or BUY authorization are inferred from these tests.
+
+
+### 2026-11-20 floorsheet — independent upstream capture count now verified
+
+- Retrieved the full log for independent NEPSE pipeline workflow run [44748903787](https://github.com/ANKITSANJYAL/nepse-pipeline/actions/runs/44748903787), job 136331336130, completed SUCCESS on 2026-11-20.
+- Collector recorded upstream totalElements=39,966; read 80/80 pages; parsed/held 39,966/39,966; 0 rejected rows; no empty pages; complete after one full sweep; published the Nov 20 Parquet partition.
+- All floorsheet quality checks passed: 0 duplicate contract IDs, 0 required nulls, 0 amount identity failures, 0 nonpositive rate/quantity, 0 date mismatches, 352 symbols. Companion EOD checks passed for 352 securities, 0 duplicate symbols, 0 invalid high/low, 4 bounded quality flags and 1% drift from trailing median.
+- SocrateAI candidate file independently has 39,966 rows and 352 symbols, with 10,602,468 shares and NPR 3,887,563,470.82 turnover; its row count and breadth match the independent capture log. Contract-level equality is not asserted because the Parquet rows were not decoded and compared.
+- Provenance caveat: the same run log says `HF_BRONZE_REPO not set - raw responses not archived this run`. Therefore upstream count/quality evidence is strong, but page-level raw replay evidence is missing.
+- Revised date status: `UPSTREAM_COUNT_RECONCILED_THIRD_PARTY_CAPTURE`; positive trades can be treated as third-party evidence, but symbol absence remains UNKNOWN until contract-level comparison or raw bronze recovery. Do not merge the 500-row extract or enable broker/manipulation scoring based on this alone.
+- Detailed audit updated: https://github.com/jaljala044/nepse-smc-data/commit/04b48672f7bb9631bbb414ef7e78b75d8876f3ee

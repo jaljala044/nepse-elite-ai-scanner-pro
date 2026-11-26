@@ -9,7 +9,7 @@ from app.wyckoff_features import wyckoff_event_features
 from app.smc_features import smc_features
 from app.sector_strength_features import sector_strength_features
 from app.liquidity_features import liquidity_tradability_features
-from app.scoring_engine import score_scan
+from app.scoring_engine import score_feature_bundle
 from app.relative_strength_features import relative_strength_universe
 
 
@@ -119,41 +119,59 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             "symbols": {},
         }
     component_candidates = {}
+    component_feature_bundles = {}
     for symbol in sorted(by_symbol):
         if not symbol:
             continue
-        component_candidates[symbol] = {
-            "wyckoff": wyckoff_features[symbol].get("score") if wyckoff_features[symbol].get("status") == "observed" else None,
-            "trend": trend_features[symbol].get("score") if trend_features[symbol].get("status") == "observed" else None,
-            "relative_strength": (
-                relative_strength.get("results", {}).get(symbol, {}).get("score")
-                if relative_strength.get("status") == "observed"
-                and relative_strength.get("results", {}).get(symbol, {}).get("score_status") == "observed"
-                else None
-            ),
-            "broker": (broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("score")
-                       if broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("status") == "observed" else None),
-            "volume": volume_features[symbol].get("score") if volume_features[symbol].get("status") == "observed" else None,
-            "liquidity": (
-                liquidity_snapshot.get("symbols", {}).get(symbol, {}).get("score")
-                if liquidity_snapshot.get("status") == "observed"
-                and liquidity_snapshot.get("symbols", {}).get(symbol, {}).get("score_status") == "observed"
-                else None
-            ),
-            "sector": (
-                sector_features.get("sectors", {}).get(
-                    sector_membership.get(symbol, {}).get("sector_code"), {}
-                ).get("score")
-                if isinstance(sector_membership, dict)
-                and sector_membership.get(symbol, {}).get("status") == "verified"
-                and sector_features.get("status") == "observed" else None
-            ),
-            "smc": smc_features_by_symbol[symbol].get("score") if smc_features_by_symbol[symbol].get("status") == "observed" else None,
+        rs_item = relative_strength.get("results", {}).get(symbol, {})
+        broker_item = broker_footprint.get("security_features", {}).get(symbol, {}).get("1W", {})
+        liquidity_item = liquidity_snapshot.get("symbols", {}).get(symbol, {})
+        sector_code = (
+            sector_membership.get(symbol, {}).get("sector_code")
+            if isinstance(sector_membership, dict)
+            and isinstance(sector_membership.get(symbol), dict)
+            and sector_membership.get(symbol, {}).get("status") == "verified"
+            else None
+        )
+        sector_item = sector_features.get("sectors", {}).get(sector_code, {}) if sector_code else {}
+
+        # Preserve complete upstream evidence objects. The scoring adapter
+        # accepts only status='observed' plus a numeric score; unavailable,
+        # partial and experimental outputs remain missing.
+        feature_bundle = {
+            "wyckoff": wyckoff_features[symbol],
+            "trend": trend_features[symbol],
+            "relative_strength": {
+                "status": rs_item.get("score_status", "insufficient_evidence"),
+                "score": rs_item.get("score"),
+                "as_of_session": rs_item.get("as_of_session"),
+                "rank": rs_item.get("rank"),
+            },
+            "broker": broker_item,
+            "volume": volume_features[symbol],
+            "liquidity": liquidity_item,
+            "sector": {
+                "status": sector_item.get("score_status", "insufficient_evidence"),
+                "score": sector_item.get("score"),
+                "sector_code": sector_code,
+                "score_coverage_pct": sector_item.get("score_coverage_pct"),
+            },
+            "smc": smc_features_by_symbol[symbol],
         }
+        component_feature_bundles[symbol] = feature_bundle
+        component_candidates[symbol] = {
+            name: (
+                feature.get("score")
+                if isinstance(feature, dict) and feature.get("status") == "observed"
+                else None
+            )
+            for name, feature in feature_bundle.items()
+        }
+
     aggregate_scores = {}
-    for symbol, components in component_candidates.items():
-        aggregate_scores[symbol] = score_scan(
-            components,
+    for symbol, feature_bundle in component_feature_bundles.items():
+        aggregate_scores[symbol] = score_feature_bundle(
+            feature_bundle,
             stage1_quality="UNKNOWN",
             structure_confirmed=False,
             liquidity_ok=False,
@@ -162,6 +180,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             hard_blocks=[
                 "stage1_hard_gates_not_connected",
                 "horizon_trade_plan_not_available",
+                "market_regime_gate_not_connected",
             ],
         )
         aggregate_scores[symbol]["decision_status"] = "research_only_fail_closed_stage2_preview"
@@ -183,6 +202,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "wyckoff_features": wyckoff_features,
         "smc_features": smc_features_by_symbol,
         "component_candidates": component_candidates,
+        "component_feature_bundles": component_feature_bundles,
         "aggregate_scores": aggregate_scores,
         "relative_strength": relative_strength,
         "broker_participation": broker_participation_summary(broker_rows),

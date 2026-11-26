@@ -2035,3 +2035,13 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - **No archive-to-classifier adapter or populated 281-equity coverage matrix was claimed or promoted.** Current pinned sample does not justify setting `complete_verified` / `reconciled` daily evidence, and exact point-in-time instrument lifecycle plus primary session calendar remain incomplete.
 - Classifier remains review-only; unknown is mandatory when capture, controls, session or lifecycle evidence is incomplete. Canonical promotion, broker scoring and BUY authorization remain blocked.
 - Next implementation gate: resolve source-use rights and acquire reproducible pinned daily raw bytes; then parse source-specific schemas, reconcile contract IDs and daily controls, and join only to verified sessions and effective-dated instrument IDs.
+
+
+## 2026-11-26 — SocrateAI source-profile adapter
+
+- Added an explicit pinned SocrateAI 2026-11-24 CSV source profile in `backend/app/floorsheet_source_profiles.py`, commit `bbd65f9baa6063e561059c01485ea9574f0bf982`.
+- Added exact header review and explicit mapping for `transaction,symbol,buyer,seller,quantity,rate,amount,date`; recorded pinned commit, Git blob SHA-1 and expected byte size. Profile status explicitly says lineage and completeness are unverified.
+- Added parser/schema tests, including a test that parsing does not promote source trust; corrected CSV fixture line breaks in commit `630a05f6c82fc456b6b05402830cf9de7b95b57d`.
+- CI on `630a05f6c82fc456b6b05402830cf9de7b95b57d`: backend tests **786 passed** (run 45845056584); unit test workflow passed (45845056512); integrated evidence audit passed (45845056446); historical data integrity workflow passed (45845056635). Logs and job conclusions inspected.
+- The evidence audit's security-coverage report remains skipped because verified universe, calendar or OHLCV inputs are unavailable. Passing CI validates code and existing audits, not archive completeness.
+- This is a schema/parser adapter only. No raw SocrateAI archive was acquired into canonical storage; no date × security coverage cells were upgraded; no broker score or BUY authorization was enabled.

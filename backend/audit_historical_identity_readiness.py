@@ -40,6 +40,7 @@ def audit_historical_identity_readiness(
     lifecycle_path: Path, events_path: Path, identity_path: Path,
     crosswalk_path: Path, snapshot_path: Path, history_dir: Path,
     corporate_actions_path: Path | None = None,
+    expected_equity_count: int = 281,
 ) -> dict:
     snapshot_rows = read_csv(snapshot_path, {"symbol", "security_id", "security_name", "active_status", "snapshot_date"})
     crosswalk_rows = read_csv(crosswalk_path, {"symbol", "security_id", "security_name", "snapshot_date", "active_status", "crosswalk_status"})
@@ -51,8 +52,8 @@ def audit_historical_identity_readiness(
     snapshot = unique_by_symbol(snapshot_rows, "security snapshot")
     crosswalk = unique_by_symbol(crosswalk_rows, "equity crosswalk")
     lifecycle = unique_by_symbol(lifecycle_rows, "lifecycle input")
-    if len(crosswalk) != 281 or len(lifecycle) != 281:
-        raise ValueError("expected exactly 281 current equity crosswalk/lifecycle rows")
+    if len(crosswalk) != expected_equity_count or len(lifecycle) != expected_equity_count:
+        raise ValueError(f"expected exactly {expected_equity_count} current equity crosswalk/lifecycle rows")
     if {row["snapshot_date"] for row in snapshot_rows} != {"2026-11-25"}:
         raise ValueError("unexpected current security snapshot date")
 

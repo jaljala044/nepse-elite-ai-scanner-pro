@@ -23,5 +23,28 @@ class MainUniverseGateTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["status"], "out_of_scope")
 
 
+
+    def test_market_health_endpoint_fails_closed_without_production_sources(self):
+        result = main.market_health()
+        self.assertEqual(result["status"], "insufficient_evidence")
+        self.assertEqual(result["regime"], "unknown")
+        self.assertEqual(result["trading_posture"], "preserve_capital")
+        self.assertIsNone(result["market_health_score"])
+        self.assertEqual(result["coverage_pct"], 0.0)
+        self.assertEqual(result["action"], "PRESERVE_CAPITAL")
+        self.assertFalse(result["readiness"]["production_source_store_connected"])
+        self.assertEqual(
+            set(result["missing_components"]),
+            {"trend", "breadth", "turnover", "sector_participation", "volatility"},
+        )
+
+    def test_market_health_readiness_does_not_claim_authoritative_sector_membership(self):
+        result = main.market_health()
+        self.assertEqual(
+            result["readiness"]["verified_sector_membership"],
+            "not_authoritatively_verified",
+        )
+        self.assertIsNone(result["probability"])
+
 if __name__ == "__main__":
     unittest.main()

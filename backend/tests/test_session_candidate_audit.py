@@ -38,7 +38,7 @@ class SessionCandidateAuditTests(unittest.TestCase):
         target = self.source_root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(payload)
-        blob = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\\0" + payload).hexdigest()
+        blob = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
         row = {"date": day, "status": "candidate_unverified", "source_repository": "example/data",
                "source_revision": "a" * 40, "source_path": str(relative),
                "git_blob_sha1": blob, "source_bytes": str(len(payload)),

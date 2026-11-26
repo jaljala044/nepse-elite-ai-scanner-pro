@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date, datetime
+from math import floor
 
 
 def _day(value, name):
@@ -168,6 +169,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
     receivables = 0.0
     rights_paid = 0.0
     audit = []
+    sized_trades = []
     pending_buys = defaultdict(float)
     for day in days:
         # Settlement of purchases adds shares; sale proceeds become spendable cash.
@@ -255,6 +257,9 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             symbol, qty = trade["symbol"], trade["_qty"]
             gross = qty * trade["_price"]
             if trade["side"] == "BUY":
+                if trade.get("auto_size") is True:
+                    if not all(k in limits for k in ("max_position_pct", "max_sector_pct", "risk_per_trade_pct", "max_positions", "max_drawdown_pct")):
+                        raise ValueError("complete_auto_size_risk_limits_required")
                 if limits:
                     if circuit_breaker:
                         raise ValueError("portfolio_drawdown_circuit_breaker_active")
@@ -262,7 +267,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                         if any(p["quantity"] > 0 for p in positions.values()):
                             raise ValueError("opening_risk_marks_required")
                         sizing_equity = starting_cash
-                        exposure = {}
+                        exposure = {sym: n * bars[sym][day] for sym, n in pending_buys.items() if n > 1e-8}
                     else:
                         sizing_equity = curve[-1]["equity"]
                         previous = days[days.index(day) - 1]
@@ -273,6 +278,25 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                                 if previous not in bars.get(sym, {}):
                                     raise ValueError("prior_risk_mark_missing:" + sym)
                                 exposure[sym] = held * bars[sym][previous]
+                    if trade.get("auto_size") is True:
+                        if any(not sectors.get(sym) for sym in set(exposure) | {symbol}):
+                            raise ValueError("sector_mapping_required")
+                        stop = _positive(trade.get("stop"), "trade_stop")
+                        capacity = _positive(trade.get("liquidity_quantity_cap"), "liquidity_quantity_cap")
+                        if stop >= trade["_price"]:
+                            raise ValueError("invalid_stop_geometry")
+                        sector_value = sum(v for sym, v in exposure.items() if sectors[sym] == sectors[symbol])
+                        price = trade["_price"]
+                        fees = trade["_fees"]  # conservative fixed upper bound, not prorated
+                        qty = floor(min(qty, capacity, (cash-fees)/price,
+                            (sizing_equity*limits["max_position_pct"]-exposure.get(symbol,0))/price,
+                            (sizing_equity*limits["max_sector_pct"]-sector_value)/price,
+                            (sizing_equity*limits["risk_per_trade_pct"]-fees)/(price-stop)))
+                        if qty < 1:
+                            raise ValueError("auto_size_no_affordable_quantity")
+                        trade["_qty"] = qty
+                        gross = qty * price
+                        sized_trades.append({"trade_id": trade["trade_id"], "quantity": qty})
                     if len(set(exposure) | {symbol}) > limits.get("max_positions", float("inf")):
                         raise ValueError("max_positions_exceeded")
                     if exposure.get(symbol, 0) + gross > sizing_equity * limits.get("max_position_pct", 1):
@@ -376,6 +400,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         "as_of_date": as_of.isoformat(), "initial_cash": starting_cash,
         "ending_equity": curve[-1]["equity"], "equity_curve": curve,
         "benchmark_comparison": benchmark,
+        "sized_trades": sized_trades,
         "risk_limits": limits, "circuit_breaker_triggered": circuit_breaker,
         "corporate_action_entitlements": [
             {"action_id": aid, "symbol": v["symbol"], "record_date": v["action"].get("record_date"),
@@ -394,6 +419,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             "Paid unlisted rights are carried at subscription cost, not fair value; unpaid entitlements are not valued.",
             "Taxes, fractional cash-in-lieu, renunciation, oversubscription, failed allotment, interest and financing are not modeled.",
             "Marks use supplied close prices, not verified executable fills; benchmark excess is descriptive, not evidence of alpha.",
+            "Auto-sizing uses caller-attested liquidity caps and fixed upper-bound fees; sell quantities must match resulting holdings. Not an order generator.",
             "Research only; no broker order routing or production eligibility."
         ],
         "production_eligible": False,

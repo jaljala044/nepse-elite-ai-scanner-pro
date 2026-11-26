@@ -11,6 +11,7 @@ from math import floor, sqrt
 from statistics import mean, pstdev
 
 from .execution_backtest import simulate_execution_scenario
+from .execution_constraints import settlement_date
 
 
 def _finite(value, name):
@@ -23,8 +24,8 @@ def _finite(value, name):
     return number
 
 
-def _equity(cash, positions, mark_date, rows_by_symbol):
-    value = cash
+def _equity(cash, positions, receivables, mark_date, rows_by_symbol):
+    value = cash + sum(float(x[\"amount\"]) for x in receivables)
     for position in positions:
         bars = {str(x["date"]): x for x in rows_by_symbol[position["symbol"]]}
         bar = bars.get(mark_date)
@@ -64,7 +65,8 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                            evaluation_date, portfolio_sessions, sector_by_symbol,
                            initial_capital, max_positions, max_position_pct,
                            max_sector_pct, risk_per_trade_pct, cost_assumptions_by_symbol,
-                           execution_config_by_symbol, reviewed=None, scenario_runner=None):
+                           execution_config_by_symbol, reviewed=None, scenario_runner=None,
+                           max_drawdown_pct=0.15):
     """Run chronological long-only portfolio simulation with cash/exposure controls."""
     initial = _finite(initial_capital, "initial_capital")
     if not isinstance(max_positions, int) or isinstance(max_positions, bool) or max_positions < 1:
@@ -79,6 +81,9 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
         limits[name] = pct
     if limits["risk_per_trade_pct"] > limits["max_position_pct"]:
         raise ValueError("risk_budget_cannot_exceed_position_cap")
+    drawdown_limit = float(max_drawdown_pct)
+    if not 0 < drawdown_limit <= 1:
+        raise ValueError("invalid_max_drawdown_pct")
     if not isinstance(portfolio_sessions, list) or len(portfolio_sessions) < 2:
         raise ValueError("portfolio_verified_sessions_required")
     days = [str(x) for x in portfolio_sessions]
@@ -138,25 +143,40 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
     cash = initial
     open_positions = []
     exits = defaultdict(list)
+    settlements = defaultdict(list)
+    receivables = []
     completed = []
     curve = []
     prior_day = None
+    peak_equity = initial
+    circuit_breaker_triggered = False
     for day in days:
-        # Exits are processed before new entries on the same session.
+        # Sale proceeds remain unsettled until the second following verified session.
+        for receivable in settlements.pop(day, []):
+            cash += receivable["amount"]
+            receivables.remove(receivable)
+        # Sell scenarios create receivables; they do not create spendable cash immediately.
         for position in exits.pop(day, []):
-            cash += position["sell_cash"]
             open_positions.remove(position)
+            receivable = {"amount": position["sell_cash"], "settlement_date": position["settlement_date"],
+                          "signal_id": position["signal_id"]}
+            receivables.append(receivable)
+            settlements[position["settlement_date"]].append(receivable)
             completed.append({
                 "signal_id": position["signal_id"], "symbol": position["symbol"],
                 "sector": position["sector"], "entry_date": position["entry_date"],
-                "exit_date": position["exit_date"], "quantity": position["quantity"],
+                "exit_date": position["exit_date"], "cash_settlement_date": position["settlement_date"],
+                "quantity": position["quantity"],
                 "buy_cash": position["buy_cash"], "sell_cash": position["sell_cash"],
                 "net_pnl": position["net_pnl"], "net_return_pct": position["net_return_pct"],
                 "risk_budget_cash": position["risk_budget_cash"],
             })
         # Size against prior close marks only. First session starts with cash only.
-        sizing_equity = cash if prior_day is None else _equity(cash, open_positions, prior_day, rows_by_symbol)
+        sizing_equity = cash if prior_day is None else _equity(cash, open_positions, receivables, prior_day, rows_by_symbol)
         for candidate in by_entry.get(day, []):
+            if circuit_breaker_triggered:
+                withheld.append({"signal_id": candidate["signal_id"], "reason": "portfolio_drawdown_circuit_breaker_active"})
+                continue
             if len(open_positions) >= max_positions:
                 withheld.append({"signal_id": candidate["signal_id"], "reason": "max_open_positions_reached"})
                 continue
@@ -205,20 +225,29 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 "signal_id": candidate["signal_id"], "symbol": symbol, "sector": sector,
                 "entry_date": scenario["entry_session"], "exit_date": scenario["exit_session"],
                 "quantity": int(scenario["scenario_quantity"]), "buy_cash": buy_cash,
-                "sell_cash": float(scenario["sell_cash"]), "net_pnl": float(scenario["net_pnl"]),
+                "sell_cash": sell_cash, "settlement_date": cash_settlement,
+                "net_pnl": float(scenario["net_pnl"]),
                 "net_return_pct": float(scenario["net_return_pct"]),
                 "risk_budget_cash": risk_budget, "mark_price": entry_price,
             }
             open_positions.append(position)
             exits[position["exit_date"]].append(position)
         # Daily mark-to-market close; missing bars are a hard failure, not zero valuation.
-        close_equity = _equity(cash, open_positions, day, rows_by_symbol)
+        close_equity = _equity(cash, open_positions, receivables, day, rows_by_symbol)
         for position in open_positions:
             bar = next(x for x in rows_by_symbol[position["symbol"]] if str(x["date"]) == day)
             position["mark_price"] = float(bar["close"])
+        peak_equity = max(peak_equity, close_equity)
+        drawdown = (peak_equity - close_equity) / peak_equity if peak_equity else 0.0
+        if drawdown >= drawdown_limit:
+            circuit_breaker_triggered = True
+        receivable_value = sum(float(x["amount"]) for x in receivables)
+        market_value = close_equity - cash - receivable_value
         curve.append({"date": day, "cash": round(cash, 8),
-                      "market_value": round(close_equity - cash, 8),
+                      "receivables": round(receivable_value, 8),
+                      "market_value": round(market_value, 8),
                       "equity": round(close_equity, 8),
+                      "drawdown_pct": round(drawdown * 100, 8),
                       "open_positions": len(open_positions)})
         prior_day = day
 
@@ -241,7 +270,11 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
         "profit_factor": sum(wins) / gross_loss if gross_loss else (None if not wins else "undefined_no_losses"),
         "metrics": metrics, "equity_curve": curve, "trades": completed,
         "withheld": withheld,
-        "risk_limits": {"max_positions": max_positions, **limits},
+        "risk_limits": {"max_positions": max_positions, "max_drawdown_pct": drawdown_limit, **limits},
+        "cash_settlement": {"unsettled_receivable_count": len(receivables),
+                            "unsettled_receivable_value": sum(float(x["amount"]) for x in receivables),
+                            "cash_available_excludes_unsettled_proceeds": True},
+        "circuit_breaker_triggered": circuit_breaker_triggered,
         "unavailable_metrics": ["benchmark_excess_return", "verified_realized_pnl",
                                 "actual_fill_rate", "market_impact", "brokerage_statement_reconciliation"],
         "limitations": [

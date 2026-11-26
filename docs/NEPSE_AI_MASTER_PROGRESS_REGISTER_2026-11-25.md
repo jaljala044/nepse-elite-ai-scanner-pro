@@ -1720,3 +1720,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Latest full backend CI: [run 45832612455](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832612455), **SUCCESS — 677 tests**.
 - Evidence/report: [EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md](EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md).
 - Remaining: primary-source membership/effective-dated lifecycle, official session calendar, OHLCV exceptions, corporate-action review, source rights and per-equity coverage remain separate data-promotion gates.
+
+
+### NEPSE official holiday API multi-year evidence review — 2026-11-26
+
+- Reviewed committed capture manifest `data/evidence/acquired/nepse-holiday-api-multiyear-audit-2015-2026.json`: 12 annual NEPSE-hosted holiday API captures (2015–2026), 499 raw records, 498 unique date keys summed within annual files, all 12 requests HTTP 200, no failed years. The workflow artifact is pinned by SHA-256 `ce8959b0f185d92c936a0c5e137cb2645b33c5d6d23b1ff38c15e2e1d68b7eec`.
+- Preserved annual response hashes and identified 2020-04-13 as a duplicate-date/two-description conflict; 2018 and 2019 annual response date ranges end early (Nov 9 and Oct 30), so completeness is not established.
+- All records have null instrumentTypeId and activeStatus. The endpoint is closure/holiday evidence, not a complete open-session calendar; absence from the endpoint is not proof of trading. 2015–2025 records remain source-evidence-only and are not bulk-promoted.
+- Added [NEPSE official holiday API multi-year review](NEPSE_OFFICIAL_HOLIDAY_API_MULTYEAR_REVIEW_2026-11-26.md), commit `456225a73eb6c53963a3c34deb524674a4b2b664`.
+- 2022-06-16 schedule change has an official NEPSE-hosted notice located and visually reviewed, but original bytes/hash are not archived. 2026-04-06 Monday–Friday transition has multiple secondary reports, but the original NEPSE notice remains uncaptured.
+- No date-level session calendar promotion, no OHLCV changes, and no repeated-row reclassification. Next: deterministic raw-payload audit and official date-level market-session evidence acquisition.

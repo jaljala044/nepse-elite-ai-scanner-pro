@@ -1,6 +1,6 @@
 import unittest
 from datetime import date, timedelta
-from app.execution_backtest import simulate_execution_scenario
+from app.execution_backtest import simulate_execution_scenario, aggregate_execution_scenarios
 
 
 COSTS = {
@@ -95,6 +95,18 @@ class ExecutionBacktestTests(unittest.TestCase):
     def test_invalid_quantity_rejected(self):
         result = self.run_scenario(quantity=1.5)
         self.assertEqual(result["reason"], "whole_share_quantity_required")
+
+    def test_aggregate_is_trade_level_and_excludes_withheld(self):
+        summary = aggregate_execution_scenarios([
+            {"status": "scenario_completed", "net_pnl": 100, "net_return_pct": 5},
+            {"status": "scenario_completed", "net_pnl": -50, "net_return_pct": -2},
+            {"status": "unavailable", "reason": "missing_costs"},
+        ])
+        self.assertEqual(summary["completed_scenarios"], 2)
+        self.assertEqual(summary["withheld_scenarios"], 1)
+        self.assertEqual(summary["total_net_pnl_scenario_sum"], 50)
+        self.assertEqual(summary["profit_factor"], 2)
+        self.assertIsNone(summary["portfolio_drawdown"])
 
 
 if __name__ == "__main__":

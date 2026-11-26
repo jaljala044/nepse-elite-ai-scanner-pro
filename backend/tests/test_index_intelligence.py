@@ -92,5 +92,5 @@ class IndexIntelligenceTests(unittest.TestCase):
         rows[0]["close"] = True
         with self.assertRaisesRegex(ValueError, "invalid_session_or_close"):
             build_verified_index_intelligence(
-                rows, decision_time="2026-11-26T15:30:00+05:45"
+                rows, verified_session_dates=[r["session_date"] for r in self.verified_rows()], decision_time="2026-11-26T15:30:00+05:45"
             )

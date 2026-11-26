@@ -67,9 +67,31 @@ class SignalConfirmationTests(unittest.TestCase):
         result = confirm_signal(rows, eligible=True)
         self.assertEqual(result["classification"], "UNKNOWN")
 
-    def test_boolean_history_parameter_is_rejected(self):
-        with self.assertRaises(ValueError):
-            confirm_signal(rising_rows(), eligible=True, min_observations=True)
+    def test_invalid_configuration_is_rejected_consistently(self):
+        invalid_options = [
+            {"min_observations": True},
+            {"min_observations": 50},
+            {"breakout_lookback": True},
+            {"breakout_lookback": 4},
+            {"volume_multiple": True},
+            {"volume_multiple": 0},
+            {"volume_multiple": float("nan")},
+            {"volume_multiple": float("inf")},
+            {"volume_multiple": None},
+            {"volume_multiple": "1.5"},
+        ]
+        for options in invalid_options:
+            with self.subTest(options=options):
+                with self.assertRaises(ValueError):
+                    confirm_signal(rising_rows(), eligible=True, **options)
+
+    def test_rows_are_sorted_before_pattern_evaluation(self):
+        rows = rising_rows()
+        rows[-1].update(open=159, high=165, low=158, close=164, volume=2500)
+        shuffled = rows[::2] + rows[1::2]
+        result = confirm_signal(shuffled, eligible=True)
+        self.assertEqual(result["as_of"], str(rows[-1]["date"]))
+        self.assertEqual(result["classification"], "bullish_confirmation")
 
 
 if __name__ == "__main__":

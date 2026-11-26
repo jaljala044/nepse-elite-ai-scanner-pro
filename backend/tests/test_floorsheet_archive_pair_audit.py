@@ -101,6 +101,22 @@ class FloorsheetArchivePairAuditTests(unittest.TestCase):
             2,
         )
 
+
+    def test_amount_arithmetic_exceptions_block_cross_source_comparison(self):
+        bad_amount = (
+            b"date,contract_no,symbol,buyer,seller,quantity,rate,amount\n"
+            b"2026-11-24,C1,AAA,11,22,10,10,101\n"
+        )
+        result = self.run_audit(left=bad_amount)
+        self.assertEqual(
+            result["comparison"]["comparison_status"],
+            "not_run_amount_reconciliation_exceptions_require_adjudication",
+        )
+        self.assertEqual(
+            result["left_file"]["row_reconciliation"]["counts"]["amount_reconciliation_exception"],
+            1,
+        )
+
     def test_empty_payload_and_invalid_digest_rejected(self):
         with self.assertRaisesRegex(ValueError, "non-empty bytes"):
             self.run_audit(left=b"")

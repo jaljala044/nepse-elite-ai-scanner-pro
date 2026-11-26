@@ -305,6 +305,11 @@ def compare_socrateai_daily_csvs(official_rows: list[dict], daily_csv_by_date: d
         "field_comparisons": 0,
         "field_mismatches": 0,
         "mismatches_by_field": {key: 0 for key in fields},
+        "field_error_accumulators": {
+            key: {"absolute_difference_sum": 0.0, "max_absolute_difference": 0.0,
+                  "max_relative_difference_pct": 0.0}
+            for key in fields
+        },
         "missing_public_active_rows": 0,
         "missing_public_zero_activity_rows": 0,
         "mismatch_examples": [],
@@ -379,9 +384,19 @@ def compare_socrateai_daily_csvs(official_rows: list[dict], daily_csv_by_date: d
                     left = public[public_key]
                     right = Decimal(str(official[official_key]))
                     result["field_comparisons"] += 1
-                    if abs(left - right) > tolerance:
+                    difference = abs(left - right)
+                    if difference > tolerance:
                         result["field_mismatches"] += 1
                         result["mismatches_by_field"][field] += 1
+                        stats = result["field_error_accumulators"][field]
+                        absolute = float(difference)
+                        relative_pct = float(difference / abs(right) * 100) if right else None
+                        stats["absolute_difference_sum"] += absolute
+                        stats["max_absolute_difference"] = max(stats["max_absolute_difference"], absolute)
+                        if relative_pct is not None:
+                            stats["max_relative_difference_pct"] = max(
+                                stats["max_relative_difference_pct"], relative_pct
+                            )
                         mismatches.append({"field": field, "public": str(left), "official": str(right)})
                 except (InvalidOperation, TypeError, ValueError, KeyError) as exc:
                     result["field_mismatches"] += 1
@@ -396,6 +411,18 @@ def compare_socrateai_daily_csvs(official_rows: list[dict], daily_csv_by_date: d
             else:
                 result["fully_matching_rows"] += 1
         result["per_day"].append(day_result)
+    result["field_error_stats"] = {
+        field: {
+            "count": result["mismatches_by_field"][field],
+            "mean_absolute_difference": round(
+                values["absolute_difference_sum"] / result["mismatches_by_field"][field], 6
+            ) if result["mismatches_by_field"][field] else 0,
+            "max_absolute_difference": round(values["max_absolute_difference"], 6),
+            "max_relative_difference_pct": round(values["max_relative_difference_pct"], 6),
+        }
+        for field, values in result["field_error_accumulators"].items()
+    }
+    del result["field_error_accumulators"]
     result["match_rate_pct"] = round(
         result["fully_matching_rows"] / result["official_rows_matched_by_date"] * 100, 4
     ) if result["official_rows_matched_by_date"] else None

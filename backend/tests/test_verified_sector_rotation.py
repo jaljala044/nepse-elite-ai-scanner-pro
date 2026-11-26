@@ -65,7 +65,7 @@ class VerifiedSectorRotationTests(unittest.TestCase):
         data = list(fixture())
         dates = data[0]
         data[3] = [row for row in data[3] if not (
-            row["symbol"] == "AAA" and row["session_date"] == dates[-30])]
+            row["symbol"] == "AAA" and row["session_date"] == dates[-10])]
         result = self.call(data)
         self.assertEqual(result["sectors"]["BANK"]["windows"]["1M"]["status"],
                          "insufficient_evidence")

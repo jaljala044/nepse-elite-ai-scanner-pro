@@ -31,6 +31,29 @@ class ScanRequest(BaseModel):
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
 
+@app.get("/v1/research/readiness")
+def research_readiness():
+    """Read-only UI contract. Never exposes uploaded data or authorizes recommendations."""
+    return {
+        "mode": "research_only",
+        "candidate_equities": len(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else None,
+        "canonical_reviewed_rows": len(REVIEWED_ROWS),
+        "universe_available": EQUITY_UNIVERSE is not None,
+        "independent_strategy_validation": False,
+        "production_recommendations_enabled": False,
+        "ai_recommendations_enabled": False,
+        "ranking_enabled": False,
+        "modules": {
+            "market_structure": "research_only",
+            "ipda": "implemented_not_production_certified",
+            "zone_lifecycle": "implemented_not_production_certified",
+            "multitimeframe": "implemented_not_production_certified",
+            "broker_confluence": "implemented_not_production_certified",
+            "combined_strategy": "research_test_not_approved",
+        },
+        "missing_evidence_policy": "UNKNOWN",
+    }
+
 @app.get("/v1/symbols")
 def symbols():
     candidate_symbols = set(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else set()

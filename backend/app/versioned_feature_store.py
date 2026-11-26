@@ -38,25 +38,41 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
     for symbol in symbols:
         matches = [r for r in security_records if r.symbol.upper() == symbol]
         if not matches:
-            joins[symbol] = {"security_status": "not_found", "corporate_actions": []}
+            joins[symbol] = {"security_status": "not_found", "security_identity_verified": False, "corporate_actions": [], "corporate_action_adjustment_actions": []}
             continue
         # Resolve by the matched stable security ID; conflicts remain ambiguous.
         ids = sorted({r.security_id for r in matches})
         if len(ids) != 1:
-            joins[symbol] = {"security_status": "ambiguous", "corporate_actions": []}
+            joins[symbol] = {"security_status": "ambiguous", "security_identity_verified": False, "corporate_actions": [], "corporate_action_adjustment_actions": []}
             continue
         resolved = security_as_of(matches, cutoff_date)
         if resolved["status"] != "resolved":
-            joins[symbol] = {"security_status": resolved["status"], "corporate_actions": []}
+            joins[symbol] = {
+                "security_status": resolved["status"],
+                "security_identity_verified": False,
+                "security_evidence_ids": resolved.get("evidence_ids", []),
+                "corporate_actions": [],
+                "corporate_action_adjustment_actions": [],
+                "corporate_action_adjustment_eligible_count": 0,
+                "corporate_action_excluded_unverified_count": 0,
+                "corporate_action_point_in_time_eligible": False,
+            }
             continue
         security = resolved["record"]
         action_result = corporate_actions_as_of(corporate_action_records, security.security_id, decision_time)
         joins[symbol] = {
             "security_status": "resolved",
+            "security_identity_verified": True,
             "security_id": security.security_id,
             "security_evidence_ids": resolved.get("evidence_ids", []),
             "corporate_actions": [asdict(action) for action in action_result["actions"]],
             "corporate_action_count": action_result["included_count"],
+            "corporate_action_adjustment_actions": [
+                asdict(action) for action in action_result["adjustment_actions"]
+            ],
+            "corporate_action_adjustment_eligible_count": action_result["adjustment_eligible_count"],
+            "corporate_action_excluded_unverified_count": action_result["excluded_unverified_count"],
+            "corporate_action_point_in_time_eligible": action_result["point_in_time_eligible"],
             "corporate_action_evidence_ids": sorted({a.evidence_id for a in action_result["actions"]}),
         }
     included_records = [

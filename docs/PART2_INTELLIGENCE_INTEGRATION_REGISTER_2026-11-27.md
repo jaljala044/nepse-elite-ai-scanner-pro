@@ -138,3 +138,12 @@ This is structural validation hardening only. It does not authenticate the sourc
 PR #151 (`4257cd95b0402102421992457738a5926e076019`) rejects configured allowed-sector-code values with leading or trailing whitespace and adds a regression test. Both `backend-tests` and `Backend contract tests` passed on exact head `248e69867c430fa176fc7b19ab38aaafc67986cf` before squash merge.
 
 Structural validation only: no official sector membership source is authenticated; `verified=false` and `admission_allowed=false` remain in force. Primary-source acquisition remains blocked and tracked in issue #146.
+
+
+### P2.03 SEBON partial evidence builder — PR #154 merged 2026-11-27
+
+PR #154 (`cab084e1e2d64b8dba4e4f48a8c7bbd13e24be36`) adds `backend/app/sebon_partial_evidence.py` and eight tests. It preserves document date, registration date and explicitly supplied classification effective date independently; absent effective dates remain unknown; company-to-security identity remains unresolved. Its output is always `partial_review_only`, `membership_verified=false`, `membership_admission_allowed=false`, and `production_sector_signals_allowed=false`. Both `backend-tests` and `Backend contract tests` passed on exact PR head `7ad1f849f12c31ccc5cdc4c009e35c2c9ebd328d`.
+
+### P2.03 SEBON raw PDF capture — PR #156 pending
+
+PR #156 adds `backend/app/sebon_pdf_capture.py` and nine tests. It restricts requests to official SEBON HTTPS PDF hosts, constructs its own httpx client with TLS verification enabled and redirects disabled, validates HTTP status/content type/PDF magic/size, records peer certificate fingerprint and capture timestamps, and persists exact bytes with the existing immutable content-addressed raw capture store. It does not yet acquire the two identified documents in this environment, parse PDF content, or establish sector membership. Membership admission and production sector signals remain disabled. CI must pass before merge.

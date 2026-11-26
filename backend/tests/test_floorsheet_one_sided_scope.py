@@ -38,6 +38,8 @@ class OneSidedScopeTests(unittest.TestCase):
              "active_status": "A", "snapshot_date": "2026-11-25"},
             {"symbol": "ODD", "security_id": "601", "security_name": "Other Instrument",
              "active_status": "A", "snapshot_date": "2026-11-25"},
+            {"symbol": "BONDED", "security_id": "701", "security_name": "Company Bonded Note",
+             "active_status": "A", "snapshot_date": "2026-11-25"},
         ])
 
     def tearDown(self):
@@ -116,6 +118,18 @@ class OneSidedScopeTests(unittest.TestCase):
             audit, self.crosswalk, self.candidates, self.snapshot, "2026-11-25"
         )
         self.assertEqual(report["one_sided_contracts"][0]["scope_class"], "OUT_OF_SCOPE_BOND")
+
+    def test_bond_substring_without_word_boundary_is_not_a_bond_classification(self):
+        audit = self._audit()
+        audit["date_reports"]["2026-11-20"]["audit"]["comparison"]["right_only_contracts"] = [
+            {"trade_date": "2026-11-20", "contract_id": "B2", "symbol": "BONDED",
+             "quantity": "10", "rate": "100", "amount": "1000"}
+        ]
+        report = classify_one_sided_contracts(
+            audit, self.crosswalk, self.candidates, self.snapshot, "2026-11-25"
+        )
+        self.assertEqual(report["one_sided_contracts"][0]["scope_class"],
+                         "UNCLASSIFIED_SECURITY_SNAPSHOT_ONLY")
 
     def test_snapshot_rows_must_match_expected_snapshot_date(self):
         rows = self._read(self.snapshot)

@@ -13,7 +13,7 @@ from typing import Iterable, Mapping
 EXPECTED_SOURCE = "NepseAlpha"
 EXPECTED_SOURCE_URL = "https://nepsealpha.com/traded-stocks/"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-ISO_DATE_RE = re.compile(r"^\\d{4}-\\d{2}-\\d{2}$")
+ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def validate_equity_manifest_rows(

@@ -95,4 +95,46 @@ class SignalEngineTests(unittest.TestCase):
             self.runit(minimum_reward_risk="1.5")
 
 
+
+    def test_exit_review_missing_is_unknown_not_hold(self):
+        result = self.runit()
+        self.assertEqual(result["exit_reviews"]["swing"]["action"], "NO_TRADE")
+        self.assertEqual(result["exit_reviews"]["swing"]["status"], "unknown")
+
+    def test_verified_breakdown_requires_sell_or_reduce(self):
+        data = snapshot()
+        stamp = data["available_at"]
+        data["exit_evidence"] = {"status":"verified","source_id":"EXIT_A","coverage":"1",
+            "available_at":stamp,"horizons":{"swing":{"status":"confirmed",
+            "triggers":["structural_breakdown"]}}}
+        result = self.runit(data)
+        self.assertEqual(result["exit_reviews"]["swing"]["action"], "SELL_OR_REDUCE")
+        self.assertEqual(result["action"], "SELL_OR_REDUCE")
+
+    def test_verified_no_exit_trigger_is_cautious_hold(self):
+        data = snapshot()
+        stamp = data["available_at"]
+        data["exit_evidence"] = {"status":"verified","source_id":"EXIT_A","coverage":"1",
+            "available_at":stamp,"horizons":{"swing":{"status":"confirmed","triggers":["none"]}}}
+        result = self.runit(data)
+        self.assertEqual(result["exit_reviews"]["swing"]["action"], "HOLD_WITH_CAUTION")
+
+    def test_late_exit_evidence_is_unknown(self):
+        data = snapshot()
+        data["exit_evidence"] = {"status":"verified","source_id":"EXIT_A","coverage":"1",
+            "available_at":"2026-11-27T09:00:00+05:45",
+            "horizons":{"swing":{"status":"confirmed","triggers":["stop_triggered"]}}}
+        result = self.runit(data)
+        self.assertEqual(result["exit_reviews"]["swing"]["action"], "NO_TRADE")
+        self.assertIn("exit_not_available_as_of_cutoff", result["exit_reviews"]["swing"]["reasons"])
+
+    def test_unknown_exit_trigger_rejected(self):
+        data = snapshot()
+        stamp = data["available_at"]
+        data["exit_evidence"] = {"status":"verified","source_id":"EXIT_A","coverage":"1",
+            "available_at":stamp,"horizons":{"swing":{"status":"confirmed","triggers":["operator_activity"]}}}
+        result = self.runit(data)
+        self.assertEqual(result["exit_reviews"]["swing"]["action"], "NO_TRADE")
+        self.assertIn("invalid_exit_trigger_evidence", result["exit_reviews"]["swing"]["reasons"])
+
 if __name__=="__main__": unittest.main()

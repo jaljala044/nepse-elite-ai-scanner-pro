@@ -1870,3 +1870,6 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 
 - Follow-up regression correction: the market-total-mismatch test now creates the zero-contract symbol in the archive universe, and malformed OHLCV volume is explicitly tested as UNKNOWN rather than NO_TRADE. Latest test commit: [937ef1b](https://github.com/jaljala044/nepse-smc-data/commit/937ef1b3324c4f576b8192309af55ddad64caf56).
 - Latest commit status query returned no status checks; CI execution remains unverified.
+
+
+- Final hardening pass: floorsheet input now requires recognized date/symbol/quantity/rate/contract headers; duplicate OHLCV rows for the same symbol/date are ambiguous and cannot support `NO_TRADE`. Added regression tests for invalid schema and duplicate OHLCV dates. Data repo commits: [schema/duplicate-bar guard 724d694](https://github.com/jaljala044/nepse-smc-data/commit/724d694a5367c96e7af7105608068c6d8456d3d9); [regression tests 37c8ba8](https://github.com/jaljala044/nepse-smc-data/commit/37c8ba86e379ad7c401f6881b026e2c9403c93d2).

@@ -128,6 +128,82 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
     return clean
 
 
+
+def _execution_channel_features(rows: list[dict], session_dates: list[str],
+                                minimum_amount_coverage: float = 0.80) -> dict:
+    """Describe source broker codes as execution channels, never as owners."""
+    from decimal import Decimal, InvalidOperation
+
+    normalized_sessions = [date.fromisoformat(str(item)).isoformat() for item in session_dates]
+    scopes = {"market": rows}
+    for symbol in sorted({str(row["symbol"]).upper() for row in rows}):
+        scopes[symbol] = [row for row in rows if str(row["symbol"]).upper() == symbol]
+    output = {"market": {}, "securities": {}}
+    for scope_name, scope_rows in scopes.items():
+        target = output["market"] if scope_name == "market" else output["securities"].setdefault(scope_name, {})
+        for horizon, count in HORIZONS.items():
+            selected_sessions = normalized_sessions[-count:]
+            session_set = set(selected_sessions)
+            window_rows = [row for row in scope_rows if row["trade_date"] in session_set]
+            coded = [row for row in window_rows if row.get("source_broker_code") not in (None, "")]
+            try:
+                gross_all = sum((Decimal(str(row["amount"])) for row in window_rows), Decimal("0"))
+                gross_coded = sum((Decimal(str(row["amount"])) for row in coded), Decimal("0"))
+            except (InvalidOperation, TypeError) as exc:
+                raise ValueError("broker execution-channel amounts must be valid decimals") from exc
+            coverage = gross_coded / gross_all if gross_all else None
+            totals = {}
+            for row in coded:
+                code = str(row["source_broker_code"]).strip()
+                if not code:
+                    continue
+                if row["side"] not in {"buy", "sell"}:
+                    raise ValueError("broker execution-channel side must be buy or sell")
+                item = totals.setdefault(code, {
+                    "buy_amount": Decimal("0"), "sell_amount": Decimal("0"),
+                    "buy_quantity": Decimal("0"), "sell_quantity": Decimal("0"),
+                    "active_sessions": set(), "party_observation_count": 0,
+                })
+                item[row["side"] + "_amount"] += Decimal(str(row["amount"]))
+                item[row["side"] + "_quantity"] += Decimal(str(row["quantity"]))
+                item["active_sessions"].add(row["trade_date"])
+                item["party_observation_count"] += 1
+            profiles = []
+            for code, item in totals.items():
+                gross = item["buy_amount"] + item["sell_amount"]
+                net = item["buy_amount"] - item["sell_amount"]
+                profiles.append({
+                    "execution_channel_code": code,
+                    "identity_status": "execution_channel_only",
+                    "buy_amount": str(item["buy_amount"]),
+                    "sell_amount": str(item["sell_amount"]),
+                    "net_amount": str(net),
+                    "buy_quantity": str(item["buy_quantity"]),
+                    "sell_quantity": str(item["sell_quantity"]),
+                    "net_quantity": str(item["buy_quantity"] - item["sell_quantity"]),
+                    "gross_participation_pct": round(float(gross / gross_coded * 100), 4) if gross_coded else None,
+                    "active_sessions": len(item["active_sessions"]),
+                    "party_observation_count": item["party_observation_count"],
+                    "flow_class": "net_buyer" if net > 0 else "net_seller" if net < 0 else "balanced",
+                })
+            profiles.sort(key=lambda item: (Decimal(item["net_amount"]), item["execution_channel_code"]), reverse=True)
+            target[horizon] = {
+                "window": horizon,
+                "window_sessions": count,
+                "calendar_sessions_available": len(selected_sessions),
+                "observed_sessions": len({row["trade_date"] for row in window_rows}),
+                "window_complete": len(selected_sessions) == count and len({row["trade_date"] for row in window_rows}) >= count,
+                "party_observation_count": len(window_rows),
+                "coded_party_observation_count": len(coded),
+                "uncoded_party_observation_count": len(window_rows) - len(coded),
+                "coded_amount_coverage_pct": round(float(coverage * 100), 4) if coverage is not None else None,
+                "status": "observed" if coverage is not None and float(coverage) >= minimum_amount_coverage else "insufficient_code_coverage",
+                "execution_channels": profiles,
+                "interpretation": "observed floorsheet execution-channel activity; not broker proprietary holdings, beneficial ownership or intent",
+            }
+    return output
+
+
 def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                           decision_time: str, minimum_amount_coverage: float = 0.80,
                           minimum_sessions: int = 5) -> dict:
@@ -139,7 +215,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
     """
     clean = _validate_observations(rows, session_dates, decision_time)
     cutoff = _aware(decision_time, "decision_time")
-    allowed_sessions = set(session_dates)
+    allowed_sessions = {date.fromisoformat(str(item)).isoformat() for item in session_dates}
     con = connect()
     try:
         _ensure_tables(con)
@@ -183,6 +259,9 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             historical_rows, minimum_amount_coverage=minimum_amount_coverage,
             minimum_sessions=minimum_sessions,
         )
+        channel_features = _execution_channel_features(
+            historical_rows, session_dates, minimum_amount_coverage
+        )
         body = {
             "schema_version": 1,
             "feature_version": "broker-footprint-v1",
@@ -193,6 +272,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             "source_count": len({row["source_id"] for row in historical_rows}),
             "source_payload_hashes": sorted({row["source_payload_sha256"] for row in historical_rows}),
             "features": features,
+            "execution_channel_features": channel_features,
             "horizon_contract": {
                 "1D": "latest verified session",
                 "1W": "latest 5 verified sessions",
@@ -234,6 +314,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
 
 def get_latest_broker_memory(*, symbol: str | None = None,
                              broker_entity_id: str | None = None,
+                             broker_code: str | None = None,
                              as_of: str | None = None) -> dict | None:
     """Return latest immutable profile matching filters; no data means None."""
     con = connect()
@@ -260,6 +341,26 @@ def get_latest_broker_memory(*, symbol: str | None = None,
                     continue
                 snapshot["selected_symbol"] = symbol.upper()
                 snapshot["selected_features"] = selected
+            if broker_code:
+                channel_matches = []
+                if snapshot.get("selected_symbol"):
+                    scopes = [snapshot["selected_symbol"]]
+                else:
+                    scopes = list(snapshot.get("execution_channel_features", {}).get("securities", {}).keys())
+                for scope_name in scopes:
+                    scope = snapshot.get("execution_channel_features", {}).get("securities", {}).get(scope_name, {})
+                    for horizon, window in scope.items():
+                        for channel in window.get("execution_channels", []):
+                            if channel.get("execution_channel_code") == broker_code:
+                                channel_matches.append({"scope": scope_name, "horizon": horizon, **channel})
+                for horizon, window in snapshot.get("execution_channel_features", {}).get("market", {}).items():
+                    for channel in window.get("execution_channels", []):
+                        if channel.get("execution_channel_code") == broker_code:
+                            channel_matches.append({"scope": "market", "horizon": horizon, **channel})
+                if not channel_matches:
+                    continue
+                snapshot["selected_execution_channel_code"] = broker_code
+                snapshot["execution_channel_matches"] = channel_matches
             if broker_entity_id:
                 matches = []
                 for scope in ([snapshot.get("selected_features")] if snapshot.get("selected_features")

@@ -18,6 +18,14 @@ on:
       - "backend/tests/test_derive_broker_party_observations.py"
       - "data/raw/acquired/rajeevpaudel-nepse-history/2026/2026-11-19-floorsheet.csv"
       - "backend/run_hf_inventory.py"
+      - "backend/audit_historical_identity_readiness.py"
+      - "backend/tests/test_historical_identity_readiness.py"
+      - "backend/app/temporal_registry.py"
+      - "backend/app/corporate_action_policy.py"
+      - "backend/app/versioned_feature_store.py"
+      - "data/reference/nepse_security_lifecycle_events_2026-11-26.csv"
+      - "data/reference/nepse_historical_identity_evidence_2026-11-26.json"
+      - "data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv"
       - "backend/tests/**"
       - ".github/workflows/nepse-data-integrity.yml"
 
@@ -86,6 +94,20 @@ jobs:
             --source-repository srijankarki07/nepse-data \
             --source-revision e6e6fe77cd3378204c7938e66601cee2339a8b7a \
             --output ../data/reports/nepse-616-session-candidate-audit.json
+      - name: Test historical identity readiness audit
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_historical_identity_readiness.py' -v
+      - name: Audit historical identity and corporate-action readiness
+        working-directory: backend
+        run: |
+          python audit_historical_identity_readiness.py \
+            --lifecycle ../data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv \
+            --events ../data/reference/nepse_security_lifecycle_events_2026-11-26.csv \
+            --identity-evidence ../data/reference/nepse_historical_identity_evidence_2026-11-26.json \
+            --crosswalk ../data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \
+            --snapshot ../data/reference/nepse_security_id_snapshot_2026-11-25.csv \
+            --history-window-dir ../data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26 \
+            --output ../data/reports/historical-identity-readiness-2026-11-26.json
       - name: Generate pinned Hugging Face inventory
         working-directory: backend
         run: python run_hf_inventory.py --max-files 10000
@@ -106,6 +128,7 @@ jobs:
             data/raw/huggingface/manifests/*.json
             data/reports/hf-source-coverage-candidates.json
             data/reports/nepse-616-session-candidate-audit.json
+            data/reports/historical-identity-readiness-2026-11-26.json
             artifacts/broker-derivation-2026-11-19/*
           if-no-files-found: error
           retention-days: 30

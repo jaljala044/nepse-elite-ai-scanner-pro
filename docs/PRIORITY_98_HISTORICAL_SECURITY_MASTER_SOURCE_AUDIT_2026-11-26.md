@@ -68,3 +68,10 @@ Priority 98 is closed as a completed source-discovery task with a documented blo
 - ShareHub API documentation reviewed 2026-11-26.
 - No authenticated credentials were accessed or requested in this audit.
 - No production API call was made and no external account access was assumed.
+
+
+## 2026-11-26 project-owner scope decision — current scanning
+
+The project owner subsequently instructed the scanner to use the **2026-11-25 current snapshot ID for each surviving successor equity** and to ignore former tickers in the current universe because those instruments merged/acquired into the successors. Accordingly, historical predecessor ID recovery is **not a blocker for current-universe scanning**. The seven current successor IDs are SLBSL 2804, NMLBBL 396, MATRI 694, SMATA 2761, SMPDA 2896, GBLBS 583 and PFL 236. See [CURRENT_UNIVERSE_SUCCESSOR_ID_POLICY_2026-11-26.md](CURRENT_UNIVERSE_SUCCESSOR_ID_POLICY_2026-11-26.md).
+
+This owner decision changes the **scope/acceptance requirement**, not the historical evidence findings above: predecessor IDs remain unrecovered, predecessor validity intervals remain unverified, and historical OHLCV/floorsheet splicing remains prohibited. Current successor IDs must not be backfilled onto predecessor records. Historical continuity research remains unresolved but optional to the current scanner. All independent data-quality, calendar, source-provenance, rights and CI release gates remain applicable.

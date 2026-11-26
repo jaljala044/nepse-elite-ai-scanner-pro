@@ -56,6 +56,7 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
                 "corporate_action_adjustment_eligible_count": 0,
                 "corporate_action_excluded_unverified_count": 0,
                 "corporate_action_point_in_time_eligible": False,
+                "corporate_action_source_universe_completeness_verified": False,
             }
             continue
         security = resolved["record"]
@@ -73,6 +74,7 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
             "corporate_action_adjustment_eligible_count": action_result["adjustment_eligible_count"],
             "corporate_action_excluded_unverified_count": action_result["excluded_unverified_count"],
             "corporate_action_point_in_time_eligible": action_result["point_in_time_eligible"],
+            "corporate_action_source_universe_completeness_verified": action_result["source_universe_completeness_verified"],
             "corporate_action_evidence_ids": sorted({a.evidence_id for a in action_result["actions"]}),
         }
     included_records = [

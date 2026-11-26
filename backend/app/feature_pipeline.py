@@ -11,13 +11,15 @@ from app.sector_strength_features import sector_strength_features
 from app.liquidity_features import liquidity_tradability_features
 from app.scoring_engine import score_feature_bundle
 from app.relative_strength_features import relative_strength_universe
+from app.broker_profile_scanner_bridge import build_broker_profile_scanner_context
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
                            expected_symbols: list[str] | None = None,
                            sector_membership: dict | None = None,
                            expected_sector_members: dict | None = None,
-                           session_dates: list[str] | None = None) -> dict:
+                           session_dates: list[str] | None = None,
+                           broker_profiles_snapshot: dict | None = None) -> dict:
     """Filter every input by availability before deriving any feature."""
     snapshot = build_as_of_snapshot(records, decision_time)
     rows = snapshot["records"]
@@ -196,6 +198,15 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
     broker_footprint = broker_footprint_features(broker_rows)
+    expected_profile_securities = sorted({
+        str(row.get("security_id", "")).strip()
+        for row in broker_profiles_snapshot.get("profiles", [])
+        if isinstance(row, dict) and row.get("security_id")
+    }) if isinstance(broker_profiles_snapshot, dict) else []
+    broker_profile_context = build_broker_profile_scanner_context(
+        broker_profiles_snapshot, decision_time=decision_time,
+        expected_security_ids=expected_profile_securities,
+    )
     if expected_symbols:
         expected_rs_symbols = [str(symbol).strip().upper() for symbol in expected_symbols]
         benchmark_rows = [
@@ -342,6 +353,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "relative_strength": relative_strength,
         "broker_participation": broker_participation_summary(raw_broker_rows),
         "broker_footprint": broker_footprint,
+        "broker_behavior_profiles": broker_profile_context,
         "sector_strength": sector_features,
         "liquidity_tradability": liquidity_snapshot,
         "interpretation": "descriptive_only_not_a_trading_signal",

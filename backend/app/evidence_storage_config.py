@@ -60,7 +60,7 @@ def inspect_evidence_storage(env: Mapping[str, str] | None = None) -> dict[str, 
         result["reasons"].append("missing_configuration:" + ",".join(missing))
     if not attested:
         result["reasons"].append("persistent_volume_not_operator_attested")
-    if missing:
+    if missing or not attested:
         return result
 
     root = Path(configured["storage_root"]).expanduser().resolve()

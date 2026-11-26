@@ -107,7 +107,7 @@ class BrokerPatternDetectorTests(unittest.TestCase):
             decision_at=sessions[-1] + "T18:00:00Z",
         )
         self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
-        self.assertIn("broker_identity_amount_coverage", result["missing_features"])
+        self.assertIn("matched_contract_buyer_seller_parties", result["missing_features"])
 
     def test_duplicate_contract_side_cannot_inflate_persistence(self):
         sessions, brokers, prices, context = fixture_rows()
@@ -148,7 +148,7 @@ class BrokerPatternDetectorTests(unittest.TestCase):
         future = dict(prices[-1])
         future["available_at"] = "2026-11-10T19:00:00Z"
         future["close"] = "9999"
-        prices[-1] = future
+        prices.append(future)
         replay = detect_broker_patterns(
             "TEST", brokers, prices, context,
             expected_sessions=sessions, complete_broker_sessions=sessions,

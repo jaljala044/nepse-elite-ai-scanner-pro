@@ -12,6 +12,7 @@ from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
 from .broker_intelligence_dashboard import build_broker_intelligence_dashboard
+from .early_entry_exit_signals import generate_early_entry_exit_signals
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -36,6 +37,11 @@ class BrokerDashboardRequest(BaseModel):
     sector_rotation_by_window: dict = Field(default_factory=dict)
     candidates: list[dict] = Field(default_factory=list)
 
+class EarlySignalRequest(BaseModel):
+    as_of_date: date
+    as_of_timestamp: str
+    snapshot: dict
+
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
@@ -55,6 +61,21 @@ def broker_dashboard(request: BrokerDashboardRequest):
             source_manifest=request.source_manifest,
             sector_rotation_by_window=request.sector_rotation_by_window,
             candidates=request.candidates,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/early-signals")
+def early_signals(request: EarlySignalRequest):
+    """Generate conservative horizon-separated signals from supplied evidence.
+
+    Upstream evidence is caller-supplied and not independently re-attested here.
+    The endpoint never places orders or claims confirmed fills.
+    """
+    try:
+        return generate_early_entry_exit_signals(
+            request.snapshot, as_of_date=request.as_of_date.isoformat(),
+            as_of_timestamp=request.as_of_timestamp,
         )
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc

@@ -1657,3 +1657,12 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added [later-start lifecycle validation](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/later_start_equity_lifecycle_validation_2026-11-26.md), commit `992f424c223d83373a80ce707b4b5cba8a23aba6`; updated [low-overlap triage register](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/equity_low_overlap_triage_register_2026-11-26.md), commit `0c3359724d1507bc0ac345898a08f1c71e2838d6`.
 - This resolves the *pre-commencement denominator issue* for nine symbols; it does not validate all expected sessions, independent contract-level execution, archive completeness after commencement, or OHLCV row quality. APHL/KHPL boundary checks remain open. No raw OHLCV was edited; no canonical/training promotion or BUY eligibility is implied.
 - Next: validate listing/first-trade boundaries for the 11 mid-2026-start names (PCIL, SIPD, SKHEL, RLEL, SKHL, BJHL, SOHL, HFIN, SABBL, RSML) and perform dedicated UNL history/source coverage review; then run full row-level OHLCV checks across both repositories.
+
+
+### Mid-2026 low-overlap equity archive boundary review — 2026-11-26
+
+- Inspected first/last OHLCV rows for PCIL, SIPD, SKHEL, RLEL, SKHL, BJHL, SOHL, HFIN, SABBL, RSML and UNL in the pinned History Starter archive. All first rows have positive volume; this is archive evidence, not independent floorsheet verification.
+- PCIL/SIPD first rows align with published 2026-04-10 commencement; SKHEL/RLEL align with Merolagani's reported first pre-open transactions on 2026-03-29. SKHL, BJHL, SOHL, HFIN, SABBL and RSML have first archive rows after published listing/scheduled commencement references and remain date-boundary exceptions pending trade evidence.
+- UNL archive begins 2024-03-05 although the issuer is long-established; this is a dedicated historical source-coverage issue, not a listing date. A 2018 suspension/resumption notice does not explain the 2024 archive start.
+- Added [mid-2026 boundary review](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/mid_2026_low_overlap_equity_archive_boundary_review_2026-11-26.md), commit `386cd8bc15ca2633005d7d2e2f3216e9b4110e50`.
+- No raw OHLCV edited, synthesized or normalized. No canonical/training promotion. Next: obtain dated trade evidence for six boundary exceptions; conduct dedicated UNL alternate-source/history audit; continue row-level OHLCV validation across both repositories.

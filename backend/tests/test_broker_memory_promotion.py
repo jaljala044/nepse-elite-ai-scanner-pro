@@ -62,7 +62,7 @@ class BrokerMemoryPromotionTests(unittest.TestCase):
         first_rows=[row("2026-11-24","E1")]
         promote_validated_batch(report(first_rows),self.store,as_of_date="2026-11-25")
         self.assertEqual(self.store.count(),1)
-        changed_rows=[row("2026-11-23","E0"),row("2026-11-24","E1","BUY","999")]
+        changed_rows=[row(f"2026-11-{day:02d}",f"E{day}", "BUY", "999" if day == 24 else "100") for day in range(20,25)]
         with self.assertRaises(IdempotencyConflict):
             promote_validated_batch(report(changed_rows),self.store,as_of_date="2026-11-25")
         self.assertEqual(self.store.count(),1)

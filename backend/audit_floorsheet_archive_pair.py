@@ -85,7 +85,7 @@ def load_profile_payload(path: Path, profile_name: str):
         if raw_sha256 != profile["expected_raw_sha256"]:
             raise ValueError(f"{profile_name} raw SHA-256 does not match pinned profile")
     if profile["expected_blob_sha1"] is not None:
-        git_blob = b"blob " + str(len(payload)).encode("ascii") + b"\\0" + payload
+        git_blob = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
         if hashlib.sha1(git_blob).hexdigest() != profile["expected_blob_sha1"]:
             raise ValueError(f"{profile_name} Git blob SHA-1 does not match pinned profile")
     review = profile["review"](header)

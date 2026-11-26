@@ -8,7 +8,7 @@ import argparse
 import hashlib
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlparse
@@ -93,12 +93,12 @@ def import_capture(report_path: Path, *, storage_root: Path, database_path: Path
                      "reason": "duplicate_session_summary"} for row in candidates if row["session_date"] in duplicate_dates)
 
     fetch_id = "nepse-market-summary-" + digest[:24]
-    timestamp = received.astimezone().isoformat()
+    timestamp = received.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     manifest = build_capture_manifest(
         payload, source_id=SOURCE_ID, source_url=source_url,
         request_method="GET", request_metadata={"capture_report": report_path.name, "capture_digest": digest},
         requested_at=timestamp, received_at=timestamp,
-        claimed_session_date=max((row["session_date"] for row in records), default=""),
+        claimed_session_date=max((row["session_date"] for row in records), default=None),
         fetch_id=fetch_id, parser_version="official-market-summary-import-v1",
         rights_status="unknown",
     )

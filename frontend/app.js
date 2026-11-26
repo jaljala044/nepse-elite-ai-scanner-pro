@@ -53,7 +53,7 @@ function renderBrokerMemory(data, symbol, code){
   if(code){
     const matches=data.execution_channel_matches||[];
     if(!matches.length){root.append(node("p","No matching execution-channel history."));return;}
-    for(const item of matches){const card=node("article",undefined,"memory-card");card.append(node("h3",item.scope+" · "+item.horizon));renderChannelTable(card,[item]);renderDailyActivity(card,item.daily_activity);root.append(card);}
+    for(const item of matches){const card=node("article",undefined,"memory-card");card.append(node("h3",item.scope+" · "+item.horizon));renderChannelTable(card,[item]);if(item.horizon==="1D")renderDailyActivity(card,item.daily_activity);root.append(card);}
     return;
   }
   const all=data.execution_channel_features||{};

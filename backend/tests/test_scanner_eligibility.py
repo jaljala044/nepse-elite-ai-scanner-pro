@@ -1,6 +1,8 @@
 import unittest
 from datetime import date
-from app.scanner_eligibility import assess
+from app.scanner_eligibility import assess, load_reviewed_rows
+import tempfile, json
+from pathlib import Path
 from app.storage import DATA, IMPORTS, store_rows
 
 class EligibilityTests(unittest.TestCase):
@@ -27,3 +29,13 @@ class EligibilityTests(unittest.TestCase):
             self.assertEqual(DATA["TEST"][0]["close"],11)
         finally:
             DATA.clear(); DATA.update(original); IMPORTS[:]=imports
+
+    def test_loader(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"review.json"
+            row = dict(symbol="TEST",date="2025-01-01",open=10,high=12,low=9,close=11,volume=100,instrument_type="equity",security_status="active",session_status="verified_open",source_id="chukul",evidence_id="fixture",available_at="2025-01-01T12:00:00Z",security_id="1",lifecycle_evidence_id="l",session_evidence_id="s",price_basis_reviewed=True,canonical_promotion_allowed=True)
+            path.write_text(json.dumps({"schema_version":1,"records":[row,{"canonical_promotion_allowed":False}]}))
+            self.assertEqual(len(load_reviewed_rows(path)),1)
+            path.write_text(json.dumps({"schema_version":1,"records":[row,row]}))
+            with self.assertRaises(ValueError):
+                load_reviewed_rows(path)

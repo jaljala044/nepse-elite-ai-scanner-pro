@@ -78,7 +78,7 @@ def _market_rows(body_path: Path, report_path: Path) -> tuple[dict[str, dict], d
     return indexed, {"source_id": SUMMARY_SOURCE, "sha256": digest, "response_bytes": len(raw)}
 
 
-def _classify(symbol: str, security_id: str, snapshot: dict, crosswalk: dict,
+def _classify(symbol: str, security_id: str, bulk_name: str, snapshot: dict, crosswalk: dict,
               candidates: dict) -> tuple[str, str, str | None]:
     sec = snapshot.get(symbol)
     candidate = candidates.get(symbol)
@@ -87,6 +87,8 @@ def _classify(symbol: str, security_id: str, snapshot: dict, crosswalk: dict,
         return "UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH", "no dated security snapshot row", None
     if str(sec.get("security_id", "")) != security_id:
         return "UNKNOWN_SECURITY_ID_MISMATCH", "bulk security ID differs from 2026-11-25 snapshot", sec.get("security_name")
+    if str(sec.get("security_name", "")) != bulk_name:
+        return "UNKNOWN_SECURITY_NAME_MISMATCH", "bulk security name differs from 2026-11-25 snapshot", sec.get("security_name")
     if cross:
         if str(cross.get("security_id", "")) == security_id:
             return "IN_SCOPE_EQUITY_CANDIDATE", "2026-11-26 equity crosswalk plus 2026-11-25 snapshot ID match", sec.get("security_name")
@@ -195,7 +197,7 @@ def audit_bulk_scope(bulk_report_path: Path, raw_dir: Path, summary_body_path: P
                 if value != _decimal(raw.get(raw_key), f"{day}/{symbol} raw {raw_key}"):
                     raise ValueError(f"{day}/{symbol}: raw/parsed {raw_key} mismatch")
                 metrics[key] += value
-            scope, evidence, security_name = _classify(symbol, security_id, snapshot, crosswalk, candidates)
+            scope, evidence, security_name = _classify(symbol, security_id, str(row.get("securityName", "")), snapshot, crosswalk, candidates)
             counts[scope] += 1
             aggregate_scope_counts[scope] += 1
             symbols.append({

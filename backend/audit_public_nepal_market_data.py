@@ -1062,6 +1062,7 @@ def audit_public_archive(*, workers: int = 8) -> dict:
             public_csv_by_symbol, merged_official_root
         )
         socrateai_crosscheck = crosscheck_socrateai_history(merged_official_root)
+        srijankarki_crosscheck = crosscheck_srijankarki_history(merged_official_root)
     bad_symbols = [item["symbol"] for item in audited if any(
         item.get(key, 0) for key in (
             "duplicate_dates", "invalid_dates", "out_of_order_transitions",
@@ -1092,9 +1093,11 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "official_capture_merge": official_capture_merge,
         "official_history_crosscheck": official_crosscheck,
         "socrateai_history_crosscheck": socrateai_crosscheck,
+        "srijankarki_history_crosscheck": srijankarki_crosscheck,
         "gate": "FAIL" if quality_failed
                 or official_capture_merge.get("gate") != "RECONCILED_REVIEW_ONLY"
                 or socrateai_crosscheck.get("gate") != "RECONCILED_WINDOW_ONLY"
+                or srijankarki_crosscheck.get("gate") != "RECONCILED_REVIEW_ONLY"
                 or official_crosscheck.get("status") != "COMPLETED"
                 or official_crosscheck.get("field_mismatches", 0)
                 or official_crosscheck.get("missing_public_active_rows", 0)

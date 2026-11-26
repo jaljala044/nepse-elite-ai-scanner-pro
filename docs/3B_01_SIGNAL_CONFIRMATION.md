@@ -360,3 +360,30 @@ candidate dataset becomes eligible only after full-universe schema and
 duplicate checks, OHLCV validation, instrument/lifecycle filtering,
 corporate-action handling, overlap reconciliation against independent
 evidence, and a documented decision on upstream data-use rights.
+
+#### Expanded ten-symbol structural spot check
+
+To avoid drawing a conclusion from ADBL alone, the same basic checks were
+run on ten ordinary-equity CSVs in the public candidate archive. Each file
+had zero duplicate dates. Basic OHLC-bound violations were:
+
+| Symbol | Rows | Invalid OHLC rows | Invalid % |
+| --- | ---: | ---: | ---: |
+| ADBL | 3,684 | 405 | 10.99% |
+| NABIL | 3,538 | 556 | 15.72% |
+| NTC | 3,558 | 481 | 13.52% |
+| HRL | 658 | 1 | 0.15% |
+| NICA | 3,039 | 257 | 8.46% |
+| API | 2,496 | 113 | 4.53% |
+| AHPC | 3,785 | 587 | 15.51% |
+| MEHL | 717 | 0 | 0.00% |
+| RHGCL | 962 | 0 | 0.00% |
+| ULHC | 717 | 0 | 0.00% |
+
+These are spot-check results, not a full-archive score. They show that
+quality is heterogeneous: three newer symbols passed this narrow OHLC
+bound check, while six of the other seven had material violations. A clean
+sample does not establish accuracy, source independence, corporate-action
+correctness, or licensing. The dataset remains quarantined as a whole; any
+future symbol-level research subset must preserve source lineage and undergo
+independent reconciliation before it can be admitted.

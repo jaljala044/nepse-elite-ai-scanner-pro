@@ -103,11 +103,18 @@ def early_signals(request: EarlySignalRequest):
         # Freeze each horizon decision immediately so later outcome tracking
         # cannot silently rewrite the original action, levels or evidence.
         evidence = []
+        decision_cutoff = datetime.fromisoformat(request.as_of_timestamp.replace("Z", "+00:00"))
         for name in ("market", "sector", "liquidity", "broker", "price_volume", "candidate"):
             item = request.snapshot.get(name) or {}
             available = item.get("available_at")
             source_ids = item.get("source_ids") or ([item.get("source_id")] if item.get("source_id") else [])
             if available:
+                try:
+                    available_dt = datetime.fromisoformat(str(available).replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if available_dt.tzinfo is None or available_dt.utcoffset() is None or available_dt > decision_cutoff:
+                    continue
                 evidence.extend({"evidence_id": sid, "available_at": available}
                                 for sid in source_ids if isinstance(sid, str) and sid.strip())
         stored_signals = {}

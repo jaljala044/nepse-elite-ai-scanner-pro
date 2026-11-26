@@ -27,5 +27,26 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
         self.assertIn("NO_TRADE requires verified", result["scan_note"])
 
 
+    def test_unknowns_are_visible_but_never_ranked_or_buy_candidates(self):
+        with patch.object(main, "DATA", {"ADBL": []}):
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan", json={
+                    "symbols": ["UNL", "ADBL", "NICEF"]
+                })
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        by_symbol = {item["symbol"]: item for item in payload["results"]}
+        self.assertEqual(set(item["symbol"] for item in payload["unknown_results"]), {"UNL", "ADBL"})
+        self.assertEqual(payload["ranked_results"], [])
+        self.assertEqual(payload["buy_candidates"], [])
+        self.assertEqual(payload["out_of_scope_results"][0]["symbol"], "NICEF")
+        for symbol in ("UNL", "ADBL"):
+            self.assertEqual(by_symbol[symbol]["result_bucket"], "unknown_results")
+            self.assertFalse(by_symbol[symbol]["ranking_eligible"])
+            self.assertFalse(by_symbol[symbol]["buy_list_eligible"])
+            self.assertEqual(by_symbol[symbol]["overall_rating"], "NOT_RATED")
+
+
+
 if __name__ == "__main__":
     unittest.main()

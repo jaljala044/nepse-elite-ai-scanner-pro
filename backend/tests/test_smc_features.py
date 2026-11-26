@@ -66,7 +66,7 @@ class SMCFeatureTests(unittest.TestCase):
     def test_invalid_ohlc_rejected(self):
         rows = bars()
         rows[-1]["low"] = rows[-1]["high"] + 1
-        with self.assertRaisesRegex(ValueError, "inconsistent low"):
+        with self.assertRaisesRegex(ValueError, "inconsistent high"):
             smc_features(rows)
 
 

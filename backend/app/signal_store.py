@@ -54,8 +54,8 @@ def store_signal(envelope: dict) -> dict:
     record = envelope["record"]
     if record.get("classification") != "research_only_not_execution":
         raise ValueError("only research-only signal records may be stored")
-    if record.get("action") != "NO TRADE":
-        raise ValueError("production recommendations are not authorized")
+    if record.get("action") not in {"BUY", "SELL", "HOLD", "NO TRADE"}:
+        raise ValueError("unsupported research action")
     encoded = _canonical(record)
     decision_time = _aware(record["decision_time"])
     con = connect()

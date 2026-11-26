@@ -2160,3 +2160,18 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 ### P4.19 next
 
 Reconcile the 279 observed equity candidates against independently verified 2026-11-24 session status and per-security controls; investigate BNL/NLO absence without treating it as zero trades; then repeat on further overlapping dates.
+
+
+## P4.19 — 2026-11-24 session and security controls (initial investigation, 2026-11-26)
+
+- Date-level cross-check: the 2026-11-24 SocrateAI row set totals **52,387 transactions, 14,670,177 shares, NPR 5,553,019,249.46 and 350 unique symbols**. ShareSansar's contemporaneous report independently publishes 52,387 transactions, 14,670,177 shares and 350 companies, with turnover Rs 5.55 Arba; the MeroLagani indexed datewise page reports exact quantity and gross turnover. Treat these as secondary published controls, not official NEPSE raw-response evidence.
+- The 18 SocrateAI-only contracts exactly close the full difference between Samir's 52,369-row subset and the MeroLagani published quantity/turnover totals. This supports high-confidence arithmetic consistency, not source independence or exchange completeness.
+- BNL and NLO absence investigation: MeroLagani company detail currently reports BNL last traded 2026-11-23 and NLO last traded 2026-09-30, with NLO 30-day average volume 0. These support sparse/no recent execution but are third-party page fields, not primary per-security NO_TRADE controls. Both remain UNKNOWN in the canonical coverage matrix.
+- NLO bonus-share listing was announced/listed on 2026-11-25; retain this as a separate dated corporate-action event and do not treat it as a 2026-11-24 trade or apply an adjustment without the correct ex-date policy.
+- Detailed report: [P4.19 initial session and security control investigation](docs/P4.19_2026-11-24_SESSION_AND_SECURITY_CONTROLS_2026-11-26.md).
+- **Remaining:** capture immutable official NEPSE market-summary-history response; obtain date-specific per-security EOD volume/turnover controls for all 279 observed equities plus BNL/NLO; verify effective-dated lifecycle and repeat on additional overlapping dates. No coverage cells, source rows, broker scores or BUY signals admitted.
+- **Disposition:** P4.19 initial investigation complete; full P4.19 acceptance remains open and LOW CONFIDENCE for full-day/per-security completeness.
+
+### P5.2c execution note
+
+- The latest main-branch historical-integrity workflow [#45851207167](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45851207167) and the P4.17/P4.18 workflow [#45851300443](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45851300443) both completed successfully. The parser tests are included in the historical-integrity workflow; this does **not** mean the scheduled/live official market-summary capture has run or that any calendar dates were promoted.

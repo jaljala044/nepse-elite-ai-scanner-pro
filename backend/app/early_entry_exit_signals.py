@@ -110,6 +110,41 @@ def _plan(horizon, plan, common, minimum_rr):
     return result
 
 
+def _exit_review(horizon, evidence, cutoff, minimum_coverage):
+    """Return a conservative exit review; absence of evidence is UNKNOWN, not HOLD."""
+    result = {"horizon": horizon, "action": "NO_TRADE", "status": "unknown",
+              "reasons": ["exit_evidence_missing"]}
+    if not isinstance(evidence, dict):
+        return result
+    error = _verified(evidence, "exit", cutoff, minimum_coverage)
+    if error:
+        result["reasons"] = [error]
+        return result
+    by_horizon = evidence.get("horizons")
+    item = by_horizon.get(horizon) if isinstance(by_horizon, dict) else None
+    if not isinstance(item, dict) or item.get("status") != "confirmed":
+        result["reasons"] = ["horizon_exit_review_not_confirmed"]
+        return result
+    triggers = item.get("triggers")
+    allowed = {"structural_breakdown", "stop_triggered", "failed_breakout",
+               "distribution_confirmed", "relative_strength_breakdown"}
+    if not isinstance(triggers, list) or any(x not in allowed | {"none"} for x in triggers):
+        result["reasons"] = ["invalid_exit_trigger_evidence"]
+        return result
+    active = sorted(set(triggers) - {"none"})
+    if active:
+        return {"horizon": horizon, "action": "SELL_OR_REDUCE",
+                "status": "exit_trigger_confirmed", "triggers": active,
+                "reasons": ["verified_exit_trigger_requires_risk_reduction"],
+                "source_ids": evidence.get("source_ids", [evidence.get("source_id")])}
+    if triggers == ["none"] or not triggers:
+        return {"horizon": horizon, "action": "HOLD_WITH_CAUTION",
+                "status": "no_exit_trigger_observed",
+                "triggers": [], "reasons": ["verified_review_found_no_listed_exit_trigger"],
+                "source_ids": evidence.get("source_ids", [evidence.get("source_id")])}
+    return result
+
+
 def generate_early_entry_exit_signals(snapshot: dict, *, as_of_date: str,
                                       as_of_timestamp: str,
                                       minimum_coverage: Decimal = Decimal("0.95"),
@@ -187,18 +222,22 @@ def generate_early_entry_exit_signals(snapshot: dict, *, as_of_date: str,
                 "probability": None, "source_ids": sorted({sid for name in ("market","sector","liquidity","broker","price_volume","candidate")
                     for sid in ((snapshot.get(name) or {}).get("source_ids") or [(snapshot.get(name) or {}).get("source_id")]) if isinstance(sid,str) and sid.strip()})}
     horizons = {h: _plan(h, (snapshot.get("plans") or {}).get(h), snapshot, rr_floor) for h in HORIZONS}
+    exit_reviews = {h: _exit_review(h, snapshot.get("exit_evidence"), cutoff, coverage_floor) for h in HORIZONS}
     actionable = [x for x in horizons.values() if x["action"] == "BUY"]
-    return {"symbol": symbol, "status": "signal_ready" if actionable else "no_confirmed_setup",
-            "action": "BUY" if actionable else "NO_TRADE",
-            "data_quality": "MEDIUM_CONFIDENCE" if actionable else "LOW_CONFIDENCE",
+    exit_actions = [x for x in exit_reviews.values() if x["action"] == "SELL_OR_REDUCE"]
+    overall = "SELL_OR_REDUCE" if exit_actions else ("BUY" if actionable else "NO_TRADE")
+    return {"symbol": symbol, "status": "exit_review_required" if exit_actions else ("signal_ready" if actionable else "no_confirmed_setup"),
+            "action": overall,
+            "data_quality": "MEDIUM_CONFIDENCE" if actionable or exit_actions else "LOW_CONFIDENCE",
             "as_of_date": evidence_date.isoformat(),
             "available_at": _time(snapshot["available_at"], "snapshot_available_at").isoformat(),
             "market_regime": market.get("regime"),
             "candidate_classification": candidate.get("classification"),
-            "horizons": horizons, "probability": None,
+            "horizons": horizons, "exit_reviews": exit_reviews, "probability": None,
             "source_ids": sorted({sid for name in ("market","sector","liquidity","broker","price_volume","candidate")
                 for sid in ((snapshot.get(name) or {}).get("source_ids") or [(snapshot.get(name) or {}).get("source_id")]) if isinstance(sid,str) and sid.strip()}),
             "policy": "NEPSE_RESEARCH_ONLY_NO_ORDER_EXECUTION",
             "limitations": ["Caller-supplied upstream verification is not independently re-attested here",
                            "No probabilities or backtest metrics without calibrated walk-forward outcomes",
-                           "Broker flow is descriptive confirmation, not proof of ownership or intent"]}
+                           "Broker flow is descriptive confirmation, not proof of ownership or intent",
+                           "Exit review is informational; no order, fill, or execution is generated"]}

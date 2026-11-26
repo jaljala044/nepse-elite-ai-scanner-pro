@@ -1,0 +1,3 @@
+# NADEP 2026-07-24
+
+Sun Securities, ArthaKendra and Financial Notices publish O=760 H=760 L=738 C=738 volume=288, matching the ShareSansar capture. Sources: https://sunsecurities.com/company/NADEP/price-history ; https://www.arthakendra.com/stock-market/company/NADEP/price-history ; https://www.financialnotices.com/stock-nepse.php?symbol=NADEP . ArthaKendra also reports previous session close 760. Retrieved floorsheet maximum 738.5; published high is not an observed execution in that archive. Prior-close initialization is a hypothesis, not verified methodology. Shared upstream source possible. Retain published candle candidate separately; do not certify execution high or promote. Original records unchanged.

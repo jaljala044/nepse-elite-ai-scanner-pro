@@ -83,3 +83,36 @@ Three predecessor symbols now have explicit last-recorded-trade dates in seconda
 For the JALPA/KLBSL group, Matribhumi (MATRI) shares were listed on 2024-08-12 and reported as available for trading from 2024-08-13. Sources: https://eng.merolagani.com/NewsDetail.aspx?newsID=104854 and https://nepsealpha.com/post/detail/5699/shares-of-matrubhumi-laguvitta-listed-on-nepse-trading-from-today.
 
 **Boundary caution:** these are secondary-source historical last-trade reports. The MATRI listing/first-trading report establishes the successor's market commencement at the reported date, but does not by itself establish an uninterrupted security-ID mapping or authorize price-history splicing. MKLB's last-trade evidence is consistent with its acquisition/suspension sequence, while SMATA is the continuing listed successor ticker. All stable_id values remain null and effective_date_verified remains false pending dated security-ID evidence and a full raw price-history cross-check. No OHLCV or floorsheet data was modified.
+
+
+## OHLCV boundary validation — JALPA/KLBSL and MKLB (2026-11-26)
+
+### Method
+
+Read-only inspection of the symbol CSVs under `03_stock_charts_ohlcv/` in both `jaljala044/nepse-smc-data` and `jaljala044/nepse-history-starter`. The two repositories' Git trees show identical blob SHAs for every predecessor/successor file in the merger set inspected. For the four files below, the CSV contents were parsed and first/last rows checked. This validates repository-file boundaries, not exchange-original data lineage or legal security identity.
+
+### Observed file boundaries
+
+| Symbol | File boundary | Boundary row | SHA-1 Git blob |
+|---|---|---|---|
+| JALPA | Last row 2024-07-10 | O 1465.00 / H 1480.00 / L 1430.00 / C 1442.10 / Vol 6,339 | `126b765ab3cab5bc8f6718a602fe0551ac5a1680` |
+| KLBSL | Last row 2024-07-10 | O 1051.50 / H 1113.10 / L 1051.50 / C 1070.00 / Vol 3,998 | `d993854149e820b123cf8f78e11c8b8001a9c432` |
+| MATRI | First row 2024-08-13 | O 1303.90 / H 1406.20 / L 1303.90 / C 1406.20 / Vol 1,391 | `fc6c9f1acb505a866bd64c76ccf83fb11c0201d7` |
+| MKLB | Last row 2024-07-07 | O 1205.00 / H 1205.00 / L 1142.00 / C 1169.00 / Vol 15,057 | `7b2289dd319c3abad706c12d937609d1f08f441f` |
+| SMATA | First row 2024-03-04 | O 600.00 / H 600.70 / L 600.00 / C 600.70 / Vol 121 | `09c11f751108336a9843b586b1c3621a53d02dac` |
+
+The JALPA and KLBSL files end on 10 July 2024; MATRI begins on 13 August 2024. The gap is visible in the repository files and must not be filled by carrying forward, interpolating, or concatenating rows. The MATRI first row is consistent with the separately reported first trading date, but exchange-primary identity/ID linkage remains unverified.
+
+MKLB ends on 7 July 2024. SMATA is not a newly commencing successor series in this archive: its existing OHLCV file begins on 4 March 2024, well before the MKLB acquisition integration date. This is an acquisition into an already-traded successor symbol, so the predecessor and successor histories overlap in calendar time. Do not append MKLB rows to SMATA as if they were a single uninterrupted instrument. Any event-study continuity treatment requires explicit corporate-action and security-ID methodology.
+
+### Cross-repository result
+
+For all 17 merger-set CSV paths found in both repositories (BPW, GBLBS, JALPA, KLBSL, MATRI, MKLB, MMFDB, NLBBL, NMLBBL, PFL, SABSL, SAMAJ, SDLBSL, SFCL, SLBSL, SMATA, SMPDA), the Git blob SHAs and file sizes are identical between the two repositories. Therefore, this is exact replication across the two archives, not independent-source corroboration.
+
+### Disposition
+
+- JALPA/KLBSL predecessor end rows and MATRI first row: repository-boundary check passed; external lineage and stable-ID interval not certified.
+- MKLB predecessor end row and SMATA pre-existing history: overlap confirmed; direct history splice prohibited.
+- No raw OHLCV files were changed.
+- `stable_id` remains null and `effective_date_verified` remains false for affected records.
+- No canonical universe promotion, model-training promotion, or synthetic boundary row was created.

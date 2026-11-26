@@ -55,6 +55,7 @@ jobs:
               "date_range": report["date_range"],
               "totals": report["totals"],
               "symbols_with_any_quality_issue": report["symbols_with_any_quality_issue"],
+              "official_capture_merge": report["official_capture_merge"],
               "official_history_crosscheck": {
                   key: report["official_history_crosscheck"].get(key)
                   for key in ("status", "official_symbols_found", "official_rows",

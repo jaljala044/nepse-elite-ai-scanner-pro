@@ -26,7 +26,7 @@ input returns UNKNOWN.
 - `bearish_warning`: all bearish rules passed.
 - `no_confirmation`: eligible data, neither full rule set passed.
 - `UNKNOWN`: eligibility or structural validation unavailable.
-- `insufficient_data`: fewer than 55 observations.
+- `insufficient_data`: fewer than 55 positive-volume observations (zero-volume no-trade rows are excluded).
 
 ## Limitations
 

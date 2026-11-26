@@ -591,3 +591,44 @@ official historical endpoint and therefore cannot be compared. The automated
 full-window result is retained in the same public archive audit artifact.
 This is a bounded reconciliation exercise only; it does not establish
 upstream data rights or authorize canonical promotion.
+
+#### Full-window SocrateAI reconciliation result — 2026-11-27
+
+The audit downloaded all 29 SocrateAI unadjusted daily CSVs for the pinned
+official review dates and compared the 281 captured equity candidates. The
+SocrateAI source commit and full per-row exceptions are retained in audit
+artifact run 45894916469:
+https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45894916469
+
+| Measure | Result |
+| --- | ---: |
+| Official rows in window | 8,142 |
+| SocrateAI date files expected / found | 29 / 29 |
+| SocrateAI rows across those files (mixed instruments) | 10,025 |
+| Official rows with matching public date+symbol row | 8,079 |
+| Missing public rows for official active dates | 0 |
+| Missing public rows for official zero-activity dates | 63 |
+| Fully matching official rows (high, low, close, volume) | 3,669 / 8,079 (45.42%) |
+| Field comparisons | 32,316 |
+| Field mismatches | 4,642 |
+| High / low / close / volume mismatches | 217 / 130 / 12 / 4,283 |
+| Duplicate symbol rows / malformed rows / invalid OHLC rows | 0 / 0 / 0 |
+
+The data is structurally cleaner in this 29-date sample than the other public
+archive, but it does **not** reconcile accurately enough with official NEPSE:
+volume differs on 4,283 comparisons, with additional high/low/close
+differences. No official active rows are missing, but that does not make
+differing values interchangeable. The candidate fails the cross-source gate.
+
+CFCL on 2026-11-18 illustrates the mixed result: SocrateAI's close (589.9)
+matches official NEPSE and the other public archive's close (636) is wrong,
+but SocrateAI volume (307,567) differs from official volume (307,576). On
+ADBL 2010-09-23, SocrateAI's open is 117 while the other archive says 116;
+the official capture window does not reach 2010, so neither historical open
+is independently established.
+
+The comparison covers high, low, close and volume only. Official history does
+not supply open or turnover in this captured endpoint. No source data is
+promoted. Despite the MIT-style dataset licence, upstream provenance and
+sublicensing authority remain unverified, and the repository does not provide
+the advertised symbol-master CSV or documented adjustment methodology.

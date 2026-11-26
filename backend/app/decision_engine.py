@@ -147,13 +147,13 @@ def evaluate_horizon(symbol, horizon, stage1, stage2, plan, evidence_refs=None,
         reasons.append("score_below_developing_setup_threshold")
     elif rr < 2:
         reasons.append("conservative_t1_reward_risk_below_2_to_1")
-    elif structure.get("confirmed_by_horizon", {}).get(horizon) is not True:
+    elif not isinstance(structure.get("confirmed_by_horizon"), dict) or structure["confirmed_by_horizon"].get(horizon) is not True:
         reasons.append("horizon_specific_structure_confirmation_missing")
         if holding:
             action, subtype = "HOLD", "HOLD_WAIT"
         elif score >= 70:
             action, subtype = "NO_TRADE", "WAIT_FOR_CONFIRMATION"
-    elif structure.get("entry_trigger", {}).get(horizon) not in {
+    elif not isinstance(structure.get("entry_trigger"), dict) or structure["entry_trigger"].get(horizon) not in {
         "at_entry", "pullback", "breakout_confirmed", "retest_confirmed"
     }:
         reasons.append("entry_trigger_not_confirmed")

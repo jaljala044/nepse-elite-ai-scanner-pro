@@ -46,21 +46,27 @@ def _validate_argv(name: str, value: Any, *, optional: bool = False) -> list[str
 
 
 def _append_receipt(path: Path, event: dict[str, Any]) -> dict[str, Any]:
-    previous = GENESIS
-    if path.exists() and path.stat().st_size:
-        audit = audit_backup_schedule(path)
-        if audit["ledger_status"] != "verified":
-            raise ValueError("backup receipt ledger invalid; refusing append")
-        previous = audit["latest_event_sha256"]
-    event["previous_event_sha256"] = previous
-    event["event_sha256"] = _hash(event)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as stream:
-        stream.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n")
-        stream.flush()
-        os.fsync(stream.fileno())
-    return event
-
+    receipt_lock = Path(str(path) + ".lock")
+    lock_fd = os.open(receipt_lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        previous = GENESIS
+        if path.exists() and path.stat().st_size:
+            audit = audit_backup_schedule(path)
+            if audit["ledger_status"] != "verified":
+                raise ValueError("backup receipt ledger invalid; refusing append")
+            previous = audit["latest_event_sha256"]
+        event["previous_event_sha256"] = previous
+        event["event_sha256"] = _hash(event)
+        with path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        return event
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
 
 def audit_backup_schedule(
     receipt_path: str | Path,

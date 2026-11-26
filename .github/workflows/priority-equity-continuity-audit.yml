@@ -7,6 +7,7 @@ on:
       - 'backend/crosscheck_unresolved_equity_gaps.py'
       - 'backend/crosscheck_sharesansar_no_trade.py'
       - 'backend/build_historical_research_overlay.py'
+      - 'backend/build_historical_eligibility_manifest.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -46,6 +47,9 @@ jobs:
       - name: Build separate historical research overlay
         run: |
           python backend/build_historical_research_overlay.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --candidates data/reference/july24_historical_recovery_candidates_2026-11-26.csv --secondary /tmp/sharesansar --gaps /tmp/audit/classified_gaps.csv --output /tmp/audit/research_overlay.csv --coverage /tmp/audit/stock_coverage.csv
+      - name: Generate historical eligibility manifest
+        run: |
+          python backend/build_historical_eligibility_manifest.py --coverage /tmp/audit/stock_coverage.csv --gaps /tmp/audit/classified_gaps.csv --overlay /tmp/audit/research_overlay.csv --output /tmp/audit/historical_eligibility_manifest.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

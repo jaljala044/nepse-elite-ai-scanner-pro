@@ -34,10 +34,22 @@ Per-security and market-level windows report:
 - Verified identity coverage by amount, party observations and quantity.
 - Counts of verified and unresolved party observations.
 - A status and optional directional breadth score.
+- Complete-window broker-flow persistence labels across 1W/1M/3M; partial
+  histories cannot be described as multi-month accumulation/distribution.
 
 A window score is withheld unless verified gross-amount coverage is at least
 80%, at least one verified broker contributes, and the observed session count
 meets the configured minimum (capped by the requested window length).
+
+## Persistence semantics
+
+Per-security persistence labels are calculated only from complete, identity-
+adequate 1W, 1M and 3M windows. Three consistent net-buyer windows yield
+`strong_accumulation`; two or more net-buyer windows yield
+`moderate_accumulation`; the corresponding seller conditions yield moderate or
+heavy distribution. Mixed or insufficient histories remain explicitly
+labelled. These are broker-flow pattern descriptions, not evidence of intent,
+beneficial ownership or manipulation.
 
 ## Score semantics
 

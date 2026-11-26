@@ -9,7 +9,7 @@ def action(**kwargs):
     values = dict(action_id="A1", security_id="SEC1", action_type="bonus",
                   ex_date=date(2026, 11, 30), announced_at="2026-11-20T10:00:00Z",
                   available_at="2026-11-20T10:05:00Z", source_id="issuer",
-                  source_tier="primary", evidence_id="DOC1", factor="1.1")
+                  source_tier="primary_nepse_notice", evidence_id="DOC1", factor="1.1")
     values.update(kwargs)
     return CorporateActionEvidence(**values)
 
@@ -46,6 +46,31 @@ class CorporateActionPolicyTests(unittest.TestCase):
         self.assertTrue(r["eligible_for_adjustment_review"])
         self.assertFalse(r["adjustment_applied"])
         self.assertFalse(r["raw_price_series_mutated"])
+
+    def test_secondary_source_cannot_authorize_adjustment(self):
+        r = evaluate_adjustment_eligibility(
+            action(source_tier="secondary_notice"),
+            policy_version="raw_unadjusted_v1",
+            decision_time="2026-11-25T00:00:00Z",
+            independently_reviewed=True,
+        )
+        self.assertFalse(r["eligible_for_adjustment_review"])
+        self.assertEqual(r["reason"], "primary_source_required")
+        self.assertFalse(r["adjustment_applied"])
+
+    def test_missing_adjustment_factor_blocks_review(self):
+        r = evaluate_adjustment_eligibility(
+            action(factor=None),
+            policy_version="raw_unadjusted_v1",
+            decision_time="2026-11-25T00:00:00Z",
+            independently_reviewed=True,
+        )
+        self.assertFalse(r["eligible_for_adjustment_review"])
+        self.assertEqual(r["reason"], "verified_adjustment_factor_required")
+
+    def test_unknown_source_tier_rejected(self):
+        with self.assertRaisesRegex(ValueError, "unsupported corporate action source tier"):
+            action(source_tier="exchange_telegram")
 
     def test_unreviewed_or_unapproved_policy_blocks_adjustment(self):
         r = evaluate_adjustment_eligibility(action(), policy_version="unknown-v9",

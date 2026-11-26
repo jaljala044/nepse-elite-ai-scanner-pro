@@ -117,3 +117,10 @@ PR #147 was merged after both GitHub Actions workflows passed on the exact revie
 The validator now derives the effective-date cutoff from `Asia/Kathmandu`, preventing UTC date rollover from selecting the prior Nepal calendar date near local midnight. It also rejects non-string/blank expected symbols and invalid/empty sector-code entries. Regression coverage includes 00:15 Nepal local time while UTC remains on the previous date, plus malformed expected-symbol input.
 
 This is a structural correctness fix only. Manifest status remains `review_ready`; `verified=false` and `admission_allowed=false`. It does not validate or promote official sector membership, and sector signals remain disabled pending issue #146 evidence review.
+
+
+### P2.03 primary-source acquisition check — 2026-11-27
+
+A further discovery pass checked the official NEPSE stock-list URL (`https://www.nepalstock.com.np/stocklist`) and SEBON annual-report material. Search indexing exposed a current stock-list snapshot, but not a sector membership export with effective dates; direct retrieval of the NEPSE page timed out in this pass, so no raw first-party response, TLS validation report or response hash was captured. The surfaced SEBON annual-report material is FY 2015/16 and contains aggregate historical sector counts, not a current security-level effective-dated mapping.
+
+Third-party directories remain discovery/corroboration only. No sector mapping was inferred, backdated or promoted. Issue #146 records this acquisition result and the exact next gate: first-party capture containing security identity, classification and effective-date/current-snapshot semantics, with raw bytes and provenance preserved. Until that evidence is obtained and independently reviewed, official sector membership, sector leadership and market-health sector participation remain unavailable.

@@ -252,12 +252,19 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
                          key=lambda k: gross_by_broker[k], reverse=True)[:3]), Decimal("0"))
         concentration = top3_amount / gross_verified if gross_verified else None
         net = verified_buy - verified_sell
-        directional_ratio = net / gross_verified if gross_verified else None
+        net_buyer_count = sum(1 for value in broker_totals.values()
+                              if value["buy_amount"] > value["sell_amount"])
+        net_seller_count = sum(1 for value in broker_totals.values()
+                               if value["sell_amount"] > value["buy_amount"])
+        directional_ratio = ((net_buyer_count - net_seller_count) / len(broker_totals)
+                             if broker_totals else None)
         enough = (len({r["trade_date"] for r in group_rows}) >= min(session_count, minimum_sessions)
                   and amount_coverage is not None and float(amount_coverage) >= minimum_amount_coverage
                   and gross_verified > 0)
-        # Directional evidence score is deliberately withheld if broker identity
-        # coverage is inadequate. It is not calibrated or a probability.
+            # Directional breadth score is deliberately withheld if broker identity
+        # coverage is inadequate. Net traded value itself is zero-sum across
+        # matched buyer/seller party observations, so score uses broker breadth,
+        # not aggregate net amount. It is not calibrated or a probability.
         score = max(0, min(100, round(50 + float(directional_ratio) * 100, 2))) if enough else None
         return {
             "window": window_name, "window_sessions": session_count,
@@ -276,9 +283,11 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
             "top_net_buyers": [x for x in ranked if Decimal(x["net_amount"]) > 0][:10],
             "top_net_sellers": sorted([x for x in ranked if Decimal(x["net_amount"]) < 0],
                                       key=lambda x: Decimal(x["net_amount"]))[:10],
-            "broker_count": len(ranked), "score": score,
+            "broker_count": len(ranked), "net_buyer_count": net_buyer_count,
+            "net_seller_count": net_seller_count, "broker_breadth_balance": directional_ratio,
+            "score": score,
             "status": "observed" if enough else "insufficient_identity_coverage_or_history",
-            "score_note": "uncalibrated verified-flow directional balance; not a probability or standalone signal",
+            "score_note": "uncalibrated net-buyer versus net-seller broker breadth balance; not a probability or standalone signal",
         }
 
     def windows_for(group_rows):
@@ -312,5 +321,5 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
         "market_windows": market_windows,
         "security_features": security_features,
         "score": overall_score,
-        "score_note": "market-level 1D verified-flow balance; uncalibrated and not a probability",
+        "score_note": "market-level 1D verified net-buyer breadth balance; uncalibrated and not a probability",
     }

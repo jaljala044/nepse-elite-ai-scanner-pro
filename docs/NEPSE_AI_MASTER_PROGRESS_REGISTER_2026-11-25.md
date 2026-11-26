@@ -2055,3 +2055,14 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - CI on commit `5c79285099f42e93dcc7b3bf80bab513f7bc5c5f`: backend tests **797 passed** (run 45845284256); standard unit workflow **797 passed** (run 45845284092); integrated evidence audit passed (run 45845284090); historical data integrity passed (run 45845284193). Job conclusions and test logs inspected.
 - The historical integrity workflow's pinned inventory/coverage generation passed; this does not turn candidate archive inventory into verified exchange coverage.
 - Next: add a date/contract identity anomaly report for cases where the same contract ID appears under different trade dates across source files; then run the comparator on pinned raw files only when reproducible raw bytes are acquired and rights permit. Keep the 2026-11-24 pair review-only until lineage, trade-date semantics, rights and point-in-time universe/session controls are resolved.
+
+
+## 2026-11-26 — P4.14 contract-date identity audit
+
+- Added `backend/app/floorsheet_identity_audit.py` and `backend/tests/test_floorsheet_identity_audit.py`, commits `6b51623b5e3d7458ddf7bcd0b0a13f3a95b79fbd` and `8a43afaf8269532706934e40ed17f9af53076780`.
+- Audit reports (a) same contract ID on multiple dates within a source, (b) cross-source date disagreements for shared contract IDs, and (c) diagnostic YYYYMMDD-like contract-ID prefixes that disagree with the CSV date.
+- Prefix semantics are explicitly unverified and are never used to correct dates. Report is review-only; `trade_date_authority_verified=false`, `coverage_admission_allowed=false`, and `canonical_promotion_allowed=false`.
+- Five tests cover cross-source date conflict, within-source reuse, valid date-prefix disagreement, invalid/non-date prefixes, and invalid inputs.
+- CI on `8a43afaf8269532706934e40ed17f9af53076780`: backend tests **802 passed** (run 45845610879); standard unit tests **802 passed** (run 45845610858); integrated evidence audit passed (run 45845610874); historical data integrity passed (run 45845610982). Backend test logs and all workflow job conclusions inspected.
+- Historical data integrity workflow completed its pinned broker-party derivation, inventory generation and source-separated date-coverage report successfully. These remain candidate archive inventory/coverage artifacts, not primary exchange verification.
+- Next: compose a single reproducible report runner that applies cross-source comparison and identity anomaly checks to two locally acquired pinned CSV byte streams, validates each file SHA-256 against the pinned profile, and emits JSON only. Do not download or promote source data until rights and acquisition provenance are resolved.

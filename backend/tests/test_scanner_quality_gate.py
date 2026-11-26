@@ -1,6 +1,6 @@
 import unittest
 from datetime import date, timedelta
-from backend.app.scanner import analyze
+from app.scanner import analyze
 
 class ScannerQualityGateTests(unittest.TestCase):
     def rows(self):

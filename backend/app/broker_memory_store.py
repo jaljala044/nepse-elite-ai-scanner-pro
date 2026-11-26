@@ -419,6 +419,10 @@ def get_latest_broker_memory(*, symbol: str | None = None,
                     continue
                 snapshot["selected_symbol"] = symbol.upper()
                 snapshot["selected_features"] = selected
+                snapshot["selected_early_patterns"] = [
+                    item for item in snapshot.get("early_patterns", [])
+                    if item.get("symbol") == symbol.upper()
+                ]
             if broker_code:
                 channel_matches = []
                 if snapshot.get("selected_symbol"):
@@ -439,6 +443,11 @@ def get_latest_broker_memory(*, symbol: str | None = None,
                     continue
                 snapshot["selected_execution_channel_code"] = broker_code
                 snapshot["execution_channel_matches"] = channel_matches
+                snapshot["selected_early_patterns"] = [
+                    item for item in snapshot.get("early_patterns", [])
+                    if item.get("execution_channel_code") == broker_code
+                    and (not symbol or item.get("symbol") == symbol.upper())
+                ]
             if broker_entity_id:
                 matches = []
                 for scope in ([snapshot.get("selected_features")] if snapshot.get("selected_features")

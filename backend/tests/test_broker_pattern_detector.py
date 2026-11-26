@@ -40,6 +40,9 @@ def fixture_rows(direction="accumulation"):
                     "source_broker_code": broker, "contract_id": contract,
                     "source_id": "floorsheet-" + day, "source_payload_sha256": digest,
                     "source_row_number": row_number,
+                    "source_validation_status": "verified",
+                    "session_calendar_status": "confirmed_open",
+                    "floorsheet_coverage_status": "verified_complete",
                 })
                 row_number += 1
         volume = 1000 if day_index < 2 else 1500
@@ -116,6 +119,29 @@ class BrokerPatternDetectorTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
         self.assertIn("duplicate_or_conflicting_broker_party", result["missing_features"])
+
+
+    def test_unmatched_contract_parties_fail_closed(self):
+        sessions, brokers, prices, context = fixture_rows()
+        brokers.pop()
+        result = detect_broker_patterns(
+            "TEST", brokers, prices, context,
+            expected_sessions=sessions, complete_broker_sessions=sessions,
+            decision_at=sessions[-1] + "T18:00:00Z",
+        )
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertIn("matched_contract_buyer_seller_parties", result["missing_features"])
+
+    def test_unverified_floorsheet_rows_fail_closed(self):
+        sessions, brokers, prices, context = fixture_rows()
+        brokers[0]["floorsheet_coverage_status"] = "partial"
+        result = detect_broker_patterns(
+            "TEST", brokers, prices, context,
+            expected_sessions=sessions, complete_broker_sessions=sessions,
+            decision_at=sessions[-1] + "T18:00:00Z",
+        )
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertIn("verified_complete_broker_source_session", result["missing_features"])
 
     def test_later_price_data_does_not_change_historical_snapshot(self):
         result, (sessions, brokers, prices, context) = self.run_detector()

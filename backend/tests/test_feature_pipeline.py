@@ -52,6 +52,66 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertIsNotNone(result["component_candidates"]["AAA"]["broker"])
         self.assertEqual(result["broker_footprint"]["as_of_trade_date"], "2026-11-20")
 
+    def test_relative_strength_uses_only_verified_final_nepse_index_rows(self):
+        from datetime import date, timedelta
+        start = date(2026, 1, 1)
+        rows = []
+        digest = "a" * 64
+        for i in range(130):
+            session = (start + timedelta(days=i)).isoformat()
+            available = session + "T16:00:00Z"
+            rows.append({
+                "record_type": "index_ohlcv", "index_code": "NEPSE",
+                "session_date": session, "available_at": available,
+                "close": 1000 + i * 0.2,
+                "source_validation_status": "verified", "finality_status": "final",
+                "source_id": "exchange-index-audit", "source_payload_sha256": digest,
+            })
+            for symbol, multiplier in (("AAA", 0.8), ("BBB", 0.05)):
+                close = 100 + i * multiplier
+                rows.append({
+                    "record_type": "ohlcv", "symbol": symbol,
+                    "session_date": session, "available_at": available,
+                    "open": close, "high": close + 1, "low": close - 1,
+                    "close": close, "previous_close": close - multiplier, "volume": 1000,
+                })
+        provisional_day = (start + timedelta(days=130)).isoformat()
+        rows.append({
+            "record_type": "index_ohlcv", "index_code": "NEPSE",
+            "session_date": provisional_day, "available_at": provisional_day + "T11:00:00Z",
+            "close": 0, "source_validation_status": "verified",
+            "finality_status": "provisional", "source_id": "exchange-index-audit",
+            "source_payload_sha256": digest,
+        })
+        result = build_feature_snapshot(rows, provisional_day + "T12:00:00Z", ["AAA", "BBB"])
+        rs = result["relative_strength"]
+        self.assertEqual(rs["status"], "observed")
+        self.assertEqual(rs["withheld_unverified_or_provisional_index_rows"], 1)
+        self.assertEqual(rs["results"]["AAA"]["as_of_session"], (start + timedelta(days=129)).isoformat())
+        self.assertGreater(rs["results"]["AAA"]["score"], rs["results"]["BBB"]["score"])
+        self.assertIsNotNone(result["component_candidates"]["AAA"]["relative_strength"])
+
+    def test_unverified_index_rows_never_populate_relative_strength_component(self):
+        from datetime import date, timedelta
+        start = date(2026, 1, 1)
+        rows = []
+        for i in range(130):
+            session = (start + timedelta(days=i)).isoformat()
+            rows.extend([
+                {"record_type": "ohlcv", "symbol": "AAA", "session_date": session,
+                 "available_at": session + "T16:00:00Z", "open": 100 + i,
+                 "high": 102 + i, "low": 99 + i, "close": 101 + i,
+                 "previous_close": 100 + i, "volume": 1000},
+                {"record_type": "index_ohlcv", "index_code": "NEPSE",
+                 "session_date": session, "available_at": session + "T16:00:00Z",
+                 "close": 1000 + i, "source_validation_status": "provisional",
+                 "finality_status": "provisional", "source_id": "unverified-source",
+                 "source_payload_sha256": "b" * 64},
+            ])
+        result = build_feature_snapshot(rows, "2026-05-12T12:00:00Z", ["AAA"])
+        self.assertEqual(result["relative_strength"]["status"], "insufficient_evidence")
+        self.assertIsNone(result["component_candidates"]["AAA"]["relative_strength"])
+
     def test_point_in_time_snapshot_includes_minervini_template(self):
         from datetime import date, timedelta
         start = date(2025, 1, 1)

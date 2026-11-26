@@ -1,6 +1,7 @@
 """Fail-closed canonical projection of promoted bronze evidence."""
 from __future__ import annotations
 import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from .evidence_store import load_evidence_record_details
@@ -40,7 +41,9 @@ def load_canonical_evidence_records(*, database_path: str | Path | None, ledger_
         for field in ("source_id", "record_type", "source_payload_sha256", "session_date", "available_at"):
             if row.get(field) != event.get(field):
                 raise ValueError(f"bronze row and promotion decision mismatch: {field}")
-        if event.get("decision_time") > decision_time:
+        event_cutoff = datetime.fromisoformat(event["decision_time"].replace("Z", "+00:00"))
+        requested_cutoff = datetime.fromisoformat(decision_time.replace("Z", "+00:00"))
+        if event_cutoff > requested_cutoff:
             continue
         attestation = event["validation_attestation"]
         _, policy_reasons = resolve_source_policy(registry, source_id=row.get("source_id", ""), record_type=row.get("record_type", ""), session_date=str(row.get("session_date") or ""), decision_time=event["decision_time"])

@@ -67,6 +67,22 @@ class RelativeStrengthTests(unittest.TestCase):
         self.assertEqual(result["eligible_symbols"], 0)
         self.assertIn("SHORT", result["excluded_symbols"])
 
+
+    def test_missing_intermediate_benchmark_session_is_not_skipped(self):
+        benchmark = price_rows(130)
+        stock = price_rows(130, lambda i: 100 + i * 0.5)
+        stock = [row for i, row in enumerate(stock) if i != 100]
+        result = relative_strength_universe({"AAA": stock}, benchmark)
+        self.assertEqual(result["eligible_symbols"], 0)
+        self.assertIn("missing_exact_sessions", result["excluded_symbols"]["AAA"])
+
+    def test_stale_stock_endpoint_is_not_used_for_cross_sectional_rs(self):
+        benchmark = price_rows(130)
+        stock = price_rows(130)[:-1]
+        result = relative_strength_universe({"AAA": stock}, benchmark)
+        self.assertEqual(result["eligible_symbols"], 0)
+        self.assertEqual(result["excluded_symbols"]["AAA"], "missing_latest_benchmark_session")
+
     def test_duplicate_benchmark_dates_rejected(self):
         benchmark = price_rows(130)
         benchmark.append(dict(benchmark[-1]))

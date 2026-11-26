@@ -1866,3 +1866,7 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Data repo commits: [strict completeness gate 23068a7](https://github.com/jaljala044/nepse-smc-data/commit/23068a77ce6de2346082801accbbbb4fc463a549); [test updates 2f1d420](https://github.com/jaljala044/nepse-smc-data/commit/2f1d4207ec907f3af0dc80f0129dee22fb372071); [OHLCV contradiction safeguards 39bc98c](https://github.com/jaljala044/nepse-smc-data/commit/39bc98cbfde984d03be58b5c6a9b2703427d2327); [expanded regression tests 757c61c](https://github.com/jaljala044/nepse-smc-data/commit/757c61c05b48eed7912fe64a7ec050de05c21450); [reconciliation contract e749a91](https://github.com/jaljala044/nepse-smc-data/commit/e749a916250c10d3d305c9ee5b1c4261ab0435a0).
 - CI status is not yet observable in the available commit status response; do not claim tests passed until the Actions run is inspected.
 - The two 500-record floorsheet samples remain incomplete/unverified, so no absence in those files can establish `NO_TRADE`. Canonical promotion and model training remain blocked.
+
+
+- Follow-up regression correction: the market-total-mismatch test now creates the zero-contract symbol in the archive universe, and malformed OHLCV volume is explicitly tested as UNKNOWN rather than NO_TRADE. Latest test commit: [937ef1b](https://github.com/jaljala044/nepse-smc-data/commit/937ef1b3324c4f576b8192309af55ddad64caf56).
+- Latest commit status query returned no status checks; CI execution remains unverified.

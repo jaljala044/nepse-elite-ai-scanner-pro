@@ -131,40 +131,15 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
 def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                           decision_time: str, minimum_amount_coverage: float = 0.80,
                           minimum_sessions: int = 5) -> dict:
-    """Persist eligible observations and a reproducible as-of horizon snapshot.
+    """Append eligible observations and rebuild profiles from all prior known evidence.
 
-    The caller must supply rows from the canonical evidence-admission pipeline;
-    this function independently enforces the required admission metadata but
-    does not itself establish source rights or independently verify source claims.
+    The caller supplies rows from the canonical evidence-admission pipeline.
+    Previously stored rows are replayed as-of decision_time, so memory persists
+    across sessions rather than only describing the latest upload.
     """
     clean = _validate_observations(rows, session_dates, decision_time)
     cutoff = _aware(decision_time, "decision_time")
-    features = broker_footprint_features(
-        clean, minimum_amount_coverage=minimum_amount_coverage,
-        minimum_sessions=minimum_sessions,
-    )
-    body = {
-        "schema_version": 1,
-        "feature_version": "broker-footprint-v1",
-        "decision_time": cutoff.isoformat(),
-        "as_of_trade_date": max(row["trade_date"] for row in clean),
-        "session_calendar": session_dates,
-        "observation_count": len(clean),
-        "source_count": len({row["source_id"] for row in clean}),
-        "source_payload_hashes": sorted({row["source_payload_sha256"] for row in clean}),
-        "features": features,
-        "horizon_contract": {
-            "1D": "latest verified session",
-            "1W": "latest 5 verified sessions",
-            "1M": "latest 21 verified sessions",
-            "1Y": "latest 252 verified sessions",
-            "incomplete_windows_remain_explicit": True,
-        },
-        "status": features["status"],
-        "production_recommendations_enabled": False,
-    }
-    snapshot_id = hashlib.sha256(_canonical(body).encode()).hexdigest()
-    encoded = _canonical(body)
+    allowed_sessions = set(session_dates)
     con = connect()
     try:
         _ensure_tables(con)
@@ -190,6 +165,46 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                  row["source_id"], row["source_payload_sha256"],
                  row["source_row_number"], row["evidence_id"], record_json],
             )
+
+        # Rebuild from every immutable observation available at this decision
+        # time and covered by the supplied verified canonical session calendar.
+        stored = con.execute(
+            """SELECT record_json FROM broker_memory_observations
+               WHERE available_at <= ? ORDER BY trade_date, source_id, source_row_number""",
+            [cutoff],
+        ).fetchall()
+        historical_rows = [
+            json.loads(str(item[0])) for item in stored
+            if json.loads(str(item[0])).get("trade_date") in allowed_sessions
+        ]
+        if not historical_rows:
+            raise ValueError("no stored broker observations fall within the verified session calendar")
+        features = broker_footprint_features(
+            historical_rows, minimum_amount_coverage=minimum_amount_coverage,
+            minimum_sessions=minimum_sessions,
+        )
+        body = {
+            "schema_version": 1,
+            "feature_version": "broker-footprint-v1",
+            "decision_time": cutoff.isoformat(),
+            "as_of_trade_date": max(row["trade_date"] for row in historical_rows),
+            "session_calendar": session_dates,
+            "observation_count": len(historical_rows),
+            "source_count": len({row["source_id"] for row in historical_rows}),
+            "source_payload_hashes": sorted({row["source_payload_sha256"] for row in historical_rows}),
+            "features": features,
+            "horizon_contract": {
+                "1D": "latest verified session",
+                "1W": "latest 5 verified sessions",
+                "1M": "latest 21 verified sessions",
+                "1Y": "latest 252 verified sessions",
+                "incomplete_windows_remain_explicit": True,
+            },
+            "status": features["status"],
+            "production_recommendations_enabled": False,
+        }
+        snapshot_id = hashlib.sha256(_canonical(body).encode()).hexdigest()
+        encoded = _canonical(body)
         existing_snapshot = con.execute(
             "SELECT snapshot_json FROM broker_memory_snapshots WHERE snapshot_id = ?",
             [snapshot_id],
@@ -199,7 +214,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                 raise ValueError("broker memory snapshot hash conflict")
             con.execute("COMMIT")
             return {"status": "already_stored", "snapshot_id": snapshot_id,
-                    "observation_count": len(clean), "features": features}
+                    "observation_count": len(historical_rows), "features": features}
         con.execute(
             """INSERT INTO broker_memory_snapshots
                (snapshot_id, as_of_trade_date, decision_time, schema_version,
@@ -214,7 +229,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
     finally:
         con.close()
     return {"status": "stored", "snapshot_id": snapshot_id,
-            "observation_count": len(clean), "features": features}
+            "observation_count": len(historical_rows), "features": features}
 
 
 def get_latest_broker_memory(*, symbol: str | None = None,

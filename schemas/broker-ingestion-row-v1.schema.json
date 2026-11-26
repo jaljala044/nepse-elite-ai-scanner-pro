@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Broker ingestion source row v1",
+  "type": "object",
+  "required": [
+    "security_id",
+    "broker_id",
+    "session_date",
+    "side",
+    "quantity",
+    "amount",
+    "source_id",
+    "evidence_id",
+    "source_payload",
+    "source_payload_sha256",
+    "source_row_count",
+    "coverage_ratio"
+  ],
+  "properties": {
+    "security_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "broker_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "side": {
+      "enum": [
+        "BUY",
+        "SELL"
+      ]
+    },
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ]
+    },
+    "amount": {
+      "type": [
+        "string",
+        "number"
+      ]
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_payload": {
+      "type": "object"
+    },
+    "source_payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "source_row_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "coverage_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "additionalProperties": true
+}

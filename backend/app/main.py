@@ -11,6 +11,9 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .broker_intelligence_dashboard import build_broker_intelligence_dashboard
+from .early_entry_exit_signals import generate_early_entry_exit_signals
+from .broker_pattern_detector import detect_broker_patterns
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -27,9 +30,70 @@ class ScanRequest(BaseModel):
     symbols: list[str] | None = None
     as_of: date | None = None
 
+class BrokerDashboardRequest(BaseModel):
+    as_of_date: date
+    as_of_timestamp: str
+    rolling_profiles: dict
+    source_manifest: dict
+    sector_rotation_by_window: dict = Field(default_factory=dict)
+    candidates: list[dict] = Field(default_factory=list)
+
+class EarlySignalRequest(BaseModel):
+    as_of_date: date
+    as_of_timestamp: str
+    snapshot: dict
+
+class BrokerPatternRequest(BaseModel):
+    symbol: str
+    broker_rows: list[dict]
+    price_rows: list[dict]
+    market_context: list[dict]
+    expected_sessions: list[str]
+    complete_broker_sessions: list[str]
+    decision_at: str
+
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
+
+@app.post("/v1/research/broker-dashboard")
+def broker_dashboard(request: BrokerDashboardRequest):
+    """Read-only broker dashboard; upstream provenance is not independently re-attested."""
+    try:
+        return build_broker_intelligence_dashboard(
+            as_of_date=request.as_of_date.isoformat(),
+            as_of_timestamp=request.as_of_timestamp,
+            rolling_profiles=request.rolling_profiles,
+            source_manifest=request.source_manifest,
+            sector_rotation_by_window=request.sector_rotation_by_window,
+            candidates=request.candidates,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/early-signals")
+def early_signals(request: EarlySignalRequest):
+    """Conservative research-only signals; no orders or confirmed fills."""
+    try:
+        return generate_early_entry_exit_signals(
+            request.snapshot, as_of_date=request.as_of_date.isoformat(),
+            as_of_timestamp=request.as_of_timestamp,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/broker-patterns")
+def broker_patterns(request: BrokerPatternRequest):
+    """Point-in-time accumulation/distribution candidates, never trading instructions."""
+    try:
+        return detect_broker_patterns(
+            request.symbol, request.broker_rows, request.price_rows, request.market_context,
+            expected_sessions=request.expected_sessions,
+            complete_broker_sessions=request.complete_broker_sessions,
+            decision_at=request.decision_at,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 @app.get("/v1/research/readiness")
 def research_readiness():

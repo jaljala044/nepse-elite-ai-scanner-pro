@@ -87,6 +87,21 @@ redistribute the data, and does not satisfy the corporate-action and source
 rights review required by our canonical gate:
 https://github.com/srijankarki07/nepse-data
 
+A third candidate is `socrateai-official/nepse-open-data`. Its public
+GitHub tree contains 8,442 stock-OHLC CSV paths across adjusted and unadjusted
+daily folders, with dated files from 2011 through 2026-11-26. A sampled
+unadjusted file has date, close, open, high, low, volume and symbol; it is
+structurally close to what the engine needs. The repository publishes an MIT
+licence that expressly purports to cover the dataset. However, its short README
+does not identify the upstream source, collection method, adjustment
+methodology, corporate-action factors, symbol lifecycle process, or
+completeness/exception policy. A permissive downstream licence alone cannot
+establish that the publisher had rights to sublicense the underlying exchange
+data. We have not imported it or treated it as canonical. It is the best
+community-data candidate for a provenance request and controlled sample
+reconciliation, not an accepted source yet:
+https://github.com/socrateai-official/nepse-open-data
+
 A separate commercial API vendor, Share Hub, documents an all-time per-stock
 daily OHLCV history service. Access requires a vendor-issued Data API account,
 a server IP allow-list, and the relevant licensed package. Its docs describe

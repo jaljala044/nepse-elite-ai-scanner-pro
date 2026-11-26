@@ -1,0 +1,101 @@
+name: Capture one year of official NEPSE per-security history
+
+on:
+  push:
+    branches: [feat/3b-01-signal-confirmation]
+    paths:
+      - "backend/capture_nepse_security_history.py"
+      - "backend/audit_official_security_history_window.py"
+      - "backend/tests/test_nepse_security_history_capture.py"
+      - "backend/tests/test_official_security_history_window.py"
+      - ".github/workflows/capture-nepse-security-history-one-year.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nepse-official-security-history-one-year-2025-11-26-to-2026-11-26
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/3b-01-signal-confirmation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned NEPSE client
+        run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+      - name: Test history parser and review-only audit
+        working-directory: backend
+        run: |
+          python -m unittest discover -s tests -p 'test_nepse_security_history_capture.py' -v
+          python -m unittest discover -s tests -p 'test_official_security_history_window.py' -v
+      - name: Capture official history for one-year window
+        run: |
+          set -euo pipefail
+          python backend/capture_nepse_security_history.py \
+            --crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \
+            --output-dir evidence/nepse-security-history/2025-11-26_to_2026-11-26 \
+            --start-date 2025-11-26 \
+            --end-date 2026-11-26 \
+            --pause-seconds 0.20
+      - name: Audit coverage against official session summaries
+        run: |
+          set -euo pipefail
+          python backend/audit_official_security_history_window.py \
+            --history-report evidence/nepse-security-history/2025-11-26_to_2026-11-26/capture-report.json \
+            --market-summary-body data/evidence/raw/nepse/market-summary-history/2026-11-26/response-body.bin \
+            --market-summary-capture-report data/evidence/raw/nepse/market-summary-history/2026-11-26/capture-report.json \
+            --lifecycle-input data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv \
+            --start-date 2025-11-26 \
+            --end-date 2026-11-26 \
+            --output evidence/nepse-security-history/2025-11-26_to_2026-11-26/window-audit.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("evidence/nepse-security-history/2025-11-26_to_2026-11-26/window-audit.json").read_text())
+          print(json.dumps({
+              "audit_status": report["audit_status"],
+              "official_session_dates": report["official_market_summary_date_count"],
+              "candidate_securities": report["equity_candidate_count"],
+              "security_id_matches": report["current_security_id_crosswalk_matches"],
+              "history_responses": report["official_history_response_count"],
+              "history_status_counts": report["history_status_counts"],
+              "unexplained_missing_rows": report["unexplained_missing_rows"],
+              "pre_valid_from_missing_rows": report["pre_valid_from_missing_rows"],
+              "historical_security_identity_verified": report["historical_security_identity_verified"],
+              "coverage_admission_allowed": report["coverage_admission_allowed"],
+              "canonical_promotion_allowed": report["canonical_promotion_allowed"],
+          }, indent=2))
+          PY
+      - name: Commit immutable raw capture and derived audit to feature branch
+        run: |
+          set -euo pipefail
+          target="data/evidence/raw/nepse/security-history/2025-11-26_to_2026-11-26"
+          mkdir -p "$target"
+          cp -R evidence/nepse-security-history/2025-11-26_to_2026-11-26/. "$target/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          if ! git diff --cached --quiet; then
+            git commit -m "data: archive one year of official NEPSE security history"
+            git pull --rebase origin feat/3b-01-signal-confirmation
+            git push origin HEAD:feat/3b-01-signal-confirmation
+          else
+            echo "No changes to immutable one-year official history capture."
+          fi
+      - name: Upload raw capture and audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-official-security-history-one-year-${{ github.run_id }}
+          path: evidence/nepse-security-history/2025-11-26_to_2026-11-26/
+          if-no-files-found: warn
+          retention-days: 90

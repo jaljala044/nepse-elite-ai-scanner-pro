@@ -17,6 +17,7 @@ from .signal_tracking import freeze_signal, HORIZONS as TRACKED_HORIZONS
 from .signal_store import store_signal, store_outcome, get_signal, list_signals, list_signal_outcomes, list_all_outcomes
 from .signal_outcome_validation import evaluate_signal_path
 from .backtest import run_walk_forward_backtest
+from .execution_backtest import simulate_execution_scenario
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -72,6 +73,15 @@ class WalkForwardBacktestRequest(BaseModel):
     calendar_evidence_by_symbol: dict[str, dict]
     train_ratio: float = 0.60
     validation_ratio: float = 0.20
+
+class ExecutionScenarioRequest(BaseModel):
+    signal_id: str
+    evaluation_date: date
+    quantity: int = Field(gt=0)
+    verified_sessions: list[date]
+    calendar_evidence: dict
+    cost_assumptions: dict
+    execution_config: dict
 
 
 @app.get("/health")
@@ -330,6 +340,40 @@ def research_walk_forward_backtest(request: WalkForwardBacktestRequest):
         )
     except HTTPException:
         raise
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+
+@app.post("/v1/research/backtest/execution-scenario")
+def research_execution_scenario(request: ExecutionScenarioRequest):
+    """Calculate a caller-configured execution/cost scenario, never a live fill."""
+    record = get_signal(request.signal_id)
+    if record is None:
+        raise HTTPException(404, "signal_not_found")
+    symbol = record.get("symbol")
+    calendar = request.calendar_evidence or {}
+    try:
+        coverage = float(calendar.get("coverage"))
+        available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        raise HTTPException(422, "calendar_evidence_malformed")
+    cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+    if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+            or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0
+            or available.tzinfo is None or available.utcoffset() is None or available > cutoff):
+        raise HTTPException(422, "verified_point_in_time_calendar_required")
+    if symbol not in DATA:
+        raise HTTPException(422, "ohlcv_missing")
+    try:
+        return simulate_execution_scenario(
+            signal=record,
+            rows=[row for row in DATA[symbol] if row["date"] <= request.evaluation_date],
+            verified_sessions=[day.isoformat() for day in request.verified_sessions],
+            evaluation_date=request.evaluation_date.isoformat(),
+            quantity=request.quantity, cost_assumptions=request.cost_assumptions,
+            execution_config=request.execution_config, reviewed=REVIEWED_ROWS,
+        )
     except (ValueError, TypeError, KeyError) as exc:
         raise HTTPException(422, str(exc)) from exc
 

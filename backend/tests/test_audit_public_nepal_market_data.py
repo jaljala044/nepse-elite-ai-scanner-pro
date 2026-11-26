@@ -6,6 +6,7 @@ from pathlib import Path
 
 from audit_public_nepal_market_data import (
     audit_symbol_csv, crosscheck_official_history, compare_socrateai_daily_csvs,
+    build_merged_official_history_root,
 )
 
 
@@ -170,7 +171,7 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         security_list = b"[]"
         (evidence_root / "security-list-response-01.bin").write_bytes(security_list)
         manifest_lines = [
-            f"{hashlib.sha256(security_list).hexdigest()}  security-list-response-01.bin\\n"
+            f"{hashlib.sha256(security_list).hexdigest()}  security-list-response-01.bin\n"
         ]
         symbol_items = []
         for symbol, security_id, rows in symbol_rows:
@@ -181,7 +182,7 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             raw_path.write_bytes(raw)
             relative = f"symbols/{symbol}/response-01.bin"
             sha = hashlib.sha256(raw).hexdigest()
-            manifest_lines.append(f"{sha}  {relative}\\n")
+            manifest_lines.append(f"{sha}  {relative}\n")
             normalized = [{
                 "business_date": row["businessDate"],
                 "trades": row["totalTrades"],
@@ -242,8 +243,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             )
             lifecycle = base / "lifecycle.csv"
             lifecycle.write_text(
-                "security_id,symbol,valid_from,valid_from_evidence_status\\n"
-                "1,TEST,,unverified\\n"
+                "security_id,symbol,valid_from,valid_from_evidence_status\n"
+                "1,TEST,,unverified\n"
             )
             merged_root = base / "merged" / "symbols"
             result = build_merged_official_history_root(
@@ -272,8 +273,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             )
             lifecycle = base / "lifecycle.csv"
             lifecycle.write_text(
-                "security_id,symbol,valid_from,valid_from_evidence_status\\n"
-                "1,TEST,,unverified\\n"
+                "security_id,symbol,valid_from,valid_from_evidence_status\n"
+                "1,TEST,,unverified\n"
             )
             result = build_merged_official_history_root(
                 [long_root, short_root], base / "merged" / "symbols",

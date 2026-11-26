@@ -1,0 +1,403 @@
+{
+  "source_repository": "jaljala044/nepse-history-starter",
+  "control_blob": "f53c192a0ab30a09a4a21c323a7492b11cf5b6f9",
+  "classification": "archive_candidate_not_canonical",
+  "sessions": [
+    {
+      "date": "2026-07-24",
+      "path": "scanner_inputs/broker_summary/2026-07-24.csv",
+      "blob_sha": "41714aee8aea39be5eee540dc873d2d3ff0709fc",
+      "shares": "13769100",
+      "turnover": "6267226722.57",
+      "instruments": "353",
+      "transactions": "70158"
+    },
+    {
+      "date": "2026-09-10",
+      "path": "scanner_inputs/broker_summary/2026-09-10.csv",
+      "blob_sha": "6fa4728cd60e8fbe4a0d71119cde464e76172b96",
+      "shares": "10588653",
+      "turnover": "4000971898.77",
+      "instruments": "341",
+      "transactions": "44198"
+    },
+    {
+      "date": "2026-09-11",
+      "path": "scanner_inputs/broker_summary/2026-09-11.csv",
+      "blob_sha": "e4b45335b2646c1236b4109a3c2c311f03633e4e",
+      "shares": "12089709",
+      "turnover": "4360159487.26",
+      "instruments": "345",
+      "transactions": "49006"
+    },
+    {
+      "date": "2026-09-14",
+      "path": "scanner_inputs/broker_summary/2026-09-14.csv",
+      "blob_sha": "40b9c0c111d0bb28ebacb7cc8fe2e5fd9692ab08",
+      "shares": "11595654",
+      "turnover": "4688682303.71",
+      "instruments": "336",
+      "transactions": "49074"
+    },
+    {
+      "date": "2026-09-15",
+      "path": "scanner_inputs/broker_summary/2026-09-15.csv",
+      "blob_sha": "1b75deb1b4a0127aff1f337f2f765c2d7c7fdb81",
+      "shares": "20387413",
+      "turnover": "8290017115.61",
+      "instruments": "347",
+      "transactions": "78869"
+    },
+    {
+      "date": "2026-09-16",
+      "path": "scanner_inputs/broker_summary/2026-09-16.csv",
+      "blob_sha": "4bec9c6b7bbce0453f8d87478204b4d4b75e5aec",
+      "shares": "15101543",
+      "turnover": "5389570064.00",
+      "instruments": "350",
+      "transactions": "55830"
+    },
+    {
+      "date": "2026-09-17",
+      "path": "scanner_inputs/broker_summary/2026-09-17.csv",
+      "blob_sha": "7b41dbeed19029bb8692fe50256b83d862494b2a",
+      "shares": "13610496",
+      "turnover": "5499316643.53",
+      "instruments": "339",
+      "transactions": "51728"
+    },
+    {
+      "date": "2026-09-18",
+      "path": "scanner_inputs/broker_summary/2026-09-18.csv",
+      "blob_sha": "518989c01baacbef6085b1624a1ed6faf947c5e3",
+      "shares": "21272761",
+      "turnover": "6745631607.18",
+      "instruments": "345",
+      "transactions": "64072"
+    },
+    {
+      "date": "2026-09-22",
+      "path": "scanner_inputs/broker_summary/2026-09-22.csv",
+      "blob_sha": "19d32b265da9f5862eb5541de9d0657e9199645a",
+      "shares": "21589761",
+      "turnover": "7050398624.97",
+      "instruments": "356",
+      "transactions": "70691"
+    },
+    {
+      "date": "2026-09-23",
+      "path": "scanner_inputs/broker_summary/2026-09-23.csv",
+      "blob_sha": "edb4567cae90d2ee9f556e177eac8fa57c22b264",
+      "shares": "21622728",
+      "turnover": "6356611395.73",
+      "instruments": "352",
+      "transactions": "57947"
+    },
+    {
+      "date": "2026-09-24",
+      "path": "scanner_inputs/broker_summary/2026-09-24.csv",
+      "blob_sha": "b714bc8a59236c13c61b50e9e36164c63e312019",
+      "shares": "17270449",
+      "turnover": "5447313168.20",
+      "instruments": "356",
+      "transactions": "51716"
+    },
+    {
+      "date": "2026-09-28",
+      "path": "scanner_inputs/broker_summary/2026-09-28.csv",
+      "blob_sha": "f8ec40c3ed0962e240e4f097102daaf713286d7d",
+      "shares": "13178128",
+      "turnover": "5385785414.91",
+      "instruments": "357",
+      "transactions": "58500"
+    },
+    {
+      "date": "2026-09-29",
+      "path": "scanner_inputs/broker_summary/2026-09-29.csv",
+      "blob_sha": "0004b9c12ceaead72d70609a3b97c7fb99d704fe",
+      "shares": "11069074",
+      "turnover": "4654878045.47",
+      "instruments": "363",
+      "transactions": "51274"
+    },
+    {
+      "date": "2026-09-30",
+      "path": "scanner_inputs/broker_summary/2026-09-30.csv",
+      "blob_sha": "f905b8a5a4526617cef841d482b607de51789f9e",
+      "shares": "12655374",
+      "turnover": "4765127885.07",
+      "instruments": "352",
+      "transactions": "47900"
+    },
+    {
+      "date": "2026-10-01",
+      "path": "scanner_inputs/broker_summary/2026-10-01.csv",
+      "blob_sha": "5b15aa0e20e8a462728c116ab13cdde88d3dbd1e",
+      "shares": "12065555",
+      "turnover": "4891876325.04",
+      "instruments": "353",
+      "transactions": "51745"
+    },
+    {
+      "date": "2026-10-02",
+      "path": "scanner_inputs/broker_summary/2026-10-02.csv",
+      "blob_sha": "8de0f2e05162bf832d99132313f6134d7d365c24",
+      "shares": "11912550",
+      "turnover": "4293774181.11",
+      "instruments": "356",
+      "transactions": "43685"
+    },
+    {
+      "date": "2026-10-05",
+      "path": "scanner_inputs/broker_summary/2026-10-05.csv",
+      "blob_sha": "4dd190152a0ee355d84ff2b0df8b739003b50134",
+      "shares": "9003388",
+      "turnover": "3279509836.32",
+      "instruments": "359",
+      "transactions": "44777"
+    },
+    {
+      "date": "2026-10-06",
+      "path": "scanner_inputs/broker_summary/2026-10-06.csv",
+      "blob_sha": "5bdcb621f18efd3af56af1aadb9d419d928cd57c",
+      "shares": "8955230",
+      "turnover": "3138119528.46",
+      "instruments": "359",
+      "transactions": "41607"
+    },
+    {
+      "date": "2026-10-07",
+      "path": "scanner_inputs/broker_summary/2026-10-07.csv",
+      "blob_sha": "3496fdaf7c64cdae3dcb2bf0c71aee7c65af1acb",
+      "shares": "10300688",
+      "turnover": "3748080303.08",
+      "instruments": "359",
+      "transactions": "39466"
+    },
+    {
+      "date": "2026-10-08",
+      "path": "scanner_inputs/broker_summary/2026-10-08.csv",
+      "blob_sha": "0854ea46fe0d177ac96cc39ec65f05d7b9b1b045",
+      "shares": "11233636",
+      "turnover": "3930560952.76",
+      "instruments": "354",
+      "transactions": "43812"
+    },
+    {
+      "date": "2026-10-09",
+      "path": "scanner_inputs/broker_summary/2026-10-09.csv",
+      "blob_sha": "b46068dfdd4c604366ed6d0114a7cf8ae2912bd6",
+      "shares": "12905942",
+      "turnover": "4837723076.79",
+      "instruments": "353",
+      "transactions": "52044"
+    },
+    {
+      "date": "2026-10-12",
+      "path": "scanner_inputs/broker_summary/2026-10-12.csv",
+      "blob_sha": "72704969ef89b24066a326311702059108aef431",
+      "shares": "12719734",
+      "turnover": "4465246360.73",
+      "instruments": "354",
+      "transactions": "49809"
+    },
+    {
+      "date": "2026-10-13",
+      "path": "scanner_inputs/broker_summary/2026-10-13.csv",
+      "blob_sha": "01aa07a7ca75353ff1bc11b33391a35469e13110",
+      "shares": "13553097",
+      "turnover": "4736926409.85",
+      "instruments": "351",
+      "transactions": "46659"
+    },
+    {
+      "date": "2026-10-14",
+      "path": "scanner_inputs/broker_summary/2026-10-14.csv",
+      "blob_sha": "92fd245c83c348b0c535dc8bb1f2366d89adb08a",
+      "shares": "11674209",
+      "turnover": "4136161331.43",
+      "instruments": "354",
+      "transactions": "39183"
+    },
+    {
+      "date": "2026-10-15",
+      "path": "scanner_inputs/broker_summary/2026-10-15.csv",
+      "blob_sha": "e35b37a65a17bd1312751dd59057b7fe5dcc77d7",
+      "shares": "13624407",
+      "turnover": "4717028104.35",
+      "instruments": "349",
+      "transactions": "38861"
+    },
+    {
+      "date": "2026-10-16",
+      "path": "scanner_inputs/broker_summary/2026-10-16.csv",
+      "blob_sha": "e8ea2927ed31977d8d142b5329725f0b8c210715",
+      "shares": "13376489",
+      "turnover": "4880089108.16",
+      "instruments": "348",
+      "transactions": "39295"
+    },
+    {
+      "date": "2026-10-26",
+      "path": "scanner_inputs/broker_summary/2026-10-26.csv",
+      "blob_sha": "28ecb95b50080e3df55edb51bbfd1bc65128b68e",
+      "shares": "10343709",
+      "turnover": "4002421168.07",
+      "instruments": "341",
+      "transactions": "38788"
+    },
+    {
+      "date": "2026-10-27",
+      "path": "scanner_inputs/broker_summary/2026-10-27.csv",
+      "blob_sha": "bbbb910d0d63c32ba701fc0bd1c6469fcaa6adb9",
+      "shares": "15346226",
+      "turnover": "5799330203.01",
+      "instruments": "360",
+      "transactions": "53030"
+    },
+    {
+      "date": "2026-10-28",
+      "path": "scanner_inputs/broker_summary/2026-10-28.csv",
+      "blob_sha": "94ba43564383d67416f48875e9740cf30e59f0e1",
+      "shares": "19397548",
+      "turnover": "7458677368.14",
+      "instruments": "348",
+      "transactions": "63744"
+    },
+    {
+      "date": "2026-10-29",
+      "path": "scanner_inputs/broker_summary/2026-10-29.csv",
+      "blob_sha": "2114a20e1a5edbb21402c424ab0137d63a867a1e",
+      "shares": "23258009",
+      "turnover": "8570098823.35",
+      "instruments": "350",
+      "transactions": "69619"
+    },
+    {
+      "date": "2026-10-30",
+      "path": "scanner_inputs/broker_summary/2026-10-30.csv",
+      "blob_sha": "80db54772274a06b9930f55d1678c60c752484a4",
+      "shares": "22862554",
+      "turnover": "8891595145.90",
+      "instruments": "348",
+      "transactions": "74054"
+    },
+    {
+      "date": "2026-11-02",
+      "path": "scanner_inputs/broker_summary/2026-11-02.csv",
+      "blob_sha": "8c3af937f8d58b6c30ac1d191a9f47a4d4e9047e",
+      "shares": "19822392",
+      "turnover": "7183713047.01",
+      "instruments": "343",
+      "transactions": "70228"
+    },
+    {
+      "date": "2026-11-03",
+      "path": "scanner_inputs/broker_summary/2026-11-03.csv",
+      "blob_sha": "a46e3c9074066498090bc613604fe5123cee3c02",
+      "shares": "15420920",
+      "turnover": "5651142523.49",
+      "instruments": "349",
+      "transactions": "57449"
+    },
+    {
+      "date": "2026-11-04",
+      "path": "scanner_inputs/broker_summary/2026-11-04.csv",
+      "blob_sha": "513badf87c44a35245b5c53b0b1fa403c24b11eb",
+      "shares": "21223414",
+      "turnover": "7439366049.62",
+      "instruments": "358",
+      "transactions": "59185"
+    },
+    {
+      "date": "2026-11-05",
+      "path": "scanner_inputs/broker_summary/2026-11-05.csv",
+      "blob_sha": "caac6aa64edc736394b724b5459a33b48a6d173b",
+      "shares": "12373841",
+      "turnover": "4722236623.35",
+      "instruments": "349",
+      "transactions": "44412"
+    },
+    {
+      "date": "2026-11-06",
+      "path": "scanner_inputs/broker_summary/2026-11-06.csv",
+      "blob_sha": "6982d50ac2854ebd29cd509c90c9e24a68849db4",
+      "shares": "10713842",
+      "turnover": "3462059323.07",
+      "instruments": "336",
+      "transactions": "33215"
+    },
+    {
+      "date": "2026-11-13",
+      "path": "scanner_inputs/broker_summary/2026-11-13.csv",
+      "blob_sha": "69b124ffc72cc0253a9e42a5bb02afdfb3f309bd",
+      "shares": "7844267",
+      "turnover": "3054274725.06",
+      "instruments": "335",
+      "transactions": "31323"
+    },
+    {
+      "date": "2026-11-17",
+      "path": "scanner_inputs/broker_summary/2026-11-17.csv",
+      "blob_sha": "006dfdae62d26ac6d8b49fd5bcb4cffad6a40296",
+      "shares": "11293450",
+      "turnover": "4731178017.24",
+      "instruments": "353",
+      "transactions": "48788"
+    },
+    {
+      "date": "2026-11-18",
+      "path": "scanner_inputs/broker_summary/2026-11-18.csv",
+      "blob_sha": "343b64ba5ceae6e6fbba62f1d3e8ab15b2dd628c",
+      "shares": "10162605",
+      "turnover": "4154925107.54",
+      "instruments": "347",
+      "transactions": "41627"
+    },
+    {
+      "date": "2026-11-19",
+      "path": "scanner_inputs/broker_summary/2026-11-19.csv",
+      "blob_sha": "525e95c7d2b09722cdebba93912d6fdd41000a41",
+      "shares": "9437842",
+      "turnover": "3877645728.62",
+      "instruments": "347",
+      "transactions": "40837"
+    },
+    {
+      "date": "2026-11-20",
+      "path": "scanner_inputs/broker_summary/2026-11-20.csv",
+      "blob_sha": "32bc38ca4a4c651ea1971e08aedf2e95fbf70b6e",
+      "shares": "10602468",
+      "turnover": "3887563470.82",
+      "instruments": "352",
+      "transactions": "39966"
+    },
+    {
+      "date": "2026-11-23",
+      "path": "scanner_inputs/broker_summary/2026-11-23.csv",
+      "blob_sha": "9bb55ed5e3ce1e57ab7146e685107101eecdb189",
+      "shares": "10826913",
+      "turnover": "3827606590.77",
+      "instruments": "360",
+      "transactions": "42854"
+    },
+    {
+      "date": "2026-11-24",
+      "path": "scanner_inputs/broker_summary/2026-11-24.csv",
+      "blob_sha": "4e7fc952338d1d4b1e102dd566ca76b62f006e7b",
+      "shares": "14670177",
+      "turnover": "5553019249.46",
+      "instruments": "350",
+      "transactions": "52387"
+    },
+    {
+      "date": "2026-11-25",
+      "path": "scanner_inputs/broker_summary/2026-11-25.csv",
+      "blob_sha": "b074998802e0c6a2a3bc9b542ce825f67234588a",
+      "shares": "16523974",
+      "turnover": "6146043909.54",
+      "instruments": "356",
+      "transactions": "52669"
+    }
+  ]
+}

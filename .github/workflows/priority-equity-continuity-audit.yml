@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'backend/audit_priority_equity_continuity.py'
+      - 'backend/classify_historical_continuity_gaps.py'
       - '.github/workflows/priority-equity-continuity-audit.yml'
   workflow_dispatch:
 permissions:
@@ -24,6 +25,10 @@ jobs:
       - name: Audit exception equities
         run: |
           python backend/audit_priority_equity_continuity.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --group exception_review --skip 0 --output /tmp/audit/exception_26.csv
+      - name: Classify missing observations
+        run: |
+          python backend/validate_equity_lifecycle_input.py --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv
+          python backend/classify_historical_continuity_gaps.py --audits data/reference/historical_continuity_batch_00*_2026-11-26.csv /tmp/audit/remaining_223.csv /tmp/audit/exception_26.csv --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --july data/reference/july24_separate_volume_observations_2026-11-26.csv --output /tmp/audit/classified_gaps.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -54,10 +54,12 @@ class FloorsheetSourceCaptureTests(unittest.TestCase):
             rights_status="review_required",
             parser_version="not-yet-assigned",
         )
-        self.times = iter([
-            datetime(2026, 11, 26, 10, 0, tzinfo=timezone.utc),
-            datetime(2026, 11, 26, 10, 0, 1, tzinfo=timezone.utc),
-        ])
+        self.clock_tick = 0
+        def clock():
+            value = datetime(2026, 11, 26, 10, 0, tzinfo=timezone.utc) + timedelta(seconds=self.clock_tick)
+            self.clock_tick += 1
+            return value
+        self.clock = clock
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -71,7 +73,7 @@ class FloorsheetSourceCaptureTests(unittest.TestCase):
             database_path=str(Path(self.tmp.name) / "evidence.duckdb"),
             fetch_id="fetch-001",
             opener=opener or FakeOpener(),
-            clock=lambda: next(self.times),
+            clock=self.clock,
         )
 
     def test_exact_response_is_captured_with_hash_and_metadata(self):

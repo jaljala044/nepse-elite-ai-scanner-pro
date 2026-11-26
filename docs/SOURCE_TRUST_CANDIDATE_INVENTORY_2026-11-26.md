@@ -19,7 +19,7 @@ review guidance, not a trust registry and is never loaded by the runtime.
 
 ### NEPSE official holiday API
 - Keep the exact raw response and digest immutable.
-- Add a dedicated `exchange_holiday` record type before source-policy admission.
+- `exchange_holiday` is now implemented on the feature branch with mandatory checks for payload integrity, source identity, schema mapping, date validity, duplicate detection, instrument scope, point-in-time availability and official notice evidence. It is not yet merged or active in the runtime registry.
 - Validate holiday-date parsing, scope, instrument applicability, duplicate dates and the 2026-09-21 emergency-close description.
 - Treat explicit holiday rows as closures only; absence from the list is not proof that a session was open.
 - Review reuse terms separately from authenticity.
@@ -36,6 +36,12 @@ review guidance, not a trust registry and is never loaded by the runtime.
 - Reconcile date-level contract counts, quantity, turnover and arithmetic against a primary exchange record or genuinely independent source.
 - Obtain explicit rights evidence for intended storage and analytics use.
 - Quarantine dates with unresolved completeness or arithmetic issues.
+
+## Holiday-source rights and admission decision
+
+The NEPSE holiday API capture establishes a candidate official-source identity and an integrity-checked raw response. It does **not** establish permission to redistribute, publish, train on, or otherwise reuse the content. Rights remain `review_required`; redistribution remains disabled. No legal or terms-of-use conclusion is inferred from the fact that the endpoint is publicly reachable.
+
+The feature-branch registry change adds the dedicated `exchange_holiday` type and its evidence requirements. The candidate remains non-active, has no canonical record-type approval, and must stay quarantined until a named human reviewer records source-scope and rights evidence. Explicit returned closure dates may be reviewed as closure claims only; absence of a date is not evidence that the exchange was open.
 
 ## Runtime registry state
 

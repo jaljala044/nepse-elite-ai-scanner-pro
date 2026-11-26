@@ -1557,3 +1557,10 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - The report gives opening price ranges for first transactions, but does not establish the first executed trading session. NMLBBL's company profile records operation date 2024-05-19; this is kept separate from exchange trading date.
 - first_trading_date remains null for both. Next evidence needed: dated daily OHLCV/floorsheet first trade row or explicit exchange/secondary notice confirming first execution.
 - No stable IDs/effective intervals inferred; no canonical/training promotion or price splice. Priority 97 remains open.
+
+
+### Priority 97 follow-up — expanded successor listing evidence (2026-11-26)
+
+- Added successor-side listing records for MATRI, SMATA, SMPDA, GBLBS and PFL to the evidence JSON. MATRI: NepseAlpha dated 2024-08-13 explicitly says trading from today; retained as a secondary-reported first-trading date pending OHLCV/floorsheet confirmation. SMATA: 2.6m acquisition shares listed 2024-08-02, exact first execution unknown. SMPDA: 7,008,584 shares listed 2024-08-15, exact first execution unknown. GBLBS: 10,053,500 shares listed 2025-12-22. PFL: 19,014,680 shares listed 2026-09-15.
+- Flagged date contradictions: GBLBS listing report's Ashwin 23, 2082 joint-transaction date conflicts with 17 Oct 2025 suspension report's Kartik 2, 2082 effective date. PFL listing report also states Ashwin 23, 2082, conflicting with 9 Jul 2026 suspension/integration report. Dates remain separate source observations, not normalized.
+- First-trading dates for SMATA/SMPDA/GBLBS/PFL remain null. No stable IDs/validity intervals inferred; no price splice or canonical/training promotion. Priority 97 remains open.

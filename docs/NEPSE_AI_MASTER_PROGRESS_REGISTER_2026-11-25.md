@@ -1454,3 +1454,15 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 - Report: `docs/PRIORITY_96_PROMOTER_SHARE_CLASSIFICATION_GUARDRAIL_2026-11-26.md`.
 - This is a validator-only change. No promoter-share ticker was added to the canonical universe; no raw OHLCV/floorsheet data changed; no training-data promotion.
 - Tests are committed but await CI execution; do not claim they pass until a workflow confirms.
+
+
+## Work-session update — 2026-11-26 (Priority 97: merger timeline evidence expansion)
+
+- Added source-backed joint-transaction start dates for six equity predecessor symbols in `data/reference/nepse_historical_identity_evidence_2026-11-26.json` (commit `31d14f61908c2c71c75a3dbde088dbe25b39c650`):
+  - BPW → Samudayik Laghubitta: 2024-03-06 (24 Falgun 2080).
+  - MMFDB and NLBBL → Nerude Mirmire Laghubitta: 2024-03-13 (30 Falgun 2080).
+  - JALPA and KLBSL → Matribhumi Laghubitta: 2024-07-11 (27 Ashad 2081).
+  - MKLB → Samata Gharelu Laghubitta: 2024-07-08 (24 Ashad 2081).
+- Sources include ShareSansar merger/listing notices and Merolagani's Matribhumi merger announcement. The dates describe joint corporate operations, not proven last-trading/first-trading boundaries or stable-ID validity windows.
+- The JSON continues to mark `effective_date_verified=false` and `stable_id=null`; no historical prices were spliced, no aliases renamed, and no raw data changed.
+- Next step: obtain exchange suspension/resumption notices and effective-dated security IDs for these predecessor/successor pairs. Do not promote identity intervals until those records are corroborated.

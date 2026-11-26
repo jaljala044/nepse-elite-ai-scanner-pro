@@ -84,7 +84,8 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
                 {"symbol":"EQ2","security_id":"22","security_name":"Example Equity","active_status":"A","snapshot_date":"2026-11-25"},
             ])
         report = audit_floorsheet_symbol_scope(
-            self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot
+            self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot,
+            "2026-11-24", "2026-11-25",
         )
         self.assertEqual(report["symbols"][0]["scope_class"], "EQUITY_CANDIDATE_NOT_IN_CROSSWALK")
 

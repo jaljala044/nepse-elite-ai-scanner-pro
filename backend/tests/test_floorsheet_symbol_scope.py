@@ -30,7 +30,7 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             ["contract_no", "stock_symbol", "quantity", "rate", "amount", "date"], [
                 {"contract_no":"E1","stock_symbol":"EQ1","quantity":"10","rate":"10","amount":"100","date":"2026-11-24"},
                 {"contract_no":"F1","stock_symbol":"MF1","quantity":"10","rate":"10","amount":"100","date":"2026-11-24"},
-                {"contract_no":"P1","stock_symbol":"PROM1","quantity":"10","rate":"10","amount":"100","date":"2026-11-24"},
+                {"contract_no":"P1","stock_symbol":"PROM1","quantity":"10","rate":"10","amount":"100","date":"2026-11-24"},\n                {"contract_no":"B1","stock_symbol":"BOND1","quantity":"10","rate":"10","amount":"100","date":"2026-11-24"},
             ])
         self.write_csv(self.socrateai,
             ["transaction", "symbol", "quantity", "rate", "amount", "date"], [
@@ -48,7 +48,7 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
         self.write_csv(self.snapshot,
             ["symbol","security_id","security_name","active_status","snapshot_date"], [
                 {"symbol":"EQ1","security_id":"1","security_name":"Example Equity","active_status":"A","snapshot_date":"2026-11-25"},
-                {"symbol":"PROM1","security_id":"3","security_name":"Example Company Promoter Share","active_status":"A","snapshot_date":"2026-11-25"},
+                {"symbol":"PROM1","security_id":"3","security_name":"Example Company Promoter Share","active_status":"A","snapshot_date":"2026-11-25"},\n                {"symbol":"BOND1","security_id":"5","security_name":"Example Bank Energy Bond 2089","active_status":"A","snapshot_date":"2026-11-25"},
                 {"symbol":"DEB1","security_id":"4","security_name":"8% Example Debenture 2089","active_status":"A","snapshot_date":"2026-11-25"},
             ])
         report = audit_floorsheet_symbol_scope(
@@ -59,7 +59,7 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
         self.assertEqual(by_symbol["EQ1"]["scope_class"], "IN_SCOPE_EQUITY_CANDIDATE")
         self.assertEqual(by_symbol["MF1"]["scope_class"], "OUT_OF_SCOPE_MUTUAL_FUND")
         self.assertEqual(by_symbol["PROM1"]["scope_class"], "OUT_OF_SCOPE_PROMOTER_SHARE")
-        self.assertEqual(by_symbol["DEB1"]["scope_class"], "OUT_OF_SCOPE_DEBENTURE")
+        self.assertEqual(by_symbol["DEB1"]["scope_class"], "OUT_OF_SCOPE_DEBENTURE")\n        self.assertEqual(by_symbol["BOND1"]["scope_class"], "OUT_OF_SCOPE_BOND")
         self.assertEqual(by_symbol["UNK1"]["scope_class"], "UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH")
         self.assertFalse(report["policy"]["canonical_promotion_allowed"])
         self.assertFalse(report["policy"]["unknown_scope_promoted"])

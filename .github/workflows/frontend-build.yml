@@ -5,6 +5,7 @@ on:
       - "frontend/**"
       - "backend/Dockerfile"
       - "backend/app/**"
+      - "data/reference/**"
       - ".github/workflows/frontend-build.yml"
   push:
     branches: [main]

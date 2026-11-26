@@ -2,7 +2,7 @@
   "date": "2026-11-26",
   "base_review_blob": "8bd7ebe58b52c7e45cf312895d78d9d59452be91",
   "provider": "ShareSansar and NepseAlpha",
-  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified",
+  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates",
   "records": [
     {
       "symbol": "BPW",
@@ -16,7 +16,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2024-03-06",
       "date_basis": "24 Falgun 2080; joint transaction under Samudayik Laghubitta",
-      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
+      "trading_suspension_effective_date": "2024-03-06",
+      "trading_suspension_source": "https://www.sharesansar.com/newsdetail/for-the-purpose-of-joint-integrated-transaction-share-trading-of-samudayik-laghubitta-and-bpw-laghubitta-to-be-halted-from-falgun-24-2024-03-06",
+      "trading_suspension_basis": "NEPSE trading suspension reported effective Falgun 24, 2080; source states suspension from that date. Not asserted as last-trade date."
     },
     {
       "symbol": "JALPA",
@@ -72,7 +75,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2024-03-13",
       "date_basis": "30 Falgun 2080; joint transaction under Nerude Mirmire Laghubitta",
-      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
+      "trading_suspension_effective_date": "2024-03-13",
+      "trading_suspension_source": "https://www.sharesansar.com/newsdetail/nerude-laghubitta-and-mirmire-laghubitta-trading-to-be-halted-from-falgun-30-2024-03-12",
+      "trading_suspension_basis": "NEPSE suspension reported from Falgun 30, 2080; source published Mar 12 and says joint business begins Falgun 30. Not asserted as last-trade date."
     },
     {
       "symbol": "NLBBL",
@@ -86,7 +92,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2024-03-13",
       "date_basis": "30 Falgun 2080; joint transaction under Nerude Mirmire Laghubitta",
-      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
+      "trading_suspension_effective_date": "2024-03-13",
+      "trading_suspension_source": "https://www.sharesansar.com/newsdetail/nerude-laghubitta-and-mirmire-laghubitta-trading-to-be-halted-from-falgun-30-2024-03-12",
+      "trading_suspension_basis": "NEPSE suspension reported from Falgun 30, 2080; source published Mar 12 and says joint business begins Falgun 30. Not asserted as last-trade date."
     },
     {
       "symbol": "SABSL",
@@ -130,7 +139,10 @@
       "raw_history_preserved": true,
       "joint_transaction_start_date": "2025-10-19",
       "date_basis": "2 Kartik 2082; joint operations under Grameen Bikas Laghubitta",
-      "additional_source": "https://eng.merolagani.com/AnnouncementDetail.aspx?id=61940"
+      "additional_source": "https://eng.merolagani.com/AnnouncementDetail.aspx?id=61940",
+      "trading_suspension_effective_date": "2025-10-19",
+      "trading_suspension_source": "https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-gblbs-and-samaj-shares-ahead-of-merger-implementation-2025-10-17",
+      "trading_suspension_basis": "NEPSE suspension explicitly effective Kartik 2, 2082; joint operations start same date. Not asserted as last-trade date."
     },
     {
       "symbol": "SFCL",
@@ -145,7 +157,10 @@
       "joint_transaction_start_date": "2026-07-10",
       "date_basis": "26 Ashadh 2083; joint operations under Pokhara Finance",
       "additional_source": "https://www.sharesansar.com/index.php/newsdetail/pokhara-finance-and-samriddhi-finance-to-begin-unified-operations-from-ashadh-26-after-merger-approval-2026-06-26",
-      "additional_source_2": "https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09"
+      "additional_source_2": "https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09",
+      "trading_suspension_effective_date": "2026-07-10",
+      "trading_suspension_source": "https://www.sharesansar.com/index.php/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09",
+      "trading_suspension_basis": "NEPSE suspension explicitly effective Ashar 26, 2083; joint operations start same date. Not asserted as last-trade date."
     },
     {
       "symbol": "CMF1",

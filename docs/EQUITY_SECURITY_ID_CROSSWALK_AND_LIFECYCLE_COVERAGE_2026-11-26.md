@@ -48,3 +48,11 @@ The next data task is to collect independently evidenced listing/trading-start a
 ## CI
 
 Full backend unit-test discovery passed on the crosswalk commit: [run 45833462850](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45833462850) — 736 tests passed.
+
+
+## Lifecycle input artifact
+
+Added `data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv` for all 281 equities:
+- YMHL has a verified-secondary notice-based first trading date of 2026-06-22 (listing notice dated 2026-06-19).
+- The other 280 `valid_from` values are intentionally blank and marked `unverified`; no earliest-archive-row inference was used.
+- The file is a coverage input, not a claim that only YMHL has a known listing date. It reflects only the lifecycle evidence already captured in this repository.

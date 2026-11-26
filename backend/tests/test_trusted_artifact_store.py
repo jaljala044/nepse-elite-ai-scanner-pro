@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from backend.app.trusted_artifact_store import TrustedArtifactStore, build_trusted_market_snapshot
-from backend.app.market_intelligence_snapshot import REQUIRED_MODULES
+from app.trusted_artifact_store import TrustedArtifactStore, build_trusted_market_snapshot
+from app.market_intelligence_snapshot import REQUIRED_MODULES
 
 
 class TrustedArtifactStoreTests(unittest.TestCase):

@@ -50,6 +50,7 @@ def _ensure_tables(con) -> None:
             observation_id VARCHAR PRIMARY KEY,
             trade_date DATE NOT NULL,
             symbol VARCHAR NOT NULL,
+            side VARCHAR NOT NULL,
             available_at TIMESTAMPTZ NOT NULL,
             source_id VARCHAR NOT NULL,
             source_payload_sha256 VARCHAR NOT NULL,
@@ -57,12 +58,12 @@ def _ensure_tables(con) -> None:
             evidence_id VARCHAR NOT NULL,
             record_json JSON NOT NULL,
             stored_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
-            UNIQUE (source_id, source_payload_sha256, source_row_number)
+            UNIQUE (source_id, source_payload_sha256, source_row_number, side)
         )
     """)
     con.execute("""
         CREATE UNIQUE INDEX IF NOT EXISTS broker_memory_source_lineage_idx
-        ON broker_memory_observations(source_id, source_payload_sha256, source_row_number)
+        ON broker_memory_observations(source_id, source_payload_sha256, source_row_number, side)
     """)
     con.execute("""
         CREATE TABLE IF NOT EXISTS broker_memory_snapshots (
@@ -284,8 +285,8 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             observation_id = hashlib.sha256(record_json.encode()).hexdigest()
             existing = con.execute(
                 """SELECT observation_id, record_json FROM broker_memory_observations
-                   WHERE source_id = ? AND source_payload_sha256 = ? AND source_row_number = ?""",
-                [row["source_id"], row["source_payload_sha256"], row["source_row_number"]],
+                   WHERE source_id = ? AND source_payload_sha256 = ? AND source_row_number = ? AND side = ?""",
+                [row["source_id"], row["source_payload_sha256"], row["source_row_number"], row["side"]],
             ).fetchone()
             if existing is not None:
                 if existing[0] != observation_id or str(existing[1]) != record_json:
@@ -293,11 +294,11 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                 continue
             con.execute(
                 """INSERT INTO broker_memory_observations
-                   (observation_id, trade_date, symbol, available_at, source_id,
+                   (observation_id, trade_date, symbol, side, available_at, source_id,
                     source_payload_sha256, source_row_number, evidence_id, record_json)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::JSON)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::JSON)""",
                 [observation_id, date.fromisoformat(row["trade_date"]),
-                 row["symbol"], _aware(row["available_at"], "available_at"),
+                 row["symbol"], row["side"], _aware(row["available_at"], "available_at"),
                  row["source_id"], row["source_payload_sha256"],
                  row["source_row_number"], row["evidence_id"], record_json],
             )

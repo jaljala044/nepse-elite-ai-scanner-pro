@@ -50,6 +50,38 @@ class InstrumentManifestTests(unittest.TestCase):
         self.assertEqual(result["active_counts_by_type"], {})
         self.assertFalse(result["promotion_allowed"])
 
+    def test_overlapping_historical_security_id_is_rejected_even_if_not_active(self):
+        old = row(1)
+        old["valid_to"] = "2024-12-31"
+        new = row(1)
+        new["valid_from"] = "2024-12-01"
+        result = validate_instrument_manifest([old, new], as_of="2026-11-25",
+                                              require_primary_evidence=False)
+        self.assertIn("overlapping_lifecycle_identity_intervals",
+                      [e["error"] for e in result["errors"]])
+        self.assertFalse(result["promotion_allowed"])
+
+    def test_overlapping_historical_symbol_with_different_ids_is_rejected(self):
+        old, new = row(1), row(2)
+        old["valid_to"] = "2024-12-31"
+        new["symbol"] = old["symbol"]
+        new["valid_from"] = "2024-12-01"
+        result = validate_instrument_manifest([old, new], as_of="2026-11-25",
+                                              require_primary_evidence=False)
+        self.assertIn("overlapping_lifecycle_identity_intervals",
+                      [e["error"] for e in result["errors"]])
+
+    def test_adjacent_nonoverlapping_lifecycle_intervals_are_allowed(self):
+        old = row(1)
+        old["valid_to"] = "2024-12-31"
+        new = row(1)
+        new["valid_from"] = "2025-01-01"
+        result = validate_instrument_manifest([old, new], as_of="2026-11-25",
+                                              require_primary_evidence=False)
+        self.assertEqual(result["overlapping_lifecycle_identity_intervals"], [])
+        self.assertNotIn("overlapping_lifecycle_identity_intervals",
+                         [e["error"] for e in result["errors"]])
+
     def test_non_object_record_is_reported_without_crashing(self):
         result = validate_instrument_manifest([None], as_of="2026-11-25")
         self.assertEqual(result["errors"][0]["error"], "record_must_be_object")

@@ -258,7 +258,7 @@ def capture(output_dir: Path, candidate_csv: Path | None = None) -> dict:
         "attempts": attempts,
         "request_errors": request_errors,
         "selected_attempt_number": next(
-            (item["attempt_number"] for item in attempts if item["http_status"] == 200 and item["response_preserved"]),
+            (item["attempt_number"] for item in attempts if item["http_status"] == 200 and item["response_preserved"] and item["response_origin_verified"]),
             None,
         ),
         "http_status": next(

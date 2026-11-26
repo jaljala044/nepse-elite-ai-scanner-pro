@@ -64,3 +64,19 @@ class UnifiedPortfolioEventTests(unittest.TestCase):
         assert response.json()["production_eligible"] is False
         payload["initial_cash"] = -1
         assert client.post("/v1/research/portfolio/event-ledger", json=payload).status_code == 422
+
+
+    def test_split_preserves_equity(self):
+        action = dict(action_id="S", symbol="ABC", action_type="split",
+                      record_date=DAYS[0], listing_date=DAYS[2], ratio=2,
+                      status="verified", source_id="synthetic-test",
+                      available_at="2025-01-05T00:00:00+00:00")
+        result = run_unified_portfolio_event_ledger(
+            initial_cash=1000, initial_holdings={"ABC": {"quantity": 4, "average_cost": 100}},
+            trades=[], corporate_actions=[action],
+            price_rows_by_symbol={"ABC": [{"date": d, "close": 100 if i < 2 else 50}
+                                         for i, d in enumerate(DAYS)]},
+            portfolio_sessions=DAYS, as_of_date=DAYS[-1],
+            evidence_cutoff="2025-01-10T00:00:00+00:00")
+        self.assertEqual([x["equity"] for x in result["equity_curve"]], [1400] * 5)
+        self.assertEqual(result["equity_curve"][2]["holdings"]["ABC"], 8)

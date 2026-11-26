@@ -48,7 +48,7 @@ def universe():
         raise HTTPException(503, "Equity candidate universe unavailable; scanner is fail-closed")
     return {
         key: value for key, value in EQUITY_UNIVERSE.items()
-        if key != "security_ids_by_symbol"
+        if key not in {"security_ids_by_symbol", "manifest_path"}
     } | {
         "membership_authoritatively_verified": False,
         "promotion_allowed": False,

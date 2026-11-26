@@ -1,0 +1,60 @@
+name: Broker archive population
+on:
+  push:
+    paths:
+      - '.github/workflows/broker-archive-population.yml'
+      - 'backend/report_broker_archive.py'
+      - 'backend/import_broker_archive.py'
+      - 'backend/app/broker_archive_memory.py'
+      - 'data/reference/broker_archive_candidate_manifest.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  populate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch pinned archive blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request,base64
+          from pathlib import Path
+          m=json.loads(Path('data/reference/broker_archive_candidate_manifest.json').read_text())
+          for c in m['sessions']:
+              url='https://api.github.com/repos/'+m['source_repository']+'/git/blobs/'+c['blob_sha']
+              req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=60) as response:
+                  data=json.load(response)
+              p=Path('archive')/c['path'];p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_bytes(base64.b64decode(data['content']))
+          PY
+      - name: Import twice and verify idempotence
+        env:
+          PYTHONPATH: backend
+        run: |
+          mkdir -p results
+          python backend/import_broker_archive.py --archive-root archive --db results/broker.sqlite > results/import_first.json
+          python backend/import_broker_archive.py --archive-root archive --db results/broker.sqlite > results/import_second.json
+          python - <<'PY'
+          import json,sqlite3
+          from pathlib import Path
+          a=json.loads(Path('results/import_first.json').read_text())['results']
+          b=json.loads(Path('results/import_second.json').read_text())['results']
+          assert len(a)==len(b)==44
+          assert all(r['status']=='recorded' for r in a)
+          assert all(r['status']=='already_recorded' for r in b)
+          with sqlite3.connect('results/broker.sqlite') as db:
+              assert db.execute('SELECT COUNT(*) FROM archive_broker').fetchone()[0]==sum(r['rows'] for r in a)
+          PY
+          python backend/report_broker_archive.py results/broker.sqlite results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: broker-archive-research
+          path: results/
+          if-no-files-found: error

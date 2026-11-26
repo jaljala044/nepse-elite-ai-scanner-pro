@@ -170,6 +170,8 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
     rights_paid = 0.0
     audit = []
     sized_trades = []
+    executed_trades = []
+    linked_entries = {}
     pending_buys = defaultdict(float)
     for day in days:
         # Settlement of purchases adds shares; sale proceeds become spendable cash.
@@ -316,8 +318,18 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                     raise ValueError("insufficient_cash_for_buy:" + trade["trade_id"])
                 cash -= debit
                 pending_buys[symbol] += qty
+                linked_entries[trade["trade_id"]] = {"symbol": symbol, "quantity": qty, "settlement": trade["_settle"], "closed": False}
                 # Shares enter holdings only on settlement date.
             else:
+                if trade.get("exit_entry_id") is not None:
+                    entry = linked_entries.get(trade["exit_entry_id"])
+                    if not entry or entry["symbol"] != symbol or entry["settlement"] > day or entry["closed"]:
+                        raise ValueError("linked_exit_entry_unavailable")
+                    if any(a.get("symbol") == symbol for a in corporate_actions or []):
+                        raise ValueError("linked_exit_corporate_action_requires_lot_reconciliation")
+                    qty = entry["quantity"]
+                    gross = qty * trade["_price"]
+                    entry["closed"] = True
                 pos = positions.setdefault(symbol, {"quantity": 0.0, "cost_basis": 0.0})
                 if qty > pos["quantity"] + 1e-8:
                     raise ValueError("sell_exceeds_settled_holdings:" + trade["trade_id"])
@@ -333,6 +345,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                                                           "trade_id": trade["trade_id"],
                                                           "symbol": symbol, "cash_delta": proceeds,
                                                           "source_id": trade["source_id"]})
+            executed_trades.append({"trade_id": trade["trade_id"], "signal_id": trade.get("signal_id"), "side": trade["side"], "symbol": symbol, "quantity": qty, "price": trade["_price"], "fees": trade["_fees"], "date": day.isoformat()})
             pending_events[trade["_settle"]].append({"type": "trade_settlement_audit",
                                                       "trade_id": trade["trade_id"], "symbol": symbol,
                                                       "side": trade["side"], "source_id": trade["source_id"]})
@@ -401,6 +414,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         "ending_equity": curve[-1]["equity"], "equity_curve": curve,
         "benchmark_comparison": benchmark,
         "sized_trades": sized_trades,
+        "executed_trade_scenarios": executed_trades,
         "risk_limits": limits, "circuit_breaker_triggered": circuit_breaker,
         "corporate_action_entitlements": [
             {"action_id": aid, "symbol": v["symbol"], "record_date": v["action"].get("record_date"),

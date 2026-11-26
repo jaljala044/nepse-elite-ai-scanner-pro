@@ -388,7 +388,12 @@ async def private_deployment_gate(request: Request, call_next):
     # Opt-in development API only. A deployed service must authenticate all non-health routes.
     if os.getenv("NEPSE_DEPLOYMENT_MODE") == "private" and request.url.path != "/health":
         try:
-            principal(request)
+            owner = principal(request)
+            if request.url.path in {"/v1/ingest/csv","/v1/imports"}:
+                admins = {s.strip() for s in os.getenv("NEPSE_ADMIN_SUBJECTS","").split(",") if s.strip()}
+                if owner not in admins:
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse({"detail":"Administrator required"},status_code=403)
         except HTTPException:
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail":"Authentication required"},status_code=401)

@@ -84,6 +84,13 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(broker_memory_status()["observation_count"], 10)
         self.assertEqual(broker_memory_status()["snapshot_count"], 1)
 
+    def test_changed_content_for_existing_source_lineage_is_rejected(self):
+        self.persist()
+        changed = dict(self.rows[0], amount="101")
+        with self.assertRaisesRegex(ValueError, "immutable-record conflict for source lineage"):
+            self.persist(rows=[changed])
+        self.assertEqual(broker_memory_status()["observation_count"], 10)
+
     def test_memory_rebuilds_from_prior_sessions_not_only_latest_batch(self):
         first_rows = [row for row in self.rows if row["trade_date"] in self.sessions[:3]]
         later_rows = [row for row in self.rows if row["trade_date"] in self.sessions[3:]]

@@ -76,6 +76,10 @@ jobs:
           git clone --filter=blob:none --no-checkout https://github.com/SamirWagle/Nepse-All-Scraper.git /tmp/corporate-actions
           git -C /tmp/corporate-actions cat-file -e 145cd9ae9935d45384c41b0b098c87382f508d12^{commit}
           python backend/inventory_corporate_action_sources.py --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --output /tmp/audit/corporate_action_inventory.csv
+      - name: Crosscheck remaining extended gaps against pinned secondary archives
+        run: |
+          python backend/crosscheck_unresolved_equity_gaps.py --gaps /tmp/audit/extended_gap_classification.csv --repo /tmp/secondary --revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/extended_secondary_crosscheck.csv
+          python backend/crosscheck_sharesansar_no_trade.py --gaps /tmp/audit/extended_secondary_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/extended_sharesansar_crosscheck.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1388,3 +1388,20 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 3. Continue the 616-session calendar recovery and primary NEPSE notice capture.
 4. Continue OHLCV exception and corporate-action review without overwriting raw values or owner-finalized records.
 5. Continue floorsheet source-lineage, missing-date and index-anomaly adjudication; keep canonical promotion blocked until all gates pass.
+
+
+## Work-session update — 2026-11-26 (automation PR #3 CI check)
+
+- Rechecked [automation PR #3](https://github.com/jaljala044/nepse-automation/pull/3), "Fix floorsheet collector NEPSE client dependency". It remains open, unmerged, and marked mergeable by GitHub.
+- The PR-head dependency-check workflow run 45803065619 completed with conclusion failure. The associated job 139851025320 is also failed.
+- The GitHub job-steps endpoint returned an empty list and the job-log download returned a BlobNotFound/404 response. Therefore the failure cause is not established; do not assume the dependency pin or import itself is wrong.
+- Safety decision: do not merge PR #3 or claim the smoke test passed. Obtain a rerunnable/retained diagnostic run and inspect the exact failing step before changing the dependency or enabling production collection. Even after the import test passes, staged writes, immutable raw-response capture, session-date validation and live end-to-end verification remain production gates.
+- No live NEPSE request, Google Sheets write, raw-data change, or canonical promotion was performed.
+
+### Next execution priorities (revised)
+
+1. Diagnose the failed dependency-check run for automation PR #3; rerun or add a minimal diagnostic workflow that preserves step output, then only proceed when the import check passes.
+2. Reconcile the three equity inclusion candidates NESDO/8041, ULBSL/8063 and YMHL/9342 against dated security-master evidence and the active-equity universe's as-of date.
+3. Continue the 616-session calendar recovery and primary NEPSE notice capture.
+4. Continue OHLCV exception and corporate-action review without overwriting raw values or owner-finalized records.
+5. Continue floorsheet source-lineage, missing-date and index-anomaly adjudication; keep canonical promotion blocked until all gates pass.

@@ -65,7 +65,7 @@ class RelativeStrengthTests(unittest.TestCase):
         strong = price_rows(130, lambda i: 100 + i * 0.8)
         weak = price_rows(130, lambda i: 100 + i * 0.05)
         result = relative_strength_universe(
-            {"STRONG": strong, "WEAK": weak}, benchmark
+            {"STRONG": strong, "WEAK": weak}, benchmark, expected_symbols=["STRONG", "WEAK"]
         )
         self.assertEqual(result["eligible_symbols"], 2)
         self.assertGreater(
@@ -78,13 +78,13 @@ class RelativeStrengthTests(unittest.TestCase):
 
     def test_incomplete_history_excluded(self):
         result = relative_strength_universe(
-            {"SHORT": price_rows(100)}, price_rows(130)
+            {"SHORT": price_rows(100)}, benchmark_rows(130), expected_symbols=["SHORT"]
         )
         self.assertEqual(result["eligible_symbols"], 0)
         self.assertIn("SHORT", result["excluded_symbols"])
 
     def test_duplicate_benchmark_dates_rejected(self):
-        benchmark = price_rows(130)
+        benchmark = benchmark_rows(130)
         benchmark.append(dict(benchmark[-1]))
         with self.assertRaises(ValueError):
             relative_strength_universe({"AAA": price_rows(130)}, benchmark, expected_symbols=["AAA"])

@@ -25,6 +25,7 @@ class FeaturePipelineTests(unittest.TestCase):
         from datetime import date, timedelta
         start = date(2026, 11, 16)
         rows = []
+        digest = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
         for i in range(5):
             day = start + timedelta(days=i)
             session = day.isoformat()
@@ -33,19 +34,29 @@ class FeaturePipelineTests(unittest.TestCase):
                 "record_type": "ohlcv", "symbol": "AAA", "session_date": session,
                 "available_at": available, "open": 100, "high": 102, "low": 99,
                 "close": 101, "previous_close": 100, "volume": 1000,
+                "source_validation_status": "verified", "source_id": "ohlcv-test",
+                "source_payload_sha256": digest, "price_basis_status": "verified_unadjusted_no_actions",
+                "corporate_action_status": "clear",
             })
             for buyer, seller, amount in (("B1", "B2", "100"), ("B2", "B1", "20")):
                 rows.extend([
                     {"record_type": "broker", "available_at": available,
                      "trade_date": session, "symbol": "AAA", "side": "buy",
                      "amount": amount, "quantity": "1", "identity_status": "verified",
-                     "broker_entity_id": buyer, "source_broker_code": buyer},
+                     "broker_entity_id": buyer, "source_broker_code": buyer,
+                     "session_calendar_status": "confirmed_open", "floorsheet_coverage_status": "verified_complete",
+                     "source_validation_status": "verified", "source_id": "floorsheet-test",
+                     "source_payload_sha256": digest},
                     {"record_type": "broker", "available_at": available,
                      "trade_date": session, "symbol": "AAA", "side": "sell",
                      "amount": amount, "quantity": "1", "identity_status": "verified",
-                     "broker_entity_id": seller, "source_broker_code": seller},
+                     "broker_entity_id": seller, "source_broker_code": seller,
+                     "session_calendar_status": "confirmed_open", "floorsheet_coverage_status": "verified_complete",
+                     "source_validation_status": "verified", "source_id": "floorsheet-test",
+                     "source_payload_sha256": digest},
                 ])
-        result = build_feature_snapshot(rows, "2026-11-21T12:00:00Z", ["AAA"])
+        result = build_feature_snapshot(rows, "2026-11-21T12:00:00Z", ["AAA"],
+                                         session_dates=[(start + timedelta(days=i)).isoformat() for i in range(5)])
         footprint = result["broker_footprint"]["security_features"]["AAA"]["1W"]
         self.assertEqual(footprint["status"], "observed")
         self.assertEqual(footprint["top_net_buyers"][0]["broker_entity_id"], "B1")
@@ -65,10 +76,13 @@ class FeaturePipelineTests(unittest.TestCase):
                 "available_at": session.isoformat() + "T16:00:00Z",
                 "open": close, "high": close + 2, "low": close - 2,
                 "close": close, "previous_close": close - 1,
-                "volume": 1000,
+                "volume": 1000, "source_validation_status": "verified", "source_id": "ohlcv-test",
+                "source_payload_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "price_basis_status": "verified_unadjusted_no_actions",
+                "corporate_action_status": "clear",
             })
         result = build_feature_snapshot(
-            rows, (start + timedelta(days=260)).isoformat() + "T12:00:00Z", ["AAA"]
+            rows, (start + timedelta(days=260)).isoformat() + "T12:00:00Z", ["AAA"],
+            session_dates=[(start + timedelta(days=i)).isoformat() for i in range(260)]
         )
         trend = result["trend_features"]["AAA"]
         self.assertEqual(trend["status"], "observed")
@@ -138,7 +152,8 @@ class FeaturePipelineTests(unittest.TestCase):
                 "source_payload_sha256": digest,
             })
         decision_time = (start + timedelta(days=260)).isoformat() + "T12:00:00Z"
-        result = build_feature_snapshot(rows, decision_time, ["AAA", "BBB"])
+        result = build_feature_snapshot(rows, decision_time, ["AAA", "BBB"],
+                                         session_dates=[(start + timedelta(days=i)).isoformat() for i in range(260)])
         self.assertEqual(result["relative_strength"]["status"], "observed")
         self.assertEqual(result["relative_strength"]["eligible_symbols"], 2)
         self.assertGreater(
@@ -147,6 +162,20 @@ class FeaturePipelineTests(unittest.TestCase):
         )
         self.assertEqual(result["aggregate_scores"]["AAA"]["coverage_pct"], 75.0)
         self.assertEqual(result["aggregate_scores"]["AAA"]["action"], "NO_TRADE")
+
+
+    def test_unverified_input_contracts_withhold_weighted_scores(self):
+        rows = [{
+            "record_type": "ohlcv", "symbol": "AAA", "session_date": "2026-11-23",
+            "available_at": "2026-11-23T16:00:00Z", "open": 10, "high": 11,
+            "low": 9, "close": 10, "previous_close": 9, "volume": 100,
+        }]
+        result = build_feature_snapshot(rows, "2026-11-24T12:00:00Z", ["AAA"])
+        self.assertEqual(result["input_contracts"]["canonical_session_calendar"], "unavailable_or_invalid")
+        self.assertFalse(result["input_contracts"]["ohlcv"]["score_eligible"])
+        self.assertEqual(result["component_feature_bundles"]["AAA"]["trend"]["status"], "input_contract_unverified")
+        self.assertIsNone(result["component_candidates"]["AAA"]["trend"])
+        self.assertFalse(result["input_contracts"]["broker_floorsheet"]["score_eligible"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -109,12 +109,14 @@ def scan_market_wide(request: ScanRequest):
         raise HTTPException(422, "Symbols outside the candidate equity universe: " + ", ".join(invalid_symbols))
     # Default to the current Nepal calendar date so future-dated rows can
     # never enter a scan merely because the caller omitted an explicit as_of.
-    effective_as_of = request.as_of or datetime.now(ZoneInfo("Asia/Kathmandu")).date()
+    now_nepal = datetime.now(ZoneInfo("Asia/Kathmandu"))
+    today_nepal = now_nepal.date()
+    effective_as_of = min(request.as_of or today_nepal, today_nepal)
     cutoff = datetime.now(timezone.utc)
-    if request.as_of:
+    if request.as_of and request.as_of <= today_nepal:
         cutoff = min(
             cutoff,
-            datetime.combine(request.as_of, time.max, ZoneInfo("Asia/Kathmandu")),
+            datetime.combine(effective_as_of, time.max, ZoneInfo("Asia/Kathmandu")),
         )
 
     def scan_one(symbol, rows, as_of):

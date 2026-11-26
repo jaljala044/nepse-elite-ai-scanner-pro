@@ -1536,3 +1536,8 @@ Attached dated 2026-11-25 successor security-ID observations from `data/referenc
 ## Priority 97 — historical security-ID recovery assessment (2026-11-26)
 
 Repository archive search did not locate dated historical security-master snapshots for predecessor symbols BPW, JALPA, KLBSL, MKLB, MMFDB, NLBBL, SABSL, SDLBSL, SAMAJ and SFCL. ShareHub documentation identifies a current stock-table `nepseSecurityId` field, but access requires a licensed authenticated account and IP allow-listing; its documented companies endpoint does not include a security ID in each company row. No authenticated response was acquired. Current successor IDs remain date-scoped observations only. Added acquisition-gap metadata and regression guard tests; no IDs inferred, no history splice, no canonical/training promotion. See `docs/PRIORITY_97_HISTORICAL_SECURITY_ID_RECOVERY_2026-11-26.md`.
+
+
+## Priority 97 — historical instrument identity regression framework (2026-11-26)
+
+Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py` (commit 418f719838b7aa44dc898b78e079db93215b2bc8). Checks include duplicate IDs/symbols, inclusive interval conflicts, missing source, invalid ID/date order, merger splice denial and unresolved equity predecessor preservation. Independent inspection of the dated snapshot found 573 rows, 573 unique symbols and 573 unique IDs, with no detected duplicate or invalid ID. Snapshot includes non-equities; observations are date-scoped. Python tests are committed but execution has not been confirmed. This is a test-local framework, not yet a production ingestion gate; no historical IDs inferred or raw prices changed. Next: run tests and integrate reusable validation into canonical promotion path. Priority 97 remains open.

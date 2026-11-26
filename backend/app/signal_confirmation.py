@@ -24,10 +24,13 @@ def _signal_input_errors(rows):
             high, low, close, volume = (float(row[key]) for key in ("high", "low", "close", "volume"))
             if not all(isfinite(value) for value in (high, low, close, volume)):
                 raise ValueError("non_finite_signal_input")
-            if min(high, low, close) <= 0 or volume < 0 or not volume.is_integer():
-                errors.append(f"invalid_signal_values:{index}")
-            if high < max(low, close) or low > min(high, close):
-                errors.append(f"invalid_signal_range:{index}")
+            if volume < 0 or not volume.is_integer():
+                errors.append(f"invalid_signal_volume:{index}")
+            elif volume > 0:
+                if min(high, low, close) <= 0:
+                    errors.append(f"invalid_signal_prices:{index}")
+                if high < max(low, close) or low > min(high, close):
+                    errors.append(f"invalid_signal_range:{index}")
         except (KeyError, ValueError, TypeError, OverflowError):
             errors.append(f"malformed_signal_row:{index}")
     return errors
@@ -62,7 +65,14 @@ def confirm_signal(rows, *, eligible=False, min_observations=55,
             or not isinstance(breakout_lookback, int) or isinstance(breakout_lookback, bool) or breakout_lookback < 5
             or not valid_volume_multiple):
         raise ValueError("invalid signal confirmation configuration")
-    ordered = sorted(rows, key=lambda row: str(row["date"]))
+    source_rows_received = len(rows)
+    ordered = sorted(
+        (row for row in rows if float(row["volume"]) > 0),
+        key=lambda row: str(row["date"]),
+    )
+    base["observations"] = len(ordered)
+    base["source_rows_received"] = source_rows_received
+    base["zero_volume_rows_excluded"] = source_rows_received - len(ordered)
     required = max(min_observations, breakout_lookback + 1, 51)
     if len(ordered) < required:
         base["status"] = "insufficient_data"

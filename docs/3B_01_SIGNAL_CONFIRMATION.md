@@ -536,3 +536,25 @@ actions, historical security identity, data-use rights or predictive value.
 The archive remains quarantined. Do not silently overwrite CFCL's public
 value or promote any other rows from this comparison into the canonical
 reviewed manifest.
+
+#### Concrete unreviewed row examples and diagnostic samples — 2026-11-27
+
+The pinned public archive snapshot contains these inspectable examples:
+
+**ADBL — 2010-09-23** (`data/nepse/ADBL.csv`, data line 5):
+- Open 116, high 120, low 117, close 120.
+- Volume 8,417; turnover 0.
+- OHLC violation: the reported open (116) is below the reported low (117).
+- Turnover violation: positive volume with zero reported value.
+- This row must be quarantined, not repaired by inference.
+
+ADBL has 405 OHLC-bound violations and 112 positive-volume/zero-turnover rows in its 3,684-row public file in the pinned audit snapshot. The per-symbol audit counts are exact for that snapshot.
+
+**CFCL — 2026-11-18**:
+- Public archive: open 598.5, high 640, low 589.9, close 636, volume 307,576, turnover NPR 184,031,033.4.
+- Pinned official NEPSE capture: high 640, low 589.9, close 589.9, volume 307,576, turnover NPR 184,031,033.4.
+- The public close differs by NPR 46.1. The public row passes OHLC bounds but fails independent source reconciliation. Official history does not supply open, so open remains unverified.
+
+The audit now retains row-level diagnostic samples by defect type (including the date and relevant OHLC/volume/turnover values) in the full per-symbol artifact, capped at five samples per defect type per symbol. Aggregate counters still count every detected row. This allows a reviewer to inspect examples without inflating the artifact with every defective row.
+
+**Why these records remain unreviewed:** (1) the public publisher describes the archive as unofficial and sourced from third parties; (2) the full archive has widespread structural defects; (3) official overlap reveals at least one material close discrepancy; (4) official history does not independently verify open; (5) historical security lifecycle and corporate-action adjustment are not established for the complete archive; and (6) the repository's publication licence does not independently prove rights to sublicense underlying market data. No automatic correction, canonical promotion or trading use is allowed.

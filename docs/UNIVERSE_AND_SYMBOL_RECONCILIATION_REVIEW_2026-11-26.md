@@ -47,3 +47,18 @@ These are debt instruments, not equity or mutual-fund targets. Their original fi
 - No raw price mutation or alias-based overwrite.
 - No treating a candidate list or a current trading table as a complete historical lifecycle registry.
 - No combining separate provider rows into one coverage numerator.
+
+
+## Dated listing and equity-class evidence expansion — 2026-11-26
+
+The three candidates now have multiple provider records supporting their equity classification and listing/trading-start timeline. This is stronger than a current active-security snapshot alone:
+
+| Symbol | Security ID (2026-11-25 snapshot) | Listing date | First trading date | Classification evidence |
+|---|---:|---|---|---|
+| NESDO | 8041 | 2022-03-27 | 2022-03-28 (secondary profile reference) | ShareSansar listing notice links the NEPSE listing PDF; ShareHub and Laganilab classify it as active microfinance equity |
+| ULBSL | 8063 | 2022-05-26 | 2022-05-27 | Merolagani reports NEPSE's listing and first trade and assigns ULBSL; ShareHub and Laganilab corroborate active microfinance classification |
+| YMHL | 9342 | 2026-06-19 | 2026-06-22 | ShareSansar listing notice links the NEPSE listing PDF; NepseBajar and NepseLabs corroborate dates and hydropower equity classification |
+
+Source URLs and the exact claim each supports are stored in `data/reference/nepse_equity_candidate_additions_2026-11-26.json` (commit `b78a9fca080b0763d8ffdcae2d6e1e826ab5ae5c`). The current IDs also appear in the dated 2026-11-25 security snapshot and the 2026-11-19 NEPSE OHLCV capture. The latter supports contemporary symbol/ID association, not proof of unbroken historical stable-ID continuity.
+
+**Decision:** the three records are now well-supported active-equity additions for the candidate manifest, not mutual funds. However, do not claim the full 281-member universe is verified: full dated membership reconciliation, instrument-ID continuity, and complete primary-source provenance are still open. The canonical target manifest remains unpromoted pending those gates; no raw OHLCV files or finalized historical records were changed.

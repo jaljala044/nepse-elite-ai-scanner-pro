@@ -130,9 +130,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         if kind in ("bonus", "split"):
             effective = _day(action.get("listing_date"), "listing_date")
             factor = _positive(action.get("ratio"), "corporate_action_ratio")
-            if kind == "split":
-                raise ValueError("split_requires_effective_date_position_conversion_not_record_date_credit")
-            event = ("shares", effective, factor)
+            event = ("split" if kind == "split" else "shares", effective, factor)
         elif kind == "dividend":
             effective = _day(action.get("payment_date"), "payment_date")
             amount = _positive(action.get("cash_per_share"), "cash_per_share", zero=True)
@@ -187,7 +185,11 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 raise ValueError("rights_subscription_exceeds_record_date_entitlement:" + aid)
             entitlement_by_action[aid]["quantity"] = entitlement
             entitlement_by_action[aid]["terms"] = terms
-            if kind == "shares":
+            if kind == "split":
+                pending_events[effective].append({"type": "split_conversion", "action_id": aid,
+                                                  "symbol": symbol, "factor": terms,
+                                                  "source_id": action["source_id"]})
+            elif kind == "shares":
                 pending_events[effective].append({"type": action["action_type"] + "_shares", "action_id": aid,
                                                   "symbol": symbol, "quantity": entitlement * terms,
                                                   "source_id": action["source_id"]})
@@ -212,7 +214,14 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 continue
             symbol = event["symbol"]
             pos = positions.setdefault(symbol, {"quantity": 0.0, "cost_basis": 0.0})
-            if event["type"] == "dividend_cash":
+            if event["type"] == "split_conversion":
+                if abs(pending_buys[symbol]) > 1e-8 or any(t["symbol"] == symbol for t in trades_by_day.get(day, [])):
+                    raise ValueError("split_with_overlapping_trade_requires_custody_reconciliation")
+                converted = pos["quantity"] * event["factor"]
+                if abs(converted - round(converted)) > 1e-8:
+                    raise ValueError("fractional_split_requires_cash_in_lieu_evidence")
+                pos["quantity"] = round(converted)
+            elif event["type"] == "dividend_cash":
                 cash += event["cash_delta"]
             elif event["type"] == "rights_subscription_payment":
                 if cash + event["cash_delta"] < -1e-8:
@@ -334,6 +343,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             "Buy shares enter holdings on supplied settlement date; sale proceeds become spendable cash on supplied settlement date.",
             "Corporate-action entitlement is calculated from settled holdings at the supplied record date; record-date/ex-date eligibility conventions must be confirmed against official event terms.",
             "Rights subscribed quantity and allotment/listing are caller supplied; no default election is inferred.",
+            "Split ratio is new shares per old share; effective-date conversion preserves total cost basis. Overlapping unsettled buys or same-day trades and fractional shares are rejected.",
             "Paid unlisted rights are carried at subscription cost, not fair value; unpaid entitlements are not valued.",
             "Taxes, fractional cash-in-lieu, renunciation, oversubscription, failed allotment, interest and financing are not modeled.",
             "Marks use supplied close prices, not verified executable fills; benchmark excess is descriptive, not evidence of alpha.",

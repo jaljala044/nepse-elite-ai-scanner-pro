@@ -85,8 +85,6 @@ def apply_corporate_actions_to_portfolio(*, holdings, cash, actions, as_of_date,
         if symbol not in positions:
             raise ValueError("corporate_action_symbol_not_in_holdings")
         entitlement = _number(action.get("entitlement_quantity"), "entitlement_quantity", allow_zero=True)
-        if entitlement > positions[symbol]["quantity"]:
-            raise ValueError("entitlement_exceeds_reconciled_holding")
         kind = action.get("action_type")
         if kind in ("bonus", "split"):
             ratio = _number(action.get("ratio"), "ratio")
@@ -115,6 +113,8 @@ def apply_corporate_actions_to_portfolio(*, holdings, cash, actions, as_of_date,
             continue
         symbol = action["symbol"]
         position = positions[symbol]
+        if float(action["entitlement_quantity"]) > position["quantity"]:
+            raise ValueError("entitlement_exceeds_reconciled_holding_at_event")
         if cash_delta < 0 and balance + cash_delta < -1e-8:
             raise ValueError("insufficient_cash_for_rights_subscription")
         balance += cash_delta

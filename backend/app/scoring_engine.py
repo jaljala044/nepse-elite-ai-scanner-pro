@@ -176,3 +176,71 @@ def score_scan(
         "probability_note": "Not estimated; a component score is not a calibrated probability.",
         "policy": "v3_capital_preservation_complete_coverage_high_quality_confirmed_setup_min_2R",
     }
+
+
+
+def _observed_feature_score(name: str, feature: Any, *, accepted_statuses: tuple[str, ...] = ("observed",)) -> float | None:
+    """Extract a score only from an explicitly accepted upstream feature status.
+
+    Feature outputs marked experimental, provisional, incomplete, unavailable or
+    insufficient are intentionally not admitted to the composite.
+    """
+    if not isinstance(feature, dict):
+        return None
+    if feature.get("status") not in accepted_statuses:
+        return None
+    return _score_value(name, feature.get("score"))
+
+
+def build_component_scores(feature_bundle: dict[str, Any]) -> dict[str, float | None]:
+    """Adapt upstream feature results into the canonical V3 component map.
+
+    Expected keys are wyckoff, trend, relative_strength, broker, volume,
+    liquidity, sector and smc. Each value must be a feature result containing
+    status='observed' and score=0..100. Broker/sector feature producers may
+    expose per-symbol results; callers must pass the selected symbol's
+    feature object, never a market-wide aggregate.
+
+    SMC is deliberately stricter: its current experimental_only status is not
+    admitted. It becomes scoreable only after a producer explicitly reports
+    status='observed' under a reviewed production method.
+    """
+    if not isinstance(feature_bundle, dict):
+        raise ValueError("feature_bundle must be an object")
+    unknown = sorted(set(feature_bundle) - set(COMPONENT_WEIGHTS))
+    if unknown:
+        raise ValueError(f"unknown feature components: {', '.join(unknown)}")
+    output: dict[str, float | None] = {}
+    for name in COMPONENT_WEIGHTS:
+        feature = feature_bundle.get(name)
+        output[name] = _observed_feature_score(name, feature)
+    return output
+
+
+def score_feature_bundle(
+    feature_bundle: dict[str, Any],
+    *,
+    stage1_quality: str,
+    structure_confirmed: bool,
+    liquidity_ok: bool,
+    market_tradeable: bool,
+    reward_risk: float | None,
+    hard_blocks: list[str] | None = None,
+) -> dict:
+    """Run the V3 weighted score directly from evidence-bearing feature outputs."""
+    component_scores = build_component_scores(feature_bundle)
+    result = score_scan(
+        component_scores,
+        stage1_quality=stage1_quality,
+        structure_confirmed=structure_confirmed,
+        liquidity_ok=liquidity_ok,
+        market_tradeable=market_tradeable,
+        reward_risk=reward_risk,
+        hard_blocks=hard_blocks,
+    )
+    result["component_evidence_status"] = {
+        name: (feature.get("status") if isinstance(feature, dict) else "missing")
+        for name, feature in ((key, feature_bundle.get(key)) for key in COMPONENT_WEIGHTS)
+    }
+    result["scoring_source"] = "observed_upstream_feature_outputs_only"
+    return result

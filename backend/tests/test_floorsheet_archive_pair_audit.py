@@ -82,6 +82,25 @@ class FloorsheetArchivePairAuditTests(unittest.TestCase):
         )
         self.assertFalse(result["canonical_promotion_allowed"])
 
+
+    def test_duplicate_contract_keys_are_retained_and_block_comparison(self):
+        duplicate_left = self.left + (
+            b"2026-11-24,C1,AAA,11,22,10,10,100\\n"
+        )
+        result = self.run_audit(left=duplicate_left)
+        self.assertEqual(
+            result["comparison"]["comparison_status"],
+            "not_run_duplicate_keys_require_adjudication",
+        )
+        self.assertEqual(
+            result["left_file"]["row_reconciliation"]["counts"]["exact_duplicate"],
+            2,
+        )
+        self.assertEqual(
+            len(result["left_file"]["row_reconciliation"]["review_rows"]),
+            2,
+        )
+
     def test_empty_payload_and_invalid_digest_rejected(self):
         with self.assertRaisesRegex(ValueError, "non-empty bytes"):
             self.run_audit(left=b"")

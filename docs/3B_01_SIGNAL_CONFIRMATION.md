@@ -745,3 +745,24 @@ The official history does not contain open, the secondary archive still has
 fails, and upstream rights/corporate-action treatment are unresolved. No rows
 were imported or promoted. No backtest or production signal eligibility is
 claimed.
+
+The 164 missing active rows in the binayabaral comparison are concentrated in
+five symbol files:
+
+| Symbol | Official active rows absent from public CSV |
+| --- | ---: |
+| BNL | 93 |
+| ECL | 15 |
+| KAHL | 26 |
+| NLO | 4 |
+| SGHL | 26 |
+
+For example, the BNL CSV contains only 25 dated rows beginning 2026-08-17,
+while the official review window contains 229 symbol-date rows for BNL,
+including 93 active dates. NLO's public CSV contains only three rows against
+229 official symbol-date rows, with four active dates missing. ECL, KAHL and
+SGHL public files begin later than their official active history. The 476
+missing zero-activity rows are different: the publisher explicitly does not
+forward-fill or write rows for no-trade dates, so those absences are expected
+under its stated file policy. The 164 missing active rows are not explained
+by that policy and remain a completeness failure.

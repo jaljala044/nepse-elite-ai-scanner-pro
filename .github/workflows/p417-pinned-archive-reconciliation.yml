@@ -15,11 +15,13 @@ on:
       - "backend/audit_floorsheet_eod_controls.py"
       - "backend/audit_official_market_summary_reconciliation.py"
       - "backend/audit_official_security_history_vs_floorsheet.py"
+      - "backend/audit_official_equity_candidate_history.py"
       - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_one_sided_scope.py"
       - "backend/tests/test_floorsheet_eod_controls.py"
       - "backend/tests/test_official_market_summary_reconciliation.py"
       - "backend/tests/test_official_security_history_vs_floorsheet.py"
+      - "backend/tests/test_official_equity_candidate_history.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -62,6 +64,10 @@ jobs:
       - name: Test official per-security history reconciliation
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_official_security_history_vs_floorsheet.py' -v
+
+      - name: Test official per-equity candidate history reconciliation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_official_equity_candidate_history.py' -v
 
       - name: Test floorsheet to EOD control reconciliation
         working-directory: backend
@@ -217,6 +223,44 @@ jobs:
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
               stream.write("## P4.22 official per-security floorsheet reconciliation\\n\\n")
               stream.write("\`\`\`json\\n" + rendered + "\\n\`\`\`\\n")
+          PY
+
+      - name: Fetch immutable official per-equity historical capture report
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/official-equity-history
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/jaljala044/nepse-elite-ai-scanner-pro/0a910e5f1fa292423ef16bcafdd18af898d9d5e5/data/evidence/raw/nepse/security-history/2026-11-19_to_2026-11-24/capture-report.json \
+            -o /tmp/official-equity-history/capture-report.json
+          sha256sum /tmp/official-equity-history/capture-report.json
+
+      - name: Reconcile all 281 equity candidate history rows with floorsheets
+        run: |
+          set -euo pipefail
+          python backend/audit_official_equity_candidate_history.py \
+            --per-security-report /tmp/official-equity-history/capture-report.json \
+            --floorsheet-dir /tmp/pinned-window \
+            --output artifacts/p422-official-equity-candidate-history.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p422-official-equity-candidate-history.json").read_text())
+          summary = {
+              day: {
+                  source: {
+                      "status_counts": item["status_counts"],
+                      "equity_candidate_count": item["equity_candidate_count"],
+                      "floorsheet_symbol_count": item["floorsheet_symbol_count"],
+                  }
+                  for source, item in sources.items()
+              }
+              for day, sources in report["dates"].items()
+          }
+          rendered = json.dumps(summary, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.22 281-equity official history reconciliation\\n\\n")
+              stream.write(chr(96) * 3 + "json\\n" + rendered + "\\n" + chr(96) * 3 + "\\n")
           PY
 
       - name: Reconcile floorsheet per-symbol aggregates with pinned EOD controls

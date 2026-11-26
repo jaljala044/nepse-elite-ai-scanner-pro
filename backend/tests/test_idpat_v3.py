@@ -1,6 +1,6 @@
 import unittest
 from datetime import date, timedelta
-from app.idpat_v3 import research_features, evaluate_idpat_v3
+from app.idpat_v3 import research_features, evaluate_idpat_v3, evaluate_provisional
 
 class IDPATFoundationTests(unittest.TestCase):
     def rows(self):
@@ -20,3 +20,15 @@ class IDPATFoundationTests(unittest.TestCase):
         self.assertEqual(research_features(rows)["status"],"data_quality_failed")
     def test_short_history(self):
         self.assertEqual(research_features(self.rows()[:20])["status"],"insufficient_data")
+
+    def test_provisional(self):
+        rows=self.rows()
+        result=evaluate_provisional(rows,eligible=True)
+        self.assertEqual(result["score"],75)
+        self.assertEqual(result["method"],"nepse_provisional_v1")
+        self.assertIsNone(evaluate_provisional(rows)["score"])
+        self.assertEqual(evaluate_provisional(rows,eligible=True,volume_threshold=3)["score"],50)
+        self.assertIsNone(evaluate_idpat_v3(rows,eligible=True)["score"])
+    def test_config(self):
+        with self.assertRaises(ValueError):
+            evaluate_provisional(self.rows(),eligible=True,weights=(0,0,0,0))

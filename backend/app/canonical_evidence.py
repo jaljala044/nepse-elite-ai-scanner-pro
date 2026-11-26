@@ -52,6 +52,13 @@ def load_canonical_evidence_records(
         ):
             latest_promotions[record_id] = event
 
+    if record_type:
+        latest_type_by_id: dict[str, str] = {}
+        for event in audit["events"]:
+            if event.get("record_id") in active_ids and event.get("action") in {"promote", "revoke"} and event.get("accepted") is True:
+                latest_type_by_id[event["record_id"]] = event.get("record_type", "")
+        active_ids = {record_id for record_id in active_ids if latest_type_by_id.get(record_id) == record_type}
+
     bronze_rows = load_evidence_record_details(
         database_path=database_path, record_type=record_type
     )

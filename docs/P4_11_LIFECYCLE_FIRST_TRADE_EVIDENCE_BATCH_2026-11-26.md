@@ -9,16 +9,16 @@ The 281-row equity lifecycle input had 9 populated `valid_from` values and 272 b
 | Symbol | First trade / first positive-volume date | Evidence status |
 |---|---|---|
 | BENH | 2026-10-15 | `verified_secondary_first_trade_archive_match` |
-| ECL | 2026-07-17 | `verified_secondary_notice_archive_match` |
+| ECL | 2026-07-17 | `verified_secondary_notice` |
 | KAHL | 2026-07-02 | `verified_secondary_first_trade_archive_match` |
-| MEPDL | 2026-08-12 | `verified_secondary_notice_archive_match` |
-| NESDO | 2022-03-28 | `verified_secondary_first_trade_date` |
+| MEPDL | 2026-08-12 | `verified_secondary_notice` |
+| NESDO | 2022-03-28 | `verified_secondary_notice` |
 | SAPIL | 2026-08-13 | `verified_secondary_first_trade_archive_match` |
 | SGHL | 2026-07-02 | `verified_secondary_first_trade_archive_match` |
 | SNORL | 2026-06-26 | `verified_secondary_first_trade_archive_match` |
 | SOPL | 2026-06-08 | `verified_secondary_first_trade_archive_match` |
-| TPKHL | 2026-06-22 | `verified_secondary_notice_archive_match` |
-| ULBSL | 2022-05-27 | `verified_secondary_first_trade_date` |
+| TPKHL | 2026-06-22 | `verified_secondary_notice` |
+| ULBSL | 2022-05-27 | `verified_secondary_notice` |
 
 The register stores the effective first executed-trade/observed start in `valid_from`, not the IPO listing date or scheduled commencement date. The notes retain the distinction and identify the evidence limitations.
 
@@ -50,7 +50,7 @@ Additional listing notices and cross-checks are recorded in `reference/later_sta
 
 - Lifecycle input remains 281 rows / 281 unique equity symbols.
 - 11 additional start dates entered in this batch (8 later-start cases plus BENH, NESDO and ULBSL; existing records were not duplicated).
-- Expected populated `valid_from` count after this batch: 20 of 281.
+- Expected populated `valid_from` count after this batch: 20 of 281. Evidence-status values are restricted to the validator's approved vocabulary.
 - Evidence tier remains secondary/project-observation; no exchange-authoritative certification.
 - No raw OHLCV mutation, no synthesized rows, no canonical/training promotion, and no BUY eligibility change.
 - Full session-level floorsheet completeness, corporate-action intervals, historical security-ID continuity, and later-session OHLCV provenance remain blocked.

@@ -104,7 +104,12 @@ def relative_strength_universe(
         if not rows:
             excluded[symbol] = "missing_stock_price_rows"
             continue
-        stock, stock_excluded = _close_series(rows, symbol, benchmark=False)
+        required_date_set = set(required_dates)
+        window_rows = [
+            row for row in rows
+            if isinstance(row, dict) and str(row.get("session_date", "")) in required_date_set
+        ]
+        stock, stock_excluded = _close_series(window_rows, symbol, benchmark=False)
         if stock_excluded["unverified_rows"] or stock_excluded["invalid_provenance_rows"]:
             excluded[symbol] = "stock_price_provenance_or_price_basis_unverified"
             continue

@@ -550,6 +550,7 @@ def compare_socrateai_daily_csvs(official_rows: list[dict], daily_csv_by_date: d
         "missing_public_active_rows": 0,
         "missing_public_zero_activity_rows": 0,
         "mismatch_examples": [],
+        "invalid_ohlc_examples": [],
         "per_day": [],
         "fields_compared": list(fields),
         "not_compared": ["open", "turnover", "per_change", "status"],
@@ -812,11 +813,25 @@ def compare_srijankarki_daily_csvs(official_rows: list[dict],
                             result["malformed_rows"] += 1
                             continue
                         result["open_values_observed"] += 1
-                        if (min(values["open"], values["high"], values["low"], values["close"]) <= 0
-                                or values["high"] < max(values["open"], values["low"], values["close"])
-                                or values["low"] > min(values["open"], values["high"], values["close"])
-                                or values["volume"] < 0 or values["turnover"] < 0):
+                        invalid_reasons = []
+                        if min(values["open"], values["high"], values["low"], values["close"]) <= 0:
+                            invalid_reasons.append("nonpositive_price")
+                        if values["high"] < max(values["open"], values["low"], values["close"]):
+                            invalid_reasons.append("high_below_ohlc")
+                        if values["low"] > min(values["open"], values["high"], values["close"]):
+                            invalid_reasons.append("low_above_ohlc")
+                        if values["volume"] < 0:
+                            invalid_reasons.append("negative_volume")
+                        if values["turnover"] < 0:
+                            invalid_reasons.append("negative_turnover")
+                        if invalid_reasons:
                             result["invalid_ohlc_rows"] += 1
+                            if len(result["invalid_ohlc_examples"]) < 100:
+                                result["invalid_ohlc_examples"].append({
+                                    "symbol": symbol, "date": day, "reasons": invalid_reasons,
+                                    "open": str(values["open"]), "high": str(values["high"]),
+                                    "low": str(values["low"]), "close": str(values["close"]),
+                                })
                         public_rows[symbol] = values
             except (UnicodeDecodeError, csv.Error):
                 result["malformed_rows"] += 1

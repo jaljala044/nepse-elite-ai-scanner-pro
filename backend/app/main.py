@@ -106,6 +106,7 @@ class PortfolioBacktestRequest(BaseModel):
     max_position_pct: float = Field(default=0.20, gt=0, le=1)
     max_sector_pct: float = Field(default=0.40, gt=0, le=1)
     risk_per_trade_pct: float = Field(default=0.01, gt=0, le=1)
+    max_drawdown_pct: float = Field(default=0.15, gt=0, le=1)
     cost_assumptions_by_symbol: dict[str, dict]
     execution_config_by_symbol: dict[str, dict]
 
@@ -520,6 +521,7 @@ def research_portfolio_backtest(request: PortfolioBacktestRequest):
             initial_capital=request.initial_capital, max_positions=request.max_positions,
             max_position_pct=request.max_position_pct, max_sector_pct=request.max_sector_pct,
             risk_per_trade_pct=request.risk_per_trade_pct,
+            max_drawdown_pct=request.max_drawdown_pct,
             cost_assumptions_by_symbol=request.cost_assumptions_by_symbol,
             execution_config_by_symbol=request.execution_config_by_symbol,
             reviewed=REVIEWED_ROWS)

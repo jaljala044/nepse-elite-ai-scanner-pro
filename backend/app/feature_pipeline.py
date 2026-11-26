@@ -7,10 +7,14 @@ from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
 from app.wyckoff_features import wyckoff_event_features
 from app.smc_features import smc_features
+from app.sector_strength_features import sector_strength_features
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
-                           expected_symbols: list[str] | None = None) -> dict:
+                           expected_symbols: list[str] | None = None,
+                           sector_membership: dict | None = None,
+                           expected_sector_members: dict | None = None,
+                           session_dates: list[str] | None = None) -> dict:
     """Filter every input by availability before deriving any feature."""
     snapshot = build_as_of_snapshot(records, decision_time)
     rows = snapshot["records"]
@@ -69,6 +73,18 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
     broker_footprint = broker_footprint_features(broker_rows)
+    if sector_membership is not None and expected_sector_members is not None and session_dates is not None:
+        sector_features = sector_strength_features(
+            prices, sector_membership=sector_membership,
+            expected_sector_members=expected_sector_members,
+            session_dates=session_dates,
+        )
+    else:
+        sector_features = {
+            "status": "insufficient_evidence",
+            "reason": "verified_sector_membership_and_calendar_not_supplied",
+            "sectors": {},
+        }
     component_candidates = {}
     for symbol in sorted(by_symbol):
         if not symbol:
@@ -81,7 +97,14 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                        if broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("status") == "observed" else None),
             "volume": volume_features[symbol].get("score") if volume_features[symbol].get("status") == "observed" else None,
             "liquidity": None,
-            "sector": None,
+            "sector": (
+                sector_features.get("sectors", {}).get(
+                    sector_membership.get(symbol, {}).get("sector_code"), {}
+                ).get("score")
+                if isinstance(sector_membership, dict)
+                and sector_membership.get(symbol, {}).get("status") == "verified"
+                and sector_features.get("status") == "observed" else None
+            ),
             "smc": smc_features_by_symbol[symbol].get("score") if smc_features_by_symbol[symbol].get("status") == "observed" else None,
         }
     latest_by_symbol = []
@@ -103,5 +126,6 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "component_candidates": component_candidates,
         "broker_participation": broker_participation_summary(broker_rows),
         "broker_footprint": broker_footprint,
+        "sector_strength": sector_features,
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

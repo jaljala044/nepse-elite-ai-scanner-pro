@@ -19,7 +19,11 @@ def evaluate_timeframes(rows, *, eligible=False, verified_sessions=None):
     weekly = []
     if verified_sessions is not None:
         sessions = {date.fromisoformat(str(d)) for d in verified_sessions}
+        previous_start = None
         for start, group in sorted(buckets.items())[:-1]:
+            if previous_start is not None and start != previous_start+timedelta(days=7):
+                weekly = []
+            previous_start = start
             expected = {d for d in sessions if start <= d < start+timedelta(days=7)}
             actual = {date.fromisoformat(str(r["date"])) for r in group}
             if not expected or expected != actual:
@@ -28,6 +32,8 @@ def evaluate_timeframes(rows, *, eligible=False, verified_sessions=None):
             weekly.append(dict(date=group[-1]["date"],open=group[0]["open"],
                 high=max(r["high"] for r in group),low=min(r["low"] for r in group),
                 close=group[-1]["close"],volume=sum(r["volume"] for r in group)))
+        if previous_start is not None and max(buckets) != previous_start+timedelta(days=7):
+            weekly = []
     week = detect_structure(weekly) if weekly else None
     weekly_bias = week["bias"] if week and week["status"]=="screened" else None
     daily_bias = daily["bias"] if daily["status"]=="screened" else None

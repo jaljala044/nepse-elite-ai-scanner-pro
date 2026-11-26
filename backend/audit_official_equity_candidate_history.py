@@ -55,7 +55,7 @@ def load_floorsheet(path: Path, day: str, source: str) -> dict[str, dict]:
 
 def reconcile(capture_report_path: Path, floorsheet_dir: Path, expected_equity_count: int = 281) -> dict:
     capture = json.loads(capture_report_path.read_text(encoding="utf-8"))
-    if capture.get("source_id") != "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME":
+    if capture.get("source_id") != "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME_HISTORY":
         raise ValueError("unexpected per-security capture source ID")
     if capture.get("historical_security_identity_verified") is not False:
         raise ValueError("capture report must retain historical identity as unverified")

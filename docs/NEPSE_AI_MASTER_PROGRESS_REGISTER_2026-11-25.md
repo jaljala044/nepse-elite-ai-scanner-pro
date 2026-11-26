@@ -1541,3 +1541,11 @@ Repository archive search did not locate dated historical security-master snapsh
 ## Priority 97 — historical instrument identity regression framework (2026-11-26)
 
 Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py` (commit 418f719838b7aa44dc898b78e079db93215b2bc8). Checks include duplicate IDs/symbols, inclusive interval conflicts, missing source, invalid ID/date order, merger splice denial and unresolved equity predecessor preservation. Independent inspection of the dated snapshot found 573 rows, 573 unique symbols and 573 unique IDs, with no detected duplicate or invalid ID. Snapshot includes non-equities; observations are date-scoped. Python tests are committed but execution has not been confirmed. This is a test-local framework, not yet a production ingestion gate; no historical IDs inferred or raw prices changed. Next: run tests and integrate reusable validation into canonical promotion path. Priority 97 remains open.
+
+
+### Priority 97 follow-up — additional predecessor last-trade evidence (2026-11-26)
+
+- Added secondary-reported last-recorded-trade dates for BPW (2024-03-06), MMFDB (2024-03-12) and NLBBL (2024-03-12) to the historical identity evidence JSON.
+- Evidence combines Laganilab/Merolagani historical company pages with ShareSansar dated company-history observations. BPW's last-trade date coincides with the reported suspension-effective date; MMFDB/NLBBL last-trade dates precede the reported 2024-03-13 suspension date.
+- Updated evidence report: `docs/PRIORITY_97_HISTORICAL_EQUITY_MERGER_TIMELINES_2026-11-26.md`.
+- Evidence remains secondary-source level; no historical predecessor security IDs, effective intervals, or legal stable IDs are certified. No canonical promotion, training promotion, or price-history splice is authorized.

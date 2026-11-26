@@ -141,9 +141,9 @@ def _validate_observations(rows: list[dict], session_dates: list[str], decision_
             row["source_broker_code"] = str(row["source_broker_code"]).strip()
         if not row["symbol"]:
             raise ValueError(f"row {index} symbol is required")
-        key = (row["source_id"], digest, row_number)
+        key = (row["source_id"], digest, row_number, row["side"])
         if key in seen:
-            raise ValueError(f"duplicate source lineage row: {key}")
+            raise ValueError(f"duplicate party observation source lineage: {key}")
         seen.add(key)
         clean.append(row)
     return clean

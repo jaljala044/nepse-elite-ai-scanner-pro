@@ -59,6 +59,65 @@ jobs:
             --right-sha256 "$SOCRATEAI_SHA256" \
             --output artifacts/p417-floorsheet-pair-audit-2026-11-24.json
 
+      - name: Summarize reconciliation exceptions and coverage limits
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("artifacts/p417-floorsheet-pair-audit-2026-11-24.json").read_text())
+          audit = report["audit"]
+          comparison = audit["comparison"]
+          identity = audit["identity_audit"]
+
+          def compact_file(key):
+              item = audit[key]
+              reconciliation = item.get("row_reconciliation") or {}
+              return {
+                  "source_id": item["source_id"],
+                  "input_rows": item["input_rows"],
+                  "parsed_rows": item["parsed_rows"],
+                  "rejected_rows": item["rejected_rows"],
+                  "duplicate_counts": reconciliation.get("counts", {}),
+                  "rejected_row_examples": item.get("rejected_row_ledger", [])[:10],
+              }
+
+          summary = {
+              "audit_status": audit["audit_status"],
+              "left": compact_file("left_file"),
+              "right": compact_file("right_file"),
+              "comparison": {
+                  "comparison_status": comparison.get("comparison_status"),
+                  "left_totals": comparison.get("left_totals"),
+                  "right_totals": comparison.get("right_totals"),
+                  "shared_contract_count": comparison.get("shared_contract_count"),
+                  "exact_shared_contract_count": comparison.get("exact_shared_contract_count"),
+                  "conflicting_shared_contract_count": comparison.get("conflicting_shared_contract_count"),
+                  "left_only_count": len(comparison.get("left_only_contract_keys", [])),
+                  "right_only_count": len(comparison.get("right_only_contract_keys", [])),
+                  "conflict_examples": comparison.get("conflicts", [])[:10],
+              },
+              "identity": {
+                  "left_within_source_date_collisions": len(identity.get("left_within_source_date_collisions", [])),
+                  "right_within_source_date_collisions": len(identity.get("right_within_source_date_collisions", [])),
+                  "cross_source_date_disagreements": len(identity.get("cross_source_date_disagreements", [])),
+                  "contract_prefix_date_findings": len(identity.get("contract_prefix_date_findings", [])),
+                  "date_disagreement_examples": identity.get("cross_source_date_disagreements", [])[:10],
+                  "prefix_examples": identity.get("contract_prefix_date_findings", [])[:10],
+              },
+              "source_independence_verified": False,
+              "daily_capture_completeness_verified": False,
+              "source_rights_verified": False,
+              "coverage_admission_allowed": False,
+              "canonical_promotion_allowed": False,
+          }
+          rendered = json.dumps(summary, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.17 floorsheet pair reconciliation\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
+
       - name: Upload review-only reconciliation report
         uses: actions/upload-artifact@v4
         with:

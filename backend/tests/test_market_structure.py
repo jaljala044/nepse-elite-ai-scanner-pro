@@ -101,7 +101,7 @@ class MarketStructureAPITests(unittest.TestCase):
                 lifecycle_evidence_id="fixture-lifecycle", session_evidence_id=f"fixture-session-{i}",
                 price_basis_reviewed=True, canonical_promotion_allowed=True,
             ))
-        manifest[1]["available_at"] = "2025-01-06T14:00:00Z"
+        manifest[1]["available_at"] = "2025-01-06T12:00:00Z"
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "rows.json"
             path.write_text(json.dumps({"schema_version": 1, "records": manifest}), encoding="utf-8")
@@ -120,7 +120,7 @@ class MarketStructureAPITests(unittest.TestCase):
                 events = result["market_structure"]["events"]
                 swing = next(e for e in events if e["type"] == "swing_high")
                 self.assertEqual(swing["date"], "2025-01-05")
-                self.assertEqual(swing["available_at"], "2025-01-06T14:00:00+00:00")
+                self.assertEqual(swing["available_at"], "2025-01-06T12:00:00+00:00")
                 order_block = next(e for e in events if e["type"] == "order_block")
                 self.assertIn("fixture-3", {item["evidence_id"] for item in order_block["evidence"]})
 

@@ -1596,3 +1596,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added a regression test asserting all seven exact IDs, 2026-11-25 snapshot date, active status, OHLCV presence and absence of the ten former symbols from that snapshot (commit `95af5937646ae8eb5c572043b1fb2c9ed0030c53`).
 - Updated this register with the owner decision (commit `3dd1e0ea312a65400553daa9501c648e02181f2d`).
 - Test execution/CI result has **not** been confirmed in this work session. No price history was spliced and no canonical/training data was promoted.
+
+### Current successor identity regression — verified 2026-11-26
+
+- Focused GitHub Actions workflow `Historical identity regression`: **SUCCESS**, run [45824348509](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824348509); **14 tests passed**, including the seven exact successor IDs, dated snapshot fields, retired alias exclusion, predecessor quarantine and no-splice guardrail.
+- Full backend unit suite: **SUCCESS**, run [45824451318](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824451318); **603 tests ran**, workflow conclusion success.
+- Backend contract tests: **SUCCESS**, run [45824451415](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824451415).
+- Integrated evidence audit: **SUCCESS**, run [45824451368](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45824451368).
+- Initial full-suite failure was traced to DuckDB timezone support requiring `pytz`; added `pytz>=2024.1` to `backend/requirements.txt` (commit `c8ee30754e586f704886e9ed7bdd554928ed6384`). All three workflows above then passed on that commit.
+- Historical predecessor IDs remain intentionally out of scope for current-universe scanning under the project-owner decision. No predecessor IDs were fabricated, no historical prices were spliced, and no historical continuity/backtest/training promotion is authorized.
+- This completion does **not** close the separate release gates already listed in this register (including calendar, universe provenance/lifecycle, quarantined OHLC conflicts, floorsheet production safety, rights/corporate-action validation and other CI/release controls). Those remain open until separately evidenced.

@@ -129,8 +129,8 @@ The first backend foundation is now committed on `feat/broker-behaviour-memory-e
 - separate execution-channel-code profiles, including unmapped codes, without promoting them to verified broker entities;
 - 20-session buy/sell baselines, daily activity acceleration ratios and a 21-session daily execution-channel timeline for each code; buyer and seller party observations from the same contract row are kept distinct by side in immutable lineage;
 - a fail-closed, explicitly uncalibrated research-rule evaluator for early-entry/early-exit candidates, requiring complete 1D/1W/1M broker windows and verified NEPSE price/index/sector/breadth/liquidity/circuit/corporate-action context;
-- read-only shared API endpoints `GET /v1/broker-memory/status`, `GET /v1/broker-memory` and `GET /v1/broker-memory/patterns`;
-- a responsive web broker-memory explorer consuming the shared API;
+- read-only shared API endpoints `GET /v1/broker-memory/status`, `GET /v1/broker-memory`, `GET /v1/broker-memory/patterns` and paginated `GET /v1/broker-memory/lineage` evidence drill-down;
+- a responsive web broker-memory explorer consuming the shared API, including 21-session timelines, early-pattern states and paginated source/rights lineage drill-down;
 - tests for idempotency, cross-session memory, no-lookahead availability, source/session/floorsheet admission, lineage, short yearly history, execution-code-only behaviour and fail-closed candidate rules.
 
 **Session input contract:** the `session_dates` supplied to the persistence layer must contain only verified NEPSE open sessions for which complete floorsheet coverage has been established and made available by the decision time. Future sessions are excluded. A mere exchange calendar is not enough to claim floorsheet coverage.

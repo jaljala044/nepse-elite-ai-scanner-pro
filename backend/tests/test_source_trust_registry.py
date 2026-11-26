@@ -96,6 +96,44 @@ class SourceTrustPromotionTests(unittest.TestCase):
             registry, "8f6a17cf87aa05150ade5c6cc510b72e5d2a5098130021f6a2d2be53762e91fc"
         ))
 
+
+    def test_registry_digest_cannot_bypass_invalid_policy_schema(self):
+        malformed = {
+            "schema_version": 1,
+            "sources": [{
+                "source_id": "untrusted",
+                "publisher_name": "Untrusted",
+                "trust_tier": "secondary_publisher",
+                "allowed_record_types": ["ohlcv"],
+                "canonical_record_types": ["ohlcv"],
+                "status": "active",
+                "effective_from": "2020-01-01",
+                "effective_to": None,
+                "reviewer": "reviewer",
+                "reviewed_at": "2026-11-25T00:00:00Z",
+                "evidence_refs": ["evidence://review"],
+            }],
+        }
+        body = json.dumps(malformed, sort_keys=True, separators=(",", ":"))
+        malformed["registry_sha256"] = hashlib.sha256(body.encode()).hexdigest()
+        self.assertFalse(verify_source_registry(
+            malformed, malformed["registry_sha256"]
+        ))
+
+    def test_registry_verification_rejects_duplicate_source_ids(self):
+        duplicate = json.loads(json.dumps(self.registry))
+        duplicate["sources"].append(dict(duplicate["sources"][0]))
+        body = {
+            "schema_version": duplicate["schema_version"],
+            "sources": duplicate["sources"],
+        }
+        duplicate["registry_sha256"] = hashlib.sha256(
+            json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        self.assertFalse(verify_source_registry(
+            duplicate, duplicate["registry_sha256"]
+        ))
+
     def test_valid_signed_primary_evidence_can_be_promoted(self):
         event = self.event()
         self.assertTrue(event["accepted"])

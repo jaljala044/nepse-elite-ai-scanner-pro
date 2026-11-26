@@ -15,3 +15,6 @@ data/silver/
 data/quarantine/
 data/reports/
 data/warehouse/
+
+# Local API database and SQLite sidecar files
+backend/instance/

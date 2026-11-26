@@ -110,7 +110,8 @@ def evaluate_horizon(symbol, horizon, stage1, stage2, plan, evidence_refs=None,
     stage2 = stage2 if isinstance(stage2, dict) else {}
     structure = stage2.get("structure") if isinstance(stage2.get("structure"), dict) else {}
     plan = plan if isinstance(plan, dict) else {}
-    refs = sorted({str(x) for x in (evidence_refs or []) if isinstance(x, str) and x.strip()})
+    raw_refs = evidence_refs if isinstance(evidence_refs, (list, tuple, set)) else []
+    refs = sorted({x.strip() for x in raw_refs if isinstance(x, str) and x.strip()})
     raw_level_refs = plan.get("evidence_refs", [])
     if not isinstance(raw_level_refs, (list, tuple, set)):
         raw_level_refs = []
@@ -188,6 +189,7 @@ def evaluate_horizon(symbol, horizon, stage1, stage2, plan, evidence_refs=None,
     ):
         action, subtype = "HOLD", "HOLD_WITH_CAUTION"
 
+    publish_levels = levels if not hard_failures else None
     return {
         "symbol": str(symbol).upper(),
         "horizon": horizon,
@@ -204,20 +206,20 @@ def evaluate_horizon(symbol, horizon, stage1, stage2, plan, evidence_refs=None,
             "HIGH" if quality == "HIGH" and coverage == 1 and len(refs) >= 3 and len(level_refs) >= 1 else "MEDIUM"
         ),
         "entry_zone": (
-            {"low": levels["entry_low"], "high": levels["entry_high"]}
-            if levels else None
+            {"low": publish_levels["entry_low"], "high": publish_levels["entry_high"]}
+            if publish_levels else None
         ),
-        "add_on_zone": plan.get("add_on_zone"),
-        "exit_zone": plan.get("exit_zone"),
-        "stop_loss": levels["stop_loss"] if levels else None,
-        "targets": levels["targets"] if levels else {"t1": None, "t2": None, "t3": None},
-        "risk_percent": levels["risk_percent"] if levels else None,
-        "reward_risk": rr,
-        "invalidation": plan.get("invalidation"),
-        "buy_side_liquidity": plan.get("buy_side_liquidity", []),
-        "sell_side_liquidity": plan.get("sell_side_liquidity", []),
-        "support": plan.get("support", []),
-        "resistance": plan.get("resistance", []),
+        "add_on_zone": plan.get("add_on_zone") if publish_levels else None,
+        "exit_zone": plan.get("exit_zone") if publish_levels else None,
+        "stop_loss": publish_levels["stop_loss"] if publish_levels else None,
+        "targets": publish_levels["targets"] if publish_levels else {"t1": None, "t2": None, "t3": None},
+        "risk_percent": publish_levels["risk_percent"] if publish_levels else None,
+        "reward_risk": publish_levels["reward_risk"] if publish_levels else None,
+        "invalidation": plan.get("invalidation") if publish_levels else None,
+        "buy_side_liquidity": plan.get("buy_side_liquidity", []) if publish_levels else [],
+        "sell_side_liquidity": plan.get("sell_side_liquidity", []) if publish_levels else [],
+        "support": plan.get("support", []) if publish_levels else [],
+        "resistance": plan.get("resistance", []) if publish_levels else [],
         "evidence_refs": refs,
         "level_evidence_refs": level_refs,
         "reasons": reasons,

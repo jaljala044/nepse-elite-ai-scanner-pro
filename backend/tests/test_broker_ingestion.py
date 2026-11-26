@@ -18,7 +18,8 @@ def run(rows=None, **kwargs):
     defaults = dict(batch_id="B-1", rows=rows or [make_row()],
         verified_brokers={"BROKER-1"}, verified_sessions={"2026-11-25"},
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
-        available_at="2026-11-26T09:00:00+05:45")
+        available_at="2026-11-26T09:00:00+05:45",
+        verified_session_finality={"2026-11-25": "2026-11-25T15:00:00+05:45"})
     defaults.update(kwargs)
     return reconcile_broker_batch(**defaults)
 
@@ -57,7 +58,9 @@ class BrokerIngestionTests(unittest.TestCase):
         self.assertEqual(len(result.accepted), 1)
 
     def test_conflicting_duplicate_blocks_batch(self):
-        result = run([make_row(), make_row(amount="1300")])
+        changed_payload = {"trade_file": "source-row-1", "value": 124}
+        result = run([make_row(), make_row(amount="1300", source_payload=changed_payload,
+            source_payload_sha256=payload_hash(changed_payload))])
         self.assertEqual(result.conflicts, 1)
         self.assertFalse(result.memory_eligible)
 

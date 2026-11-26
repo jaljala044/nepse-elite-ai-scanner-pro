@@ -147,7 +147,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             raise ValueError("corporate_action_effective_date_not_verified_session")
         if kind == "rights" and listing not in days and listing <= as_of:
             raise ValueError("rights_listing_date_not_verified_session")
-        if record_day not in days or effective < record_day or (kind == "rights" and listing < record_day):
+        if record_day not in days or effective < record_day or (kind == "rights" and listing <= effective):
             raise ValueError("corporate_action_dates_must_follow_verified_record_date")
         actions_by_day[record_day].append(action)
         entitlement_by_action[aid] = {"symbol": symbol, "event": event,
@@ -156,6 +156,8 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
     pending_events = defaultdict(list)
     curve = []
     receivables = 0.0
+    rights_paid = 0.0
+    audit = []
     pending_buys = defaultdict(float)
     for day in days:
         # Settlement of purchases adds shares; sale proceeds become spendable cash.
@@ -214,6 +216,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 if cash + event["cash_delta"] < -1e-8:
                     raise ValueError("insufficient_cash_for_rights_subscription:" + event["action_id"])
                 cash += event["cash_delta"]
+                rights_paid -= event["cash_delta"]
                 pending_events[event["listing_date"]].append({
                     "type": "rights_shares", "action_id": event["action_id"], "symbol": symbol,
                     "quantity": event["quantity"], "price": event["price"], "source_id": event["source_id"]})
@@ -221,10 +224,11 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 pos["quantity"] += event["quantity"]
                 if event["type"] == "rights_shares":
                     pos["cost_basis"] += event["quantity"] * event["price"]
+                    rights_paid -= event["quantity"] * event["price"]
             if event["type"] != "dividend_cash":
                 pos["average_cost"] = pos["cost_basis"] / pos["quantity"] if pos["quantity"] else 0.0
             event["effective_date"] = day.isoformat()
-            pending_events[day].append({"type": "_audit_only", "payload": event}) if False else None
+            audit.append({**event, "effective_date": day.isoformat()})
         # Execute trades after record-date snapshots and corporate-action credits.
         for trade in trades_by_day.get(day, []):
             symbol, qty = trade["symbol"], trade["_qty"]
@@ -274,11 +278,11 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 if day not in bars.get(symbol, {}):
                     raise ValueError("pending_buy_mark_missing:" + symbol)
                 market_value += qty * bars[symbol][day]
-        equity = cash + market_value + receivables
+        equity = cash + market_value + receivables + rights_paid
         if equity <= 0:
             raise ValueError("nonpositive_portfolio_equity")
         curve.append({"date": day.isoformat(), "cash": round(cash, 8),
-                      "market_value": round(market_value, 8), "sale_receivables": round(receivables, 8), "equity": round(equity, 8),
+                      "market_value": round(market_value, 8), "sale_receivables": round(receivables, 8), "rights_paid_at_cost": round(rights_paid, 8), "equity": round(equity, 8),
                       "holdings": {s: round(v["quantity"], 8) for s, v in positions.items() if v["quantity"] > 1e-8}})
     # Any pending event effective on/before as_of indicates a missing replay event/session.
     late = [d.isoformat() for d, events in pending_events.items() if events and d <= as_of]
@@ -320,6 +324,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
              "entitlement_quantity": v.get("quantity"), "source_id": v["source_id"]}
             for aid, v in entitlement_by_action.items() if "quantity" in v
         ],
+        "corporate_action_audit": audit,
         "trade_count": len(seen_trade), "corporate_action_count": len(seen_action),
         "limitations": [
             "Trade, settlement, entitlement and corporate-action evidence is caller supplied and not independently verified against NEPSE/CDSC/custodian records.",
@@ -327,6 +332,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             "Buy shares enter holdings on supplied settlement date; sale proceeds become spendable cash on supplied settlement date.",
             "Corporate-action entitlement is calculated from settled holdings at the supplied record date; record-date/ex-date eligibility conventions must be confirmed against official event terms.",
             "Rights subscribed quantity and allotment/listing are caller supplied; no default election is inferred.",
+            "Paid unlisted rights are carried at subscription cost, not fair value; unpaid entitlements are not valued.",
             "Taxes, fractional cash-in-lieu, renunciation, oversubscription, failed allotment, interest and financing are not modeled.",
             "Marks use supplied close prices, not verified executable fills; benchmark excess is descriptive, not evidence of alpha.",
             "Research only; no broker order routing or production eligibility."

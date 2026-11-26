@@ -86,6 +86,29 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
         self.assertEqual(payload["ranked_results"], [])
         self.assertEqual(payload["buy_candidates"], [])
 
+    def test_api_keeps_synthetic_history_unknown_when_server_manifest_is_empty(self):
+        from datetime import date, timedelta
+        rows = []
+        start = date(2025, 1, 1)
+        for i in range(60):
+            close = 100 + i
+            rows.append({"date": start + timedelta(days=i), "open": close - 1,
+                         "high": close + 1, "low": close - 2,
+                         "close": close, "volume": 1000})
+        rows[-1].update(open=159, high=165, low=158, close=164, volume=2500)
+        with patch.object(main, "DATA", {"ADBL": rows}), \
+             patch.object(main, "REVIEWED_ROWS", {}):
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan", json={"symbols": ["ADBL"]})
+        self.assertEqual(response.status_code, 200)
+        result = response.json()["results"][0]
+        self.assertFalse(result["eligibility"]["eligible"])
+        self.assertTrue(result["eligibility"]["reasons"])
+        self.assertEqual(result["signal_confirmation"]["status"], "unknown")
+        self.assertEqual(result["signal_confirmation"]["classification"], "UNKNOWN")
+        self.assertFalse(result["ranking_eligible"])
+        self.assertFalse(result["buy_list_eligible"])
+
     def test_api_emits_bullish_research_confirmation_only_after_eligibility_gate(self):
         from datetime import date, timedelta
         from contextlib import ExitStack

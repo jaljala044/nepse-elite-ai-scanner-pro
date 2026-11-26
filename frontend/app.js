@@ -1,6 +1,6 @@
 "use strict";
 const byId = id => document.getElementById(id);
-const labels = {market_structure:"Market structure",ipda:"IPDA 20 / 40 / 60",zone_lifecycle:"FVG and order blocks",multitimeframe:"Multi-timeframe SMC",broker_confluence:"Broker footprint confluence",combined_strategy:"Combined strategy",broker_behaviour_memory:"Broker behaviour memory"};
+const labels = {market_structure:"Market structure",ipda:"IPDA 20 / 40 / 60",zone_lifecycle:"FVG and order blocks",multitimeframe:"Multi-timeframe SMC",broker_confluence:"Broker footprint confluence",combined_strategy:"Combined strategy",broker_behaviour_memory:"Broker behaviour memory",broker_early_patterns:"Early entry / exit patterns"};
 let loadedSymbols = [];
 let generation=0;
 function set(id,value){byId(id).textContent=String(value);}

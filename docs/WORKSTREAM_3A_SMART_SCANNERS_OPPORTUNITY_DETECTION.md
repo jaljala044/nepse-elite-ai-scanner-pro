@@ -171,3 +171,12 @@ The repository does not currently expose a verified deployment target or deploym
 - Direct unauthenticated retrieval of both exchange-hosted endpoints returned HTTP 401 in this check. The endpoint response schema, authentication requirements, effective-date semantics and complete symbol membership could not be independently verified.
 - This is a useful lead to an exchange-hosted API path, not an official published API contract or a validated dated universe snapshot. Do not use the third-party implementation as authority, bypass access controls, or promote its output to the candidate manifest.
 - The exchange-primary universe gate remains open. Continue using the immutable 281-symbol file only as a dated secondary-source candidate set until an accessible, date-aligned primary source and instrument classification are verified.
+
+
+### Private research image authentication smoke test (2026-11-27)
+
+- Added a separate CI build of `Dockerfile.research` and exercised its private-mode HTTP boundary.
+- Verified in the built image that `/health` remains reachable, unauthenticated `/v1/research/readiness` and `/terminal/` requests receive HTTP 401, and a forged subject header without the proxy secret receives HTTP 401.
+- Verified that a test request carrying both a syntactically valid subject and the configured proxy secret can reach readiness and the terminal.
+- CI run `45891950033` (workflow run 44) passed; its job log marks both private-image build and authentication-boundary smoke-test steps successful. Backend tests `45891950038` and backend contract tests `45891950048` also passed on commit `02722569bb3e1f5ccc38923bcc0b41e222e22272`.
+- This validates the application-side gate in a container. It does **not** independently audit a real reverse proxy's header stripping, OIDC verification, TLS, CSRF protections, persistent-volume permissions, or deployed account isolation. Those remain deployment gates.

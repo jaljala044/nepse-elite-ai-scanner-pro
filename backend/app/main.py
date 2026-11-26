@@ -90,6 +90,31 @@ def broker_memory_readiness():
     return broker_memory_status()
 
 
+@app.get("/v1/broker-memory/patterns")
+def broker_memory_patterns(symbol: str | None = None, broker_code: str | None = None,
+                           as_of: date | None = None):
+    """Read-only early-entry/exit research candidates from the latest stored snapshot."""
+    result = get_latest_broker_memory(
+        symbol=symbol.strip().upper() if symbol else None,
+        broker_code=broker_code.strip() if broker_code else None,
+        as_of=as_of.isoformat() if as_of else None,
+    )
+    if result is None:
+        return {
+            "status": "INSUFFICIENT_EVIDENCE",
+            "patterns": [],
+            "reason": "no_persisted_broker_memory_snapshot",
+            "production_recommendations_enabled": False,
+        }
+    return {
+        "status": result.get("early_pattern_status", "INSUFFICIENT_EVIDENCE"),
+        "as_of_trade_date": result.get("as_of_trade_date"),
+        "patterns": result.get("selected_early_patterns", result.get("early_patterns", [])),
+        "rule_config": result.get("early_pattern_rule_config"),
+        "production_recommendations_enabled": False,
+    }
+
+
 @app.get("/v1/broker-memory")
 def broker_memory(symbol: str | None = None, broker_entity_id: str | None = None,
                   broker_code: str | None = None, as_of: date | None = None):

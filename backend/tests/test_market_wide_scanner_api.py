@@ -107,5 +107,13 @@ class MarketWideScannerAPITests(unittest.TestCase):
         self.assertFalse(result["buy_list_eligible"])
 
 
+    def test_rejects_noncanonical_lowercase_symbol(self):
+        with patch.object(main, "EQUITY_UNIVERSE", {"symbols": ["ADBL"]}):
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan/market-wide", json={"symbols": ["adbl"]})
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("outside the candidate", response.json()["detail"])
+
+
 if __name__ == "__main__":
     unittest.main()

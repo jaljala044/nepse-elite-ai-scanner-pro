@@ -14,10 +14,12 @@ on:
       - "backend/audit_floorsheet_one_sided_scope.py"
       - "backend/audit_floorsheet_eod_controls.py"
       - "backend/audit_official_market_summary_reconciliation.py"
+      - "backend/audit_official_security_history_vs_floorsheet.py"
       - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_one_sided_scope.py"
       - "backend/tests/test_floorsheet_eod_controls.py"
       - "backend/tests/test_official_market_summary_reconciliation.py"
+      - "backend/tests/test_official_security_history_vs_floorsheet.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -56,6 +58,10 @@ jobs:
       - name: Test official NEPSE aggregate reconciliation
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_official_market_summary_reconciliation.py' -v
+
+      - name: Test official per-security history reconciliation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_official_security_history_vs_floorsheet.py' -v
 
       - name: Test floorsheet to EOD control reconciliation
         working-directory: backend
@@ -182,6 +188,35 @@ jobs:
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
               stream.write("## P4.21 official NEPSE aggregate reconciliation\\n\\n")
               stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
+
+      - name: Fetch immutable official daily per-security history responses
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/official-daily
+          base="https://raw.githubusercontent.com/jaljala044/nepse-elite-ai-scanner-pro/069395e1153b1f49ed771774995022382d2b1863/data/evidence/raw/nepse/daily-security-prices/2026-11-19_20_24"
+          for day in 2026-11-19 2026-11-20 2026-11-24; do
+            curl --fail --silent --show-error --location "$base/$day-parsed-response.json" -o "/tmp/official-daily/$day-parsed-response.json"
+          done
+          sha256sum /tmp/official-daily/*
+
+      - name: Reconcile official per-security rows with both floorsheet archives
+        run: |
+          set -euo pipefail
+          python backend/audit_official_security_history_vs_floorsheet.py \
+            --official-dir /tmp/official-daily \
+            --floorsheet-dir /tmp/pinned-window \
+            --security-snapshot data/reference/nepse_security_id_snapshot_2026-11-25.csv \
+            --output artifacts/p422-official-per-security-reconciliation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p422-official-per-security-reconciliation.json").read_text())
+          rendered = json.dumps(report["dates"], indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.22 official per-security floorsheet reconciliation\\n\\n")
+              stream.write("\`\`\`json\\n" + rendered + "\\n\`\`\`\\n")
           PY
 
       - name: Reconcile floorsheet per-symbol aggregates with pinned EOD controls

@@ -120,3 +120,19 @@ PR #131 (`reconcile/3a01-on-current-main`) is still open and draft. At the audit
 - [NEPSE historical session calendar and integrity gate](NEPSE_SESSION_CALENDAR_AND_INTEGRITY_GATE.md)
 
 **Final disposition:** 3A.01 implementation work is substantially built, but task acceptance is not complete. Keep the scanner research-only and fail-closed. Do not advance to 3A.02 until the remaining data, integration and deployment gates pass.
+
+
+## 281-symbol per-security OHLCV impact matrix — 2026-11-27
+
+A companion CSV matrix is published at [3A01_281_SYMBOL_OHLCV_IMPACT_MATRIX_2026-11-27.csv](3A01_281_SYMBOL_OHLCV_IMPACT_MATRIX_2026-11-27.csv). It contains one row for each of the 281 symbols in the pinned v2 manifest and records:
+
+- Derived row count and raw/derived Git blob hashes.
+- Official EOD rows applied and derived correction count.
+- Per-symbol invalid OHLCV row counts where the P4.30 report publishes an exact breakdown (13 symbols; other symbols are recorded as zero in that published invalid-row breakdown).
+- Known corporate-action records and the four-symbol exception review (LBBL, DORDI, BNHC and the unverified NLIC split proposal).
+- The five open-session repeated-row pairs by symbol/date where explicitly reported.
+- An explicit research-only, non-canonical eligibility disposition for every symbol.
+
+**Important limits:** P4.30 publishes the 18,910 verified-closed repeat candidates and 52,891 outside-calendar UNKNOWN repeats as dataset-level totals, not a per-symbol allocation. The matrix therefore deliberately marks per-symbol closed-repeat and unresolved-repeat counts as NOT_PUBLISHED_PER_SYMBOL; it does not invent allocations. Similarly, absence from the partial corporate-action file is not proof that no action occurred. Per-symbol min/max dates and deployment-store coverage are not derived from the manifest and remain outside this matrix.
+
+The matrix is an evidence index, not a reviewed-row manifest. It does not authorize technical-indicator eligibility, ranking, BUY-list inclusion, backtesting, or production promotion. The canonical reviewed-row manifest remains empty.

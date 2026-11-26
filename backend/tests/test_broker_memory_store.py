@@ -165,8 +165,8 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(daily["latest_buy_vs_prior_20_avg_ratio"], 1.0)
         self.assertEqual(len(daily["daily_activity"]), 21)
         self.assertEqual(daily["daily_activity"][-1]["session_date"], sessions[-1])
-        self.assertEqual(len(profile["input_lineage"]), 42)
-        self.assertEqual({item["side"] for item in profile["input_lineage"]}, {"buy", "sell"})
+        self.assertEqual(profile["observation_count"], 42)
+        self.assertEqual(len(profile["input_lineage_sha256"]), 64)
         self.assertEqual(profile["selected_early_patterns"][0]["status"], "EARLY_ENTRY_CANDIDATE")
 
     def test_broker_filter_returns_observed_execution_channel_profile(self):

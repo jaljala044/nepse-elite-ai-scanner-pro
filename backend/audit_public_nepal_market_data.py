@@ -282,6 +282,189 @@ def crosscheck_official_history(public_csv_by_symbol: dict[str, bytes], official
     return result
 
 
+
+def compare_socrateai_daily_csvs(official_rows: list[dict], daily_csv_by_date: dict[str, bytes]) -> dict:
+    """Compare a public daily OHLC archive against pinned official NEPSE captures."""
+    fields = {
+        "high": ("high", "highPrice", Decimal("0.0001")),
+        "low": ("low", "lowPrice", Decimal("0.0001")),
+        "close": ("close", "closePrice", Decimal("0.0001")),
+        "volume": ("volume", "totalTradedQuantity", Decimal("0")),
+    }
+    result = {
+        "official_rows": len(official_rows),
+        "public_dates_expected": len({str(r.get("businessDate", ""))[:10] for r in official_rows}),
+        "public_files_found": len(daily_csv_by_date),
+        "missing_public_files": [],
+        "public_rows": 0,
+        "duplicate_symbol_rows": 0,
+        "malformed_rows": 0,
+        "invalid_ohlc_rows": 0,
+        "official_rows_matched_by_date": 0,
+        "fully_matching_rows": 0,
+        "field_comparisons": 0,
+        "field_mismatches": 0,
+        "mismatches_by_field": {key: 0 for key in fields},
+        "missing_public_active_rows": 0,
+        "missing_public_zero_activity_rows": 0,
+        "mismatch_examples": [],
+        "per_day": [],
+        "fields_compared": list(fields),
+        "not_compared": ["open", "turnover", "per_change", "status"],
+    }
+    public_by_date = {}
+    expected_dates = sorted({str(r.get("businessDate", ""))[:10] for r in official_rows})
+    for day in expected_dates:
+        content = daily_csv_by_date.get(day)
+        if content is None:
+            result["missing_public_files"].append(day)
+            public_by_date[day] = {}
+            continue
+        try:
+            reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig")))
+            if reader.fieldnames != ["date", "close", "open", "high", "low", "volume", "symbol"]:
+                result["malformed_rows"] += 1
+                public_by_date[day] = {}
+                continue
+            rows = {}
+            for row in reader:
+                result["public_rows"] += 1
+                symbol = (row.get("symbol") or "").strip()
+                if not symbol or row.get("date") != day:
+                    result["malformed_rows"] += 1
+                    continue
+                if symbol in rows:
+                    result["duplicate_symbol_rows"] += 1
+                    continue
+                try:
+                    values = {key: Decimal(str(row[key])) for key in
+                              ("open", "high", "low", "close", "volume")}
+                    if any(not value.is_finite() for value in values.values()):
+                        raise InvalidOperation("non-finite value")
+                except (InvalidOperation, TypeError, ValueError, KeyError):
+                    result["malformed_rows"] += 1
+                    continue
+                if min(values["open"], values["high"], values["low"], values["close"]) <= 0 or (
+                    values["high"] < max(values["open"], values["low"], values["close"])
+                    or values["low"] > min(values["open"], values["high"], values["close"])
+                    or values["volume"] < 0
+                ):
+                    result["invalid_ohlc_rows"] += 1
+                rows[symbol] = values
+            public_by_date[day] = rows
+        except (UnicodeDecodeError, csv.Error):
+            result["malformed_rows"] += 1
+            public_by_date[day] = {}
+
+    for day in expected_dates:
+        day_official = [r for r in official_rows if str(r.get("businessDate", ""))[:10] == day]
+        day_result = {"date": day, "official_rows": len(day_official), "matched": 0, "mismatches": 0}
+        public_rows = public_by_date.get(day, {})
+        for official in day_official:
+            symbol = str(official.get("symbol", "")).strip()
+            public = public_rows.get(symbol)
+            quantity = Decimal(str(official.get("totalTradedQuantity", 0) or 0))
+            turnover = Decimal(str(official.get("totalTradedValue", 0) or 0))
+            if public is None:
+                if quantity > 0 or turnover > 0:
+                    result["missing_public_active_rows"] += 1
+                else:
+                    result["missing_public_zero_activity_rows"] += 1
+                continue
+            result["official_rows_matched_by_date"] += 1
+            day_result["matched"] += 1
+            mismatches = []
+            for field, (public_key, official_key, tolerance) in fields.items():
+                try:
+                    left = public[public_key]
+                    right = Decimal(str(official[official_key]))
+                    result["field_comparisons"] += 1
+                    if abs(left - right) > tolerance:
+                        result["field_mismatches"] += 1
+                        result["mismatches_by_field"][field] += 1
+                        mismatches.append({"field": field, "public": str(left), "official": str(right)})
+                except (InvalidOperation, TypeError, ValueError, KeyError) as exc:
+                    result["field_mismatches"] += 1
+                    result["mismatches_by_field"][field] += 1
+                    mismatches.append({"field": field, "error": str(exc)})
+            if mismatches:
+                day_result["mismatches"] += 1
+                if len(result["mismatch_examples"]) < 100:
+                    result["mismatch_examples"].append({
+                        "symbol": symbol, "date": day, "mismatches": mismatches,
+                    })
+            else:
+                result["fully_matching_rows"] += 1
+        result["per_day"].append(day_result)
+    result["match_rate_pct"] = round(
+        result["fully_matching_rows"] / result["official_rows_matched_by_date"] * 100, 4
+    ) if result["official_rows_matched_by_date"] else None
+    result["status"] = "COMPLETED"
+    return result
+
+
+def crosscheck_socrateai_history(official_root: Path) -> dict:
+    """Fetch pinned free SocrateAI daily files and compare them to official captures."""
+    evidence_root = official_root.parent
+    manifest_path = evidence_root / "SHA256SUMS"
+    manifest = {}
+    if manifest_path.exists():
+        for line in manifest_path.read_text(encoding="utf-8").splitlines():
+            parts = line.strip().split(None, 1)
+            if len(parts) == 2:
+                manifest[parts[1].lstrip("* ")] = parts[0].lower()
+    official_rows = []
+    hash_errors = []
+    for symbol_dir in sorted(p for p in official_root.iterdir() if p.is_dir()):
+        response_path = symbol_dir / "response-01.bin"
+        if not response_path.exists():
+            continue
+        relative = str(response_path.relative_to(evidence_root)).replace("\\", "/")
+        raw = response_path.read_bytes()
+        if manifest.get(relative) != hashlib.sha256(raw).hexdigest():
+            hash_errors.append({"symbol": symbol_dir.name, "error": "official_sha256_missing_or_mismatch"})
+            continue
+        try:
+            rows = json.loads(raw.decode("utf-8")).get("content")
+            if not isinstance(rows, list):
+                raise ValueError("missing content array")
+            for row in rows:
+                official_rows.append({**row, "symbol": symbol_dir.name})
+        except Exception as exc:
+            hash_errors.append({"symbol": symbol_dir.name, "error": f"official_json_invalid:{type(exc).__name__}"})
+    dates = sorted({str(r.get("businessDate", ""))[:10] for r in official_rows if r.get("businessDate")})
+    if not dates:
+        return {"status": "OFFICIAL_CAPTURE_NOT_PRESENT", "hash_errors": hash_errors}
+    headers = {"User-Agent": "NEPSE-ELITE-public-source-crosscheck/1.0"}
+    with httpx.Client(timeout=httpx.Timeout(45.0, connect=15.0),
+                      headers=headers, follow_redirects=True) as client:
+        commit_response = client.get("https://api.github.com/repos/socrateai-official/nepse-open-data/commits/main")
+        commit_response.raise_for_status()
+        source_commit = commit_response.json()["sha"]
+        daily_files = {}
+        download_errors = []
+        for day in dates:
+            url = f"https://raw.githubusercontent.com/socrateai-official/nepse-open-data/{source_commit}/ohlc_unadjusted_stock/unadj_{day}.csv"
+            response = client.get(url)
+            if response.status_code == 404:
+                download_errors.append({"date": day, "error": "daily_file_missing"})
+                continue
+            response.raise_for_status()
+            daily_files[day] = response.content
+    result = compare_socrateai_daily_csvs(official_rows, daily_files)
+    result["source_repository"] = "socrateai-official/nepse-open-data"
+    result["source_commit"] = source_commit
+    result["official_hash_errors"] = hash_errors
+    result["download_errors"] = download_errors
+    result["gate"] = "FAIL" if (
+        hash_errors or download_errors or result["missing_public_files"]
+        or result["duplicate_symbol_rows"] or result["malformed_rows"]
+        or result["invalid_ohlc_rows"] or result["missing_public_active_rows"]
+        or result["field_mismatches"]
+    ) else "RECONCILED_WINDOW_ONLY"
+    return result
+
+
 def audit_public_archive(*, workers: int = 8) -> dict:
     headers = {"User-Agent": "NEPSE-ELITE-public-archive-audit/1.0",
                "Accept": "application/vnd.github+json"}
@@ -362,6 +545,9 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         public_csv_by_symbol,
         Path("data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/symbols"),
     )
+    socrateai_crosscheck = crosscheck_socrateai_history(
+        Path("data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/symbols"),
+    )
     bad_symbols = [item["symbol"] for item in audited if any(
         item.get(key, 0) for key in (
             "duplicate_dates", "invalid_dates", "out_of_order_transitions",
@@ -390,7 +576,9 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "symbols_with_any_quality_issue": len(set(bad_symbols)),
         "symbol_results": audited,
         "official_history_crosscheck": official_crosscheck,
+        "socrateai_history_crosscheck": socrateai_crosscheck,
         "gate": "FAIL" if quality_failed
+                or socrateai_crosscheck.get("gate") != "RECONCILED_WINDOW_ONLY"
                 or official_crosscheck.get("status") != "COMPLETED"
                 or official_crosscheck.get("field_mismatches", 0)
                 or official_crosscheck.get("missing_public_active_rows", 0)

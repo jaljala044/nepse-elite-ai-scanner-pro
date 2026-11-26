@@ -34,7 +34,7 @@ class WalkForwardBacktestTests(unittest.TestCase):
     def test_chronological_purged_walk_forward_and_determinism(self):
         signals, rows, sessions, reviewed = self._fixture()
         kwargs = dict(signals=signals, rows_by_symbol=rows, verified_sessions_by_symbol=sessions,
-            evaluation_date=sessions[-1], reviewed=reviewed, min_partition=2)
+            evaluation_date=sessions["TEST"][-1], reviewed=reviewed, min_partition=2)
         a = run_walk_forward_backtest(**kwargs)
         b = run_walk_forward_backtest(**kwargs)
         self.assertEqual(a["config_hash"], b["config_hash"])
@@ -45,7 +45,7 @@ class WalkForwardBacktestTests(unittest.TestCase):
     def test_duplicate_signal_records_are_not_double_counted(self):
         signals, rows, sessions, reviewed = self._fixture()
         result = run_walk_forward_backtest(signals=signals + signals, rows_by_symbol=rows,
-            verified_sessions_by_symbol=sessions, evaluation_date=sessions[-1],
+            verified_sessions_by_symbol=sessions, evaluation_date=sessions["TEST"][-1],
             reviewed=reviewed, min_partition=2)
         self.assertEqual(result["signals_seen"], len(signals))
 
@@ -54,12 +54,12 @@ class WalkForwardBacktestTests(unittest.TestCase):
         signals[0]["classification"] = "execution"
         with self.assertRaises(ValueError):
             run_walk_forward_backtest(signals=signals, rows_by_symbol=rows,
-                verified_sessions_by_symbol=sessions, evaluation_date=sessions[-1], reviewed=reviewed)
+                verified_sessions_by_symbol=sessions, evaluation_date=sessions["TEST"][-1], reviewed=reviewed)
 
     def test_insufficient_sample_does_not_emit_metrics(self):
         signals, rows, sessions, reviewed = self._fixture()
         result = run_walk_forward_backtest(signals=signals[:5], rows_by_symbol=rows,
-            verified_sessions_by_symbol=sessions, evaluation_date=sessions[-1], reviewed=reviewed)
+            verified_sessions_by_symbol=sessions, evaluation_date=sessions["TEST"][-1], reviewed=reviewed)
         self.assertEqual(result["status"], "insufficient_sample")
         self.assertEqual(result["partitions"], {})
 

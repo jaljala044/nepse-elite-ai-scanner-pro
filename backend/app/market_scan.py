@@ -72,6 +72,10 @@ def run_market_scan(
         result = dict(result)
         result["symbol"] = symbol
         result["requested_as_of"] = as_of.isoformat() if as_of else None
+        # The 3A.01 orchestration layer is research-only even if a callback
+        # accidentally returns permissive ranking or BUY eligibility flags.
+        result["ranking_eligible"] = False
+        result["buy_list_eligible"] = False
         latest_day = _row_date(rows[-1])
         result["latest_available_observation"] = latest_day.isoformat()
         result["latest_observation_calendar_age_days"] = (

@@ -1,0 +1,29 @@
+from app.unified_portfolio_event_engine import run_unified_portfolio_event_ledger
+import pytest
+
+DAYS = ["2025-01-05", "2025-01-06", "2025-01-07", "2025-01-08", "2025-01-09"]
+
+def replay(trades):
+    return run_unified_portfolio_event_ledger(
+        initial_cash=1000, initial_holdings={},
+        trades=trades, corporate_actions=[],
+        price_rows_by_symbol={"ABC": [{"date": d, "close": 100} for d in DAYS]},
+        portfolio_sessions=DAYS, as_of_date=DAYS[-1],
+        evidence_cutoff="2025-01-10T00:00:00+00:00")
+
+def trade(side, start, end):
+    return dict(trade_id=side, symbol="ABC", side=side, quantity=5,
+                price=100, fees=0, trade_date=DAYS[start],
+                settlement_date=DAYS[end], status="verified",
+                source_id="synthetic-test", available_at="2025-01-09T12:00:00+00:00")
+
+def test_settlement_preserves_equity_and_cash():
+    result = replay([trade("BUY", 0, 2), trade("SELL", 2, 4)])
+    curve = result["equity_curve"]
+    assert [x["equity"] for x in curve] == [1000] * 5
+    assert [x["cash"] for x in curve] == [500, 500, 500, 500, 1000]
+    assert curve[2]["sale_receivables"] == 500
+
+def test_wrong_settlement_rejected():
+    with pytest.raises(ValueError, match="t_plus_two"):
+        replay([trade("BUY", 0, 1)])

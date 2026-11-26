@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone, time
+from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -8,10 +9,20 @@ from .structure_timeframes import evaluate_timeframes
 from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
+from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
+
+_UNIVERSE_PATH = Path(__file__).resolve().parents[2] / "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
+try:
+    EQUITY_UNIVERSE = load_equity_universe_manifest(_UNIVERSE_PATH)
+    UNIVERSE_LOAD_ERROR = None
+except (OSError, ValueError) as exc:
+    # Fail closed: no scan is permitted when the candidate universe is absent or invalid.
+    EQUITY_UNIVERSE = None
+    UNIVERSE_LOAD_ERROR = str(exc)
 class ScanRequest(BaseModel):
     symbols: list[str] | None = None
     as_of: date | None = None
@@ -22,7 +33,26 @@ def health():
 
 @app.get("/v1/symbols")
 def symbols():
-    return {"symbols": sorted(DATA.keys()), "count": len(DATA)}
+    candidate_symbols = set(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else set()
+    loaded = sorted(set(DATA.keys()) & candidate_symbols)
+    return {
+        "symbols": loaded,
+        "count": len(loaded),
+        "candidate_universe_count": len(candidate_symbols),
+        "universe_status": "secondary_candidate_manifest_validated" if EQUITY_UNIVERSE else "unavailable",
+    }
+
+@app.get("/v1/universe")
+def universe():
+    if EQUITY_UNIVERSE is None:
+        raise HTTPException(503, "Equity candidate universe unavailable; scanner is fail-closed")
+    return {
+        key: value for key, value in EQUITY_UNIVERSE.items()
+        if key != "security_ids_by_symbol"
+    } | {
+        "membership_authoritatively_verified": False,
+        "promotion_allowed": False,
+    }
 
 @app.get("/v1/imports")
 def imports():
@@ -45,7 +75,31 @@ async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(
 def scan(request: ScanRequest):
     selected = request.symbols or sorted(DATA.keys())
     results = []
+    if EQUITY_UNIVERSE is None:
+        return {
+            "mode": "research_only",
+            "results": [{
+                "symbol": symbol.upper(),
+                "status": "universe_unavailable",
+                "eligibility": {"eligible": False, "reasons": ["candidate_universe_unavailable"]},
+                "signals": [],
+                "metrics": {},
+            } for symbol in selected],
+            "disclaimer": "Fail-closed: no equity universe manifest is available.",
+        }
+    candidate_symbols = set(EQUITY_UNIVERSE["symbols"])
     for symbol in selected:
+        normalized_symbol = symbol.upper()
+        if normalized_symbol not in candidate_symbols:
+            results.append({
+                "symbol": normalized_symbol,
+                "status": "out_of_scope",
+                "eligibility": {"eligible": False, "reasons": ["not_in_active_equity_candidate_universe"]},
+                "signals": [],
+                "metrics": {},
+            })
+            continue
+        symbol = normalized_symbol
         rows = DATA.get(symbol.upper(), [])
         if request.as_of:
             rows = [r for r in rows if r["date"] <= request.as_of]

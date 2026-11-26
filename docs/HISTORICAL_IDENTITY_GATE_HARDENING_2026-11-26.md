@@ -21,4 +21,6 @@ The historical identity workflow now runs both the dedicated identity regression
 This is an engineering validation improvement. It does not certify the 281-equity universe, establish official historical IDs, repair source data, authorize predecessor/successor price splicing, or promote any data to canonical/training use.
 
 ## Verification
-GitHub Actions is expected to run from the workflow-path update. No test result is claimed until the run is observed and its conclusion is checked.
+- Focused workflow [45829193181](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45829193181): SUCCESS; 14 historical identity tests and 14 instrument-manifest tests passed.
+- Full backend workflow [45829193192](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45829193192): SUCCESS; 641 tests passed.
+- The first workflow attempt exposed a working-directory/import-path error in the workflow itself. The command was corrected to run from `backend/`, then both focused suites passed.

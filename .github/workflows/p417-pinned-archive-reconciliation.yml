@@ -267,11 +267,30 @@ jobs:
           import json
           from pathlib import Path
           report = json.loads(Path("artifacts/p422-official-per-security-reconciliation.json").read_text())
-          rendered = json.dumps(report["dates"], indent=2, sort_keys=True)
+          summary = {
+              day: {
+                  source: {
+                      "status_counts": item["status_counts"],
+                      "equity_candidate_count": item["equity_candidate_count"],
+                      "floorsheet_symbol_count": item["floorsheet_symbol_count"],
+                      "exception_examples": [
+                          {"symbol": row["symbol"], "status": row["status"]}
+                          for row in item["rows"]
+                          if row["status"] not in (
+                              "MATCH_EXACT",
+                              "OFFICIAL_ZERO_ACTIVITY_NO_FLOORSHEET_ROW",
+                          )
+                      ][:10],
+                  }
+                  for source, item in sources.items()
+              }
+              for day, sources in report["dates"].items()
+          }
+          rendered = json.dumps(summary, indent=2, sort_keys=True)
           print(rendered)
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
-              stream.write("## P4.22 official per-security floorsheet reconciliation\\n\\n")
-              stream.write("\`\`\`json\\n" + rendered + "\\n\`\`\`\\n")
+              stream.write("## P4.22 official per-security floorsheet reconciliation (summary)\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
           PY
 
       - name: Fetch immutable official per-equity historical capture report

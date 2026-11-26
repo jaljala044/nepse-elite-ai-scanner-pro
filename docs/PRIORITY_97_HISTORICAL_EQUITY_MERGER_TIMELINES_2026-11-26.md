@@ -68,3 +68,18 @@ Five predecessor records now have explicitly reported trading-suspension effecti
 | SFCL | 2026-07-10 | NEPSE suspension effective Ashar 26, 2083: https://www.sharesansar.com/index.php/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09 |
 
 **Interpretation guardrail:** a suspension effective date is not necessarily the last date with an actual trade. These dates must not be used as last-trading dates, successor first-trading dates, or stable-ID boundaries without separate trade-history and listing evidence. JALPA/KLBSL and MKLB/SAMATA remain without separately verified suspension-effective dates. All affected `stable_id` and `effective_date_verified` values remain unchanged.
+
+
+## Follow-up evidence expansion — predecessor last-recorded-trade dates
+
+Three predecessor symbols now have explicit last-recorded-trade dates in secondary historical company records:
+
+| Predecessor | Reported last recorded trade | Source | Evidence note |
+|---|---:|---|---|
+| JALPA | 2024-07-10 | https://laganilab.com/nepse-company/JALPA/ | Laganilab states last recorded trade 2024-07-10 |
+| KLBSL | 2024-07-10 | https://www.merolagani.com/CompanyDetail.aspx?symbol=KLBSL | Merolagani reports last traded 2024/07/10 02:59:50; ShareSansar also reports the closing price on 2024-07-11 merger notice |
+| MKLB | 2024-07-07 | https://laganilab.com/nepse-company/MKLB/ | Laganilab states last recorded trade 2024-07-07; Merolagani company detail reports 2024/07/07 02:59:35 |
+
+For the JALPA/KLBSL group, Matribhumi (MATRI) shares were listed on 2024-08-12 and reported as available for trading from 2024-08-13. Sources: https://eng.merolagani.com/NewsDetail.aspx?newsID=104854 and https://nepsealpha.com/post/detail/5699/shares-of-matrubhumi-laguvitta-listed-on-nepse-trading-from-today.
+
+**Boundary caution:** these are secondary-source historical last-trade reports. The MATRI listing/first-trading report establishes the successor's market commencement at the reported date, but does not by itself establish an uninterrupted security-ID mapping or authorize price-history splicing. MKLB's last-trade evidence is consistent with its acquisition/suspension sequence, while SMATA is the continuing listed successor ticker. All stable_id values remain null and effective_date_verified remains false pending dated security-ID evidence and a full raw price-history cross-check. No OHLCV or floorsheet data was modified.

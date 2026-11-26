@@ -1,0 +1,46 @@
+name: Unified archive research
+on:
+  push:
+    paths:
+      - '.github/workflows/unified-archive-research.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve immutable research artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p inputs/prices inputs/brokers
+          gh api repos/jaljala044/nepse-history-starter/actions/artifacts/15133662109/zip > inputs/prices.zip
+          gh api repos/jaljala044/nepse-elite-ai-scanner-pro/actions/artifacts/15150674205/zip > inputs/brokers.zip
+          echo '61449bd6449fbde66f20951192a66ab62e4da7b2fb02a1a29c3c1c33616f4985  inputs/prices.zip' | sha256sum -c
+          echo '01af48fd9cbf4e310ff16bc61c235081080314073d1fcb597e682a391fe120cc  inputs/brokers.zip' | sha256sum -c
+          unzip -q inputs/prices.zip -d inputs/prices
+          unzip -q inputs/brokers.zip -d inputs/brokers
+      - name: Execute research engines
+        env:
+          PYTHONPATH: backend
+        run: |
+          python backend/run_unified_archive_research.py inputs/prices/candidate.csv inputs/brokers/broker.sqlite results
+          python - <<'PY'
+          import json,csv
+          s=json.load(open('results/summary.json'))
+          assert s['symbols']==281 and s['price_rows']==154467
+          assert s['production_eligible'] is False
+          rows=list(csv.DictReader(open('results/stock_coverage.csv')))
+          assert len(rows)==281 and all(r['action']=='UNKNOWN' and not r['production_score'] for r in rows)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unified-equity-research
+          path: results/
+          if-no-files-found: error

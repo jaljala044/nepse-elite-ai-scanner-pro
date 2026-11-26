@@ -1,0 +1,631 @@
+{
+  "audit_status": "review_only_official_equity_history_window",
+  "canonical_promotion_allowed": false,
+  "coverage_admission_allowed": false,
+  "current_security_id_crosswalk_matches": 281,
+  "date_reports": {
+    "2026-10-05": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "43688",
+        "turnover": "3164789615.12",
+        "volume": "7913330"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "359",
+        "trades": "44777",
+        "turnover": "3279509836.32",
+        "volume": "9003388"
+      },
+      "positive_activity_rows": 278
+    },
+    "2026-10-06": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "40764",
+        "turnover": "3073867081.2",
+        "volume": "8112978"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 1,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "359",
+        "trades": "41607",
+        "turnover": "3138119528.46",
+        "volume": "8955230"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-10-07": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "38654",
+        "turnover": "3674721714.31",
+        "volume": "9106834"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 1,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "359",
+        "trades": "39466",
+        "turnover": "3748080303.08",
+        "volume": "10300688"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-10-08": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "42891",
+        "turnover": "3807043743.83",
+        "volume": "10397067"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "354",
+        "trades": "43812",
+        "turnover": "3930560952.76",
+        "volume": "11233636"
+      },
+      "positive_activity_rows": 278
+    },
+    "2026-10-09": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "51196",
+        "turnover": "4725421323.1",
+        "volume": "12129678"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 1,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "353",
+        "trades": "52044",
+        "turnover": "4837723076.79",
+        "volume": "12905942"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-10-12": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "49040",
+        "turnover": "4391210981.3",
+        "volume": "11839991"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 3,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "354",
+        "trades": "49809",
+        "turnover": "4465246360.73",
+        "volume": "12719734"
+      },
+      "positive_activity_rows": 277
+    },
+    "2026-10-13": {
+      "current_equity_candidate_rows_missing": 1,
+      "current_equity_candidate_rows_returned": 280,
+      "current_equity_history_totals": {
+        "trades": "45974",
+        "turnover": "4680115181.1",
+        "volume": "12224382"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [
+        "BENH"
+      ],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "351",
+        "trades": "46659",
+        "turnover": "4736926409.85",
+        "volume": "13553097"
+      },
+      "positive_activity_rows": 278
+    },
+    "2026-10-14": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "38535",
+        "turnover": "3988546834.51",
+        "volume": "10807675"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 4,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "354",
+        "trades": "39183",
+        "turnover": "4136161331.43",
+        "volume": "11674209"
+      },
+      "positive_activity_rows": 277
+    },
+    "2026-10-15": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "38259",
+        "turnover": "4643563830.6",
+        "volume": "12556543"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 3,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "349",
+        "trades": "38861",
+        "turnover": "4717028104.35",
+        "volume": "13624407"
+      },
+      "positive_activity_rows": 278
+    },
+    "2026-10-16": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "38742",
+        "turnover": "4827267689.56",
+        "volume": "12722467"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 4,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "348",
+        "trades": "39295",
+        "turnover": "4880089108.16",
+        "volume": "13376489"
+      },
+      "positive_activity_rows": 277
+    },
+    "2026-10-26": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "38130",
+        "turnover": "3951348635.3",
+        "volume": "9714622"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 5,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "341",
+        "trades": "38788",
+        "turnover": "4002421168.07",
+        "volume": "10343709"
+      },
+      "positive_activity_rows": 276
+    },
+    "2026-10-27": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "52375",
+        "turnover": "5755039334.0",
+        "volume": "14699666"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "360",
+        "trades": "53030",
+        "turnover": "5799330203.01",
+        "volume": "15346226"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-10-28": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "62957",
+        "turnover": "7400442637.63",
+        "volume": "18619121"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "348",
+        "trades": "63744",
+        "turnover": "7458677368.14",
+        "volume": "19397548"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-10-29": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "68759",
+        "turnover": "8483931979.3",
+        "volume": "21941524"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 3,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "350",
+        "trades": "69619",
+        "turnover": "8570098823.35",
+        "volume": "23258009"
+      },
+      "positive_activity_rows": 278
+    },
+    "2026-10-30": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "73204",
+        "turnover": "8821535651.6",
+        "volume": "21571373"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "348",
+        "trades": "74054",
+        "turnover": "8891595145.9",
+        "volume": "22862554"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-02": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "69373",
+        "turnover": "7152955702.4",
+        "volume": "18718355"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "343",
+        "trades": "70228",
+        "turnover": "7183713047.01",
+        "volume": "19822392"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-03": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "56735",
+        "turnover": "5612170069.9",
+        "volume": "13984380"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "349",
+        "trades": "57449",
+        "turnover": "5651142523.49",
+        "volume": "15420920"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-04": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "58408",
+        "turnover": "7378980000.45",
+        "volume": "18432842"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 3,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "358",
+        "trades": "59185",
+        "turnover": "7439366049.62",
+        "volume": "21223414"
+      },
+      "positive_activity_rows": 278
+    },
+    "2026-11-05": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "43779",
+        "turnover": "4690712367.8",
+        "volume": "10998303"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "349",
+        "trades": "44412",
+        "turnover": "4722236623.35",
+        "volume": "12373841"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-06": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "32804",
+        "turnover": "3412381686.7",
+        "volume": "7822397"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "336",
+        "trades": "33215",
+        "turnover": "3462059323.07",
+        "volume": "10713842"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-13": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "30898",
+        "turnover": "3039437037.3",
+        "volume": "7261149"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "335",
+        "trades": "31323",
+        "turnover": "3054274725.06",
+        "volume": "7844267"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-17": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "48113",
+        "turnover": "4344772325.7",
+        "volume": "10024630"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 1,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "353",
+        "trades": "48788",
+        "turnover": "4731178017.24",
+        "volume": "11293450"
+      },
+      "positive_activity_rows": 280
+    },
+    "2026-11-18": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "41143",
+        "turnover": "4136087607.71",
+        "volume": "9433424"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "347",
+        "trades": "41627",
+        "turnover": "4154925107.54",
+        "volume": "10162605"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-19": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "40340",
+        "turnover": "3861028941.2",
+        "volume": "8940307"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 1,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "347",
+        "trades": "40837",
+        "turnover": "3877645728.62",
+        "volume": "9437842"
+      },
+      "positive_activity_rows": 280
+    },
+    "2026-11-20": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "39258",
+        "turnover": "3750106481.87",
+        "volume": "9684066"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "352",
+        "trades": "39966",
+        "turnover": "3887563470.82",
+        "volume": "10602468"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-23": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "42055",
+        "turnover": "3797046670.15",
+        "volume": "9918940"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 1,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "360",
+        "trades": "42854",
+        "turnover": "3827606590.77",
+        "volume": "10826913"
+      },
+      "positive_activity_rows": 280
+    },
+    "2026-11-24": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "51576",
+        "turnover": "5523562407.1",
+        "volume": "14007368"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "350",
+        "trades": "52387",
+        "turnover": "5553019249.46",
+        "volume": "14670177"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-25": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "51885",
+        "turnover": "6123116147.27",
+        "volume": "15911395"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "356",
+        "trades": "52669",
+        "turnover": "6146043909.54",
+        "volume": "16523974"
+      },
+      "positive_activity_rows": 279
+    },
+    "2026-11-26": {
+      "current_equity_candidate_rows_missing": 0,
+      "current_equity_candidate_rows_returned": 281,
+      "current_equity_history_totals": {
+        "trades": "48774",
+        "turnover": "5423180112.9",
+        "volume": "13798716"
+      },
+      "equity_subset_is_not_full_market_universe": true,
+      "explicit_zero_activity_rows": 2,
+      "missing_symbols": [],
+      "official_all_instrument_market_totals": {
+        "traded_symbols": "355",
+        "trades": "49806",
+        "turnover": "5489584101.96",
+        "volume": "14710298"
+      },
+      "positive_activity_rows": 279
+    }
+  },
+  "equity_candidate_count": 281,
+  "full_market_universe_verified": false,
+  "historical_security_identity_verified": false,
+  "history_source_id": "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME_HISTORY",
+  "history_status_counts": {
+    "ROWS_RETURNED_REVIEW_ONLY": 281
+  },
+  "official_history_response_count": 281,
+  "official_market_summary_date_count": 29,
+  "official_market_summary_dates_in_window": [
+    "2026-10-05",
+    "2026-10-06",
+    "2026-10-07",
+    "2026-10-08",
+    "2026-10-09",
+    "2026-10-12",
+    "2026-10-13",
+    "2026-10-14",
+    "2026-10-15",
+    "2026-10-16",
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28",
+    "2026-10-29",
+    "2026-10-30",
+    "2026-11-02",
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-13",
+    "2026-11-17",
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-23",
+    "2026-11-24",
+    "2026-11-25",
+    "2026-11-26"
+  ],
+  "official_market_summary_evidence": {
+    "date_count_in_window": 29,
+    "response_bytes": 31150,
+    "response_sha256": "74165b75b936a920f83ee1d3dc21955a50ef1afaac43e569c719d79d665fb95f",
+    "retrieved_at_utc": "2026-11-26T16:00:20.300521Z",
+    "source_id": "NEPSE_OFFICIAL_MARKET_SUMMARY_HISTORY",
+    "source_url": "https://nepalstock.com.np/api/nots/market-summary-history"
+  },
+  "official_session_calendar_verified": false,
+  "per_security_completeness_verified": false,
+  "policy": "current_equity_candidate_history_only_missing_rows_unknown_zero_activity_not_no_trade",
+  "requested_window": {
+    "end_date": "2026-11-26",
+    "start_date": "2026-10-05"
+  },
+  "schema_version": "1.0",
+  "source_independence_verified": false,
+  "source_rights_verified": false
+}

@@ -12,6 +12,7 @@ on:
       - 'backend/audit_indicator_warmup.py'
       - 'backend/audit_extended_history.py'
       - 'backend/build_extended_research_inventory.py'
+      - 'backend/classify_extended_history_gaps.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -66,6 +67,9 @@ jobs:
       - name: Build extended research inventory and warmup
         run: |
           python backend/build_extended_research_inventory.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/nepse_primary_observed_open_sessions_2025-2026.csv --recovery data/reference/july24_historical_recovery_candidates_2026-11-26.csv --output /tmp/audit/extended_research.csv --warmup /tmp/audit/extended_warmup.csv
+      - name: Classify extended historical gaps
+        run: |
+          python backend/classify_extended_history_gaps.py --extended /tmp/audit/extended_history.csv --overlay /tmp/audit/extended_research.csv --prior-gaps /tmp/audit/classified_gaps.csv --prior-crosscheck /tmp/audit/sharesansar_crosscheck.csv --listing data/reference/historical_listing_evidence_candidates_2026-11-26.csv --suspension data/reference/pfl_suspension_evidence_2026-11-26.csv --output /tmp/audit/extended_gap_classification.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

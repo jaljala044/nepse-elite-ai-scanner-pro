@@ -62,7 +62,7 @@ class VerifiedSectorRotationTests(unittest.TestCase):
         self.assertEqual(result["sectors"]["BANK"]["score_status"], "insufficient_evidence")
 
     def test_missing_stock_session_is_not_filled(self):
-        data = fixture()
+        data = list(fixture())
         dates = data[0]
         data[3] = [row for row in data[3] if not (
             row["symbol"] == "AAA" and row["session_date"] == dates[-30])]

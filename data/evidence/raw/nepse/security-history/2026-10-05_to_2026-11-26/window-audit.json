@@ -23,7 +23,18 @@
         "turnover": "3279509836.32",
         "volume": "9003388"
       },
-      "positive_activity_rows": 278
+      "positive_activity_rows": 278,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-06": {
       "current_equity_candidate_rows_missing": 1,
@@ -44,7 +55,18 @@
         "turnover": "3138119528.46",
         "volume": "8955230"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-07": {
       "current_equity_candidate_rows_missing": 1,
@@ -65,7 +87,18 @@
         "turnover": "3748080303.08",
         "volume": "10300688"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-08": {
       "current_equity_candidate_rows_missing": 1,
@@ -86,7 +119,18 @@
         "turnover": "3930560952.76",
         "volume": "11233636"
       },
-      "positive_activity_rows": 278
+      "positive_activity_rows": 278,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-09": {
       "current_equity_candidate_rows_missing": 1,
@@ -107,7 +151,18 @@
         "turnover": "4837723076.79",
         "volume": "12905942"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-12": {
       "current_equity_candidate_rows_missing": 1,
@@ -128,7 +183,18 @@
         "turnover": "4465246360.73",
         "volume": "12719734"
       },
-      "positive_activity_rows": 277
+      "positive_activity_rows": 277,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-13": {
       "current_equity_candidate_rows_missing": 1,
@@ -149,7 +215,18 @@
         "turnover": "4736926409.85",
         "volume": "13553097"
       },
-      "positive_activity_rows": 278
+      "positive_activity_rows": 278,
+      "pre_valid_from_missing_rows": 1,
+      "pre_valid_from_missing_symbols": [
+        {
+          "symbol": "BENH",
+          "valid_from": "2026-10-15",
+          "valid_from_evidence_status": "verified_secondary_first_trade_archive_match",
+          "valid_from_evidence_uri": "https://eng.merolagani.com/NewsDetail.aspx?newsID=131897"
+        }
+      ],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-14": {
       "current_equity_candidate_rows_missing": 0,
@@ -168,7 +245,11 @@
         "turnover": "4136161331.43",
         "volume": "11674209"
       },
-      "positive_activity_rows": 277
+      "positive_activity_rows": 277,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-15": {
       "current_equity_candidate_rows_missing": 0,
@@ -187,7 +268,11 @@
         "turnover": "4717028104.35",
         "volume": "13624407"
       },
-      "positive_activity_rows": 278
+      "positive_activity_rows": 278,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-16": {
       "current_equity_candidate_rows_missing": 0,
@@ -206,7 +291,11 @@
         "turnover": "4880089108.16",
         "volume": "13376489"
       },
-      "positive_activity_rows": 277
+      "positive_activity_rows": 277,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-26": {
       "current_equity_candidate_rows_missing": 0,
@@ -225,7 +314,11 @@
         "turnover": "4002421168.07",
         "volume": "10343709"
       },
-      "positive_activity_rows": 276
+      "positive_activity_rows": 276,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-27": {
       "current_equity_candidate_rows_missing": 0,
@@ -244,7 +337,11 @@
         "turnover": "5799330203.01",
         "volume": "15346226"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-28": {
       "current_equity_candidate_rows_missing": 0,
@@ -263,7 +360,11 @@
         "turnover": "7458677368.14",
         "volume": "19397548"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-29": {
       "current_equity_candidate_rows_missing": 0,
@@ -282,7 +383,11 @@
         "turnover": "8570098823.35",
         "volume": "23258009"
       },
-      "positive_activity_rows": 278
+      "positive_activity_rows": 278,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-10-30": {
       "current_equity_candidate_rows_missing": 0,
@@ -301,7 +406,11 @@
         "turnover": "8891595145.9",
         "volume": "22862554"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-02": {
       "current_equity_candidate_rows_missing": 0,
@@ -320,7 +429,11 @@
         "turnover": "7183713047.01",
         "volume": "19822392"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-03": {
       "current_equity_candidate_rows_missing": 0,
@@ -339,7 +452,11 @@
         "turnover": "5651142523.49",
         "volume": "15420920"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-04": {
       "current_equity_candidate_rows_missing": 0,
@@ -358,7 +475,11 @@
         "turnover": "7439366049.62",
         "volume": "21223414"
       },
-      "positive_activity_rows": 278
+      "positive_activity_rows": 278,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-05": {
       "current_equity_candidate_rows_missing": 0,
@@ -377,7 +498,11 @@
         "turnover": "4722236623.35",
         "volume": "12373841"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-06": {
       "current_equity_candidate_rows_missing": 0,
@@ -396,7 +521,11 @@
         "turnover": "3462059323.07",
         "volume": "10713842"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-13": {
       "current_equity_candidate_rows_missing": 0,
@@ -415,7 +544,11 @@
         "turnover": "3054274725.06",
         "volume": "7844267"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-17": {
       "current_equity_candidate_rows_missing": 0,
@@ -434,7 +567,11 @@
         "turnover": "4731178017.24",
         "volume": "11293450"
       },
-      "positive_activity_rows": 280
+      "positive_activity_rows": 280,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-18": {
       "current_equity_candidate_rows_missing": 0,
@@ -453,7 +590,11 @@
         "turnover": "4154925107.54",
         "volume": "10162605"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-19": {
       "current_equity_candidate_rows_missing": 0,
@@ -472,7 +613,11 @@
         "turnover": "3877645728.62",
         "volume": "9437842"
       },
-      "positive_activity_rows": 280
+      "positive_activity_rows": 280,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-20": {
       "current_equity_candidate_rows_missing": 0,
@@ -491,7 +636,11 @@
         "turnover": "3887563470.82",
         "volume": "10602468"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-23": {
       "current_equity_candidate_rows_missing": 0,
@@ -510,7 +659,11 @@
         "turnover": "3827606590.77",
         "volume": "10826913"
       },
-      "positive_activity_rows": 280
+      "positive_activity_rows": 280,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-24": {
       "current_equity_candidate_rows_missing": 0,
@@ -529,7 +682,11 @@
         "turnover": "5553019249.46",
         "volume": "14670177"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-25": {
       "current_equity_candidate_rows_missing": 0,
@@ -548,7 +705,11 @@
         "turnover": "6146043909.54",
         "volume": "16523974"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     },
     "2026-11-26": {
       "current_equity_candidate_rows_missing": 0,
@@ -567,7 +728,11 @@
         "turnover": "5489584101.96",
         "volume": "14710298"
       },
-      "positive_activity_rows": 279
+      "positive_activity_rows": 279,
+      "pre_valid_from_missing_rows": 0,
+      "pre_valid_from_missing_symbols": [],
+      "unexplained_missing_rows": 0,
+      "unexplained_missing_symbols": []
     }
   },
   "equity_candidate_count": 281,
@@ -576,6 +741,20 @@
   "history_source_id": "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME_HISTORY",
   "history_status_counts": {
     "ROWS_RETURNED_REVIEW_ONLY": 281
+  },
+  "lifecycle_context": {
+    "available": true,
+    "evidence_note": "secondary lifecycle dates are context only and do not establish exchange-primary effective dates",
+    "identity_basis": "current crosswalk ID only; not historical stable-ID proof",
+    "primary_start_evidence_count": 0,
+    "secondary_start_evidence_count": 44,
+    "sha256": "52249d6f7caa03d4210bbdefbe152a272824a277177b6bc14ca83bfc913a44d8",
+    "status_counts": {
+      "unverified": 237,
+      "verified_secondary_first_trade_archive_match": 30,
+      "verified_secondary_notice": 14
+    },
+    "undated_start_count": 237
   },
   "official_history_response_count": 281,
   "official_market_summary_date_count": 29,
@@ -620,12 +799,14 @@
   },
   "official_session_calendar_verified": false,
   "per_security_completeness_verified": false,
-  "policy": "current_equity_candidate_history_only_missing_rows_unknown_zero_activity_not_no_trade",
+  "policy": "current_equity_candidate_history_only_pre_valid_from_missing_rows_contextualized_by_labeled_lifecycle_evidence_unexplained_missing_rows_unknown_zero_activity_not_no_trade",
+  "pre_valid_from_missing_rows": 7,
   "requested_window": {
     "end_date": "2026-11-26",
     "start_date": "2026-10-05"
   },
   "schema_version": "1.0",
   "source_independence_verified": false,
-  "source_rights_verified": false
+  "source_rights_verified": false,
+  "unexplained_missing_rows": 0
 }

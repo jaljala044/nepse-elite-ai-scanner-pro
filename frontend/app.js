@@ -22,6 +22,15 @@ function renderChannelTable(container, channels){
   ])tr.append(node("td",value));body.append(tr);}
   table.append(body);container.append(table);
 }
+function renderDailyActivity(container, rows){
+  if(!rows?.length)return;
+  container.append(node("h4","Recent daily execution-channel history"));
+  const table=node("table");const head=node("thead");const hr=node("tr");
+  for(const label of ["Session","Buy amount","Sell amount","Net amount"])hr.append(node("th",label));
+  head.append(hr);table.append(head);const body=node("tbody");
+  for(const item of rows){const tr=node("tr");for(const value of [item.session_date,item.buy_amount,item.sell_amount,item.net_amount])tr.append(node("td",value));body.append(tr);}
+  table.append(body);container.append(table);
+}
 function renderBrokerMemory(data, symbol, code){
   const root=byId("broker-memory-results");root.replaceChildren();
   root.append(node("p","As of "+(data.as_of_trade_date||"unknown")+" · "+(data.status||"unknown"),"memory-asof"));
@@ -44,7 +53,7 @@ function renderBrokerMemory(data, symbol, code){
   if(code){
     const matches=data.execution_channel_matches||[];
     if(!matches.length){root.append(node("p","No matching execution-channel history."));return;}
-    for(const item of matches){const card=node("article",undefined,"memory-card");card.append(node("h3",item.scope+" · "+item.horizon));renderChannelTable(card,[item]);root.append(card);}
+    for(const item of matches){const card=node("article",undefined,"memory-card");card.append(node("h3",item.scope+" · "+item.horizon));renderChannelTable(card,[item]);renderDailyActivity(card,item.daily_activity);root.append(card);}
     return;
   }
   const all=data.execution_channel_features||{};

@@ -409,3 +409,30 @@ unverified, unadjusted secondary dataset—not validated signals, investment
 advice, or evidence of predictive performance. The server-reviewed manifest
 remains empty, so the production/API engine must continue to return UNKNOWN
 for these records.
+
+### Full public-archive audit automation added — 2026-11-27
+
+A reproducible, read-only full-universe audit has now been added:
+- `backend/audit_public_nepal_market_data.py`
+- `backend/tests/test_audit_public_nepal_market_data.py`
+- `.github/workflows/public-nepse-data-audit.yml`
+
+The workflow pins the public archive to the commit SHA resolved at audit start,
+reads the publisher's instrument reference master, selects every row marked
+`instrument_type=ordinary` and `status=listed`, and audits the matching
+per-symbol CSV files. It checks header/schema, missing symbol files, malformed
+rows, ISO dates, duplicate dates, chronological order, finite numeric fields,
+OHLC bounds, negative/fractional volume, negative/zero turnover, and
+percentage-change formatting. It writes a per-symbol JSON report as a
+30-day GitHub Actions artifact.
+
+This automation is intentionally read-only: it does not copy any source rows
+into project datasets, modify the public archive, promote canonical records,
+or enable signal eligibility. Its structural gate is separate from source
+rights, exchange accuracy, session-calendar verification, historical
+security identity and corporate-action adjustment. A clean structural report
+would still be only a necessary, not sufficient, condition for research use.
+
+The full-universe run is pending the GitHub Actions execution on this PR. Until
+that report is available and independently reconciled, the previous ten-symbol
+spot-check findings remain the only completed local structural sample.

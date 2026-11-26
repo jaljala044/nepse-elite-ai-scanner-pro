@@ -20,6 +20,7 @@ from .backtest import run_walk_forward_backtest
 from .execution_backtest import simulate_execution_scenario, aggregate_execution_scenarios
 from .portfolio_backtest import run_portfolio_backtest
 from .corporate_action_benchmark import adjust_ohlcv_for_corporate_actions, compare_portfolio_to_benchmark
+from .corporate_action_ledger import run_corporate_action_portfolio_ledger
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -112,6 +113,13 @@ class PortfolioBacktestRequest(BaseModel):
     execution_config_by_symbol: dict[str, dict]
 
 
+class CorporateActionPortfolioLedgerRequest(BaseModel):
+    initial_cash: float = Field(ge=0)
+    initial_holdings: list[dict] = Field(default_factory=list)
+    corporate_actions: list[dict] = Field(default_factory=list)
+    price_rows_by_symbol: dict[str, list[dict]]
+    as_of_date: date
+    evidence_cutoff: str
 class CorporateActionBenchmarkRequest(BaseModel):
     symbol: str = Field(min_length=1, max_length=32)
     as_of_date: date
@@ -539,6 +547,18 @@ def research_portfolio_backtest(request: PortfolioBacktestRequest):
         raise HTTPException(422, str(exc)) from exc
 
 
+@app.post("/v1/research/backtest/corporate-action-ledger")
+def research_corporate_action_ledger(request: CorporateActionPortfolioLedgerRequest):
+    """Replay caller-attested corporate actions against a holdings/cash ledger."""
+    try:
+        return run_corporate_action_portfolio_ledger(
+            initial_cash=request.initial_cash, initial_holdings=request.initial_holdings,
+            corporate_actions=request.corporate_actions,
+            price_rows_by_symbol=request.price_rows_by_symbol,
+            as_of_date=request.as_of_date.isoformat(), evidence_cutoff=request.evidence_cutoff,
+        )
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 @app.post("/v1/research/backtest/corporate-action-benchmark")
 def research_corporate_action_benchmark(request: CorporateActionBenchmarkRequest):
     """Return point-in-time adjusted OHLCV plus exact-date benchmark comparison.

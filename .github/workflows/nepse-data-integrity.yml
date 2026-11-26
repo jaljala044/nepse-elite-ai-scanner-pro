@@ -73,6 +73,8 @@ jobs:
             --candidates ../data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv \
             --calendar ../data/reference/nepse_session_calendar.csv \
             --source-root ../external-nepse-data \
+            --source-repository srijankarki07/nepse-data \
+            --source-revision e6e6fe77cd3378204c7938e66601cee2339a8b7a \
             --output ../data/reports/nepse-616-session-candidate-audit.json
       - name: Generate pinned Hugging Face inventory
         working-directory: backend

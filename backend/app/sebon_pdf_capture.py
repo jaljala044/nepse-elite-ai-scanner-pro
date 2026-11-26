@@ -56,12 +56,11 @@ def capture_sebon_pdf(
     storage_root: str | Path,
     timeout_seconds: float = 25.0,
     max_bytes: int = _MAX_BYTES,
-    client: httpx.Client | None = None,
 ) -> dict:
     """GET and immutably archive one official SEBON PDF with transport evidence.
 
-    An injected client is intended for tests. Production calls create an httpx
-    client with certificate verification enabled and redirects disabled.
+    The transport is created internally with certificate verification enabled;
+    callers cannot inject a client that might disable TLS verification.
     """
     _validate_url(url)
     if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or not 1 <= max_bytes <= _MAX_BYTES:
@@ -69,8 +68,7 @@ def capture_sebon_pdf(
     if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or timeout_seconds <= 0:
         raise ValueError("timeout_seconds_must_be_positive")
 
-    owns_client = client is None
-    active_client = client or httpx.Client(
+    active_client = httpx.Client(
         timeout=httpx.Timeout(timeout_seconds, connect=min(timeout_seconds, 10.0)),
         verify=True,
         follow_redirects=False,
@@ -132,5 +130,4 @@ def capture_sebon_pdf(
             "production_sector_signals_allowed": False,
         }
     finally:
-        if owns_client:
-            active_client.close()
+        active_client.close()

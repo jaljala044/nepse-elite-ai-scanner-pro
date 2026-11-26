@@ -118,3 +118,18 @@ All surfaces must provide loading, empty, stale, partial-coverage, conflict and 
 The repository already contains broker party aggregation, floorsheet identity joins, descriptive footprint feature primitives, broker/SMC confluence research code and broker coverage reports. The footprint function currently has rolling windows and a 1D/1W/1M/3M persistence concept, but it is not proof of durable historical memory, a calibrated early-entry/exit engine or production data access. The README currently states that live API feeds, web UI, Android app, authentication, deployment and scheduled automation are not yet connected or verified.
 
 This document records mandatory scope and an implementation plan. It does not claim that broker memory, early-entry/exit detection, a web UI, a mobile app, live ingestion or production deployment have been implemented.
+
+
+## First backend implementation slice (PR #87)
+
+The first backend foundation is now committed on `feat/broker-behaviour-memory-early-entry-exit`:
+- append-only DuckDB tables for source-lineaged broker observations and immutable, content-addressed as-of snapshots;
+- cumulative rebuild from all previously stored observations that were available at the decision time;
+- daily, weekly, monthly and yearly broker-flow windows, with additional 3M/6M/2Y descriptive windows in the underlying feature primitive;
+- separate execution-channel-code profiles, including unmapped codes, without promoting them to verified broker entities;
+- read-only shared API endpoints `GET /v1/broker-memory/status` and `GET /v1/broker-memory`;
+- tests for idempotency, cross-session memory, no-lookahead availability, source/session/floorsheet admission, lineage, short yearly history and execution-code-only behaviour.
+
+**Session input contract:** the `session_dates` supplied to the persistence layer must contain only verified NEPSE open sessions for which complete floorsheet coverage has been established and made available by the decision time. Future sessions are excluded. A mere exchange calendar is not enough to claim floorsheet coverage.
+
+This slice does not yet connect an automated source collector or scheduler, create early-entry/early-exit detections, render web/mobile interfaces, or certify production operation. It is not a live broker monitor. Existing P4 durability and P1/P2 evidence/source-rights gates remain mandatory.

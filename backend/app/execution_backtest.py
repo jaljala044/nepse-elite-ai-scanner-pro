@@ -177,3 +177,24 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
             "Tax is simplified by the supplied scenario calculator and is not tax advice."
         ]
     }
+
+
+def aggregate_execution_scenarios(scenarios):
+    """Trade-level aggregate only; deliberately not a portfolio equity curve."""
+    completed = [x for x in scenarios if x.get("status") == "scenario_completed"]
+    pnls = [Decimal(str(x["net_pnl"])) for x in completed]
+    returns = [Decimal(str(x["net_return_pct"])) for x in completed]
+    gains = [x for x in pnls if x > 0]
+    losses = [x for x in pnls if x < 0]
+    gross_gain, gross_loss = sum(gains, Decimal(0)), -sum(losses, Decimal(0))
+    return {
+        "classification": "trade_level_execution_scenario_summary_not_portfolio_backtest",
+        "scenario_count": len(scenarios), "completed_scenarios": len(completed),
+        "withheld_scenarios": len(scenarios) - len(completed),
+        "total_net_pnl_scenario_sum": float(sum(pnls, Decimal(0))) if pnls else None,
+        "average_net_return_pct_per_scenario": float(sum(returns, Decimal(0)) / len(returns)) if returns else None,
+        "win_rate_pct": float(Decimal(len(gains)) / len(pnls) * 100) if pnls else None,
+        "profit_factor": float(gross_gain / gross_loss) if gross_loss else (None if not gross_gain else "undefined_no_losses"),
+        "metrics_scope": "independent trade scenarios; not compounded and not a portfolio equity curve",
+        "portfolio_drawdown": None, "sharpe": None, "sortino": None,
+    }

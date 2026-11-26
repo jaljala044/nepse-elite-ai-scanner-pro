@@ -1405,3 +1405,11 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 3. Continue the 616-session calendar recovery and primary NEPSE notice capture.
 4. Continue OHLCV exception and corporate-action review without overwriting raw values or owner-finalized records.
 5. Continue floorsheet source-lineage, missing-date and index-anomaly adjudication; keep canonical promotion blocked until all gates pass.
+
+
+## Work-session update — 2026-11-26 (P1 calendar evidence expansion)
+
+- Expanded the secondary-source cross-check for the two 616-date candidates missing from the pinned SocrateAI index archive: 2025-04-03 and 2026-11-20.
+- For 2025-04-03, added HimalPress and Expert Nepal historical index-table records alongside Kathmandu Post. For 2026-11-20, added Nepse Decode's date-stamped daily summary and a NepseTrading date-specific close report alongside NepseIQ and ShareSansar.
+- Machine-readable cross-check updated in commit `3b96c0783426fe776c20ba6decf0faefd4615e8a`; detailed recovery report updated in commit `662b12bef6673666ff3e36a63e64d2186d909ab1`.
+- This increases secondary corroboration but does not satisfy the primary NEPSE date-by-date evidence requirement. All 616 dates remain candidate_unverified; zero canonical dates promoted; exact identity with the original extraction list remains unresolved; P2 training remains blocked.

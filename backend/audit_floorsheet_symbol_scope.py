@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from datetime import date
 from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
@@ -174,7 +175,7 @@ def audit_floorsheet_symbol_scope(
             scope_class = "OUT_OF_SCOPE_DEBENTURE"
             security_id = (security or {}).get("security_id")
             evidence = "dated_security_snapshot_name_identifies_debenture"
-        elif "bond" in normalized_name.split():
+        elif re.search(r"\\bbond\\b", normalized_name):
             scope_class = "OUT_OF_SCOPE_BOND"
             security_id = (security or {}).get("security_id")
             evidence = "dated_security_snapshot_name_identifies_bond"

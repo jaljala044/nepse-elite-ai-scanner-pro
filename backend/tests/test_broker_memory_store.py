@@ -55,14 +55,14 @@ class BrokerMemoryStoreTests(unittest.TestCase):
     def test_as_of_query_hides_future_event_and_late_available_rows(self):
         self.store.append(snapshot(), idempotency_key="old",
                           available_at=datetime(2026, 11, 24, 10, tzinfo=timezone.utc))
-        self.store.append(snapshot(as_of_date="2026-11-25"), idempotency_key="future",
-                          available_at=datetime(2026, 11, 25, 10, tzinfo=timezone.utc))
+        self.store.append(snapshot(as_of_date="2026-11-26"), idempotency_key="future",
+                          available_at=datetime(2026, 11, 26, 10, tzinfo=timezone.utc))
         self.store.append(snapshot(net_amount="200"), idempotency_key="late",
                           available_at=datetime(2026, 11, 26, 10, tzinfo=timezone.utc))
         rows = self.store.get_as_of(
             security_id="SEC-1", broker_entity_id="BROKER-1",
-            as_of_date="2026-11-24",
-            available_by=datetime(2026, 11, 24, 23, tzinfo=timezone.utc),
+            as_of_date="2026-11-25",
+            available_by=datetime(2026, 11, 25, 23, tzinfo=timezone.utc),
         )
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["snapshot"]["net_amount"], "100.50")

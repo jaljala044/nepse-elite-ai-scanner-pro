@@ -20,3 +20,18 @@ Example:
 python backend/import_nepse_market_summary_capture.py --capture-report data/evidence/raw/nepse/market-summary-history/2026-11-26/capture-report.json --storage-root data/evidence/bronze-raw --database backend/data/evidence.duckdb
 
 This is a manual import adapter. The scheduled capture workflow does not yet automatically populate the application evidence database, and the official market-summary source is not yet activated in the trust registry.
+
+
+## API configuration
+
+POST /v1/canonical-feature-snapshot requires these server-side settings:
+
+- NEPSE_SOURCE_TRUST_REGISTRY_PATH: reviewed registry JSON path (defaults to data/reference/source-trust-registry.v1.json).
+- NEPSE_SOURCE_REGISTRY_SHA256: independently pinned registry digest.
+- NEPSE_REVIEWER_KEYS_JSON: JSON object mapping reviewer IDs to secret key strings; provision only through the deployment secret manager.
+- NEPSE_PROMOTION_LEDGER_PATH: append-only promotion ledger path (defaults to backend/data/promotion-ledger.jsonl).
+- NEPSE_SESSION_CALENDAR_PATH: reviewed session-calendar CSV path.
+- NEPSE_SESSION_CALENDAR_SHA256: trusted SHA-256 of the exact calendar CSV bytes.
+- NEPSE_EVIDENCE_DATABASE: DuckDB evidence database path (uses the evidence-store default when unset).
+
+Do not commit reviewer keys or use a client-provided registry, digest, calendar, ledger or promotion status. If any required setting is missing or invalid, the API returns UNKNOWN / PRESERVE_CAPITAL.

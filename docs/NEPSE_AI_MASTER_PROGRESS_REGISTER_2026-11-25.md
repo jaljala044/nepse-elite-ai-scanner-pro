@@ -1519,3 +1519,10 @@ Read-only OHLCV boundary inspection completed for JALPA, KLBSL, MATRI, MKLB and 
 Observed: JALPA and KLBSL end on 2024-07-10; MATRI begins 2024-08-13. MKLB ends 2024-07-07, while SMATA's existing series begins 2024-03-04, predating the acquisition integration. This confirms the acquisition case is not a simple predecessor-to-new-successor concatenation. Detailed rows, hashes and dispositions are in `docs/PRIORITY_97_HISTORICAL_EQUITY_MERGER_TIMELINES_2026-11-26.md`; JSON observations are in `data/reference/nepse_historical_identity_evidence_2026-11-26.json`.
 
 No raw OHLCV data was modified. The boundary check validates the archive contents only; it does not certify NEPSE-origin data, security-ID continuity, or effective-dated legal identity. `stable_id` remains null and `effective_date_verified` false. No history splice or canonical/training promotion is authorized.
+
+
+## Priority 97 follow-up — expanded OHLCV boundary review (2026-11-26)
+
+Extended read-only predecessor OHLCV boundary review to BPW, MMFDB, NLBBL, SAMAJ, SFCL, SABSL and SDLBSL. BPW has a nonzero-volume row on the reported suspension-effective date (2024-03-06), so notice timing must be reconciled before asserting last trade. MMFDB/NLBBL files end 2024-03-12; SFCL ends 2026-07-09. SABSL/SDLBSL files extend to 2024-07-13 but rows on 12–13 July repeat the 11 July OHLCV exactly. SAMAJ's rows on 17–18 October 2025 repeat 16 October exactly. Repeated terminal rows must not be treated as actual trades without session evidence.
+
+Successor series SLBSL, GBLBS and PFL already existed before the merger integration events; they are not newly-started ticker histories. NMLBBL and SMPDA file starts are 2024-05-19 and 2024-08-18 respectively, but file starts alone do not establish legal first trading dates. Full row-level notes are in the Priority 97 report and JSON evidence. No raw data was edited, no price histories were spliced, and canonical/training promotion remains blocked pending independent source lineage, exchange-session confirmation and dated security-ID validity.

@@ -22,11 +22,11 @@ FIELDS = (
 STATUSES = {"verified_primary_notice", "verified_secondary_notice", "unverified"}
 
 
-def _read(path: str | Path) -> tuple[list[dict[str, str]], str]:
+def _read(path: str | Path, required_fields: tuple[str, ...] = FIELDS) -> tuple[list[dict[str, str]], str]:
     raw = Path(path).read_bytes()
     with Path(path).open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        missing = set(FIELDS) - set(reader.fieldnames or [])
+        missing = set(required_fields) - set(reader.fieldnames or [])
         if missing:
             raise ValueError("lifecycle input missing columns: " + ", ".join(sorted(missing)))
         rows = [{key: (value or "").strip() for key, value in row.items()} for row in reader]
@@ -39,7 +39,7 @@ def validate_equity_lifecycle_input(
     expected_count: int = 281,
 ) -> dict[str, Any]:
     rows, lifecycle_sha = _read(lifecycle_path)
-    crosswalk, crosswalk_sha = _read(crosswalk_path)
+    crosswalk, crosswalk_sha = _read(crosswalk_path, ("security_id", "symbol", "crosswalk_status"))
     errors: list[str] = []
     expected = {
         row["symbol"]: row["security_id"]

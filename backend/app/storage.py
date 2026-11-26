@@ -1,4 +1,6 @@
 import csv, io
+from decimal import Decimal
+from math import isfinite
 from datetime import date
 from collections import defaultdict
 
@@ -23,7 +25,12 @@ def store_rows(csv_text: str, source: str) -> dict:
                 raise ValueError("invalid symbol")
             d = date.fromisoformat(row["date"])
             o, h, lo, c = (float(row[k]) for k in ("open", "high", "low", "close"))
-            vol = int(float(row["volume"]))
+            volume = Decimal(row["volume"])
+            if not volume.is_finite() or volume < 0 or volume != volume.to_integral_value():
+                raise ValueError("invalid volume")
+            vol = int(volume)
+            if not all(isfinite(x) for x in (o,h,lo,c)):
+                raise ValueError("nonfinite price")
             if min(o, h, lo, c) <= 0 or vol < 0 or h < max(o, c, lo) or lo > min(o, c, h):
                 raise ValueError("invalid OHLCV values")
             item = {"date": d, "open": o, "high": h, "low": lo, "close": c, "volume": vol}
@@ -35,6 +42,11 @@ def store_rows(csv_text: str, source: str) -> dict:
         seen[key] = item
     for (symbol, d), item in seen.items():
         parsed[symbol].append(item)
+    for symbol, rows in parsed.items():
+        existing = {r["date"]: r for r in DATA.get(symbol, [])}
+        for row in rows:
+            if row["date"] in existing and existing[row["date"]] != row:
+                raise ValueError(f"Conflicting stored row for {symbol} on {row['date']}")
     for symbol, rows in parsed.items():
         merged = {r["date"]: r for r in DATA.get(symbol, [])}
         merged.update({r["date"]: r for r in rows})

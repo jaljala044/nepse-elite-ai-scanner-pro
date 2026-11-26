@@ -1,0 +1,68 @@
+name: P4.17 pinned floorsheet archive reconciliation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/floorsheet_archive_pair_audit.py"
+      - "backend/audit_floorsheet_archive_pair.py"
+      - "backend/app/floorsheet_source_profiles.py"
+      - ".github/workflows/p417-pinned-archive-reconciliation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile-pinned-2026-11-24-archives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out scanner
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch exact pinned Samir raw CSV
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/SamirWagle/Nepse-All-Scraper/e6160adc6bdf3d19562167388e3d9d4f645c455a/data/floorsheet/floorsheet_2026-11-24.csv \
+            -o /tmp/samir-floorsheet-2026-11-24.csv
+          sha256sum /tmp/samir-floorsheet-2026-11-24.csv
+
+      - name: Fetch exact pinned SocrateAI raw CSV
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-11-24.csv \
+            -o /tmp/socrateai-floorsheet-2026-11-24.csv
+          sha256sum /tmp/socrateai-floorsheet-2026-11-24.csv
+
+      - name: Verify exact pinned identities and reconcile all contracts
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          SAMIR_SHA256="$(sha256sum /tmp/samir-floorsheet-2026-11-24.csv | cut -d ' ' -f 1)"
+          SOCRATEAI_SHA256="$(sha256sum /tmp/socrateai-floorsheet-2026-11-24.csv | cut -d ' ' -f 1)"
+          python backend/audit_floorsheet_archive_pair.py \
+            --left-file /tmp/samir-floorsheet-2026-11-24.csv \
+            --left-source-id "SamirWagle/Nepse-All-Scraper@e6160adc6bdf3d19562167388e3d9d4f645c455a" \
+            --left-profile samir \
+            --left-sha256 "$SAMIR_SHA256" \
+            --right-file /tmp/socrateai-floorsheet-2026-11-24.csv \
+            --right-source-id "socrateai-official/nepse-open-data@cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3" \
+            --right-profile socrateai \
+            --right-sha256 "$SOCRATEAI_SHA256" \
+            --output artifacts/p417-floorsheet-pair-audit-2026-11-24.json
+
+      - name: Upload review-only reconciliation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: p417-floorsheet-pair-audit-2026-11-24
+          path: artifacts/p417-floorsheet-pair-audit-2026-11-24.json
+          if-no-files-found: error
+          retention-days: 30

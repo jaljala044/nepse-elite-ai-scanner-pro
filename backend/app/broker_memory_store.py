@@ -201,16 +201,19 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
             profiles = []
             baseline_sessions = normalized_sessions[-21:-1]
             latest_session = normalized_sessions[-1] if normalized_sessions else None
+            daily_sessions = baseline_sessions + ([latest_session] if latest_session else [])
+            daily_by_code = {
+                code: {day: {"buy": Decimal("0"), "sell": Decimal("0")} for day in daily_sessions}
+                for code in totals
+            }
+            for row in scope_rows:
+                code = row.get("source_broker_code")
+                if code in daily_by_code and row["trade_date"] in daily_by_code[code]:
+                    daily_by_code[code][row["trade_date"]][row["side"]] += Decimal(str(row["amount"]))
             for code, item in totals.items():
                 gross = item["buy_amount"] + item["sell_amount"]
                 net = item["buy_amount"] - item["sell_amount"]
-                daily_by_session = {
-                    day: {"buy": Decimal("0"), "sell": Decimal("0")}
-                    for day in baseline_sessions + ([latest_session] if latest_session else [])
-                }
-                for row in scope_rows:
-                    if row.get("source_broker_code") == code and row["trade_date"] in daily_by_session:
-                        daily_by_session[row["trade_date"]][row["side"]] += Decimal(str(row["amount"]))
+                daily_by_session = daily_by_code[code]
                 prior_buy_values = [daily_by_session[day]["buy"] for day in baseline_sessions]
                 prior_sell_values = [daily_by_session[day]["sell"] for day in baseline_sessions]
                 prior_buy_avg = (sum(prior_buy_values, Decimal("0")) / Decimal("20")

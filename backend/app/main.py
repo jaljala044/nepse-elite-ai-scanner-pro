@@ -73,21 +73,32 @@ async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(
 
 @app.post("/v1/scan")
 def scan(request: ScanRequest):
-    selected = request.symbols or sorted(DATA.keys())
+    selected = request.symbols
     results = []
     if EQUITY_UNIVERSE is None:
+        unavailable = [{
+            "symbol": symbol.upper(),
+            "status": "universe_unavailable",
+            "result_bucket": "universe_unavailable",
+            "ranking_eligible": False,
+            "buy_list_eligible": False,
+            "eligibility": {"eligible": False, "reasons": ["candidate_universe_unavailable"]},
+            "signals": [],
+            "metrics": {},
+        } for symbol in (selected or sorted(DATA.keys()))]
         return {
             "mode": "research_only",
-            "results": [{
-                "symbol": symbol.upper(),
-                "status": "universe_unavailable",
-                "eligibility": {"eligible": False, "reasons": ["candidate_universe_unavailable"]},
-                "signals": [],
-                "metrics": {},
-            } for symbol in selected],
+            "results": unavailable,
+            "unknown_results": [],
+            "ranked_results": [],
+            "buy_candidates": [],
+            "out_of_scope_results": [],
+            "research_only_results": [],
+            "universe_unavailable_results": unavailable,
             "disclaimer": "Fail-closed: no equity universe manifest is available.",
         }
     candidate_symbols = set(EQUITY_UNIVERSE["symbols"])
+    selected = selected or sorted(candidate_symbols)
     for symbol in selected:
         normalized_symbol = symbol.upper()
         if normalized_symbol not in candidate_symbols:

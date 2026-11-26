@@ -106,6 +106,8 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         fees = _positive(trade.get("fees", 0), "trade_fees", zero=True)
         if trade_day not in days or settle_day not in days:
             raise ValueError("trade_dates_must_be_verified_portfolio_sessions")
+        if days.index(settle_day) - days.index(trade_day) != 2:
+            raise ValueError("trade_settlement_must_be_t_plus_two")
         trades_by_day[trade_day].append({**trade, "_qty": qty, "_price": price,
                                          "_fees": fees, "_settle": settle_day})
     actions_by_day = defaultdict(list)
@@ -152,6 +154,9 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                                       "source_id": action["source_id"], "action": action}
     # Events are keyed to their actual economic dates after record-date entitlement is known.
     pending_events = defaultdict(list)
+    curve = []
+    receivables = 0.0
+    pending_buys = defaultdict(float)
     for day in days:
         # Settlement of purchases adds shares; sale proceeds become spendable cash.
         for trade in trades_by_day.get(day, []):
@@ -162,6 +167,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 if trade["side"] == "BUY" and trade["_settle"] == day:
                     symbol = trade["symbol"]
                     pos = positions.setdefault(symbol, {"quantity": 0.0, "cost_basis": 0.0})
+                    pending_buys[symbol] -= trade["_qty"]
                     pos["quantity"] += trade["_qty"]
                     pos["cost_basis"] += trade["_qty"] * trade["_price"] + trade["_fees"]
                     pending_events[day].append({"type": "buy_shares_settled", "trade_id": trade["trade_id"],
@@ -173,7 +179,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             entitlement = positions.get(symbol, {"quantity": 0.0})["quantity"]
             aid = action["action_id"]
             kind, effective, terms = entitlement_by_action[aid]["event"]
-            if kind == "rights" and terms[0] > entitlement + 1e-8:
+            if kind == "rights" and terms[0] > entitlement * _positive(action.get("ratio"), "rights_ratio") + 1e-8:
                 raise ValueError("rights_subscription_exceeds_record_date_entitlement:" + aid)
             entitlement_by_action[aid]["quantity"] = entitlement
             entitlement_by_action[aid]["terms"] = terms
@@ -194,6 +200,12 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                                                   "listing_date": listing, "source_id": action["source_id"]})
         # Apply due corporate-action events before trades executed on this date.
         for event in pending_events.pop(day, []):
+            if event["type"] == "sell_proceeds_settled":
+                cash += event["cash_delta"]
+                receivables -= event["cash_delta"]
+                continue
+            if event["type"] in ("trade_settlement_audit", "buy_shares_settled"):
+                continue
             symbol = event["symbol"]
             pos = positions.setdefault(symbol, {"quantity": 0.0, "cost_basis": 0.0})
             if event["type"] == "dividend_cash":
@@ -222,6 +234,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 if debit > cash + 1e-8:
                     raise ValueError("insufficient_cash_for_buy:" + trade["trade_id"])
                 cash -= debit
+                pending_buys[symbol] += qty
                 # Shares enter holdings only on settlement date.
             else:
                 pos = positions.setdefault(symbol, {"quantity": 0.0, "cost_basis": 0.0})
@@ -232,6 +245,9 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 pos["quantity"] -= qty
                 pos["cost_basis"] -= average_cost * qty
                 proceeds = gross - trade["_fees"]
+                if proceeds < 0:
+                    raise ValueError("negative_sale_proceeds")
+                receivables += proceeds
                 pending_events[trade["_settle"]].append({"type": "sell_proceeds_settled",
                                                           "trade_id": trade["trade_id"],
                                                           "symbol": symbol, "cash_delta": proceeds,
@@ -253,11 +269,16 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             if day not in bars.get(symbol, {}):
                 raise ValueError("portfolio_mark_missing:" + symbol + ":" + day.isoformat())
             market_value += bars[symbol][day] * pos["quantity"]
-        equity = cash + market_value
+        for symbol, qty in pending_buys.items():
+            if qty > 1e-8:
+                if day not in bars.get(symbol, {}):
+                    raise ValueError("pending_buy_mark_missing:" + symbol)
+                market_value += qty * bars[symbol][day]
+        equity = cash + market_value + receivables
         if equity <= 0:
             raise ValueError("nonpositive_portfolio_equity")
         curve.append({"date": day.isoformat(), "cash": round(cash, 8),
-                      "market_value": round(market_value, 8), "equity": round(equity, 8),
+                      "market_value": round(market_value, 8), "sale_receivables": round(receivables, 8), "equity": round(equity, 8),
                       "holdings": {s: round(v["quantity"], 8) for s, v in positions.items() if v["quantity"] > 1e-8}})
     # Any pending event effective on/before as_of indicates a missing replay event/session.
     late = [d.isoformat() for d, events in pending_events.items() if events and d <= as_of]

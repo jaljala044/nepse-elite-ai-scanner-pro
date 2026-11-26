@@ -2,7 +2,7 @@ import csv
 import unittest
 from pathlib import Path
 
-from app.equity_universe_manifest import validate_equity_manifest_rows
+from app.equity_universe_manifest import (\n    load_equity_universe_manifest, validate_equity_manifest_rows,\n)
 
 
 class EquityUniverseManifestTests(unittest.TestCase):
@@ -38,6 +38,14 @@ class EquityUniverseManifestTests(unittest.TestCase):
         symbols = {row["symbol"] for row in rows}
         self.assertTrue({"NESDO", "ULBSL", "YMHL"}.issubset(symbols))
         self.assertNotIn("NICEF", symbols)
+
+    def test_loader_returns_only_validated_current_equity_candidates(self):
+        root = Path(__file__).resolve().parents[2]
+        path = root / "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
+        result = load_equity_universe_manifest(path)
+        self.assertEqual(len(result["symbols"]), 281)
+        self.assertEqual(result["security_ids_by_symbol"]["NESDO"], "8041")
+        self.assertFalse(result["promotion_allowed"])
 
     def test_duplicate_symbol_rejected(self):
         rows = self.valid_rows()

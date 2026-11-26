@@ -90,6 +90,14 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertIsNotNone(candidates["smc"])
         self.assertIsNone(candidates["relative_strength"])
         self.assertIsNone(candidates["broker"])
+        aggregate = result["aggregate_scores"]["AAA"]
+        self.assertEqual(aggregate["coverage_pct"], 65.0)
+        self.assertEqual(aggregate["stage1_quality"], "UNKNOWN")
+        self.assertEqual(aggregate["action"], "NO_TRADE")
+        self.assertIn("relative_strength", aggregate["missing_components"])
+        self.assertIn("liquidity", aggregate["missing_components"])
+        self.assertIn("sector", aggregate["missing_components"])
+        self.assertEqual(aggregate["decision_status"], "research_only_fail_closed_stage2_preview")
 
 
 if __name__ == "__main__":

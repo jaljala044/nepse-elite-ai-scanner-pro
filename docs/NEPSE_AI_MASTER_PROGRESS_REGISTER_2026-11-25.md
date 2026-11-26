@@ -2125,3 +2125,21 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 
 - Follow-up scope caveat: 52,369 is the cross-source shared-contract count, **not** a verified ordinary-equity contract count. The complete 52,369 shared rows have not yet been joined to the effective-dated 281-equity register; other shared records may also be out of scope. The 18 one-sided rows alone have been classified from the dated snapshot.
 - CI after the P4.17 report/progress commits: backend unit tests **836 passed** (run 45849859966; log inspected). P4.17 pinned archive workflow itself completed successfully (run 45849142578) and uploaded the JSON artifact.
+
+## 2026-11-26 — P4.18 floorsheet instrument-scope audit hardening
+
+- Added `backend/audit_floorsheet_symbol_scope.py` and focused tests to reconcile symbols observed in the pinned 2026-11-24 Samir/SocrateAI floorsheet pair against the dated equity crosswalk, target-universe candidate list and 2026-11-25 security snapshot.
+- Scope outcomes are explicitly review-only: ordinary-equity candidates, mutual funds, promoter shares, debentures, bonds, equity candidates absent from the crosswalk, snapshot-only unclassified instruments, and UNKNOWN symbols. Unknowns are not promoted; archive absence is not NO_TRADE.
+- Hardened the audit to require the exact trade date (2026-11-24), exact security-snapshot date (2026-11-25), and row-for-row symbol/ID/name/status/date agreement between the 281-row equity crosswalk and dated security snapshot. It fails closed on date drift, missing snapshot matches, crosswalk identity conflicts and duplicate contract keys.
+- Direct CSV reconciliation of the committed reference files: equity crosswalk **281 rows**, security snapshot **573 rows**, target candidates **325 rows** (278 Equity + 47 Mutual Fund); **zero crosswalk/snapshot identity conflicts** across the 281 crosswalk symbols.
+- Added regression cases for instrument classification including bonds, wrong trade date, crosswalk/snapshot identity conflict, equity candidate missing from crosswalk, and duplicate contract keys. The P4.17 workflow and historical integrity workflow now run the focused scope tests.
+- Latest implementation/test/workflow commits include `17241d8`, `4cde582`, `0c24d7b`, `a18da38`, `bb594d2`, `e713b1d`, `3c4353d` and `859d1f3`.
+- **Execution status:** no CI status or workflow-run result is visible through the currently available commit-status/workflow query. The audit has not yet been run on the real pinned pair after this hardening. No symbol scope is admitted to canonical coverage and no data is promoted.
+
+## 2026-11-26 — P5.2c official summary activity validation hardening
+
+- Extended `backend/capture_nepse_market_summary_history.py` to distinguish mere date-field presence from a validated activity record. A date is listed as activity-confirmed only when it has exactly one summary row and positive, parseable values for total turnover, traded shares, transaction count and traded scrip count.
+- Duplicate summary dates, missing/invalid/nonpositive activity metrics and invalid dates remain unverified. The report separately emits candidate dates with validated activity and dates without it. The canonical-calendar promotion flag remains hard-coded false.
+- Added regression tests for positive activity, zero-activity rows, duplicate-date rejection and missing activity metrics. The historical integrity and scheduled capture workflows now execute the focused parser tests before their other work.
+- Implementation commit: `eecb1aa`; tests: `1e90ea2`; workflow commits: `8c6cc03` and `6e1bf85`.
+- **Execution status:** tests and live official API capture have not yet been observed passing in this work session. No candidate date has been promoted. The 616-date inventory remains `candidate_unverified` until date-by-date source evidence and review are complete.

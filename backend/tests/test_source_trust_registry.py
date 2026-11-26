@@ -80,6 +80,18 @@ class SourceTrustPromotionTests(unittest.TestCase):
         ))
         self.assertTrue(verify_reviewer_signature(self.validation, self.keys))
 
+    def test_redistribution_requires_dedicated_rights_evidence(self):
+        with self.assertRaisesRegex(ValueError, "dedicated rights_evidence_ref"):
+            SourcePolicy(
+                source_id="licensed", publisher_name="Licensed",
+                trust_tier="official_registry", allowed_record_types=("corporate_action",),
+                canonical_record_types=("corporate_action",), status="active",
+                effective_from="2020-01-01", effective_to=None,
+                reviewer="reviewer", reviewed_at="2026-11-25T00:00:00Z",
+                evidence_refs=("evidence://source-review",),
+                rights_state="redistribution_permitted", redistribution_allowed=True,
+            )
+
     def test_secondary_publisher_cannot_be_configured_as_canonical(self):
         with self.assertRaisesRegex(ValueError, "only exchange_primary"):
             SourcePolicy(
@@ -183,6 +195,7 @@ class SourceTrustPromotionTests(unittest.TestCase):
                 trusted_registry_sha256=self.registry["registry_sha256"],
                 reviewer_keys=self.keys,
             )
+            self.assertTrue(revoked["accepted"])
             append_promotion_event(path, revoked)
             self.assertEqual(active_promoted_record_ids(path), set())
             lines = path.read_text().splitlines()

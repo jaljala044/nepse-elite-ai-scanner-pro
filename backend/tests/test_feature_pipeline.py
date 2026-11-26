@@ -100,5 +100,43 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertEqual(aggregate["decision_status"], "research_only_fail_closed_stage2_preview")
 
 
+
+    def test_verified_nepse_benchmark_feeds_relative_strength_component(self):
+        from datetime import date, timedelta
+        start = date(2025, 1, 1)
+        rows = []
+        digest = "d" * 64
+        for i in range(260):
+            session = (start + timedelta(days=i)).isoformat()
+            available = session + "T16:00:00Z"
+            for symbol, rate in (("AAA", 0.8), ("BBB", 0.05)):
+                close = 100 + i * rate
+                rows.append({
+                    "record_type": "ohlcv", "symbol": symbol, "session_date": session,
+                    "available_at": available, "open": close, "high": close + 2,
+                    "low": close - 2, "close": close, "previous_close": close - rate,
+                    "volume": 1000, "source_validation_status": "verified",
+                    "source_id": "daily-equity-archive-v1", "source_payload_sha256": digest,
+                    "price_basis_status": "verified_unadjusted_no_actions",
+                    "corporate_action_status": "clear",
+                })
+            rows.append({
+                "record_type": "index_ohlcv", "index_code": "NEPSE",
+                "session_date": session, "available_at": available,
+                "close": 100 + i * 0.2, "source_validation_status": "verified",
+                "finality_status": "final", "source_id": "nepse-index-final-v1",
+                "source_payload_sha256": digest,
+            })
+        decision_time = (start + timedelta(days=260)).isoformat() + "T12:00:00Z"
+        result = build_feature_snapshot(rows, decision_time, ["AAA", "BBB"])
+        self.assertEqual(result["relative_strength"]["status"], "observed")
+        self.assertEqual(result["relative_strength"]["eligible_symbols"], 2)
+        self.assertGreater(
+            result["component_candidates"]["AAA"]["relative_strength"],
+            result["component_candidates"]["BBB"]["relative_strength"],
+        )
+        self.assertEqual(result["aggregate_scores"]["AAA"]["coverage_pct"], 80.0)
+        self.assertEqual(result["aggregate_scores"]["AAA"]["action"], "NO_TRADE")
+
 if __name__ == "__main__":
     unittest.main()

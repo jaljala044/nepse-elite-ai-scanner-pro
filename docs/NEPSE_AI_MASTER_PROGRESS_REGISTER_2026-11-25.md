@@ -1444,3 +1444,13 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 - Detailed report: [Priority 95 unmapped Yonepse IDs resolved](docs/PRIORITY_95_UNMAPPED_YONEPSE_IDS_RESOLVED_2026-11-26.md), commit `cd08a1c4af0b7196f2fd76e464886df84c38509b`.
 - No raw floorsheet/OHLCV records changed; no canonical target-universe or training-data promotion.
 
+
+
+## Work-session update — 2026-11-26 (Priority 96: promoter-share classification guardrail)
+
+- Added `promoter_share` as an explicit recognized non-target instrument class in both instrument-manifest and universe-snapshot validation.
+- Promoter-share rows remain available for lifecycle/audit retention but are excluded from equity/mutual-fund target counts; the snapshot validator rejects any promoter-share row marked in-scope.
+- Added regression tests for audit retention, exclusion from active targets and rejection of target promotion.
+- Report: `docs/PRIORITY_96_PROMOTER_SHARE_CLASSIFICATION_GUARDRAIL_2026-11-26.md`.
+- This is a validator-only change. No promoter-share ticker was added to the canonical universe; no raw OHLCV/floorsheet data changed; no training-data promotion.
+- Tests are committed but await CI execution; do not claim they pass until a workflow confirms.

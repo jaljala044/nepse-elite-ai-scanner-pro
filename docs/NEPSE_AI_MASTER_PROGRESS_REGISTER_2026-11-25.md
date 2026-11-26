@@ -1706,4 +1706,4 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Added `docs/EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md`.
 - Important qualification: the file is a dated NepseAlpha **secondary-provider snapshot**. Structural validation passes, but official membership/effective-dated lifecycle is not yet authoritative; the validator explicitly keeps `membership_authoritatively_verified=false` and `promotion_allowed=false`.
 - Current 281-equity file may be used as a working candidate universe for equity-only scanner development and coverage reconciliation. Mutual funds, promoter shares, debentures, suspended and delisted instruments remain excluded.
-- CI is pending confirmation from the backend-tests workflow triggered by the new tests. No canonical/training promotion is approved.
+- Full backend CI passed: [run 45832163019](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45832163019), including full unittest discovery after the validator date-pattern fix. No canonical/training promotion is approved.

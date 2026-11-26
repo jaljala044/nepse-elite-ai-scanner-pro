@@ -5,7 +5,9 @@ proves structural consistency and declared scope, not exchange-primary membershi
 """
 from __future__ import annotations
 
+import csv
 import re
+from pathlib import Path
 from collections import Counter
 from datetime import date
 from typing import Iterable, Mapping
@@ -91,3 +93,17 @@ def validate_equity_manifest_rows(
         "evidence_tier": "secondary_provider_snapshot",
         "policy": "equity_only_no_ticker_type_inference_no_secondary_source_promotion",
     }
+
+
+def load_equity_universe_manifest(path: str | Path) -> dict:
+    """Load and validate the dated secondary-provider candidate manifest."""
+    manifest_path = Path(path)
+    with manifest_path.open(newline="", encoding="utf-8-sig") as handle:
+        rows = list(csv.DictReader(handle))
+    result = validate_equity_manifest_rows(rows)
+    result["symbols"] = sorted(row["symbol"] for row in rows)
+    result["security_ids_by_symbol"] = {
+        row["symbol"]: row["security_id"] for row in rows
+    }
+    result["manifest_path"] = str(manifest_path)
+    return result

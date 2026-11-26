@@ -40,7 +40,7 @@ class BrokerIngestionTests(unittest.TestCase):
     def test_naive_availability_rejected_and_early_availability_quarantined(self):
         with self.assertRaises(IngestionError):
             run(available_at="2026-11-26T09:00:00")
-        result = run(available_at="2026-11-25T09:00:00+05:45")
+        result = run(available_at="2026-11-24T23:59:00+05:45")
         self.assertFalse(result.memory_eligible)
 
     def test_payload_hash_mismatch_quarantined(self):
@@ -57,7 +57,10 @@ class BrokerIngestionTests(unittest.TestCase):
         self.assertEqual(len(result.accepted), 1)
 
     def test_conflicting_duplicate_blocks_batch(self):
-        result = run([make_row(), make_row(amount="1300")])
+        changed_payload = {"trade_file": "source-row-1", "value": 1300}
+        changed = make_row(amount="1300", source_payload=changed_payload,
+                           source_payload_sha256=payload_hash(changed_payload))
+        result = run([make_row(), changed])
         self.assertEqual(result.conflicts, 1)
         self.assertFalse(result.memory_eligible)
 

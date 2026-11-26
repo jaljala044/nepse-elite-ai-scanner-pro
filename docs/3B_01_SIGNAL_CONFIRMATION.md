@@ -199,3 +199,40 @@ other securities, historical dates, corporate actions, or the publisher's
 rights. The source remains quarantined and is **not eligible** for canonical
 promotion or signal testing. The 29 rows must not be generalized to the
 archive as a whole.
+
+### Additional one-session structural audit — SocrateAI (2026-11-27)
+
+A read-only structural check was run on the publisher's unadjusted daily file
+for 2026-11-26
+(`ohlc_unadjusted_stock/unadj_2026-11-26.csv`). It contains 349 rows with
+the columns date, close, open, high, low, volume and symbol.
+
+- 349/349 date-symbol keys are unique in this one-file sample.
+- No duplicate keys were found.
+- No negative volumes or basic OHLC-bound violations were found
+  (high below open/close/low or low above open/close/high).
+- 13/349 rows have zero volume. The file mixes instrument types, so this
+  requires instrument-universe classification before treating all rows as
+  tradable common-equity observations.
+- This is a single-date structural check only. It does not establish complete
+  market coverage, historical continuity, source accuracy, identity/lifecycle,
+  or corporate-action correctness.
+
+There is also a licensing metadata ambiguity: the repository's root
+`LICENSE` file contains MIT-style text that expressly says it applies to
+the dataset, but GitHub's repository API currently reports the repository
+licence as `Other` with SPDX `NOASSERTION`. That API classification does
+not invalidate the text file, but it means automated licence detection does
+not independently confirm an SPDX licence. More importantly, neither the
+text nor metadata proves that the publisher owns or is authorized to
+sublicense upstream exchange/provider data.
+
+The repository's commits inspected for the recent daily updates are unsigned
+according to GitHub's commit-verification metadata. This is not evidence that
+the data is false; it means those commits do not provide a verified
+cryptographic publisher signature. The existing open provenance question
+(issue #2) has no comments as of this check. No publisher clarification or
+permission has therefore been obtained.
+
+This additional sample does not change the source decision: keep the archive
+quarantined and do not promote it into the canonical reviewed-row manifest.

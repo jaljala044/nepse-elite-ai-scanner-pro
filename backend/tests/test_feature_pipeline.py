@@ -48,6 +48,9 @@ class FeaturePipelineTests(unittest.TestCase):
         wyckoff = result["wyckoff_features"]["AAA"]
         self.assertEqual(wyckoff["status"], "observed")
         self.assertEqual(wyckoff["history_sessions"], 260)
+        smc = result["smc_features"]["AAA"]
+        self.assertEqual(smc["status"], "observed")
+        self.assertEqual(smc["timeframes"]["daily"]["status"], "observed")
 
 
 if __name__ == "__main__":

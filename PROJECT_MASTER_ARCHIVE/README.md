@@ -15,6 +15,7 @@ This is the central index for project datasets, reports, source links, code/work
 |---|---|
 | [DATASET_REGISTER.csv](DATASET_REGISTER.csv) | Dataset/archive inventory, coverage, revision, evidence and limitations |
 | [EVIDENCE_REGISTER.csv](EVIDENCE_REGISTER.csv) | Reports, CI runs, artifacts, attachment evidence and local-only outputs |
+| [GITHUB_DOCUMENT_REGISTER.csv](GITHUB_DOCUMENT_REGISTER.csv) | 38 key GitHub project documents discovered and linked |
 | [SOURCE_LINKS.csv](SOURCE_LINKS.csv) | Primary, secondary and community source links with use restrictions |
 | [COMPLETION_STATUS.csv](COMPLETION_STATUS.csv) | Workstream status, acceptance criteria, blockers and next actions |
 
@@ -70,3 +71,8 @@ After every material work session:
 
 **Initial inventory date:** 2026-11-26.  
 **Note:** this archive is a curated inventory, not a claim that all historical data has been downloaded or verified.
+
+
+## GitHub document inventory scope
+
+The GitHub document register currently lists 38 key documents discovered through repository searches across data integrity, OHLCV, floorsheets, session calendars, security universe, broker identity, source provenance and project governance. It is a search-based working inventory, not yet a byte-for-byte exhaustive listing of every file in every connected repository. The main project repository is the authoritative archive home; related repositories are linked where relevant.

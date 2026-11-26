@@ -19,7 +19,7 @@ FIELDS = (
     "target_in_scope", "valid_from_evidence_status", "valid_from_evidence_uri",
     "valid_from_evidence_note",
 )
-STATUSES = {"verified_primary_notice", "verified_secondary_notice", "unverified"}
+STATUSES = {"verified_primary_notice", "verified_secondary_notice", "verified_secondary_first_trade_archive_match", "unverified"}
 
 
 def _read(path: str | Path, required_fields: tuple[str, ...] = FIELDS) -> tuple[list[dict[str, str]], str]:

@@ -72,3 +72,17 @@ Until a trusted registry, reviewer key provisioning, evidence verification workf
 ## Tests
 
 `backend/tests/test_source_trust_registry.py` covers source-tier restrictions, pinned registry digests, signed reviewer attestations, per-record validation requirements, point-in-time checks, effective dates, payload digest matching, hash-chain tamper detection, idempotent events and revocation.
+
+
+## Security operations checklist
+
+Before enabling any production promotion endpoint:
+- provision a unique random HMAC key per reviewer in a secret manager;
+- bind reviewer IDs to authenticated identities and least-privilege roles;
+- rotate keys and revoke compromised reviewers without rewriting prior ledger events;
+- pin the registry digest in deployment configuration, not in a request body;
+- serialize ledger writes and back up the ledger with integrity verification;
+- retain the raw source object and all independent evidence referenced by each signed review;
+- monitor rejected promotions, invalid signatures, registry digest drift and ledger-integrity failures.
+
+HMAC is a shared-secret attestation mechanism, not public-key non-repudiation. A compromised reviewer key can forge that reviewer's attestations until revoked; production operations must support key revocation and audit this risk.

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_public_nepal_market_data import audit_symbol_csv, crosscheck_official_history
+from audit_public_nepal_market_data import (\n    audit_symbol_csv, crosscheck_official_history, compare_socrateai_daily_csvs,\n)
 
 
 HEADER = b"published_date,open,high,low,close,per_change,traded_quantity,traded_amount,status\n"
@@ -108,6 +108,51 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             result = crosscheck_official_history({"TEST": public}, root)
             self.assertEqual(result["field_mismatches"], 1)
             self.assertEqual(result["mismatches_by_field"]["traded_quantity"], 1)
+
+
+    def test_socrateai_daily_archive_matches_official_fields(self):
+        official = [{
+            "businessDate": "2026-11-26", "symbol": "CFCL",
+            "highPrice": 570.8, "lowPrice": 550, "closePrice": 561,
+            "totalTradedQuantity": 87614, "totalTradedValue": 49159830.2,
+        }]
+        daily = {
+            "2026-11-26": (
+                b"date,close,open,high,low,volume,symbol\\n"
+                b"2026-11-26,561,550,570.8,550,87614,CFCL\\n"
+            )
+        }
+        result = compare_socrateai_daily_csvs(official, daily)
+        self.assertEqual(result["official_rows_matched_by_date"], 1)
+        self.assertEqual(result["fully_matching_rows"], 1)
+        self.assertEqual(result["field_comparisons"], 4)
+        self.assertEqual(result["field_mismatches"], 0)
+
+    def test_socrateai_daily_archive_records_volume_mismatch(self):
+        official = [{
+            "businessDate": "2026-11-18", "symbol": "CFCL",
+            "highPrice": 640, "lowPrice": 589.9, "closePrice": 589.9,
+            "totalTradedQuantity": 307576, "totalTradedValue": 184031033.4,
+        }]
+        daily = {
+            "2026-11-18": (
+                b"date,close,open,high,low,volume,symbol\\n"
+                b"2026-11-18,589.9,598.5,640,589.9,307567,CFCL\\n"
+            )
+        }
+        result = compare_socrateai_daily_csvs(official, daily)
+        self.assertEqual(result["field_mismatches"], 1)
+        self.assertEqual(result["mismatches_by_field"]["volume"], 1)
+
+    def test_socrateai_daily_archive_missing_active_row_is_counted(self):
+        official = [{
+            "businessDate": "2026-11-26", "symbol": "CFCL",
+            "highPrice": 570.8, "lowPrice": 550, "closePrice": 561,
+            "totalTradedQuantity": 87614, "totalTradedValue": 49159830.2,
+        }]
+        result = compare_socrateai_daily_csvs(official, {})
+        self.assertEqual(result["missing_public_files"], ["2026-11-26"])
+        self.assertEqual(result["missing_public_active_rows"], 1)
 
 if __name__ == "__main__":
     unittest.main()

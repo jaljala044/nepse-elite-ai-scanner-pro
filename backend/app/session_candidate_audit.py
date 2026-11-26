@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -37,12 +36,15 @@ def audit_session_candidates(candidate_csv: str | Path, calendar_csv: str | Path
                 duplicates.append(day.isoformat())
             seen.add(day)
             digest = (raw.get("git_blob_sha1") or "").strip().lower()
+            revision = (raw.get("source_revision") or "").strip().lower()
             try:
                 size = int((raw.get("source_bytes") or "").strip())
             except ValueError:
                 size = -1
             if len(digest) != 40 or any(c not in "0123456789abcdef" for c in digest):
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "invalid_git_blob_sha1"})
+            if len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision):
+                malformed.append({"line": line, "date": day.isoformat(), "reason": "invalid_source_revision"})
             if size <= 0:
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "invalid_source_bytes"})
             if raw.get("status") != "candidate_unverified":

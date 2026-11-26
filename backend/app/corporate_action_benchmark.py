@@ -100,21 +100,26 @@ def adjust_ohlcv_for_corporate_actions(*, rows, actions, as_of_date, evidence_cu
             factor = ((prior_close + ratio * subscription) / (1.0 + ratio)) / prior_close
         else:
             raise ValueError("unsupported_corporate_action_type")
-        normalized.append((ex_date, factor, kind, source_id))
+        volume_factor = factor if kind in ("bonus", "split") else 1.0
+        normalized.append((ex_date, factor, volume_factor, kind, source_id))
     adjusted, audit = [], []
     for row, day in zip(ordered, dates):
         out = dict(row)
         combined = 1.0
-        for ex_date, factor, _, _ in normalized:
+        for ex_date, factor, _, _, _ in normalized:
             if day < ex_date:
                 combined *= factor
         for field in _PRICE_FIELDS:
             out[field] = round(float(out[field]) * combined, 10)
-        if combined:
-            out["volume"] = round(float(out["volume"]) / combined, 6)
+        volume_adjustment = 1.0
+        for ex_date, _, volume_factor, _, _ in normalized:
+            if day < ex_date:
+                volume_adjustment *= volume_factor
+        if volume_adjustment:
+            out["volume"] = round(float(out["volume"]) / volume_adjustment, 6)
         out["corporate_action_adjustment_factor"] = round(combined, 12)
         adjusted.append(out)
-    for ex_date, factor, kind, source_id in normalized:
+    for ex_date, factor, _, kind, source_id in normalized:
         audit.append({"ex_date": ex_date.isoformat(), "action_type": kind,
                       "backward_price_factor": factor, "source_id": source_id,
                       "classification": "caller_attested_verified_corporate_action"})

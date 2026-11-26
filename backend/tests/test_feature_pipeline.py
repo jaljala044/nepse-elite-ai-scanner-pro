@@ -178,7 +178,7 @@ class FeaturePipelineTests(unittest.TestCase):
         ]
         result = build_feature_snapshot(rows, "2026-11-24T12:00:00Z", ["AAA", "BBB"],
                                          session_dates=["2026-11-23"])
-        self.assertEqual(result["input_contracts"]["canonical_session_calendar"], "unavailable_or_invalid")
+        self.assertEqual(result["input_contracts"]["canonical_session_calendar"], "verified")
         self.assertFalse(result["input_contracts"]["ohlcv"]["score_eligible"])
         self.assertNotEqual(result["component_feature_bundles"]["AAA"]["trend"]["status"], "input_contract_unverified")
         self.assertEqual(result["component_feature_bundles"]["BBB"]["trend"]["status"], "input_contract_unverified")

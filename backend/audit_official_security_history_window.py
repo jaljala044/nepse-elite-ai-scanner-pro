@@ -192,7 +192,10 @@ def audit_history_window(history_report_path: Path, market_body_path: Path,
             target["volume"] += volume
             target["turnover"] += turnover
 
-    market_rows = json.loads(market_body_path.read_text(encoding="utf-8")).get("content", [])
+    market_payload = json.loads(market_body_path.read_text(encoding="utf-8"))
+    market_rows = market_payload.get("content") if isinstance(market_payload, dict) else market_payload
+    if not isinstance(market_rows, list):
+        raise ValueError("official market-summary body has no content list")
     market_by_date = {str(row["businessDate"])[:10]: row for row in market_rows}
     date_reports = {}
     for day in expected_dates:

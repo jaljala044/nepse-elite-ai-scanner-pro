@@ -126,7 +126,9 @@ The overall workstream is complete only when all 23 items pass their acceptance 
 - Kept production ranking and BUY eligibility disabled; the empty reviewed-row manifest continues to fail closed.
 - Added backend unit/API coverage for ordering, date cutoffs, missing rows, invalid universes and unreviewed-row suppression.
 - Added frontend build checks to pull-request CI and changed `backend/Dockerfile` to build and package the browser terminal at `/terminal`.
-- Latest verified CI head `e4378f8d33bf9f5785e90b8565c75d450a6c3261`: backend unit tests, backend contract tests, frontend syntax/build, generated asset checks and Docker image build all passed.
+- Included the dated candidate-universe CSV in the image at `/data/reference`, matching the API's runtime manifest path.
+- Extended container smoke tests to call `/v1/research/readiness`, `/v1/symbols` and the full `POST /v1/scan/market-wide` endpoint across all 281 candidate symbols.
+- Latest verified code CI head `6d830c58589118d515a5347ef80a9c329decfda5`: backend unit tests, backend contract tests, frontend syntax/build, generated assets, Docker image, terminal routes and the full-universe API smoke test all passed. In the clean CI container, the scanner correctly reported 281 candidate symbols, zero stored observations, 0% observation coverage and ranking disabled.
 
 ### Outstanding acceptance gates
 

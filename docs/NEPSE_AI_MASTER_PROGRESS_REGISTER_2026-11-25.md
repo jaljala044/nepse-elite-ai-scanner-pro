@@ -2143,3 +2143,20 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - Added regression tests for positive activity, zero-activity rows, duplicate-date rejection, missing activity metrics and list payloads with no recognized date field. The historical integrity and scheduled capture workflows now execute the focused parser tests before their other work.
 - Implementation commits: `eecb1aa` and `68ddb3a`; test commits: `1e90ea2` and `b7f24a2`; workflow commits: `8c6cc03` and `6e1bf85`.
 - **Execution status:** tests and live official API capture have not yet been observed passing in this work session. No candidate date has been promoted. The 616-date inventory remains `candidate_unverified` until date-by-date source evidence and review are complete.
+
+
+## P4.18 — dated instrument-scope reconciliation completed (2026-11-26)
+
+- Added `backend/audit_floorsheet_symbol_scope.py` and `backend/tests/test_floorsheet_symbol_scope.py`; integrated the audit into the pinned P4.17/P4.18 workflow.
+- The scope runner checks every row is dated 2026-11-24, validates the 281-row equity crosswalk against the 2026-11-25 security snapshot by ID/name/active status/snapshot date, and classifies every observed symbol without inferring scope from ticker spelling.
+- Successful workflow: [#45851300443](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45851300443), artifact ID `15132588935` (pair and symbol-scope JSON reports).
+- Across **350 unique observed symbols** in 52,369 Samir + 52,387 SocrateAI rows: 279 equity-crosswalk candidates, 43 mutual funds, 23 debentures, 4 promoter shares and 1 bond. Zero unknown or unclassified symbols after adding explicit bond-name handling.
+- **Two equity crosswalk symbols, BNL and NLO, were not observed** in these files. Four mutual-fund candidates (C30MF, NICEF, RMF2, SFMF) were also not observed. Absence is not proof of NO_TRADE; retain UNKNOWN until complete session/security capture and controls exist. Mutual funds remain excluded from the equity scanner.
+- The 52,369 shared contracts are a source-overlap count, not an equity-contract count. Shared rows also contain out-of-scope instruments. The 18 one-sided records are 16 mutual-fund RSY2 trades, one promoter-share NMLBBLP trade and one ICFCD89 debenture trade.
+- CI at commit `bbd19f9eed0651056acd75ba57b23367ccce4c66`: backend tests **845 passed** (run 45851300651; log inspected). P4.17/P4.18 archive + scope workflow passed (run 45851300443).
+- Detailed report: [P4.18 floorsheet symbol scope reconciliation](docs/P4.18_FLOORSHEET_SYMBOL_SCOPE_RECONCILIATION_2026-11-26.md).
+- **Disposition:** one-day instrument-scope partition is review-only. Official session completeness, source independence/rights, full 281-equity daily coverage, canonical promotion and production BUY authorization remain blocked.
+
+### P4.19 next
+
+Reconcile the 279 observed equity candidates against independently verified 2026-11-24 session status and per-security controls; investigate BNL/NLO absence without treating it as zero trades; then repeat on further overlapping dates.

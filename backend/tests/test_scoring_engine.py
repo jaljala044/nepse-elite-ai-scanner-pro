@@ -52,7 +52,8 @@ class ScoringEngineTests(unittest.TestCase):
         result = evaluate({"wyckoff": 80, "trend": 80})
         self.assertEqual(result["coverage_pct"], 50)
         self.assertEqual(result["action"], "NO_TRADE")
-        self.assertIsNone(result["composite_score"])
+        self.assertEqual(result["composite_score"], 80.0)
+        self.assertTrue(result["rating"].startswith("Unrated"))
 
     def test_score_normalizes_only_over_available_weights(self):
         result = evaluate({"wyckoff": 80, "trend": 100})

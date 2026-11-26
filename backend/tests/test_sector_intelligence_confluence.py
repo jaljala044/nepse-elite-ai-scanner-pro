@@ -73,7 +73,7 @@ class SectorIntelligenceConfluenceTests(unittest.TestCase):
 
     def test_mismatched_market_and_broker_dates_withheld(self):
         broker = broker_fixture()
-        broker["as_of_date"] = "2026-11-26"
+        broker["as_of_date"] = "2026-11-25"
         result = build_sector_intelligence_confluence(
             market_fixture(), broker, decision_time=CUTOFF
         )
@@ -89,7 +89,7 @@ class SectorIntelligenceConfluenceTests(unittest.TestCase):
 
     def test_broker_window_must_end_on_market_session(self):
         broker = broker_fixture()
-        broker["current_complete_sessions"][-1] = "2026-11-26"
+        broker["current_complete_sessions"] = ["2026-11-19", "2026-11-22", "2026-11-23", "2026-11-24", "2026-11-25"]
         result = build_sector_intelligence_confluence(
             market_fixture(), broker, decision_time=CUTOFF
         )

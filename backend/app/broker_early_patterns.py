@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 import re
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 RULE_VERSION = "nepse-broker-flow-candidate-v1"
@@ -59,7 +60,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         raise ValueError("as_of_session must be YYYY-MM-DD") from exc
     if isinstance(minimum_daily_flow_multiple, bool) or not isinstance(minimum_daily_flow_multiple, (int, float)) or not math.isfinite(minimum_daily_flow_multiple) or minimum_daily_flow_multiple <= 0:
         raise ValueError("minimum_daily_flow_multiple must be finite and positive")
-    if cutoff.astimezone(__import__("zoneinfo").ZoneInfo("Asia/Kathmandu")).date().isoformat() != as_of_session:
+    if cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date().isoformat() != as_of_session:
         return _insufficient(broker_code, symbol, "decision_time_session_mismatch")
     if not isinstance(execution_channel_windows, dict) or not isinstance(market_context, dict):
         raise ValueError("broker windows and market_context must be objects")

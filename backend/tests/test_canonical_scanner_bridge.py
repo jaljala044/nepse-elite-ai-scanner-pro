@@ -95,7 +95,7 @@ class CanonicalScannerBridgeTests(unittest.TestCase):
                 "verified_at_utc":"2026-11-25T12:01:00Z",
                 "scope":"all_securities","notes":"verified fixture",
             })
-        self.calendar_digest = self.calendar_digest
+        self.calendar_digest = hashlib.sha256(self.calendar.read_bytes()).hexdigest()
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -112,7 +112,6 @@ class CanonicalScannerBridgeTests(unittest.TestCase):
             database_path=self.db, ledger_path=self.ledger, registry=self.registry,
             trusted_registry_sha256=self.registry["registry_sha256"],
             reviewer_keys=self.reviewer_keys, calendar_path=self.calendar,
-            trusted_calendar_sha256=self.calendar_digest,
             trusted_calendar_sha256=self.calendar_digest,
             decision_time=self.decision_time, expected_symbols=["AAA"],
         )

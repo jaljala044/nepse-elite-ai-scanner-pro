@@ -1782,3 +1782,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Historical data integrity: [run 45834139312](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45834139312), success.
 - Report: [EQUITY_LIFECYCLE_PROVENANCE_VALIDATOR_2026-11-26.md](EQUITY_LIFECYCLE_PROVENANCE_VALIDATOR_2026-11-26.md).
 - Remaining: independently sourced effective listing/trading starts and lifecycle end intervals for the remaining 280; verified exchange calendar; source-separated OHLCV row-level coverage; corporate-action/price-basis validation and data rights. No canonical promotion or training.
+
+
+### Generic UNKNOWN scan policy — 2026-11-26
+
+- Generalized the UNL fail-closed treatment to every in-scope equity when row validation/provenance/session/point-in-time eligibility fails, or when the observation history is insufficient for the basic screen.
+- Such results remain visible as `status=unknown_result`, `data_status=UNKNOWN`, `data_quality=LOW_CONFIDENCE`, `overall_rating=NOT_RATED`, with T+2, swing, positional and investment actions all `UNKNOWN`; signals, metrics and structure scores are withheld.
+- UNKNOWN is explicitly distinct from NO_TRADE. A no-trade conclusion still requires verified open-session status and complete date-matched floorsheet coverage with zero contracts.
+- Added API regression coverage for a candidate equity with no validated rows. Existing UNL-specific evidence reasons and policy remain intact.
+- Code commit: [c7d2ed6](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/c7d2ed657495b8fa1c3c89a386f5958c88f34a54); test commit: [82ba000](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/82ba000803eae8b6d13af4a3e2d7cc247ac0a9f9).
+- CI/test execution has not yet been verified for these commits. Do not treat the change as test-passed or production-ready until workflow evidence is available.

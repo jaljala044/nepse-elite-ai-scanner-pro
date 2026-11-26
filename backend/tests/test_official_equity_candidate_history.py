@@ -54,7 +54,7 @@ class OfficialEquityCandidateHistoryTests(unittest.TestCase):
     def test_positive_exact_and_zero_without_floor_are_separate(self):
         with tempfile.TemporaryDirectory() as tmp:
             cap, floors = self._fixture(Path(tmp))
-            report = reconcile(cap, floors)
+            report = reconcile(cap, floors, expected_equity_count=2)
         statuses = report["dates"]["2026-11-20"]["socrateai"]["status_counts"]
         self.assertEqual(statuses, {"OFFICIAL_ZERO_ACTIVITY_NO_FLOORSHEET_ROW": 2})
         self.assertEqual(report["dates"]["2026-11-19"]["socrateai"]["status_counts"],

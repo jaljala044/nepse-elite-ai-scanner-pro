@@ -25,7 +25,7 @@ No source is approved by default. The repository ships no populated production t
 
 Only `exchange_primary` and `official_registry` tiers can be configured for canonical records. Secondary publishers, licensed aggregators, user uploads and derived datasets may be retained as corroborating/research evidence, but cannot become canonical through this policy engine. Their records must not be silently substituted for official exchange evidence.
 
-The serialized registry is content-hashed. Production callers must pin the expected registry SHA-256 in trusted deployment configuration and call `verify_source_registry`; accepting an arbitrary registry supplied with the data request defeats the trust boundary. Registry updates require reviewed code/configuration changes and a new pinned digest.
+Canonical approval is restricted to exchange-primary and official-registry tiers; secondary sources remain corroborative only. Redistribution permission requires a separate dedicated rights-evidence reference and is not inferred from source-trust approval.\n\nThe serialized registry is content-hashed. Production callers must pin the expected registry SHA-256 in trusted deployment configuration and call `verify_source_registry`; accepting an arbitrary registry supplied with the data request defeats the trust boundary. Registry updates require reviewed code/configuration changes and a new pinned digest.
 
 ## Reviewer attestations
 
@@ -55,7 +55,7 @@ A promotion is accepted only when:
 - the record and validation were available by the decision timestamp;
 - every required validation check passed with an evidence reference.
 
-Revocation is an append-only event. A revoked record is no longer returned by the active-promotion reader. Rejected decisions remain in the audit ledger but never enter the active set.
+Revocation is an append-only, signed event and is accepted only when the reviewer attestation and revocation evidence are valid. An unsigned or invalid revocation is retained as a rejected audit event and cannot remove a record from the active set. A revoked record is no longer returned by the active-promotion reader. Rejected decisions remain in the audit ledger but never enter the active set.
 
 ## Explicit non-goals
 

@@ -114,7 +114,8 @@ def build_broker_intelligence_dashboard(
             raise BrokerDashboardError("duplicate_broker_security_window_profile")
         coverage = _coverage(row.get("coverage_ratio"), "profile_coverage")
         enough = (
-            row.get("status") == "descriptive_only"
+            manifest_reason is None
+            and row.get("status") == "descriptive_only"
             and coverage >= threshold
             and row.get("directional_summary") != "insufficient_evidence"
         )

@@ -80,6 +80,7 @@ class EvidenceReadinessTests(unittest.TestCase):
                 "NEPSE_PROMOTION_LEDGER_PATH": str(ledger),
             })
             self.assertTrue(result["source_registry_valid"])
+            self.assertEqual(result["status"], "no_promoted_records")
             self.assertEqual(result["active_canonical_source_policy_count"], 1)
             self.assertEqual(result["canonical_record_count"], 0)
             self.assertFalse(result["production_eligible"])

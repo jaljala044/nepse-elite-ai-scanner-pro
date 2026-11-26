@@ -236,3 +236,44 @@ permission has therefore been obtained.
 
 This additional sample does not change the source decision: keep the archive
 quarantined and do not promote it into the canonical reviewed-row manifest.
+
+### New upstream/provider leads — 2026-11-27
+
+SocrateAI's public organization profile says its work is built in collaboration
+with Nepalytix for real NEPSE data and lists `support@socrateai.com` as its
+contact. This makes Nepalytix a specific provenance lead for the SocrateAI
+archive, but it does not prove that Nepalytix supplied the individual-stock
+CSV files or that SocrateAI has sublicensing rights:
+https://github.com/socrateai-official
+https://github.com/socrateai-official/nepse-open-data
+
+Nepalytix publicly describes open JSON REST endpoints and five-year price
+history. Its terms say market data comes from public NEPSE records and
+third-party providers, prohibit scraping/copying/redistribution without
+written permission, and state that its REST API is for personal/research use
+while commercial API use requires a separate written agreement with Cognify
+System Pvt. Ltd. The terms do not clearly settle permanent local retention,
+derived datasets, or redistribution of outputs. Therefore, do not harvest
+the open endpoints or ingest Nepalytix data into this project until written
+scope and retention permission are clarified:
+https://nepalytix.com/
+https://nepalytix.com/terms
+
+A stronger documented authorized-provider route has also been identified:
+Source Code Pvt. Ltd. markets its Market Data Provider (MDP) as a NEPSE-
+licensed data platform, describing live and 5–10 years of historical market
+data, API packages, and corporate-action coverage. Its public contact is
+`info@sourcecode.com.np` / `+977 980-2071475`. This is a vendor claim, not
+independent proof of a specific licence grant to this project. A written
+quote and contract must specify historical daily OHLCV fields, security
+universe and lifecycle, corporate-action adjustments, correction/version
+history, permitted local retention, backtesting, derived analytics, internal
+use, and any public display or redistribution rights before integration:
+https://sourcecode.com.np/product/mdp
+https://mdp.sourcecode.com.np/
+
+The provider's public material makes this a better route to pursue than
+unauthorized scraping or republishing community archives. No account,
+contract, credentials, or licence has been obtained; no API calls or data
+imports were made. The signal engine remains fail-closed until a properly
+authorized dataset is captured, reconciled and admitted.

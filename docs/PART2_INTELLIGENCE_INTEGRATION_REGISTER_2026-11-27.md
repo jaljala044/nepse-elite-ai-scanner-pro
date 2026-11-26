@@ -100,3 +100,11 @@ Part 2 is complete only when:
 - This does not independently prove that the route remains active, that the returned payload is final, that the response is complete, or that the date series covers every exchange session.
 - No candidate response has been admitted to the trusted artifact store. No index history has been promoted, backfilled, forward-filled or used to calculate market health.
 - Issue #134 records the required first-party capture, TLS, hash, schema, session-calendar and per-index acceptance gates.
+
+## P2.03 sector membership audit update — 2026-11-27
+
+PR #139 is merged at `bf5d16cdcaedaa85478526ae415dac791bf380e6`. GitHub Actions checks `backend-tests` and `Backend contract tests` both completed successfully.
+
+The new `backend/app/sector_membership_manifest.py` performs deterministic structural checks for versioned membership manifests: manifest/payload SHA-256 references, source identity consistency, capture cutoff, record identity, sector codes, effective-date intervals, overlap detection, source-record references and point-in-time symbol coverage. Its strongest possible status is `review_ready`; it always reports `verified=false` and `admission_allowed=false`. It does not authenticate a publisher or prove official NEPSE classification.
+
+Tracking issue [#146](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/146) now owns the remaining primary-source work: acquire a reproducible NEPSE/SEBON sector classification source, preserve raw bytes and TLS/provenance evidence, establish effective dates and stable security identity, reconcile symbol changes and independently review the resulting manifest. No sector membership was promoted. Sector leadership and market-health sector participation remain unavailable until that evidence is approved.

@@ -89,7 +89,7 @@ https://github.com/srijankarki07/nepse-data
 
 A third candidate is `socrateai-official/nepse-open-data`. Its public
 GitHub tree contains 8,442 stock-OHLC CSV paths across adjusted and unadjusted
-daily folders, with dated files from 2011 through 2026-11-26. A sampled
+daily folders, with dated files as early as 2007 and through 2026-11-26. A sampled
 unadjusted file has date, close, open, high, low, volume and symbol; it is
 structurally close to what the engine needs. The repository publishes an MIT
 licence that expressly purports to cover the dataset. However, its short README
@@ -144,3 +144,36 @@ proof of entitlement.
 Do not mark this feature fully validated, production-ready, or performance-
 tested until a sufficiently long, complete, independently reviewed OHLCV
 history is admitted through the canonical evidence process.
+
+
+### Follow-up provenance check (2026-11-27)
+
+A second independent public project, YONEPSE, credits
+`socrateai-official/nepse-open-data` specifically as an upstream for its
+NEPSE sub-index and headline index history (2003–2025). This corroborates that
+SocrateAI is used as a source by another project, but it does not identify the
+upstream origin or licensing authority for SocrateAI's **individual stock
+OHLCV** files. It is not independent validation of those stock rows:
+https://shubhamnpk.github.io/yonepse/pages/sources.html
+
+The SocrateAI commit history also records late additions to already-published
+sessions: its 2026-11-19 commit says BENH was backfilled into 12 prior sessions
+after the exchange supplied its history, and its 2026-10-02 commit says a
+GBIMEP row was added for 2026-09-18 after it arrived late. This is useful
+evidence that late-arriving records can occur, but it is not a complete
+correction/revision policy or a guarantee that all such changes are logged:
+https://github.com/socrateai-official/nepse-open-data/commits/main/
+
+The repository's public issue tracker contains an unanswered request asking
+the publisher to clarify the data licence scope, upstream rights, private
+retention, update/correction policy, and whether the stock OHLCV values are
+genuine end-of-day source values. As checked on 2026-11-27, that issue remains
+open with no public comments. This is not permission and cannot substitute
+for a publisher response:
+https://github.com/socrateai-official/nepse-open-data/issues/2
+
+The current-day adjusted and unadjusted stock files sampled for 2026-11-26
+have the same rows and values in the returned sample. That is expected for
+same-day prices but does not validate the historical adjustment factors or
+corporate-action treatment. No files were downloaded into this project,
+reconciled as an acceptance dataset, or promoted to the canonical manifest.

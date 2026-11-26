@@ -63,16 +63,18 @@ class RawCaptureTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 persist_capture(tmp, b"different", manifest)
 
-    def test_conflicting_manifest_for_same_payload_is_not_overwritten(self):
+    def test_same_payload_supports_distinct_immutable_capture_manifests(self):
         with tempfile.TemporaryDirectory() as tmp:
             payload = b"same payload"
             first = self.manifest(payload, fetch_id="first")
             second = self.manifest(payload, fetch_id="second")
-            persist_capture(tmp, payload, first)
-            with self.assertRaises(CaptureConflictError):
-                persist_capture(tmp, payload, second)
-            manifest_path = Path(tmp) / "test-source" / "2026-11-24" / hashlib.sha256(payload).hexdigest() / "manifest.json"
-            self.assertEqual(json.loads(manifest_path.read_text())["fetch_id"], "first")
+            first_result = persist_capture(tmp, payload, first)
+            second_result = persist_capture(tmp, payload, second)
+            self.assertEqual(first_result["payload_path"], second_result["payload_path"])
+            self.assertNotEqual(first_result["manifest_path"], second_result["manifest_path"])
+            self.assertEqual(json.loads(Path(first_result["manifest_path"]).read_text())["fetch_id"], "first")
+            self.assertEqual(json.loads(Path(second_result["manifest_path"]).read_text())["fetch_id"], "second")
+            self.assertTrue(persist_capture(tmp, payload, first)["idempotent"])
 
 
 if __name__ == "__main__":

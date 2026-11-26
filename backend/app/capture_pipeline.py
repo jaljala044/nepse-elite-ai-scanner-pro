@@ -1,8 +1,9 @@
 """Fixture-oriented raw capture -> normalization -> point-in-time feature pipeline.
 
 The parser contract is deliberately narrow JSON: a top-level list of OHLCV or
-broker observation objects. Raw bytes are persisted before parsing. This module
-does not fetch network data or imply an official exchange schema.
+broker observation objects. Raw bytes and provisional normalized rows are
+persisted before point-in-time features are built. This module does not fetch
+network data or imply an official exchange schema.
 """
 from __future__ import annotations
 
@@ -11,7 +12,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from app.raw_capture import build_capture_manifest, persist_capture
+from app.evidence_store import persist_evidence_batch
+from app.raw_capture import build_capture_manifest
 from app.feature_pipeline import build_feature_snapshot
 
 
@@ -42,6 +44,7 @@ def normalize_json_payload(payload: bytes, received_at_utc: str) -> list[dict[st
         # Never trust an embedded available_at value; receipt time is the earliest
         # point at which this capture can be known by this pipeline.
         item["available_at"] = received_at_utc
+        item["source_row_number"] = index + 1
         item["record_id"] = hashlib.sha256(
             (str(index) + ":" + json.dumps(row, sort_keys=True, separators=(",", ":"))).encode("utf-8")
         ).hexdigest()
@@ -51,12 +54,17 @@ def normalize_json_payload(payload: bytes, received_at_utc: str) -> list[dict[st
 
 def capture_normalize_and_build_features(
     payload: bytes, *, storage_root: str | Path, decision_time: str,
-    expected_symbols: list[str] | None = None, **manifest_args: Any,
+    expected_symbols: list[str] | None = None,
+    evidence_database_path: str | Path | None = None,
+    **manifest_args: Any,
 ) -> dict[str, Any]:
-    """Persist exact bytes, normalize only after persistence, then build as-of features."""
+    """Persist exact bytes and provisional records, then build as-of features."""
     manifest = build_capture_manifest(payload, **manifest_args)
-    stored = persist_capture(storage_root, payload, manifest)
     rows = normalize_json_payload(payload, manifest["received_at_utc"])
+    stored = persist_evidence_batch(
+        payload, manifest, rows, storage_root=storage_root,
+        database_path=evidence_database_path,
+    )
     features = build_feature_snapshot(rows, decision_time, expected_symbols)
     return {
         "capture": {
@@ -64,7 +72,9 @@ def capture_normalize_and_build_features(
             "payload_bytes": manifest["payload_bytes"],
             "idempotent": stored["idempotent"],
             "manifest_path": stored["manifest_path"],
-            "payload_path": stored["payload_path"],
+            "payload_path": stored["raw_object_path"],
+            "evidence_status": stored["status"],
+            "production_eligible": stored["production_eligible"],
         },
         "normalized_record_count": len(rows),
         "feature_snapshot": features,

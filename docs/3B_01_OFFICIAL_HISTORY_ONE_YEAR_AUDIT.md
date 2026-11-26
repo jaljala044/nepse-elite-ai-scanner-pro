@@ -118,3 +118,24 @@ The signal-validator and zero-volume tests passed on code commit
 research code to handle the fields NEPSE actually publishes, but 3B.01 is
 still not accepted for production. Keep all data quarantined and do not
 advance to 3B.02 yet.
+## NEPSE data-use policy check
+
+The project also located NEPSE's own hosted **Data Usage Procedure 2077** PDF
+through NEPSE's document endpoint. The procedure describes a formal
+application stating the intended use and an agreement before API use. Its
+published fee schedule has a category for foreign companies/individuals
+requesting research data; the one-year offline historical-data line is USD
+700 one-time, and the schedule lists a USD 2,000 one-time installation charge
+as mandatory for API users. The document is dated 2077/2022 and the current
+fee schedule or its application to the public website endpoint has not been
+independently reconfirmed with NEPSE.
+
+This does **not** establish that merely viewing the public website is itself
+licensed API access, nor does it settle whether the project's specific
+non-commercial use falls under another category. It does mean that public
+endpoint accessibility cannot be treated as a blanket free-use or
+redistribution grant. Since this task is constrained to freely available
+data and no paid access or provider correspondence is authorized, no licence
+or API agreement was sought. The rights gate therefore remains false.
+
+Official NEPSE-hosted procedure: [Data Usage Procedure 2077 PDF](https://www.nepalstock.com.np/api/nots/security/fetchFiles?fileLocation=santosh_thapa%2F2022-11-07%2Fdc3c594bb83da088339bda0215515e18_1667801106767.pdf). The fee schedule appears in the section for foreign company/individual research use. The related [ShareSansar notice](https://www.sharesansar.com/index.php/newsdetail/30-day-application-deadline-for-users-who-want-to-use-nepses-api-data-usage-what-are-the-rates-to-get-access-to-api-2022-11-07) summarizes the application and agreement requirement.

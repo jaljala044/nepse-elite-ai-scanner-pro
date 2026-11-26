@@ -24,6 +24,8 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
         self.assertEqual(result["signals"], [])
         self.assertEqual(result["metrics"], {})
         self.assertEqual(result["market_structure"]["status"], "unknown")
+        self.assertEqual(result["signal_confirmation"]["status"], "unknown")
+        self.assertEqual(result["signal_confirmation"]["classification"], "UNKNOWN")
         self.assertIn("NO_TRADE requires verified", result["scan_note"])
 
 
@@ -71,6 +73,8 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
         payload = response.json()
         result = payload["results"][0]
         self.assertEqual(result["status"], "screened")
+        self.assertEqual(result["signal_confirmation"]["status"], "insufficient_data")
+        self.assertEqual(result["signal_confirmation"]["classification"], "UNKNOWN")
         self.assertEqual(result["result_bucket"], "research_only")
         self.assertEqual(result["horizon_actions"], {
             "t_plus_2": "NOT_ASSESSED", "swing": "NOT_ASSESSED",

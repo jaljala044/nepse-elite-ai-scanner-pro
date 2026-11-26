@@ -49,7 +49,7 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         self.assertEqual(sample["close"], 10)
 
     def test_zero_turnover_with_volume_has_auditable_row_sample(self):
-        data = HEADER + b"2024-01-02,10,11,9,10,nan,100,0,A\\n"
+        data = HEADER + b"2024-01-02,10,11,9,10,nan,100,0,A\n"
         result = audit_symbol_csv(data, "TEST", "data/nepse/TEST.csv")
         self.assertEqual(result["zero_turnover_with_volume"], 1)
         sample = result["row_error_samples"]["zero_turnover_with_volume"][0]

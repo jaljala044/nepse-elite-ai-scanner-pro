@@ -40,6 +40,7 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
             digest = hashlib.sha256((symbol + "payload").encode()).hexdigest()
             symbols.append({
                 "symbol": symbol, "status": "ROWS_RETURNED_REVIEW_ONLY",
+                "crosswalk_security_id": security_id,
                 "current_id_match": True, "current_security_list_id": security_id,
                 "historical_security_identity_verified": False, "rows": rows,
                 "response_sha256": digest,
@@ -57,12 +58,36 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
             }],
             "symbols": symbols,
         }))
-        return history, body, market_report, start, end
+        lifecycle = root / "lifecycle.csv"
+        with lifecycle.open("w", newline="") as handle:
+            import csv
+            writer = csv.DictWriter(handle, fieldnames=[
+                "security_id", "symbol", "instrument_type", "valid_from", "valid_to",
+                "target_in_scope", "valid_from_evidence_status",
+                "valid_from_evidence_uri", "valid_from_evidence_note",
+            ])
+            writer.writeheader()
+            writer.writerow({
+                "security_id": "1", "symbol": "ABC", "instrument_type": "equity",
+                "valid_from": "2026-11-20", "valid_to": "", "target_in_scope": "true",
+                "valid_from_evidence_status": "verified_secondary_notice",
+                "valid_from_evidence_uri": "https://example.test/abc-listing",
+                "valid_from_evidence_note": "secondary fixture evidence",
+            })
+            writer.writerow({
+                "security_id": "2", "symbol": "XYZ", "instrument_type": "equity",
+                "valid_from": "", "valid_to": "", "target_in_scope": "true",
+                "valid_from_evidence_status": "unverified",
+                "valid_from_evidence_uri": "",
+                "valid_from_evidence_note": "no verified start date",
+            })
+        return history, body, market_report, start, end, lifecycle
 
     def test_window_counts_explicit_zero_and_missing_is_not_zero(self):
         with tempfile.TemporaryDirectory() as tmp:
             args = self._fixture(Path(tmp))
-            report = audit_history_window(*args, expected_equity_count=2)
+            audit_args = args[:5]
+            report = audit_history_window(*audit_args, expected_equity_count=2, lifecycle_path=args[5])
         self.assertEqual(report["official_market_summary_date_count"], 2)
         self.assertEqual(report["date_reports"]["2026-11-19"]["explicit_zero_activity_rows"], 1)
         self.assertEqual(report["date_reports"]["2026-11-19"]["positive_activity_rows"], 1)
@@ -79,7 +104,27 @@ class OfficialSecurityHistoryWindowTests(unittest.TestCase):
         day = report["date_reports"]["2026-11-20"]
         self.assertEqual(day["current_equity_candidate_rows_missing"], 1)
         self.assertEqual(day["explicit_zero_activity_rows"], 1)
+        self.assertEqual(day["unexplained_missing_rows"], 1)
+        self.assertEqual(day["pre_valid_from_missing_rows"], 0)
         self.assertIn("ABC", day["missing_symbols"])
+
+    def test_missing_before_secondary_valid_from_is_contextualized_not_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = self._fixture(Path(tmp))
+            data = json.loads(args[0].read_text())
+            data["symbols"][0]["rows"] = [
+                row for row in data["symbols"][0]["rows"]
+                if row["business_date"] != "2026-11-19"
+            ]
+            args[0].write_text(json.dumps(data))
+            report = audit_history_window(*args[:5], expected_equity_count=2, lifecycle_path=args[5])
+        day = report["date_reports"]["2026-11-19"]
+        self.assertEqual(day["current_equity_candidate_rows_missing"], 1)
+        self.assertEqual(day["pre_valid_from_missing_rows"], 1)
+        self.assertEqual(day["unexplained_missing_rows"], 0)
+        self.assertEqual(day["pre_valid_from_missing_symbols"][0]["symbol"], "ABC")
+        self.assertEqual(report["pre_valid_from_missing_rows"], 1)
+        self.assertFalse(report["per_security_completeness_verified"])
 
     def test_bad_raw_summary_hash_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

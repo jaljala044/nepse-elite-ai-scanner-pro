@@ -156,7 +156,12 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                 "sector_code": sector_code,
                 "score_coverage_pct": sector_item.get("score_coverage_pct"),
             },
-            "smc": smc_features_by_symbol[symbol],
+            "smc": {
+                **smc_features_by_symbol[symbol],
+                "status": "experimental_only",
+                "score": None,
+                "score_note": "uncalibrated directional heuristic is retained as descriptive evidence but excluded from weighted production scoring",
+            },
         }
         component_feature_bundles[symbol] = feature_bundle
         component_candidates[symbol] = {

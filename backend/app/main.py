@@ -16,6 +16,7 @@ from .early_entry_exit_signals import generate_early_entry_exit_signals
 from .signal_tracking import freeze_signal, HORIZONS as TRACKED_HORIZONS
 from .signal_store import store_signal, store_outcome, get_signal, list_signals, list_signal_outcomes, list_all_outcomes
 from .signal_outcome_validation import evaluate_signal_path
+from .backtest import run_walk_forward_backtest
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -63,6 +64,14 @@ class StoreSignalOutcomeRequest(BaseModel):
     horizon: str
     observed_at: str
     outcome: dict
+
+class WalkForwardBacktestRequest(BaseModel):
+    signal_ids: list[str] = Field(min_length=1, max_length=5000)
+    evaluation_date: date
+    verified_sessions_by_symbol: dict[str, list[date]]
+    calendar_evidence_by_symbol: dict[str, dict]
+    train_ratio: float = 0.60
+    validation_ratio: float = 0.20
 
 
 @app.get("/health")
@@ -275,6 +284,54 @@ def research_signal_performance(horizon: str | None = None, limit: int = 2000):
             "limitations": ["No execution/fill records, fees, slippage or market impact",
                             "Repeated evaluations of one signal are separate observations; deduplication is not a trade ledger",
                             "No calibrated probability or strategy-performance claim is produced"]}
+
+
+
+@app.post("/v1/research/backtest/walk-forward")
+def research_walk_forward_backtest(request: WalkForwardBacktestRequest):
+    """Run a chronological, purged research backtest on stored frozen BUY signals."""
+    try:
+        records = []
+        for signal_id in request.signal_ids:
+            record = get_signal(signal_id)
+            if record is None:
+                raise HTTPException(404, "signal_not_found:" + signal_id)
+            if record.get("action") == "BUY":
+                records.append(record)
+        symbols = sorted({item["symbol"] for item in records})
+        for symbol in symbols:
+            calendar = request.calendar_evidence_by_symbol.get(symbol) or {}
+            try:
+                coverage = float(calendar.get("coverage"))
+                available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                raise HTTPException(422, "calendar_evidence_malformed:" + symbol)
+            cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+            if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+                    or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0
+                    or available.tzinfo is None or available.utcoffset() is None or available > cutoff):
+                raise HTTPException(422, "verified_point_in_time_calendar_required:" + symbol)
+            if symbol not in DATA or symbol not in request.verified_sessions_by_symbol:
+                raise HTTPException(422, "ohlcv_or_calendar_missing:" + symbol)
+        rows_by_symbol = {
+            symbol: [row for row in DATA[symbol] if row["date"] <= request.evaluation_date]
+            for symbol in symbols
+        }
+        sessions_by_symbol = {
+            symbol: [day.isoformat() for day in request.verified_sessions_by_symbol[symbol]]
+            for symbol in symbols
+        }
+        return run_walk_forward_backtest(
+            signals=records, rows_by_symbol=rows_by_symbol,
+            verified_sessions_by_symbol=sessions_by_symbol,
+            evaluation_date=request.evaluation_date.isoformat(),
+            reviewed=REVIEWED_ROWS, train_ratio=request.train_ratio,
+            validation_ratio=request.validation_ratio,
+        )
+    except HTTPException:
+        raise
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @app.get("/v1/research/readiness")

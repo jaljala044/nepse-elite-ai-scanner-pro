@@ -84,9 +84,9 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 | Acceptance gate | Status | Evidence / blocker |
 |---|---|---|
-| Deterministic market-wide orchestration and API | Implemented on PR #149 | Latest-main draft integration includes backend implementation and API regression tests |
-| Dedicated frontend entry point | Implemented on PR #149 | Latest-main draft integration includes UI module and build integration |
-| Backend, contract and frontend build CI for PR #149 | Passed | Exact latest-main port head `2a98cf085189b619f8c68bab6b5f377a6124735f`: unit-tests run 45899542680, backend-unit-tests run 45899542654, build run 45899501585 all successful |
+| Deterministic market-wide orchestration and API | Implemented on PR #153 | Latest-main draft integration includes backend implementation and API regression tests |
+| Dedicated frontend entry point | Implemented on PR #153 | Latest-main draft integration includes UI module and build integration |
+| Backend, contract and frontend build CI for PR #153 | Passed | Exact latest-main port head `8a0ffca690796141975fcb61e7d254652ee2fef2`: unit-tests run 45899542680, backend-unit-tests run 45899542654, build run 45899501585 all successful |
 | Candidate universe has stable dated provenance | Partial | 281-row secondary snapshot is pinned; authoritative membership is not established |
 | Current security ID crosswalk | Partial | 281/281 current-snapshot matches; historical effective-dated identity outstanding |
 | Complete all-market instrument scope | Partial | Three official bulk dates reconcile; only those dates and current-snapshot instrument classifications are covered |
@@ -109,7 +109,7 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 ## Engineering integration note
 
-PR #149 (`reconcile/3a01-on-current-main-2026-11-27`) is the current clean latest-main scanner integration candidate. It is open and draft; GitHub reports it mergeable, and its exact head has passing backend unit, contract and frontend build checks. PR #142 is left open as the superseded prior scanner port; PR #131 is an older divergent implementation and is not the integration candidate. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
+PR #153 (`reconcile/3a01-on-current-main-2026-11-27`) is the current clean latest-main scanner integration candidate. It is open and draft; GitHub reports it mergeable, and its exact head has passing backend unit, contract and frontend build checks. PR #142 is left open as the superseded prior scanner port; PR #131 is an older divergent implementation and is not the integration candidate. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
 
 ## Source reports
 
@@ -141,14 +141,14 @@ The matrix is an evidence index, not a reviewed-row manifest. It does not author
 
 ## Integration status refresh — 2026-11-27
 
-The scanner integration has been re-ported onto the current-main snapshot in PR #149:
-- PR #149: [3A.01 current-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/149).
-- Head: `2a98cf085189b619f8c68bab6b5f377a6124735f`; base snapshot: `c8b64f59d750846209bbff4a11852665741fbb7e`.
+The scanner integration has been re-ported onto the current-main snapshot in PR #153:
+- PR #153: [3A.01 current-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/149).
+- Head: `8a0ffca690796141975fcb61e7d254652ee2fef2`; base snapshot: `b679b0d6bdb309a4cc979ff2f7293d147fd8f753`.
 - The port replays all eight scanner implementation/UI/test changes additively on current main and preserves the newer sector-membership manifest work.
 - The lowercase-symbol regression test is included; the endpoint rejects noncanonical lowercase symbols rather than normalizing them.
-- Exact-head CI passed: `unit-tests` run 45899542680, `backend-unit-tests` run 45899542654, and `build` run 45899501585.
-- A subsequent main commit `907dfd565ed3e0291c31229c97eae75936099278` updates only the Part 2 documentation register; it does not touch scanner source, tests or evidence matrix files. GitHub currently reports PR #149 mergeable.
-- PR #149 remains draft and unmerged. PR #142 is superseded but left open; no merge or deployment is claimed.
+- Exact-head CI passed on PR #153: `unit-tests` run 45899949432, `backend-unit-tests` run 45899949435, and `build` run 45899920249.
+- The scanner branch is based on current main commit `b679b0d6bdb309a4cc979ff2f7293d147fd8f753`; its comparison is 8 commits ahead and 0 behind. GitHub reports PR #153 mergeable.
+- PR #153 remains draft and unmerged. PR #142 is superseded but left open; no merge or deployment is claimed.
 
 The evidence artifacts in this PR were copied onto a branch created from current main. Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
 

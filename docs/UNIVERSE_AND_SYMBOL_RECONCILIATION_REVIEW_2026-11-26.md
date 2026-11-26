@@ -9,11 +9,14 @@ The existing candidate CSV contains 325 unique records: 278 Equity and 47 Mutual
 The 278/47 file is a candidate list, not a verified 281/47 manifest. Do not force the count.
 
 ## Additional active equity candidates requiring manifest review
-The 2026-11-25 security snapshot includes:
-- NESDO — security ID 8041 — NESDO Sambridha Laghubitta Bittiya Sanstha Limited — active — OHLCV file present.
-- ULBSL — security ID 8063 — Upakar Laghubitta Bittiya Sanstha Limited — active — OHLCV file present.
+The 2026-11-25 security snapshot and the 281-row provisional equity coverage file identify three additional symbols absent from the 2026-11-26 rendered company-list capture:
+- NESDO — security ID 8041 — NESDO Sambridha Laghubitta Bittiya Sanstha Limited — status A in the 2026-11-25 security snapshot — OHLCV file present.
+- ULBSL — security ID 8063 — Upakar Laghubitta Bittiya Sanstha Limited — status A in the 2026-11-25 security snapshot — OHLCV file present.
+- YMHL — security ID 9342 — Yambaling Hydropower Limited — status A in the 2026-11-25 security snapshot — OHLCV file present.
 
-Both are absent from the 2026-11-26 target candidate CSV. This identifies two concrete omissions to investigate. It does not yet identify a third missing equity. EDBL (ID 274) is already present in the candidate CSV and must not be counted as missing.
+A fresh row-level comparison confirms that the 281-row 2026-11-26 company-list CSV contains only 278 unique active-equity symbols because USLB is repeated once and SYPNL is repeated twice. All 278 unique symbols match the 278-symbol candidate-equity list. The separate 281-symbol provisional OHLCV coverage set differs by exactly NESDO, ULBSL and YMHL. The dated security snapshot records all three as status A, but that snapshot does not itself prove instrument type or effective lifecycle dates. Treat all three as strong candidates requiring an authoritative instrument-type/status cross-check; do not silently promote them to the canonical 281-equity register.
+
+EDBL (ID 274) is already present in both the 278-symbol list and the 281-symbol provisional OHLCV coverage set and must not be counted as missing.
 
 Secondary evidence: NepseAlpha's listed-securities page reports active equity records and identifies instrument/status fields; NEPSEAlpha live-market results include EDBL. NEPSEDATA's 26 Nov 2026 development-bank list includes EDBL. These are corroborating leads, not a complete 281-member manifest:
 - https://nepsealpha.com/traded-stocks/

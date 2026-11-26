@@ -201,7 +201,7 @@ def detect_broker_patterns(
         day = date.fromisoformat(str(row.get("trade_date"))).isoformat()
         if day not in window:
             continue
-        required_text = ("contract_id", "source_id", "source_row_number")
+        required_text = ("contract_id", "source_id", "source_row_number", "source_broker_code")
         if any(row.get(key) in (None, "") for key in required_text):
             return _insufficient(symbol, decision_at, window[-1], methodology_version,
                                  ["broker_lineage"], sorted(evidence_ids))
@@ -210,6 +210,9 @@ def detect_broker_patterns(
                 or row.get("floorsheet_coverage_status") != "verified_complete"):
             return _insufficient(symbol, decision_at, window[-1], methodology_version,
                                  ["verified_complete_broker_source_session"], sorted(evidence_ids))
+        if not isinstance(row.get("source_broker_code"), str) or not row["source_broker_code"].strip():
+            return _insufficient(symbol, decision_at, window[-1], methodology_version,
+                                 ["source_broker_code"], sorted(evidence_ids))
         digest = str(row.get("source_payload_sha256", "")).lower()
         if not _HASH.fullmatch(digest):
             return _insufficient(symbol, decision_at, window[-1], methodology_version,

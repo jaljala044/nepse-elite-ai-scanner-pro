@@ -25,7 +25,7 @@ def freeze_signal(*,symbol,decision_time,horizon,action,methodology,evidence,det
             raise ValueError("missing or future evidence")
     payload={"schema_version":1,"symbol":symbol,"decision_time":cutoff.isoformat(),
              "horizon":horizon,"action":action,"methodology":methodology,
-             "evidence":evidence,"details":details,"classification":"research_only"}
+             "evidence":evidence,"details":details,"classification":"research_only_not_execution"}
     encoded=json.dumps(payload,sort_keys=True,separators=(",",":"),allow_nan=False)
     return {"signal_id":hashlib.sha256(encoded.encode()).hexdigest(),"record":json.loads(encoded)}
 

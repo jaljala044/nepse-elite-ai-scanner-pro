@@ -1640,3 +1640,10 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Register: [equity low-overlap triage](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/equity_low_overlap_triage_register_2026-11-26.md), final wording commit `3fd16a798c10598d5d19b92b73f156bec2936b58`.
 - Updated the original observed-date audit to reflect NLO sparse trading and BNL's confirmed missing 23 Nov trade: commit `b8a3df878ae4be1a56ccc43ca08bf9654f31c860`.
 - No raw OHLCV was modified. Next work is lifecycle verification for later-start candidates and per-symbol trade/no-trade evidence for remaining low-overlap names, then full OHLCV row/value checks across both repositories.
+
+
+### BENH late-listing validation — 2026-11-26
+
+- BENH's 7.11% overlap is explained by late listing/trading commencement: ShareSansar reports IPO shares listed 2026-10-13 and regular trading commencing 2026-10-14; ArthaKendra and Sun Securities show first executed OHLCV row on 2026-10-15 (O 273, H 313.9, L 273, C 313.9, V 90). The 14 October execution status remains to be checked. No dates before the security's trading commencement should count against its completeness.
+- Report: [BENH listing and first-trade validation](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/BENH_listing_and_first_trade_validation_2026-11-26.md), commit `a1f74d1d33ed82e43bffea2eba430c008805541e`.
+- Triage register now has 4 reviewed cases and 11 later-start candidates pending verification; update commit `c29f62d8b42f37415eb9ce512110dce77ee3a742`.

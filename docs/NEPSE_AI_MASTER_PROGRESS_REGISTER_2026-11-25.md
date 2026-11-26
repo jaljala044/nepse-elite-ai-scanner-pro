@@ -1935,3 +1935,25 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - This confirms a date-specific partition exists, not that its contents or completeness have been verified. The dataset viewer's default tabular config is minute bars and does not expose this floorsheet parquet as its rows endpoint.
 - Binary retrieval/decoding was not completed in this environment; browser automation could not start because its external wallet was out of funds. No retry was made. Data-repo audit updated: https://github.com/jaljala044/nepse-smc-data/commit/4866c9cedfaea5e9e329ccbe4757a14fbce80487
 - Next: retrieve/decode this exact parquet file; compare contract IDs and normalized transaction fields against the 39,966-row SocrateAI file and 500-row local extract; then reconcile count, shares, turnover, distinct symbols and any upstream totalElements evidence. Current classification remains `INDEPENDENT_ARCHIVE_PARTITION_LOCATED_NOT_RECONCILED`; NO_TRADE, canonical promotion and broker scoring remain disabled.
+
+
+### I. Feature-input contract hardening — implemented; CI validated (2026-11-26)
+
+Code commit: `3ca7e3ac3aec612832fa877a33b52914f2288c09`.
+
+Updated `backend/app/feature_pipeline.py` and its regression tests so feature values cannot enter weighted V3 scoring solely because a row exists or has a point-in-time timestamp.
+
+- **OHLCV scoring gate:** requires a supplied, unique, ascending canonical session list; each point-in-time OHLCV row must map to one of those sessions and carry `source_validation_status=verified`, a nonblank source ID, a valid SHA-256 payload digest, a verified adjusted/unadjusted price basis, and a clear/verified-adjusted corporate-action status.
+- **Broker footprint scoring gate:** requires exact canonical trade-date alignment, `session_calendar_status=confirmed_open`, `floorsheet_coverage_status=verified_complete`, verified source status, source ID and payload digest. Unqualified rows are excluded from broker footprint scoring; raw broker rows remain available for descriptive identity-coverage diagnostics.
+- **Sector scoring gate:** requires every expected sector member to have a verified, effective-dated membership record with explicit as-of verification, source ID and payload digest. Missing or ambiguous membership is not treated as neutral.
+- **Coverage output:** the snapshot now exposes `input_contracts` with input/admitted/excluded row counts, per-row exclusion reasons, and explicit score-eligibility flags.
+- **Fail-closed behaviour:** unverified OHLCV, broker or sector inputs have their weighted component score withheld. Raw point-in-time price observations can still be emitted as descriptive diagnostics. Existing production/recommendation hard blocks remain unchanged.
+- **Regression handling:** initial CI runs exposed two failures (broker identity diagnostics were inadvertently filtered with score inputs, and the OHLCV eligibility count was using the descriptive raw-row list). Both were corrected; the latest full run is green.
+
+Latest commit validation:
+- Backend unit tests: **776 passed**, [run 45841851498](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45841851498).
+- Backend contract tests: passed, [run 45841851472](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45841851472).
+- Integrated evidence audit: passed, [run 45841851462](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45841851462).
+- Historical data integrity workflow: passed, [run 45841851545](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45841851545).
+
+**Limitations / next contract work:** the OHLCV eligibility flag is currently conservative at the snapshot-wide level (one unqualified row withholds price-derived component scores across that snapshot); it should be refined to per-symbol/per-session eligibility without weakening exclusions. Broker input rows still need an independent date-level floorsheet coverage manifest so an absent symbol/date can be distinguished from a genuinely complete zero-contract result. Sector membership producers must populate the new effective-date/as-of fields. Canonical calendar authority and upstream source authenticity remain separate data-governance gates; these code checks do not prove source truth. No canonical data promotion or production BUY authorization is implied.

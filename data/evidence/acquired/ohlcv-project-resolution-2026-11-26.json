@@ -302,8 +302,34 @@
     "training_allowed": false
   },
   "limitations": [
-    "Archived NEPSE EOD body read directly for three November rows. July evidence is saved user-supplied ShareHub audit; original workbook and PDF were not independently re-opened in this session.",
     "Chukul returned no readable dated rows; NepseAlpha chart exposed login form; no newly retrieved dated rows claimed from those providers.",
-    "Secondary sources may share upstream data. Preserve strict primary capture workflow and canonical gates."
-  ]
+    "Secondary sources may share upstream data. Preserve strict primary capture workflow and canonical gates.",
+    "Original uploaded workbook and PDF now independently reopened and internally reconciled; no fresh exchange download."
+  ],
+  "uploaded_evidence_reverification": {
+    "date": "2026-11-26",
+    "files": [
+      {
+        "name": "NEPSE_Floorsheet_Evidence (1).xlsx",
+        "sha256": "946ab968e49d8f4e196f923c9d76a786842be3c112365d61e14504ac76691e30"
+      },
+      {
+        "name": "NEPSE_Chart_Evidence (2).pdf",
+        "sha256": "d0497e9752d0e64610021ca825d278e36e7c1b1acef352758fa9066bc9ded7e0",
+        "pages": 10
+      }
+    ],
+    "checks": {
+      "distinct_contracts": 2793,
+      "contract_rows": 2793,
+      "arithmetic_errors": 0,
+      "page_count": 31,
+      "page_count_or_endpoint_id_errors": 0,
+      "stock_date_pairs": 7,
+      "july_final_15_minute_close_matches": 5,
+      "outside_daily_range_trades": 7
+    },
+    "method": "Direct inspection of uploaded workbook and PDF; exact Decimal contract arithmetic and closing-window VWAP; per-page counts and endpoint IDs.",
+    "classification": "ShareHub supplied capture, not independent exchange primary for July"
+  }
 }

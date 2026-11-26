@@ -243,4 +243,5 @@ def corporate_actions_as_of(records: Iterable[CorporateActionRecord],
         "excluded_unverified_evidence_ids": sorted({action.evidence_id for action in unverified}),
         "evidence_ids": sorted({action.evidence_id for action in verified}),
         "point_in_time_eligible": not unverified,
+        "source_universe_completeness_verified": False,
     }

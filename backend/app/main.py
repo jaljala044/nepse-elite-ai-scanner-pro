@@ -288,13 +288,14 @@ def canonical_feature_snapshot(request: CanonicalFeatureRequest):
         str(root / "data" / "reference" / "source-trust-registry.v1.json"),
     ))
     calendar_value = os.getenv("NEPSE_SESSION_CALENDAR_PATH")
+    calendar_digest = os.getenv("NEPSE_SESSION_CALENDAR_SHA256", "")
     ledger_path = Path(os.getenv(
         "NEPSE_PROMOTION_LEDGER_PATH",
         str(root / "backend" / "data" / "promotion-ledger.jsonl"),
     ))
     trusted_digest = os.getenv("NEPSE_SOURCE_REGISTRY_SHA256", "")
     reviewer_keys_raw = os.getenv("NEPSE_REVIEWER_KEYS_JSON", "")
-    if not calendar_value or not trusted_digest or not reviewer_keys_raw:
+    if not calendar_value or not calendar_digest or not trusted_digest or not reviewer_keys_raw:
         return {
             "status": "insufficient_evidence", "decision_status": "UNKNOWN",
             "action": "PRESERVE_CAPITAL", "feature_snapshot": None,

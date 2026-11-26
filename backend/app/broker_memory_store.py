@@ -192,7 +192,7 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
                 "window_sessions": count,
                 "calendar_sessions_available": len(selected_sessions),
                 "observed_sessions": len({row["trade_date"] for row in window_rows}),
-                "window_complete": len(selected_sessions) == count and len({row["trade_date"] for row in window_rows}) >= count,
+                "window_complete": len(selected_sessions) == count,
                 "party_observation_count": len(window_rows),
                 "coded_party_observation_count": len(coded),
                 "uncoded_party_observation_count": len(window_rows) - len(coded),
@@ -257,7 +257,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             raise ValueError("no stored broker observations fall within the verified session calendar")
         features = broker_footprint_features(
             historical_rows, minimum_amount_coverage=minimum_amount_coverage,
-            minimum_sessions=minimum_sessions,
+            minimum_sessions=minimum_sessions, session_dates=session_dates,
         )
         channel_features = _execution_channel_features(
             historical_rows, session_dates, minimum_amount_coverage

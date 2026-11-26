@@ -62,6 +62,9 @@ def classify_one_sided_contracts(
     crosswalk = unique_index(crosswalk_rows, "equity crosswalk")
     candidates = unique_index(candidate_rows, "target candidates")
     snapshot = unique_index(snapshot_rows, "security snapshot")
+    for symbol, row in snapshot.items():
+        if row["snapshot_date"] != expected_snapshot_date:
+            raise ValueError(f"security snapshot row for {symbol} is not dated {expected_snapshot_date}")
 
     for symbol, row in crosswalk.items():
         security = snapshot.get(symbol)
@@ -105,6 +108,10 @@ def classify_one_sided_contracts(
         cross = crosswalk.get(symbol)
         candidate = candidates.get(symbol)
         candidate_class = (candidate or {}).get("instrument_class_from_rendered_list", "")
+        if candidate and security:
+            candidate_id = candidate.get("official_snapshot_id", "")
+            if candidate_id and candidate_id != security["security_id"]:
+                raise ValueError(f"target candidate/security snapshot ID conflict for {symbol}")
         name = (security or {}).get("security_name", "").casefold()
 
         if cross:
@@ -151,6 +158,8 @@ def classify_one_sided_contracts(
             "security_id": security_id,
             "security_name": (security or {}).get("security_name"),
             "evidence": evidence,
+            "scope_evidence_temporality": "2026-11-25_current_snapshot_hint_not_historical_trade_date_identity_proof",
+            "historical_security_identity_verified": False,
             "buyer_broker_code": row.get("buyer_broker_code"),
             "seller_broker_code": row.get("seller_broker_code"),
         }
@@ -196,6 +205,7 @@ def classify_one_sided_contracts(
         "schema_version": "1.0",
         "audit_status": "review_only_dated_scope_classification",
         "security_snapshot_date": expected_snapshot_date,
+        "scope_classification_basis": "current_snapshot_hint_only_not_historical_effective_dated_identity",
         "crosswalk_rows": len(crosswalk_rows),
         "target_candidate_rows": len(candidate_rows),
         "security_snapshot_rows": len(snapshot_rows),
@@ -210,7 +220,7 @@ def classify_one_sided_contracts(
         "source_rights_verified": False,
         "coverage_admission_allowed": False,
         "canonical_promotion_allowed": False,
-        "policy": "dated_instrument_scope_only_unknown_preserved_no_source_completeness_or_no_trade_inference",
+        "policy": "current_snapshot_scope_hint_only_unknown_preserved_no_historical_identity_source_completeness_or_no_trade_inference",
     }
 
 

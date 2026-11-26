@@ -60,6 +60,7 @@ def reconcile_broker_batch(
     *, batch_id: str, rows: Iterable[Mapping[str, Any]], verified_brokers: set[str],
     verified_sessions: set[str], expected_source_ids: set[str] | None,
     received_source_ids: set[str], available_at: str,
+    verified_session_finality: Mapping[str, str] | None = None,
     contracts: Iterable[ContractTotal] | None = None,
     seen_natural_keys: Mapping[str, str] | None = None,
     coverage_threshold: Decimal = COVERAGE_THRESHOLD,
@@ -147,8 +148,18 @@ def reconcile_broker_batch(
             reasons.append("missing_source_payload")
         elif str(raw["source_payload_sha256"]).lower() != payload_hash(payload):
             reasons.append("source_payload_hash_mismatch")
-        if session and availability.date() < session:
-            reasons.append("available_before_session")
+        finality_raw = (verified_session_finality or {}).get(str(raw["session_date"]))
+        if finality_raw is None:
+            reasons.append("missing_verified_session_finality")
+        else:
+            try:
+                finality = datetime.fromisoformat(str(finality_raw).replace("Z", "+00:00"))
+                if finality.tzinfo is None or finality.utcoffset() is None:
+                    raise ValueError("finality_timestamp_must_be_timezone_aware")
+                if availability < finality:
+                    reasons.append("available_before_session_finality")
+            except (TypeError, ValueError):
+                reasons.append("invalid_verified_session_finality")
 
         if reasons:
             report.quarantined.append({"row_index": index, "raw": raw, "reasons": reasons})

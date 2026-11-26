@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from decimal import Decimal
 
 from app.floorsheet_archive_pair_audit import audit_floorsheet_archive_pair
 from app.floorsheet_source_profiles import (
@@ -22,7 +23,6 @@ from app.floorsheet_source_profiles import (
     review_samir_merolagani_headers,
     review_socrateai_floorsheet_headers,
 )
-from audit_floorsheet_archive_pair import load_profile_payload
 
 
 PINNED_DATES = {
@@ -121,12 +121,12 @@ def audit_pinned_archive_window(input_dir: str | Path) -> dict:
                 "samir_totals": comparison.get("left_totals"),
                 "socrateai_totals": comparison.get("right_totals"),
                 "socrateai_only_quantity": str(sum(
-                    (row["quantity"] for row in pair["comparison"].get("right_only_contracts", [])),
-                    __import__("decimal").Decimal("0"),
+                    (Decimal(row["quantity"]) for row in pair["comparison"].get("right_only_contracts", [])),
+                    Decimal("0"),
                 )),
                 "socrateai_only_gross_amount": str(sum(
-                    (row["amount"] for row in pair["comparison"].get("right_only_contracts", [])),
-                    __import__("decimal").Decimal("0"),
+                    (Decimal(row["amount"]) for row in pair["comparison"].get("right_only_contracts", [])),
+                    Decimal("0"),
                 )),
             },
         }

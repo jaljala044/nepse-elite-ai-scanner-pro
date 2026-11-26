@@ -2,13 +2,16 @@
 
 from collections.abc import Mapping
 from datetime import date, datetime
+from math import isfinite
 
 from .scanner import quality_errors
 
 
-def detect_structure(rows: list[dict], pivot_width: int = 2) -> dict:
+def detect_structure(rows: list[dict], pivot_width: int = 2, equal_tolerance: float = 0.005) -> dict:
     if isinstance(pivot_width, bool) or not isinstance(pivot_width, int) or pivot_width < 1:
         raise ValueError("pivot_width must be a positive integer")
+    if not isfinite(equal_tolerance) or not 0 <= equal_tolerance <= 0.05:
+        raise ValueError("equal_tolerance must be between 0 and 0.05")
     errors = quality_errors(rows)
     if errors:
         return {"status": "data_quality_failed", "bias": "neutral", "events": [], "limitations": errors}
@@ -117,6 +120,14 @@ def detect_structure(rows: list[dict], pivot_width: int = 2) -> dict:
                 price = float(bars[pivot][side])
                 neighbors = [float(bar[side]) for j, bar in enumerate(window) if j != pivot_width]
                 if (price > max(neighbors) if side == "high" else price < min(neighbors)):
+                    previous = levels.get(side)
+                    if previous is not None:
+                        old_price, old_pivot, old_confirmed = previous
+                        if (side, old_pivot) not in broken_levels and abs(price-old_price)/max(price,old_price) <= equal_tolerance:
+                            emit("equal_"+side+"s", day, [days[old_pivot],days[old_confirmed],*days[pivot-pivot_width:i+1]],
+                                 lower=min(price,old_price),upper=max(price,old_price),
+                                 liquidity_side="buy_side" if side=="high" else "sell_side",
+                                 classification="inferred_chart_level")
                     levels[side] = (price, pivot, i)
                     emit(f"swing_{side}", day, days[pivot - pivot_width:i],
                          level=price, pivot_date=days[pivot])
@@ -126,7 +137,21 @@ def detect_structure(rows: list[dict], pivot_width: int = 2) -> dict:
         elif close > opening:
             last_opposing["bearish"] = i
 
+    dealing_range = None
+    if bars and "high" in levels and "low" in levels:
+        hi, hp, hc = levels["high"]
+        lo, lp, lc = levels["low"]
+        close = float(bars[-1]["close"])
+        if hi > lo and ("high",hp) not in broken_levels and ("low",lp) not in broken_levels and lo <= close <= hi:
+            mid = (hi+lo)/2
+            dealing_range = {"lower":lo,"upper":hi,"equilibrium":mid,
+                             "discount":[lo,mid],"premium":[mid,hi],
+                             "location":"discount" if close<mid else "premium" if close>mid else "equilibrium",
+                             "evidence_dates":sorted({days[hp],days[hc],days[lp],days[lc],days[-1]}),
+                             "classification":"inferred_chart_range"}
     return {
+        "dealing_range": dealing_range,
+        "equal_tolerance": equal_tolerance,
         "status": "screened" if len(bars) >= 2 * pivot_width + 1 else "insufficient_data",
         "bias": bias,
         "events": events,

@@ -1831,3 +1831,14 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Updated data audit flags so rows on calendar-closed dates and adjacent identical OHLCV rows explicitly carry `resolution_status=UNKNOWN` and a reason. No raw OHLCV rows were altered.
 - Data repo commits: [audit flag semantics ee3ef59](https://github.com/jaljala044/nepse-smc-data/commit/ee3ef5944e1b89cc06918f5d005c8d5cdcd79940); [floorsheet reconciliation report 48aec5c](https://github.com/jaljala044/nepse-smc-data/commit/48aec5c6d7b8dbe5e48962c603f61b6176005667).
 - Remaining: complete day-wide floorsheets, source provenance, exchange-confirmed calendar and per-security contract-to-OHLCV reconciliation. Canonical promotion and training remain blocked.
+
+
+### Evidence-gated daily floorsheet-to-OHLCV reconciliation engine — 2026-11-26
+
+- Added `tools/reconcile_floorsheet_ohlcv.py` in the data repository. It aggregates date-matched contracts by symbol, calculates shares/turnover/VWAP, compares floorsheet shares with OHLCV volume, and emits explicit `TRADED`, `NO_TRADE` or `UNKNOWN`.
+- `TRADED` requires at least one valid date-matched contract. `NO_TRADE` requires verified-open session status, valid date-matched file, explicit full-day completeness evidence, source URI and exact SHA-256 match. Any missing/invalid evidence yields `UNKNOWN`.
+- Includes every archived equity symbol even when the OHLCV file has no row for that date. Rejects duplicate contract IDs, non-integral/non-positive quantities, non-positive rates, wrong-date rows and malformed records for negative conclusions.
+- Added regression tests and a dedicated GitHub Actions workflow. Test execution is **pending/unverified**; no CI pass is claimed.
+- Added runbook and blank completeness-manifest template. Existing 500-row 2026-11-19/20 floorsheet files must remain incomplete; they may support positive contract observations only, not `NO_TRADE`.
+- Data repo commits: engine [3672a2e](https://github.com/jaljala044/nepse-smc-data/commit/3672a2e229b764ee818c22cb18dd6c33cbf5237b), test workflow [edc5b85](https://github.com/jaljala044/nepse-smc-data/commit/edc5b85199e8587bef5a34b8bd27c4a7ac4cb594), hardening [2e7c779](https://github.com/jaljala044/nepse-smc-data/commit/2e7c779a498f5baa7893d1caaa98352a75eb35c9), tests [6fd862e](https://github.com/jaljala044/nepse-smc-data/commit/6fd862e259c5b7a17dc86ce894c2d6bcabd600a3), runbook [72c54b4](https://github.com/jaljala044/nepse-smc-data/commit/72c54b4c6ebbba4b1fba9ae4e703507de6eb9d98).
+- Canonical promotion and model training remain blocked until complete, independently evidenced daily floorsheets and exchange session data are available and reconciled across the universe.

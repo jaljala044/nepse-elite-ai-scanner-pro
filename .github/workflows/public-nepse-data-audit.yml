@@ -64,6 +64,16 @@ jobs:
                               "missing_public_zero_activity_rows", "missing_public_symbol_files",
                               "hash_or_parse_errors", "mismatch_examples")
               },
+              "socrateai_history_crosscheck": {
+                  key: report["socrateai_history_crosscheck"].get(key)
+                  for key in ("status", "source_commit", "official_rows",
+                              "public_dates_expected", "public_files_found", "missing_public_files",
+                              "official_rows_matched_by_date", "fully_matching_rows",
+                              "match_rate_pct", "field_comparisons", "field_mismatches",
+                              "mismatches_by_field", "missing_public_active_rows",
+                              "missing_public_zero_activity_rows", "mismatch_examples",
+                              "official_hash_errors", "download_errors", "gate")
+              },
               "gate": report["gate"],
               "limitations": report["limitations"],
           }

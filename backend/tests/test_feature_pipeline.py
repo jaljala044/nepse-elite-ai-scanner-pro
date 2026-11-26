@@ -45,6 +45,9 @@ class FeaturePipelineTests(unittest.TestCase):
         volume = result["volume_features"]["AAA"]
         self.assertEqual(volume["status"], "observed")
         self.assertEqual(volume["relative_volume"], 1.0)
+        wyckoff = result["wyckoff_features"]["AAA"]
+        self.assertEqual(wyckoff["status"], "observed")
+        self.assertEqual(wyckoff["history_sessions"], 260)
 
 
 if __name__ == "__main__":

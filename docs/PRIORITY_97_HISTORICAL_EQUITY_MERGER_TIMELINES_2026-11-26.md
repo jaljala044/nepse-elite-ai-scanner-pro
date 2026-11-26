@@ -190,3 +190,27 @@ Sources:
 - https://www.sharesansar.com/announcementdetail/nerude-laghubitta-bittiya-sanstha-limited-and-mirmire-laghubitta-bittiya-sanstha-limited-after-the-successful-merger-to-commence-its-joint-transactions-in-the-name-of-nerude-mirmire-laghubitta-bittiya-sanstha-limited-from-30th-falgun-2080-2024-03-06
 
 No stable IDs or historical validity intervals are inferred. Listing is not treated as proof of a trade; no history is spliced and no canonical/training promotion is authorized.
+
+
+## Additional successor-side listing evidence — MATRI / SMATA / SMPDA / GBLBS / PFL
+
+| Successor | Reported listing / availability evidence | First executed trade status |
+|---|---|---|
+| MATRI | 6,283,573.37 shares listed 2024-08-12; NepseAlpha dated 2024-08-13 explicitly reports trading from that day and NEPSE's opening range/code | 2024-08-13 reported first trading day (secondary-source; verify against daily tape before canonical promotion) |
+| SMATA | 2,600,000 additional acquisition shares listed 2024-08-02; ShareSansar says they will trade under SMATA | Exact first execution date not stated |
+| SMPDA | 7,008,584 post-merger shares listed 2024-08-15; opening range Rs 1,057 reported | Exact first execution date not stated |
+| GBLBS | 10,053,500 post-merger shares listed 2025-12-22; opening range Rs 804.91 reported | Exact first execution date not stated; listing report's joint-transaction date conflicts with earlier suspension report date |
+| PFL | 19,014,680 post-merger shares listed 2026-09-15; opening range Rs 366.58 reported | Exact first execution date not stated; listing report's joint-transaction date conflicts with earlier suspension/integration report |
+
+The GBLBS inconsistency is material: the 17 October 2025 ShareSansar suspension report says integrated operations and suspension effective Kartik 2, 2082 (19 October 2025), while the 22 December 2025 listing report states joint transaction from Ashwin 23, 2082. The PFL listing report dated 15 September 2026 similarly states Ashwin 23, 2082, which conflicts with the 9 July 2026 report describing suspension/integration effective Ashar 26, 2083. These source statements are preserved as conflicting observations, not reconciled by assumption.
+
+Sources:
+- https://www.nepsealpha.com/post/detail/5699/shares-of-matrubhumi-laguvitta-listed-on-nepse-trading-from-today
+- https://www.sharesansar.com/newsdetail/after-successful-acquisition-share-of-samata-gharelu-laghubitta-listed-in-nepse-2024-08-02
+- https://www.sharesansar.com/index.php/newsdetail/after-successful-merger-between-sabsl-and-sdlbsl-shares-of-sampada-laghubitta-listed-in-nepse-2024-08-15
+- https://www.sharesansar.com/newsdetail/after-successful-merger-between-gblbs-and-samaj-shares-of-grameen-bikas-laghubitta-listed-in-nepse-2025-12-22
+- https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-gblbs-and-samaj-shares-ahead-of-merger-implementation-2025-10-17
+- https://www.sharesansar.com/newsdetail/after-successful-merger-between-pfl-and-sfcl-shares-of-pokhara-finance-limited-listed-in-nepse-2026-09-15
+- https://www.sharesansar.com/index.php/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09
+
+Only MATRI has a secondary report explicitly saying trading commenced that day; this is not yet validated against first non-zero daily OHLCV/floorsheet rows. All other first_trading_date fields remain null. No stable IDs or historical validity intervals inferred; no price histories spliced and no canonical/training promotion authorized.

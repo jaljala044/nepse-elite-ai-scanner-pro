@@ -8,6 +8,11 @@ from decimal import Decimal
 
 ACTION_TYPES = {"bonus", "right", "split", "cash_dividend", "merger", "symbol_change", "other"}
 APPROVED_POLICIES = {"raw_unadjusted_v1"}
+ALLOWED_SOURCE_TIERS = {
+    "primary_nepse_notice", "cdsc_notice", "secondary_notice",
+    "secondary_archive", "third_party", "unknown",
+}
+PRIMARY_ADJUSTMENT_SOURCE_TIERS = {"primary_nepse_notice", "cdsc_notice"}
 
 
 def _time(value: str) -> datetime:
@@ -38,6 +43,8 @@ class CorporateActionEvidence:
             raise ValueError("corporate action identifiers, source tier and evidence are required")
         if self.action_type not in ACTION_TYPES:
             raise ValueError("unsupported corporate action type")
+        if self.source_tier not in ALLOWED_SOURCE_TIERS:
+            raise ValueError("unsupported corporate action source tier")
         if self.status not in {"confirmed", "provisional", "cancelled", "disputed"}:
             raise ValueError("unsupported corporate action status")
         if not isinstance(self.ex_date, date):
@@ -85,14 +92,32 @@ def evaluate_adjustment_eligibility(action: CorporateActionEvidence, *,
                                     independently_reviewed: bool = False) -> dict:
     """No adjusted series is emitted; this only records a fail-closed eligibility decision."""
     visible = _time(action.available_at) <= _time(decision_time)
+    primary_source = action.source_tier in PRIMARY_ADJUSTMENT_SOURCE_TIERS
+    factor_present = action.factor is not None
     eligible = (policy_version in APPROVED_POLICIES and visible
-                and action.status == "confirmed" and independently_reviewed)
+                and action.status == "confirmed" and primary_source
+                and factor_present and independently_reviewed)
+    if eligible:
+        reason = "eligible_for_separate_review"
+    elif policy_version not in APPROVED_POLICIES:
+        reason = "unapproved_policy"
+    elif not visible:
+        reason = "not_yet_available_at_decision_time"
+    elif action.status != "confirmed":
+        reason = "action_not_confirmed"
+    elif not primary_source:
+        reason = "primary_source_required"
+    elif not factor_present:
+        reason = "verified_adjustment_factor_required"
+    else:
+        reason = "independent_review_required"
     return {
         "action_id": action.action_id,
         "eligible_for_adjustment_review": eligible,
         "adjustment_applied": False,
         "raw_price_series_mutated": False,
-        "reason": ("eligible_for_separate_review" if eligible else
-                   "policy_or_visibility_or_confirmation_or_review_gate_not_met"),
+        "source_tier": action.source_tier,
+        "factor_present": factor_present,
+        "reason": reason,
         "policy_version": policy_version,
     }

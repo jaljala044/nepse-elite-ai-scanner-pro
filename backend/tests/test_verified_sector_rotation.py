@@ -71,7 +71,7 @@ class VerifiedSectorRotationTests(unittest.TestCase):
                          "insufficient_evidence")
 
     def test_missing_benchmark_session_withholds_all(self):
-        data = fixture()
+        data = list(fixture())
         dates = data[0]
         data[4] = [row for row in data[4] if row["session_date"] != dates[-1]]
         result = self.call(data)

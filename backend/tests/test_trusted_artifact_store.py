@@ -25,13 +25,15 @@ class TrustedArtifactStoreTests(unittest.TestCase):
             "coverage_ratio": 1.0,
             "source_validation_status": "verified",
             "finality_status": "final",
+            "session_calendar_id": "NEPSE-CALENDAR-v1",
+            "corporate_action_status": "verified",
         }
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def store(self, entry=None):
-        return TrustedArtifactStore(self.root, {"index_intelligence": entry or self.entry})
+    def store(self, entry=None, module="index_intelligence"):
+        return TrustedArtifactStore(self.root, {module: entry or self.entry})
 
     def test_admits_pinned_server_side_payload(self):
         result = self.store().load(
@@ -93,6 +95,46 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertIsNone(snapshot["production_score"])
         self.assertFalse(snapshot["signals_enabled"])
         self.assertIn("market_health", snapshot["missing_modules"])
+
+
+    def test_unverified_corporate_action_status_is_rejected(self):
+        entry = dict(self.entry, corporate_action_status="unknown")
+        result = self.store(entry).load(
+            decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+            required_modules=("index_intelligence",),
+        )
+        self.assertIn("corporate_action_status_unverified",
+                      result["index_intelligence"]["rejection_reason"])
+
+    def test_sector_membership_must_be_effective_versioned_and_verified(self):
+        entry = dict(self.entry, sector_membership_status="unverified",
+                     sector_membership_version="sector-map-v1")
+        result = self.store(entry, module="sector_rotation").load(
+            decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+            required_modules=("sector_rotation",),
+        )
+        self.assertIn("sector_membership_version_unverified",
+                      result["sector_rotation"]["rejection_reason"])
+
+    def test_broker_code_identity_coverage_is_required(self):
+        entry = dict(self.entry, broker_code_mapping_status="verified",
+                     broker_identity_coverage_ratio=0.0)
+        result = self.store(entry, module="broker_profiles").load(
+            decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+            required_modules=("broker_profiles",),
+        )
+        self.assertIn("broker_identity_coverage_invalid",
+                      result["broker_profiles"]["rejection_reason"])
+
+    def test_broker_code_mapping_must_be_verified(self):
+        entry = dict(self.entry, broker_code_mapping_status="unverified",
+                     broker_identity_coverage_ratio=0.95)
+        result = self.store(entry, module="broker_profiles").load(
+            decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+            required_modules=("broker_profiles",),
+        )
+        self.assertIn("broker_code_mapping_unverified",
+                      result["broker_profiles"]["rejection_reason"])
 
     def test_duplicate_evidence_ids_rejected(self):
         entry = dict(self.entry, evidence_ids=["same", "same"])

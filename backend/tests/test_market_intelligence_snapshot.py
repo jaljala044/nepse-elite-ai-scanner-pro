@@ -123,6 +123,58 @@ class MarketIntelligenceSnapshotTests(unittest.TestCase):
         self.assertIn("coverage_ratio_missing_or_invalid",
                       result["modules"]["broker_profiles"]["reasons"])
 
+
+    def test_cross_module_as_of_mismatch_blocks_coherent_snapshot(self):
+        artifacts = {name: artifact(name) for name in REQUIRED_MODULES}
+        artifacts["broker_profiles"] = artifact("broker", as_of="2026-11-25")
+        result = build_market_intelligence_snapshot(
+            artifacts, decision_date="2026-11-26",
+            decision_time="2026-11-26T15:30:00+05:45",
+        )
+        self.assertEqual(result["status"], "partial_evidence")
+        self.assertEqual(result["alignment"]["status"], "mismatch")
+        self.assertIn("module_as_of_date_mismatch", result["alignment"]["reasons"])
+        self.assertIsNone(result["production_score"])
+        self.assertFalse(result["signals_enabled"])
+
+    def test_session_calendar_identity_must_be_complete_and_consistent(self):
+        artifacts = {name: artifact(name) for name in REQUIRED_MODULES}
+        for item in artifacts.values():
+            item["session_calendar_id"] = "NEPSE-CALENDAR-v1"
+        artifacts["market_structure"]["session_calendar_id"] = None
+        result = build_market_intelligence_snapshot(
+            artifacts, decision_date="2026-11-26",
+            decision_time="2026-11-26T15:30:00+05:45",
+        )
+        self.assertEqual(result["status"], "partial_evidence")
+        self.assertIn(
+            "session_calendar_identity_missing_or_mismatched",
+            result["alignment"]["reasons"],
+        )
+
+    def test_conflicting_session_calendar_versions_block_snapshot(self):
+        artifacts = {name: artifact(name) for name in REQUIRED_MODULES}
+        for item in artifacts.values():
+            item["session_calendar_id"] = "NEPSE-CALENDAR-v1"
+        artifacts["sector_rotation"]["session_calendar_id"] = "NEPSE-CALENDAR-v2"
+        result = build_market_intelligence_snapshot(
+            artifacts, decision_date="2026-11-26",
+            decision_time="2026-11-26T15:30:00+05:45",
+        )
+        self.assertEqual(result["alignment"]["status"], "mismatch")
+        self.assertEqual(result["status"], "partial_evidence")
+
+    def test_nepal_local_cutoff_accepts_equivalent_utc_availability(self):
+        artifacts = {name: artifact(name) for name in REQUIRED_MODULES}
+        artifacts["index_intelligence"] = artifact(
+            "index", available_at="2026-11-26T18:30:00Z"
+        )
+        result = build_market_intelligence_snapshot(
+            artifacts, decision_date="2026-11-27",
+            decision_time="2026-11-27T00:15:00+05:45",
+        )
+        self.assertTrue(result["modules"]["index_intelligence"]["admitted"])
+
     def test_required_module_list_must_be_unique(self):
         with self.assertRaisesRegex(ValueError, "required_modules_must_be_unique"):
             build_market_intelligence_snapshot(

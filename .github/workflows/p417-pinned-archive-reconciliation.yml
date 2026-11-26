@@ -10,8 +10,10 @@ on:
       - "backend/app/floorsheet_contract.py"
       - "backend/app/floorsheet_cross_source.py"
       - "backend/audit_floorsheet_symbol_scope.py"
-      - "backend/audit_floorsheet_archive_window.py"\n      - "backend/audit_floorsheet_one_sided_scope.py"
-      - "backend/tests/test_floorsheet_archive_window.py"\n      - "backend/tests/test_floorsheet_one_sided_scope.py"
+      - "backend/audit_floorsheet_archive_window.py"
+      - "backend/audit_floorsheet_one_sided_scope.py"
+      - "backend/tests/test_floorsheet_archive_window.py"
+      - "backend/tests/test_floorsheet_one_sided_scope.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -43,7 +45,11 @@ jobs:
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_floorsheet_archive_window.py' -v
 
-      - name: Test dated scope classification of one-sided contracts\n        working-directory: backend\n        run: python -m unittest discover -s tests -p 'test_floorsheet_one_sided_scope.py' -v\n\n      - name: Fetch exact pinned Samir raw CSV
+      - name: Test dated scope classification of one-sided contracts
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_floorsheet_one_sided_scope.py' -v
+
+      - name: Fetch exact pinned Samir raw CSV
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --location \

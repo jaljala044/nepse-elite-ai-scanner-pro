@@ -10,8 +10,8 @@ on:
       - "backend/app/floorsheet_contract.py"
       - "backend/app/floorsheet_cross_source.py"
       - "backend/audit_floorsheet_symbol_scope.py"
-      - "backend/audit_floorsheet_archive_window.py"
-      - "backend/tests/test_floorsheet_archive_window.py"
+      - "backend/audit_floorsheet_archive_window.py"\n      - "backend/audit_floorsheet_one_sided_scope.py"
+      - "backend/tests/test_floorsheet_archive_window.py"\n      - "backend/tests/test_floorsheet_one_sided_scope.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -43,7 +43,7 @@ jobs:
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_floorsheet_archive_window.py' -v
 
-      - name: Fetch exact pinned Samir raw CSV
+      - name: Test dated scope classification of one-sided contracts\n        working-directory: backend\n        run: python -m unittest discover -s tests -p 'test_floorsheet_one_sided_scope.py' -v\n\n      - name: Fetch exact pinned Samir raw CSV
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --location \
@@ -116,6 +116,37 @@ jobs:
           print(rendered)
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
               stream.write("## P4.19 multi-date archive comparison\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
+
+      - name: Classify one-sided contracts against dated instrument registry
+        run: |
+          set -euo pipefail
+          python backend/audit_floorsheet_one_sided_scope.py \\
+            --audit artifacts/p419-three-date-floorsheet-audit.json \\
+            --equity-crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \\
+            --target-candidates data/reference/nepse_target_universe_candidates_2026-11-26.csv \\
+            --security-snapshot data/reference/nepse_security_id_snapshot_2026-11-25.csv \\
+            --expected-snapshot-date 2026-11-25 \\
+            --output artifacts/p420-one-sided-instrument-scope.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p420-one-sided-instrument-scope.json").read_text())
+          rendered = json.dumps({
+              "one_sided_contract_count": report["one_sided_contract_count"],
+              "scope_class_counts": report["scope_class_counts"],
+              "date_summaries": report["date_summaries"],
+              "unknown_contract_count": sum(
+                  row["scope_class"] in {"UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH", "UNCLASSIFIED_SECURITY_SNAPSHOT_ONLY"}
+                  for row in report["one_sided_contracts"]
+              ),
+              "coverage_admission_allowed": False,
+              "canonical_promotion_allowed": False,
+          }, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.20 one-sided instrument scope classification\\n\\n")
               stream.write("```json\\n" + rendered + "\\n```\\n")
           PY
 
@@ -232,6 +263,6 @@ jobs:
           path: |
             artifacts/p417-floorsheet-pair-audit-2026-11-24.json
             artifacts/p418-floorsheet-symbol-scope-2026-11-24.json
-            artifacts/p419-three-date-floorsheet-audit.json
+            artifacts/p419-three-date-floorsheet-audit.json\n            artifacts/p420-one-sided-instrument-scope.json
           if-no-files-found: error
           retention-days: 30

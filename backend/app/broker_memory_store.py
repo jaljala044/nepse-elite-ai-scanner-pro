@@ -182,9 +182,26 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
                 item["active_sessions"].add(row["trade_date"])
                 item["party_observation_count"] += 1
             profiles = []
+            baseline_sessions = normalized_sessions[-21:-1]
+            latest_session = normalized_sessions[-1] if normalized_sessions else None
             for code, item in totals.items():
                 gross = item["buy_amount"] + item["sell_amount"]
                 net = item["buy_amount"] - item["sell_amount"]
+                daily_by_session = {
+                    day: {"buy": Decimal("0"), "sell": Decimal("0")}
+                    for day in baseline_sessions + ([latest_session] if latest_session else [])
+                }
+                for row in scope_rows:
+                    if row.get("source_broker_code") == code and row["trade_date"] in daily_by_session:
+                        daily_by_session[row["trade_date"]][row["side"]] += Decimal(str(row["amount"]))
+                prior_buy_values = [daily_by_session[day]["buy"] for day in baseline_sessions]
+                prior_sell_values = [daily_by_session[day]["sell"] for day in baseline_sessions]
+                prior_buy_avg = (sum(prior_buy_values, Decimal("0")) / Decimal("20")
+                                 if len(prior_buy_values) == 20 else None)
+                prior_sell_avg = (sum(prior_sell_values, Decimal("0")) / Decimal("20")
+                                  if len(prior_sell_values) == 20 else None)
+                latest_buy = daily_by_session[latest_session]["buy"] if latest_session else Decimal("0")
+                latest_sell = daily_by_session[latest_session]["sell"] if latest_session else Decimal("0")
                 profiles.append({
                     "execution_channel_code": code,
                     "identity_status": "execution_channel_only",
@@ -197,6 +214,14 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
                     "gross_participation_pct": round(float(gross / gross_coded * 100), 4) if gross_coded else None,
                     "active_sessions": len(item["active_sessions"]),
                     "party_observation_count": item["party_observation_count"],
+                    "latest_session": latest_session,
+                    "latest_buy_amount": str(latest_buy),
+                    "latest_sell_amount": str(latest_sell),
+                    "prior_20_session_count": len(baseline_sessions),
+                    "prior_20_avg_buy_amount": str(prior_buy_avg) if prior_buy_avg is not None else None,
+                    "prior_20_avg_sell_amount": str(prior_sell_avg) if prior_sell_avg is not None else None,
+                    "latest_buy_vs_prior_20_avg_ratio": float(latest_buy / prior_buy_avg) if prior_buy_avg is not None and prior_buy_avg > 0 else None,
+                    "latest_sell_vs_prior_20_avg_ratio": float(latest_sell / prior_sell_avg) if prior_sell_avg is not None and prior_sell_avg > 0 else None,
                     "flow_class": "net_buyer" if net > 0 else "net_seller" if net < 0 else "balanced",
                 })
             profiles.sort(key=lambda item: (Decimal(item["net_amount"]), item["execution_channel_code"]), reverse=True)

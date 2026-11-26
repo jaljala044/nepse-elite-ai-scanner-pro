@@ -1,7 +1,14 @@
-name: Capture official NEPSE conflict OHLCV history
+name: Capture NEPSE and validate approved-provider OHLCV evidence
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - fix/p1-empty-nepse-responses
+    paths:
+      - backend/capture_nepse_conflict_ohlcv.py
+      - backend/tests/test_nepse_conflict_ohlcv_capture.py
+      - .github/workflows/capture-nepse-conflict-ohlcv.yml
 
 permissions:
   contents: write
@@ -14,6 +21,8 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      TZ: Asia/Kathmandu
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -23,6 +32,9 @@ jobs:
           python-version: "3.12"
       - name: Install pinned NEPSE client
         run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+      - name: Run conflict-capture regression tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p "test_nepse_conflict_ohlcv_capture.py" -v
       - name: Capture primary OHLCV conflict records
         id: capture
         continue-on-error: true
@@ -39,16 +51,24 @@ jobs:
         run: |
           set -euo pipefail
           if [ -d evidence/nepse-conflict-ohlcv ]; then
-            target="data/evidence/raw/nepse/conflict-ohlcv/$(date -u +%Y-%m-%d)"
+            # Keep every run immutable and avoid same-day capture races.
+            target="data/evidence/raw/nepse/conflict-ohlcv/run-${GITHUB_RUN_ID}"
             mkdir -p "$target"
             cp -R evidence/nepse-conflict-ohlcv/. "$target/"
+            if [ -f data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json ]; then
+              cp data/evidence/acquired/ohlcv-conflict-ledger-2026-11-25.json "$target/ledger.json"
+            fi
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add "$target"
             if ! git diff --cached --quiet; then
-              git commit -m "data: archive primary NEPSE OHLCV conflict responses"
-              git pull --rebase origin main
-              git push
+              git commit -m "data: archive NEPSE evidence run ${GITHUB_RUN_ID}"
+              # The branch may advance while capture is running (for example,
+              # investigation-log updates). Rebase only onto the same feature
+              # branch; never rebase evidence onto main.
+              git fetch origin "${GITHUB_REF_NAME}"
+              git rebase "origin/${GITHUB_REF_NAME}"
+              git push origin "HEAD:${GITHUB_REF_NAME}"
             fi
           fi
       - name: Upload capture artifact
@@ -59,10 +79,6 @@ jobs:
           path: evidence/nepse-conflict-ohlcv/
           if-no-files-found: warn
           retention-days: 90
-      - name: Require all conflict dates to have a primary match
+      - name: Validate approved-provider project evidence
         if: always()
-        run: |
-          if [ "${{ steps.capture.outputs.capture_exit_code }}" != "0" ]; then
-            echo "Primary capture is partial or unresolved; inspect the preserved artifact."
-            exit 1
-          fi
+        run: python backend/validate_project_ohlcv_evidence.py

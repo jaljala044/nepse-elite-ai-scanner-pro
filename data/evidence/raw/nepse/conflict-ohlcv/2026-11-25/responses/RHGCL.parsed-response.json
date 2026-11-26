@@ -1,6 +1,33 @@
 {
   "content": [
     {
+      "businessDate": "2026-11-24",
+      "totalTrades": 70,
+      "totalTradedQuantity": 14851,
+      "totalTradedValue": 3797450.3,
+      "highPrice": 258.0,
+      "lowPrice": 254.1,
+      "closePrice": 255.2
+    },
+    {
+      "businessDate": "2026-11-23",
+      "totalTrades": 104,
+      "totalTradedQuantity": 21709,
+      "totalTradedValue": 5573796.2,
+      "highPrice": 260.0,
+      "lowPrice": 254.0,
+      "closePrice": 255.0
+    },
+    {
+      "businessDate": "2026-11-20",
+      "totalTrades": 87,
+      "totalTradedQuantity": 18724,
+      "totalTradedValue": 4804587.9,
+      "highPrice": 264.7,
+      "lowPrice": 254.0,
+      "closePrice": 254.2
+    },
+    {
       "businessDate": "2026-11-19",
       "totalTrades": 47,
       "totalTradedQuantity": 9054,
@@ -2038,7 +2065,7 @@
     "paged": true,
     "unpaged": false
   },
-  "totalElements": 225,
+  "totalElements": 228,
   "last": true,
   "totalPages": 1,
   "size": 500,
@@ -2049,6 +2076,6 @@
     "empty": true
   },
   "first": true,
-  "numberOfElements": 225,
+  "numberOfElements": 228,
   "empty": false
 }

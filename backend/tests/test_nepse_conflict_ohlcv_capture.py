@@ -1,6 +1,11 @@
 from __future__ import annotations
 import unittest
-from capture_nepse_conflict_ohlcv import analyze_history_payload
+import httpx
+import os
+import tempfile
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+from capture_nepse_conflict_ohlcv import analyze_history_payload, request_date_specific_price_volume, request_today_price_without_host_header, request_today_price_with_browser_headers, configure_nepse_timezone, fetch_official_company_floorsheet_clean
 
 
 def conflict():
@@ -12,6 +17,206 @@ def conflict():
 
 
 class NepseConflictOhlcvCaptureTests(unittest.TestCase):
+
+
+
+
+
+
+    def test_clean_company_floorsheet_uses_nepse_browser_headers(self):
+        class FakeClient:
+            base_url = "https://www.nepalstock.com"
+
+            api_end_points = {"company_floorsheet": "/api/nots/security/floorsheet/"}
+
+            def getSecurityIDKeyMap(self):
+                return {"BGWT": 12}
+
+            def _build_query_params(self, **kwargs):
+                return "businessDate=2025-07-28&size=500"
+
+            def getAuthorizationHeaders(self):
+                return {"Authorization": "Salter test-token", "Host": "www.nepalstock.com"}
+
+            def getPOSTPayloadIDForFloorSheet(self, business_date=None):
+                seen["payload_date"] = business_date
+                return 123456
+
+            def get_full_url(self, url):
+                return self.base_url + url
+
+        seen = {}
+
+        class FakeResponse:
+            status_code = 200
+            text = '{"floorsheets":{"content":[],"totalPages":1}}'
+
+            def json(self):
+                return {"floorsheets": {
+                    "content": [
+                        {"contractId": "2025072801000064", "contractQuantity": 10, "contractRate": 940, "contractAmount": 9400},
+                        {"contractId": "2025072801000065", "contractQuantity": 20, "contractRate": 960, "contractAmount": 19200},
+                    ],
+                    "totalPages": 1,
+                }}
+
+        class FakeHTTP:
+            def __init__(self, **kwargs):
+                seen["http2"] = kwargs["http2"]
+                seen["verify"] = kwargs["verify"]
+                seen["hooks"] = kwargs["event_hooks"]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def post(self, url, **kwargs):
+                seen["url"] = url
+                seen["headers"] = kwargs["headers"]
+                seen["json"] = kwargs["json"]
+                return FakeResponse()
+
+        original = httpx.Client
+        try:
+            httpx.Client = FakeHTTP
+            with tempfile.TemporaryDirectory() as temp_dir:
+                result = fetch_official_company_floorsheet_clean(
+                    FakeClient(), "BGWT", "2025-07-28", temp_dir,
+                    lambda response: None, "com"
+                )
+        finally:
+            httpx.Client = original
+
+        self.assertEqual(result["status"], "captured")
+        self.assertEqual(result["volume"], 30)
+        self.assertEqual(result["open_from_first_contract"], 940)
+        self.assertFalse(seen["http2"])
+        self.assertNotIn("Host", seen["headers"])
+        self.assertEqual(seen["headers"]["Origin"], "https://www.nepalstock.com")
+        self.assertEqual(seen["payload_date"], "2025-07-28")
+        self.assertEqual(seen["headers"]["Authorization"], "Salter test-token")
+        self.assertEqual(seen["json"], {"id": 123456})
+
+    def test_nepse_timezone_uses_kathmandu_local_date(self):
+        configure_nepse_timezone()
+        self.assertEqual(os.environ.get("TZ"), "Asia/Kathmandu")
+        self.assertEqual(
+            date.today(),
+            datetime.now(ZoneInfo("Asia/Kathmandu")).date(),
+        )
+
+    def test_historical_filter_keeps_current_session_payload_id(self):
+        class FakeClient:
+            def __init__(self):
+                self.payload_date = None
+                self.request_url = None
+
+            def getPOSTPayloadIDForFloorSheet(self, business_date=None):
+                self.payload_date = business_date
+                return 123456
+
+            def requestPOSTAPI(self, url, payload_generator):
+                self.request_url = url
+                return {"payload_id": payload_generator()}
+
+        client = FakeClient()
+        result = request_date_specific_price_volume(
+            client, "/api/nots/market/today-price", "2025-07-28"
+        )
+        self.assertEqual(client.request_url, "/api/nots/market/today-price?size=500&businessDate=2025-07-28")
+        self.assertIsNone(client.payload_date)
+        self.assertEqual(result, {"payload_id": 123456})
+
+
+    def test_today_price_probe_omits_explicit_host_header(self):
+        class FakeHTTP:
+            def __init__(self):
+                self.kwargs = None
+
+            def post(self, url, **kwargs):
+                self.kwargs = {"url": url, **kwargs}
+                return "response"
+
+        class FakeClient:
+            def __init__(self):
+                self.client = FakeHTTP()
+
+            def getAuthorizationHeaders(self):
+                return {
+                    "Authorization": "Salter test-token",
+                    "Host": "nepalstock.com.np",
+                    "Content-Type": "application/json",
+                }
+
+            def get_full_url(self, url):
+                return "https://nepalstock.com.np" + url
+
+            def getPOSTPayloadIDForFloorSheet(self):
+                return 123456
+
+        client = FakeClient()
+        result = request_today_price_without_host_header(client, "/api/nots/nepse-data/today-price")
+        self.assertEqual(result, "response")
+        self.assertNotIn("Host", client.client.kwargs["headers"])
+        self.assertEqual(client.client.kwargs["headers"]["Authorization"], "Salter test-token")
+        self.assertEqual(client.client.kwargs["json"], {"id": 123456})
+
+
+    def test_clean_browser_probe_uses_token_payload_without_host_header(self):
+        class FakeResponse:
+            status_code = 200
+
+        class FakeClient:
+            base_url = "https://www.nepalstock.com"
+
+            def getAuthorizationHeaders(self):
+                return {"Authorization": "Salter test-token", "Host": "www.nepalstock.com"}
+
+            def getPOSTPayloadIDForFloorSheet(self):
+                return 123456
+
+            def get_full_url(self, url):
+                return self.base_url + url
+
+        seen = {}
+
+        class FakeHTTP:
+            def __init__(self, **kwargs):
+                seen["http2"] = kwargs["http2"]
+                seen["verify"] = kwargs["verify"]
+                seen["hook"] = kwargs["event_hooks"]["response"][0]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def post(self, url, **kwargs):
+                seen["url"] = url
+                seen["headers"] = kwargs["headers"]
+                seen["json"] = kwargs["json"]
+                return FakeResponse()
+
+        original = httpx.Client
+        try:
+            httpx.Client = FakeHTTP
+            hook = lambda response: None
+            result = request_today_price_with_browser_headers(
+                FakeClient(), "/api/nots/nepse-data/today-price", hook
+            )
+        finally:
+            httpx.Client = original
+
+        self.assertEqual(result.status_code, 200)
+        self.assertFalse(seen["http2"])
+        self.assertNotIn("Host", seen["headers"])
+        self.assertEqual(seen["headers"]["Authorization"], "Salter test-token")
+        self.assertEqual(seen["json"], {"id": 123456})
+        self.assertEqual(seen["hook"], hook)
+
     def test_official_row_matching_source_a_is_detected(self):
         payload = {"content": [{
             "businessDate": "2025-07-28T00:00:00", "openPrice": 940,
@@ -32,10 +237,11 @@ class NepseConflictOhlcvCaptureTests(unittest.TestCase):
         result = analyze_history_payload(payload, [conflict()])
         self.assertEqual(result["conflict_comparisons"][0]["status"], "matches_source_b")
 
-    def test_unknown_schema_does_not_infer_ohlcv(self):
+    def test_partial_primary_row_reports_missing_ohlcv_fields(self):
         payload = {"content": [{"date": "2025-07-28", "close": 945}]}
         result = analyze_history_payload(payload, [conflict()])
-        self.assertEqual(result["conflict_comparisons"][0]["status"], "unmapped_ohlcv_fields")
+        self.assertEqual(result["conflict_comparisons"][0]["status"], "partial_primary_fields")
+        self.assertEqual(result["conflict_comparisons"][0]["missing_fields"], ["open", "high", "low", "volume"])
         self.assertTrue(result["decision_requires_review"])
 
     def test_missing_primary_date_is_not_imputed(self):

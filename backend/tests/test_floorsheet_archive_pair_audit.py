@@ -85,7 +85,7 @@ class FloorsheetArchivePairAuditTests(unittest.TestCase):
 
     def test_duplicate_contract_keys_are_retained_and_block_comparison(self):
         duplicate_left = self.left + (
-            b"2026-11-24,C1,AAA,11,22,10,10,100\\n"
+            b"2026-11-24,C1,AAA,11,22,10,10,100\n"
         )
         result = self.run_audit(left=duplicate_left)
         self.assertEqual(

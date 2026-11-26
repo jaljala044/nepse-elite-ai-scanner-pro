@@ -45,6 +45,28 @@ class MarketWideScannerAPITests(unittest.TestCase):
         self.assertFalse(payload["ranking_enabled"])
         self.assertFalse(payload["results"][0]["buy_list_eligible"])
 
+    def test_default_as_of_excludes_future_dated_rows(self):
+        rows = [
+            {"date": date(2026, 1, 1), "open": 10, "high": 12,
+             "low": 9, "close": 11, "volume": 100},
+            {"date": date(2099, 1, 1), "open": 10, "high": 12,
+             "low": 9, "close": 11, "volume": 100},
+        ]
+        seen = []
+        def analyze(symbol, selected_rows):
+            seen.extend(row["date"] for row in selected_rows)
+            return {"status": "screened", "signals": [], "metrics": {}}
+
+        with patch.object(main, "EQUITY_UNIVERSE", {"symbols": ["ADBL"]}), \\
+             patch.object(main, "DATA", {"ADBL": rows}), \\
+             patch.object(main, "REVIEWED_ROWS", {}), \\
+             patch.object(main, "analyze", side_effect=analyze):
+            with TestClient(main.app) as client:
+                response = client.post("/v1/scan/market-wide", json={})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(seen, [date(2026, 1, 1)])
+        self.assertEqual(response.json()["as_of"], "2026-11-27")
+
     def test_unreviewed_rows_cannot_emit_signals_or_metrics(self):
         rows = [{"date": date(2026, 1, 1), "open": 10, "high": 12,
                  "low": 9, "close": 11, "volume": 100}]

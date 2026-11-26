@@ -41,6 +41,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         return len(digest) == 64 and all(ch in "0123456789abcdef" for ch in digest)
 
     price_contract_failures = []
+    price_contract_by_symbol = {}
     prices = []
     for index, row in enumerate(raw_prices):
         day = str(row.get("session_date", ""))
@@ -52,11 +53,17 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             and row.get("price_basis_status") in {"verified_unadjusted_no_actions", "verified_adjusted"}
             and row.get("corporate_action_status") in {"clear", "adjusted_verified"}
         )
+        symbol = str(row.get("symbol", "")).strip().upper()
+        contract = price_contract_by_symbol.setdefault(symbol, {"input_rows": 0, "admitted_rows": 0, "exclusions": []})
+        contract["input_rows"] += 1
         if admitted:
             prices.append(row)
+            contract["admitted_rows"] += 1
         else:
-            price_contract_failures.append({"row_index": index, "symbol": row.get("symbol"),
-                "session_date": row.get("session_date"), "reason": "session_provenance_or_price_basis_unverified"})
+            failure = {"row_index": index, "symbol": row.get("symbol"),
+                "session_date": row.get("session_date"), "reason": "session_provenance_or_price_basis_unverified"}
+            price_contract_failures.append(failure)
+            contract["exclusions"].append(failure)
 
     broker_contract_failures = []
     broker_rows = []
@@ -109,15 +116,18 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         if sector_membership_contract_ok:
             sector_membership_contract_reason = None
 
+    for contract in price_contract_by_symbol.values():
+        contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
+
     # Keep raw point-in-time prices for descriptive diagnostics; the contract
-    # gate below independently controls whether any component score is admitted.
+    # gate below independently controls whether each symbol's component score is admitted.
     prices = raw_prices
 
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
         "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(raw_prices) - len(price_contract_failures),
                   "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and not price_contract_failures,
-                  "exclusions": price_contract_failures},
+                  "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
                   "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
                   "exclusions": broker_contract_failures},
@@ -239,7 +249,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         # Preserve complete upstream evidence objects. The scoring adapter
         # accepts only status='observed' plus a numeric score; unavailable,
         # partial and experimental outputs remain missing.
-        price_score_gate = input_contracts["ohlcv"]["score_eligible"]
+        price_score_gate = input_contracts["ohlcv"]["symbols"].get(symbol, {}).get("score_eligible", False)
         broker_score_gate = input_contracts["broker_floorsheet"]["score_eligible"]
         feature_bundle = {
             "wyckoff": ({**wyckoff_features[symbol], "status": "input_contract_unverified", "score": None}
@@ -261,8 +271,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                           if not price_score_gate else liquidity_item),
             "sector": {
                 "status": (sector_item.get("score_status", "insufficient_evidence")
-                           if price_score_gate and sector_membership_contract_ok else "membership_validity_unverified"),
-                "score": sector_item.get("score") if price_score_gate and sector_membership_contract_ok else None,
+                           if input_contracts["ohlcv"]["score_eligible"] and sector_membership_contract_ok else "membership_validity_unverified"),
+                "score": sector_item.get("score") if input_contracts["ohlcv"]["score_eligible"] and sector_membership_contract_ok else None,
                 "sector_code": sector_code,
                 "score_coverage_pct": sector_item.get("score_coverage_pct"),
             },

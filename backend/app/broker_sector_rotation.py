@@ -131,8 +131,8 @@ def build_broker_sector_rotation(
                 return buy,sell,buy+sell,buy-sell
             pb,ps,pg,pn=sums(prior_covered)
             cb,cs,cg,cn=sums(current_covered)
-            prior_total=sum((sums(prior_covered)[2] for s in sectors),Decimal(0))
-            current_total=sum((sums(current_covered)[2] for s in sectors),Decimal(0))
+            prior_total=sum((sum((totals.get((broker,other_sector,d),{}).get("buy",Decimal(0)) + totals.get((broker,other_sector,d),{}).get("sell",Decimal(0)) for d in prior_covered),Decimal(0)) for other_sector in sectors),Decimal(0))
+            current_total=sum((sum((totals.get((broker,other_sector,d),{}).get("buy",Decimal(0)) + totals.get((broker,other_sector,d),{}).get("sell",Decimal(0)) for d in current_covered),Decimal(0)) for other_sector in sectors),Decimal(0))
             prior_share=pg/prior_total if prior_total else None
             current_share=cg/current_total if current_total else None
             shift=(current_share-prior_share) if prior_share is not None and current_share is not None else None

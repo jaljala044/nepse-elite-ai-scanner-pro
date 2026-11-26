@@ -227,6 +227,17 @@ def audit_floorsheet_symbol_scope(
         "scope_class_counts": dict(sorted(class_counts.items())),
         "symbols": symbol_reports,
         "unobserved_equity_crosswalk_symbols": sorted(set(crosswalk) - set(observed)),
+        "unobserved_target_candidate_symbols": sorted(set(candidates) - set(observed)),
+        "unobserved_mutual_fund_candidate_symbols": sorted(
+            symbol for symbol, row in candidates.items()
+            if row["instrument_class_from_rendered_list"].casefold() == "mutual fund"
+            and symbol not in observed
+        ),
+        "unobserved_target_equity_candidate_symbols": sorted(
+            symbol for symbol, row in candidates.items()
+            if row["instrument_class_from_rendered_list"].casefold() == "equity"
+            and symbol not in observed
+        ),
         "policy": {
             "mutual_funds_in_equity_scanner": False,
             "promoter_shares_in_ordinary_equity_scanner": False,

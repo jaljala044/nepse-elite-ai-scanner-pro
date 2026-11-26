@@ -68,7 +68,7 @@ class OfficialEquityCandidateHistoryTests(unittest.TestCase):
             data["symbols"][0]["current_id_match"] = False
             cap.write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, "capture status/current ID match"):
-                reconcile(cap, floors)
+                reconcile(cap, floors, expected_equity_count=2)
 
 
 if __name__ == "__main__":

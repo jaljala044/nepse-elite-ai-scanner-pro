@@ -77,6 +77,8 @@ def _assess_artifact(name: str, artifact: Any, *, decision_date: date,
         "evidence_ids": [],
         "data": None,
         "reasons": [],
+        "as_of_date": None,
+        "session_calendar_id": None,
     }
     if not isinstance(artifact, Mapping):
         return {**base, "reasons": ["artifact_missing_or_not_an_object"]}
@@ -133,6 +135,8 @@ def _assess_artifact(name: str, artifact: Any, *, decision_date: date,
         "status": status if admitted else ("withheld" if status == "withheld" else "unavailable"),
         "admitted": admitted,
         "coverage_ratio": coverage,
+        "as_of_date": as_of_date.isoformat() if admitted and as_of_date else None,
+        "session_calendar_id": (artifact.get("session_calendar_id") if admitted else None),
         "source_ids": source_ids if admitted else [],
         "evidence_ids": evidence_ids if admitted else [],
         "data": dict(artifact["data"]) if admitted else None,
@@ -182,13 +186,47 @@ def build_market_intelligence_snapshot(
     admitted_names = [name for name, item in modules.items() if item["admitted"]]
     missing_names = [name for name, item in modules.items() if not item["admitted"]]
     all_admitted = not missing_names
+
+    # A unified snapshot must represent one exchange session. If any module
+    # supplies a calendar identity, every admitted module must supply the same
+    # identity; partial calendar metadata is not treated as aligned.
+    admitted_as_of = {
+        item["as_of_date"] for item in modules.values() if item["admitted"]
+    }
+    calendar_ids = [
+        item["session_calendar_id"] for item in modules.values() if item["admitted"]
+    ]
+    calendar_metadata_present = any(value is not None for value in calendar_ids)
+    calendar_aligned = (
+        not calendar_metadata_present
+        or (
+            all(isinstance(value, str) and value.strip() for value in calendar_ids)
+            and len(set(calendar_ids)) == 1
+        )
+    )
+    as_of_aligned = len(admitted_as_of) <= 1
+    alignment_ok = as_of_aligned and calendar_aligned
+    alignment = {
+        "status": "aligned" if alignment_ok else "mismatch",
+        "as_of_dates": sorted(admitted_as_of),
+        "session_calendar_ids": sorted({
+            value for value in calendar_ids if isinstance(value, str) and value.strip()
+        }),
+        "reasons": [
+            reason for condition, reason in (
+                (not as_of_aligned, "module_as_of_date_mismatch"),
+                (not calendar_aligned, "session_calendar_identity_missing_or_mismatched"),
+            ) if condition
+        ],
+    }
     source_ids = sorted({value for item in modules.values() for value in item["source_ids"]})
     evidence_ids = sorted({value for item in modules.values() for value in item["evidence_ids"]})
 
     return {
-        "status": "research_only" if all_admitted else (
+        "status": "research_only" if all_admitted and alignment_ok else (
             "partial_evidence" if admitted_names else "insufficient_evidence"
         ),
+        "alignment": alignment,
         "decision_date": cutoff_date.isoformat(),
         "decision_time": cutoff_time.isoformat(),
         "required_modules": list(required_modules),

@@ -277,3 +277,38 @@ unauthorized scraping or republishing community archives. No account,
 contract, credentials, or licence has been obtained; no API calls or data
 imports were made. The signal engine remains fail-closed until a properly
 authorized dataset is captured, reconciled and admitted.
+
+### Additional authorized-provider comparison — 2026-11-27
+
+A second commercial API route was checked: Share Hub's published NEPSE Data
+API documentation specifies a `price-history/{symbol}` endpoint returning
+daily `time`, `symbol`, `open`, `close`, `high`, `low`, and `volume`.
+The documented `ALL` period is described as history from listing. Access
+requires a Data API account, bearer-token authentication, server IP
+allow-listing, and the relevant licensed service/package. Test mode must be
+enabled by Share Hub. Public documentation does not state a definitive
+retention/backtesting/derived-analytics grant, so these must be negotiated
+in writing before ingestion:
+https://sharehubnepal.com/data/nepse-data-documentation/
+
+Provider route comparison:
+- **Source Code MDP:** markets itself as a NEPSE-authorized/API data provider;
+  its published MDP material describes NEPSE data, corporate actions and
+  API integration. Obtain written confirmation of the exact daily OHLCV
+  history endpoint, historical depth, corporate-action methodology and
+  retention/backtesting rights.
+  https://sourcecode.com.np/
+  https://mdp.sourcecode.com.np/
+- **Share Hub Data API:** most explicit public endpoint contract for the
+  exact daily OHLCV fields needed by this engine, including ALL history.
+  Obtain a quote and written confirmation of local retention, backtesting,
+  derived signals and user-facing analytics rights.
+  https://sharehubnepal.com/data/nepse-data-documentation/
+- **Nepalytix/SocrateAI public datasets:** useful provenance lead and
+  research material, but upstream rights and permanent local use remain
+  unresolved; keep quarantined.
+
+No commercial API credentials or licences are available in the project.
+No paid endpoint was called and no vendor data was imported. This comparison
+narrows the procurement path but does not satisfy the real-data acceptance
+gate.

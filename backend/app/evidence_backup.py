@@ -84,6 +84,7 @@ def create_evidence_backup(
             "created_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "database_file": DATABASE_NAME,
             "raw_directory": RAW_DIRECTORY,
+            "source_storage_root": str(source_root),
             "source_audit": {
                 "raw_objects_checked": source_audit["raw_objects_checked"],
                 "captures_checked": source_audit["captures_checked"],
@@ -175,6 +176,7 @@ def restore_evidence_backup(
         database = staging / DATABASE_NAME
         restored_root = staging / RAW_DIRECTORY
         con = duckdb.connect(str(database))
+        transaction_started = False
         try:
             object_rows = con.execute(
                 "SELECT source_id, payload_sha256, payload_path FROM raw_source_objects"
@@ -182,25 +184,16 @@ def restore_evidence_backup(
             capture_rows = con.execute(
                 "SELECT fetch_id, manifest_path FROM source_captures"
             ).fetchall()
-            # Catalog paths are absolute in the source deployment. The backup
-            # layout is rooted at raw/ and is rebound only after checksum checks.
-            old_root = None
+            # The source root is recorded in the backup manifest. Do not infer
+            # it from directory names: deployments may call the root anything.
+            backup_manifest = json.loads((backup / BACKUP_MANIFEST).read_text(encoding="utf-8"))
+            old_root = Path(backup_manifest["source_storage_root"]).resolve()
             for _, _, payload_name in object_rows:
-                candidate = Path(payload_name).resolve()
-                parts = candidate.parts
-                if RAW_DIRECTORY not in parts:
-                    raise ValueError("catalog raw path cannot be safely rebased")
-                index = len(parts) - 1 - tuple(reversed(parts)).index(RAW_DIRECTORY)
-                inferred = Path(*parts[:index + 1])
-                if old_root is None:
-                    old_root = inferred
-                elif inferred != old_root:
-                    raise ValueError("catalog contains multiple raw roots; restore refused")
+                Path(payload_name).resolve().relative_to(old_root)
             for _, manifest_name in capture_rows:
-                candidate = Path(manifest_name).resolve()
-                if RAW_DIRECTORY not in candidate.parts:
-                    raise ValueError("catalog manifest path cannot be safely rebased")
+                Path(manifest_name).resolve().relative_to(old_root)
             con.execute("BEGIN TRANSACTION")
+            transaction_started = True
             for source_id, digest, payload_name in object_rows:
                 old_path = Path(payload_name).resolve()
                 relative = old_path.relative_to(old_root)
@@ -222,9 +215,11 @@ def restore_evidence_backup(
                     [str(new_path), fetch_id],
                 )
             con.execute("COMMIT")
+            transaction_started = False
             con.execute("CHECKPOINT")
         except Exception:
-            con.execute("ROLLBACK")
+            if transaction_started:
+                con.execute("ROLLBACK")
             raise
         finally:
             con.close()

@@ -67,3 +67,12 @@ A dated cross-check in `jaljala044/nepse-smc-data/reference/first_trade_boundary
 The data repository's read-only audit script now reports per-symbol file presence, SHA-256, archive boundaries, first/last positive-volume observations, malformed rows, duplicate dates, out-of-order dates, OHLC-bound violations, non-positive volume, adjacent identical OHLCV rows, and calendar status counts. It emits `summary.csv`, `row_flags.csv` and `totals.json` as workflow artifacts. It does not infer listing dates from archive boundaries or treat candidate weekdays as confirmed sessions. Script commit: [711e4e2](https://github.com/jaljala044/nepse-smc-data/commit/711e4e2162c886bf1506f18967073dbc42bd30b9).
 
 **Current status:** implementation committed; full 281-security workflow artifact not yet verified. Existing comparison matches 276/281 equities; NESDO, SYPNL, ULBSL, USLB and YMHL are missing from compared OHLCV filenames. Calendar remains partial (225 sampled observed-open dates, 150 closed dates, 26 candidate weekdays). Canonical promotion and training remain blocked.
+
+
+## Correction — five-symbol OHLCV presence verified, 2026-11-26
+
+The earlier statement that NESDO, SYPNL, ULBSL, USLB and YMHL were missing from the OHLCV archive was incorrect. Direct repository path/content checks confirm all five files exist. The older comparison artifact is a rendered-company-list match report, not an OHLCV file inventory. It has three non-matches (NESDO, ULBSL, YMHL) and duplicate/multiple rows for SYPNL and USLB; these are company-list identity reconciliation issues, not missing OHLCV files.
+
+Targeted checks found 934 NESDO, 290 SYPNL, 932 ULBSL, 935 USLB and 97 YMHL rows; no duplicate dates or invalid OHLC bounds in these five files. However, 81/76/81/81/3 rows respectively fall on dates classified `verified_closed` by the current partial calendar, and 320/74/318/320/2 adjacent identical OHLCV rows were observed. All rows have positive volume, but that does not prove actual executions. These rows require floorsheet/session provenance reconciliation. Full detail and source blob hashes: [five-symbol archive reconciliation](https://github.com/jaljala044/nepse-smc-data/commit/75adc64db34029456a846bf5b001845d560fe5e0).
+
+Corrected status: OHLCV file presence 281/281 is supported by the dated crosswalk inventory plus direct checks of the five previously questioned paths; actual trade validity and complete session coverage remain unverified. Canonical promotion and training remain blocked.

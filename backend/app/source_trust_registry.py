@@ -147,13 +147,36 @@ def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
 
 
 def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bool:
-    """Verify a loaded registry against a digest pinned in trusted deployment config."""
-    expected = _sha256(expected_sha256, "expected_registry_sha256")
-    body = {"schema_version": registry.get("schema_version"),
-            "sources": registry.get("sources")}
-    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
-    actual = hashlib.sha256(canonical.encode()).hexdigest()
-    return registry.get("registry_sha256") == actual == expected
+    """Verify the pinned digest and the complete source-policy schema."""
+    try:
+        expected = _sha256(expected_sha256, "expected_registry_sha256")
+        if not isinstance(registry, dict) or registry.get("schema_version") != 1:
+            return False
+        sources = registry.get("sources")
+        if not isinstance(sources, list):
+            return False
+        seen: set[str] = set()
+        for item in sources:
+            if not isinstance(item, dict):
+                return False
+            for field in ("allowed_record_types", "canonical_record_types", "evidence_refs"):
+                if not isinstance(item.get(field), (list, tuple)):
+                    return False
+            policy = SourcePolicy(**{
+                **item,
+                "allowed_record_types": tuple(item["allowed_record_types"]),
+                "canonical_record_types": tuple(item["canonical_record_types"]),
+                "evidence_refs": tuple(item["evidence_refs"]),
+            })
+            if policy.source_id in seen:
+                return False
+            seen.add(policy.source_id)
+        body = {"schema_version": registry.get("schema_version"), "sources": sources}
+        canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
+        actual = hashlib.sha256(canonical.encode()).hexdigest()
+        return registry.get("registry_sha256") == actual == expected
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
 
 
 def _validation_signature_payload(validation: dict[str, Any]) -> bytes:
@@ -277,18 +300,23 @@ def build_promotion_event(
     elif action == "revoke":
         if not record.get("record_id"):
             reasons.append("record_id_required_for_revocation")
-        if not validation.get("reviewer") or not validation.get("evidence_refs"):
-            reasons.append("revocation_reviewer_and_evidence_required")
+        if not validation.get("reviewer") or not validation.get("validation_id") or not validation.get("evidence_refs"):
+            reasons.append("revocation_reviewer_validation_and_evidence_required")
+        if not verify_reviewer_signature(validation, reviewer_keys):
+            reasons.append("revocation_reviewer_signature_invalid_or_untrusted")
     body = {
         "schema_version": 1, "decision_id": decision_id, "action": action,
         "record_id": record.get("record_id"), "source_id": record.get("source_id"),
         "record_type": record.get("record_type"),
         "source_payload_sha256": record.get("source_payload_sha256"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
         "decision_time": _utc(decision_time, "decision_time").isoformat().replace("+00:00", "Z"),
         "validation_id": validation.get("validation_id"),
         "reviewer": validation.get("reviewer"),
         "evidence_refs": validation.get("evidence_refs", {}),
-        "accepted": action == "promote" and not reasons,
+        "validation_attestation": dict(validation),
+        "accepted": action in {"promote", "revoke"} and not reasons,
         "reasons": sorted(set(reasons)),
         "registry_sha256": registry.get("registry_sha256"),
         "validation_signature": validation.get("signature"),
@@ -361,8 +389,6 @@ def active_promoted_record_ids(path: str | Path) -> set[str]:
     state: dict[str, bool] = {}
     for event in audit["events"]:
         record_id = event.get("record_id")
-        if event.get("action") == "promote" and event.get("accepted") is True:
-            state[record_id] = True
-        elif event.get("action") == "revoke":
-            state[record_id] = False
+        if event.get("action") in {"promote", "revoke"} and event.get("accepted") is True:
+            state[record_id] = event.get("action") == "promote"
     return {record_id for record_id, active in state.items() if active and record_id}

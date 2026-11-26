@@ -154,7 +154,7 @@ class NepseMarketSummaryHistoryCaptureTests(unittest.TestCase):
         self.assertIsNone(report["selected_attempt_number"])
         self.assertFalse(report["response_origin_verified"])
         self.assertFalse(report["response_preserved"])
-        self.assertTrue((Path(tmp) / "attempt-01-response-body.bin").exists())
+        self.assertFalse(report["attempts"][0]["response_origin_verified"])
 
     def test_non_list_payload_is_preserved_as_unknown_shape(self):
         result = analyze_payload({"error": "unauthorized"}, {"2024-03-04"})

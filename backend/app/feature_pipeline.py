@@ -9,6 +9,7 @@ from app.wyckoff_features import wyckoff_event_features
 from app.smc_features import smc_features
 from app.sector_strength_features import sector_strength_features
 from app.liquidity_features import liquidity_tradability_features
+from app.relative_strength_features import relative_strength_universe
 from app.scoring_engine import score_scan
 
 
@@ -97,6 +98,46 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             "reason": "expected_universe_and_canonical_calendar_not_supplied",
             "symbols": {},
         }
+    index_candidates = [row for row in rows
+                         if row.get("record_type") == "index_ohlcv"
+                         and str(row.get("index_code", "")).upper() == "NEPSE"]
+    benchmark_rows = []
+    withheld_index_rows = 0
+    for row in index_candidates:
+        digest = str(row.get("source_payload_sha256", "")).lower()
+        provenance_ok = (
+            isinstance(row.get("source_id"), str) and bool(row["source_id"].strip())
+            and len(digest) == 64 and all(ch in "0123456789abcdef" for ch in digest)
+        )
+        if (row.get("source_validation_status") == "verified"
+                and row.get("finality_status") == "final" and provenance_ok):
+            benchmark_rows.append({"session_date": row.get("session_date"),
+                                   "close": row.get("close")})
+        else:
+            withheld_index_rows += 1
+    rs_securities = {}
+    rs_excluded = {}
+    for symbol, items in sorted(by_symbol.items()):
+        if not symbol:
+            continue
+        if any(item.get("session_date") is None or item.get("close") is None for item in items):
+            rs_excluded[symbol] = "missing_stock_session_or_close"
+        else:
+            rs_securities[symbol] = [{"session_date": item["session_date"],
+                                      "close": item["close"]} for item in items]
+    if benchmark_rows and rs_securities:
+        relative_strength = relative_strength_universe(rs_securities, benchmark_rows)
+        relative_strength["withheld_unverified_or_provisional_index_rows"] = withheld_index_rows
+        relative_strength["benchmark_contract"] = "index_ohlcv:NEPSE:verified:final:source_id+sha256"
+    else:
+        relative_strength = {
+            "status": "insufficient_evidence",
+            "reason": "no_verified_final_nepse_index_rows" if not benchmark_rows else "no_eligible_stock_close_series",
+            "benchmark_candidate_rows": len(index_candidates),
+            "verified_final_benchmark_rows": len(benchmark_rows),
+            "withheld_unverified_or_provisional_index_rows": withheld_index_rows,
+            "eligible_symbols": 0, "excluded_symbols": rs_excluded, "results": {},
+        }
     component_candidates = {}
     for symbol in sorted(by_symbol):
         if not symbol:
@@ -104,7 +145,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         component_candidates[symbol] = {
             "wyckoff": wyckoff_features[symbol].get("score") if wyckoff_features[symbol].get("status") == "observed" else None,
             "trend": trend_features[symbol].get("score") if trend_features[symbol].get("status") == "observed" else None,
-            "relative_strength": None,
+            "relative_strength": (relative_strength.get("results", {}).get(symbol, {}).get("score")
+                                  if relative_strength.get("status") == "observed" else None),
             "broker": (broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("score")
                        if broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("status") == "observed" else None),
             "volume": volume_features[symbol].get("score") if volume_features[symbol].get("status") == "observed" else None,
@@ -162,5 +204,6 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "broker_footprint": broker_footprint,
         "sector_strength": sector_features,
         "liquidity_tradability": liquidity_snapshot,
+        "relative_strength": relative_strength,
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

@@ -70,6 +70,20 @@ class SignalConfirmationTests(unittest.TestCase):
         self.assertEqual(result["classification"], "bullish_confirmation")
         self.assertEqual(result["status"], "research_confirmed")
 
+    def test_zero_volume_rows_are_excluded_from_observation_count(self):
+        rows = rising_rows()
+        rows[-1].update(open=159, high=165, low=158, close=164, volume=2500)
+        no_trade = {"date": date(2025, 4, 1), "high": 0, "low": 0,
+                    "close": 0, "volume": 0}
+        rows.extend([no_trade.copy(), no_trade.copy()])
+        rows[-1]["date"] = date(2025, 4, 2)
+        result = confirm_signal(rows, eligible=True)
+        self.assertEqual(result["classification"], "bullish_confirmation")
+        self.assertEqual(result["observations"], 60)
+        self.assertEqual(result["source_rows_received"], 62)
+        self.assertEqual(result["zero_volume_rows_excluded"], 2)
+        self.assertEqual(result["as_of"], str(date(2025, 3, 1)))
+
     def test_invalid_ohlcv_is_unknown(self):
         rows = rising_rows()
         rows[-1]["high"] = 1

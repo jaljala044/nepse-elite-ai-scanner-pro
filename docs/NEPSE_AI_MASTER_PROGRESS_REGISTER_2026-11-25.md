@@ -2275,3 +2275,19 @@ Investigate official NEPSE `securityDailyTradeStat` historical date support and 
 
 Extend official per-security history reconciliation to a wider date window; validate historical effective-dated security IDs and corporate-action transitions; reconcile remaining non-equity traded symbols from the official bulk endpoint. Preserve zero-activity rows as evidence only until open-session and complete-floorsheet gates are independently met.
 
+
+
+## P4.23 — 29-date official per-security history window completed (2026-11-26)
+
+- Added `backend/audit_official_security_history_window.py` and five focused regression tests. The audit validates the official market-summary raw-body hash, official endpoint/origin metadata, history response URL and date parameters, current security-ID mapping, unique symbols/dates, nonnegative activity metrics and bounded subset totals. Missing rows remain UNKNOWN; explicit zero rows remain separate evidence.
+- Fixed the history-capture workflow's output/commit path and extended the requested range to **2026-10-05 through 2026-11-26**. The immutable official market-summary history contains **29 dated positive-activity summary rows** in this range; these are not independently certified session-calendar rows.
+- Captured **281 / 281** current equity crosswalk candidates, with **281 / 281** current security-list IDs matching the 2026-11-25 snapshot and **281 accepted official history responses**.
+- Of 8,149 possible candidate/date cells, **8,142 rows returned**: **8,079 positive-activity**, **63 explicit zero-activity**, and **7 missing**. All seven missing cells are BENH on 2026-10-05, 06, 07, 08, 09, 12 and 13; BENH rows are present from 14-Oct onward. The cause remains UNKNOWN pending effective-dated listing evidence. No missing row was treated as zero or NO_TRADE.
+- Raw responses, SHA-256 manifest, capture report and `window-audit.json` committed under `data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/`, commit [13a4dbfa978d0affd82692c1b621e9297b5ab2ec](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/13a4dbfa978d0affd82692c1b621e9297b5ab2ec). Successful capture workflow [#45857818455](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45857818455), artifact ID `15135549463`. Full backend suite [#45857826996](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45857826996): **884 tests passed**.
+- A duplicate queued capture [#45857826871](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45857826871) passed capture and audit but failed while attempting to rebase a second write over the immutable data path. The first capture commit remains valid. Workflow hardening in [7ce4790](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/commit/7ce4790ab9533481e2e700cdcdad21e5f91f05a2) now restores and reuses existing evidence instead of recapturing or overwriting it.
+- Detailed report: [P4.23 29-date official security history window](docs/P4.23_29_DATE_OFFICIAL_SECURITY_HISTORY_WINDOW_2026-11-26.md).
+- **Disposition:** official per-security history capture and bounded row validation completed, review-only. Current snapshot IDs do not prove historical identity. BENH's seven missing rows, official session calendar, non-equity scope, historical corporate actions, full-market completeness, source lineage and rights remain unresolved. No canonical promotion, coverage admission, broker scoring, training/backtest promotion or BUY authorization.
+
+### P4.24 next
+
+Build the effective-dated security identity/corporate-action registry and investigate BENH's missing early-window rows using official listing evidence. In parallel, classify all non-equity symbols in the official bulk daily endpoint against dated instrument records; keep unmatched symbols UNKNOWN and preserve the no-promotion gate.

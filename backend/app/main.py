@@ -5,6 +5,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .market_scan import run_market_scan
 from .structure_timeframes import evaluate_timeframes
 from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
@@ -261,6 +262,62 @@ async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(
     except (ValueError, UnicodeDecodeError) as exc:
         raise HTTPException(422, str(exc)) from exc
     return result
+
+@app.post("/v1/scan/market-wide")
+def scan_market_wide(request: ScanRequest):
+    """Run the 3A.01 candidate-universe pass without authorizing rankings."""
+    if EQUITY_UNIVERSE is None:
+        raise HTTPException(503, "Equity candidate universe unavailable; scanner is fail-closed")
+    selected = request.symbols or EQUITY_UNIVERSE["symbols"]
+    candidate_symbols = set(EQUITY_UNIVERSE["symbols"])
+    if len(set(selected)) != len(selected):
+        raise HTTPException(422, "Duplicate symbols are not allowed")
+    invalid_symbols = sorted(set(selected) - candidate_symbols)
+    if invalid_symbols:
+        raise HTTPException(422, "Symbols outside the candidate equity universe: " + ", ".join(invalid_symbols))
+
+    now_nepal = datetime.now(ZoneInfo("Asia/Kathmandu"))
+    today_nepal = now_nepal.date()
+    effective_as_of = min(request.as_of or today_nepal, today_nepal)
+    cutoff = datetime.now(timezone.utc)
+    if request.as_of and request.as_of <= today_nepal:
+        cutoff = min(cutoff, datetime.combine(effective_as_of, time.max, ZoneInfo("Asia/Kathmandu")))
+
+    def scan_one(symbol, rows, as_of):
+        result = analyze(symbol, rows)
+        errors = assess(symbol, rows, cutoff.isoformat(), REVIEWED_ROWS)
+        result["eligibility"] = {"eligible": not errors, "reasons": errors}
+        if errors:
+            if result.get("status") != "data_quality_failed":
+                result["status"] = "eligibility_unverified"
+            result["signals"] = []
+            result["metrics"] = {}
+            result["ranking_eligible"] = False
+            result["buy_list_eligible"] = False
+            result["result_bucket"] = "unknown_results"
+            result["limitations"] = list(result.get("limitations", [])) + errors
+        else:
+            result["result_bucket"] = "research_only"
+            result["ranking_eligible"] = False
+            result["buy_list_eligible"] = False
+        return result
+
+    payload = run_market_scan(selected, DATA, as_of=effective_as_of, scan_symbol=scan_one)
+    payload["candidate_universe_provenance"] = {
+        "record_count": EQUITY_UNIVERSE.get("record_count", len(candidate_symbols)),
+        "observed_on": EQUITY_UNIVERSE.get("observed_on"),
+        "source": EQUITY_UNIVERSE.get("source"),
+        "source_snapshot_sha256": EQUITY_UNIVERSE.get("source_snapshot_sha256"),
+        "evidence_tier": EQUITY_UNIVERSE.get("evidence_tier", "unverified"),
+        "membership_authoritatively_verified": False,
+        "promotion_allowed": False,
+        "warning": (
+            "Candidate set only: secondary-provider snapshot. It is not an "
+            "authoritative or point-in-time NEPSE active-equity universe."
+        ),
+    }
+    return payload
+
 
 @app.post("/v1/scan")
 def scan(request: ScanRequest):

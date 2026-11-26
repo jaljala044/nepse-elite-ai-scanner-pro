@@ -150,10 +150,39 @@ def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
 
 
 def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bool:
-    expected = _sha256(expected_sha256, "expected_registry_sha256")
-    body = {"schema_version": registry.get("schema_version"), "sources": registry.get("sources")}
-    actual = hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    return registry.get("registry_sha256") == actual == expected
+    """Verify both the pinned digest and the complete registry policy schema.
+
+    A matching digest alone proves byte identity, not that a registry is safe
+    to consume. Validate every policy before treating the registry as trusted.
+    """
+    try:
+        expected = _sha256(expected_sha256, "expected_registry_sha256")
+        if not isinstance(registry, dict) or registry.get("schema_version") != 1:
+            return False
+        sources = registry.get("sources")
+        if not isinstance(sources, list):
+            return False
+        seen: set[str] = set()
+        for item in sources:
+            if not isinstance(item, dict):
+                return False
+            policy_data = dict(item)
+            for field in ("allowed_record_types", "canonical_record_types", "evidence_refs"):
+                value = policy_data.get(field)
+                if not isinstance(value, list):
+                    return False
+                policy_data[field] = tuple(value)
+            policy = SourcePolicy(**policy_data)
+            if policy.source_id in seen:
+                return False
+            seen.add(policy.source_id)
+        body = {"schema_version": registry["schema_version"], "sources": sources}
+        actual = hashlib.sha256(
+            json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        return registry.get("registry_sha256") == actual == expected
+    except (KeyError, TypeError, ValueError):
+        return False
 
 
 def _validation_signature_payload(validation: dict[str, Any]) -> bytes:

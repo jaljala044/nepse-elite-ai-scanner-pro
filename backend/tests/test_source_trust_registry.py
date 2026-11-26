@@ -51,6 +51,15 @@ class SourceTrustPromotionTests(unittest.TestCase):
             "payload_sha256": self.digest,
             "checks": checks,
             "evidence_refs": refs,
+            "decision_action": "promote",
+            "record_id": self.record["record_id"],
+            "source_id": self.record["source_id"],
+            "record_type": self.record["record_type"],
+            "source_payload_sha256": self.record["source_payload_sha256"],
+            "session_date": self.record["session_date"],
+            "available_at": self.record["available_at"],
+            "registry_sha256": self.registry["registry_sha256"],
+            "decision_time": "2026-11-26T12:00:00Z",
         }
         self.sign(self.validation)
 
@@ -59,6 +68,13 @@ class SourceTrustPromotionTests(unittest.TestCase):
         message = json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode()
         validation["signature"] = hmac.new(self.key, message, hashlib.sha256).hexdigest()
         return validation
+
+    def active(self, path):
+        return active_promoted_record_ids(
+            path, registry=self.registry,
+            trusted_registry_sha256=self.registry["registry_sha256"],
+            reviewer_keys=self.keys,
+        )
 
     def event(self, **changes):
         args = dict(
@@ -182,6 +198,15 @@ class SourceTrustPromotionTests(unittest.TestCase):
                 "validated_at": "2026-11-26T12:01:00Z",
                 "evidence_refs": {"revocation": ["evidence://revocation-case"]},
                 "signature": "invalid",
+                "decision_action": "revoke",
+                "record_id": self.record["record_id"],
+                "source_id": self.record["source_id"],
+                "record_type": self.record["record_type"],
+                "source_payload_sha256": self.record["source_payload_sha256"],
+                "session_date": self.record["session_date"],
+                "available_at": self.record["available_at"],
+                "registry_sha256": self.registry["registry_sha256"],
+                "decision_time": "2026-11-26T12:02:00Z",
             }
             revoked = build_promotion_event(
                 decision_id="decision-revoke-invalid", action="revoke", record=self.record,
@@ -192,7 +217,7 @@ class SourceTrustPromotionTests(unittest.TestCase):
             )
             self.assertFalse(revoked["accepted"])
             append_promotion_event(path, revoked)
-            self.assertEqual(active_promoted_record_ids(path), {"record-001"})
+            self.assertEqual(self.active(path), {"record-001"})
 
     def test_ledger_chain_append_idempotency_revocation_and_tamper_detection(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -208,6 +233,15 @@ class SourceTrustPromotionTests(unittest.TestCase):
                 "validation_id": "revocation-001", "reviewer": "reviewer-1",
                 "validated_at": "2026-11-26T12:01:00Z",
                 "evidence_refs": {"revocation": ["evidence://revocation-case"]},
+                "decision_action": "revoke",
+                "record_id": self.record["record_id"],
+                "source_id": self.record["source_id"],
+                "record_type": self.record["record_type"],
+                "source_payload_sha256": self.record["source_payload_sha256"],
+                "session_date": self.record["session_date"],
+                "available_at": self.record["available_at"],
+                "registry_sha256": self.registry["registry_sha256"],
+                "decision_time": "2026-11-26T12:02:00Z",
             }
             self.sign(revoke_validation)
             revoked = build_promotion_event(

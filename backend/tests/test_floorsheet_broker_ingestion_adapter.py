@@ -28,10 +28,10 @@ def setup(rows, controls=None, security_registry=None, **kwargs):
     join={"input_contract_rows":len(rows)//2,"party_observation_rows":len(rows),
           "rows":rows,"counts_by_identity_status":{}}
     default={
-        "source_controls":controls or [{"source_id":"SRC-A","trade_date":"2026-11-25",
+        "source_controls":([{"source_id":"SRC-A","trade_date":"2026-11-25",
             "contract_count":len(rows)//2,"party_observation_count":len(rows),
             "gross_amount":str(Decimal("100")*(len(rows)//2)),
-            "quantity":str(Decimal("2")*(len(rows)//2))}],
+            "quantity":str(Decimal("2")*(len(rows)//2))}] if controls is None else controls),
         "security_registry":security_registry or [{"symbol":"CFCL","security_id":"SEC-CFCL",
             "status":"verified","effective_from":"2020-01-01","effective_to":None}],
         "verified_sessions":{"2026-11-25"},

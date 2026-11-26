@@ -1,0 +1,3 @@
+# July 24 odd-lot diagnostics
+
+All 83 out-of-range contracts across 18 equities have quantity below ten. Removing only out-of-range contracts reproduces ShareSansar extrema in 17 cases; this is a post-hoc diagnostic, not a validated market filter. NADEP remains exceptional. Keep all contracts and total volume. The board-lot threshold depends on face value and order type; quantity alone does not establish contract category. Sources: https://eng.merolagani.com/NewsDetail.aspx?newsID=116589 and https://www.sharesansar.com/newsdetail/nepse-enables-market-depth-visibility-for-odd-lot-orders-from-shrawan-1-2025-07-17 . Neither source establishes the exact historical candle calculation. No canonical or backtest promotion.

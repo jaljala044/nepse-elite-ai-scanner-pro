@@ -56,6 +56,20 @@ class UniverseSnapshotTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate target"):
             validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
 
+    def test_promoter_share_must_remain_outside_target_universe(self):
+        item = self.snapshot()
+        item["records"].append({
+            "security_id": "P1", "symbol": "HIDCLP", "instrument_type": "promoter_share",
+            "status": "active", "target_in_scope": False,
+            "valid_from": "2020-01-01", "valid_to": None,
+        })
+        result = validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+        self.assertEqual(result["target_security_count"], 3)
+        self.assertTrue(result["manifest_verified"])
+        item["records"][-1]["target_in_scope"] = True
+        with self.assertRaisesRegex(ValueError, "only active equity/mutual_fund"):
+            validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
     def test_non_object_record_rejected(self):
         item = self.snapshot()
         item["records"][0] = None

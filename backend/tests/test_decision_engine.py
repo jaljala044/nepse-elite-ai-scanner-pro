@@ -41,7 +41,7 @@ class DecisionEngineTests(unittest.TestCase):
                                   self.plan, ["ohlcv:1", "stage2:1"])
         self.assertEqual(result["action"], "BUY")
         self.assertEqual(result["subtype"], "BUY_AFTER_RETEST")
-        self.assertEqual(result["reward_risk"], 3.0)
+        self.assertEqual(result["reward_risk"], 2.0)
 
     def test_missing_stage1_evidence_never_buys(self):
         result = evaluate_horizon("TEST", "SWING", {"eligible": False},

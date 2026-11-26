@@ -106,7 +106,7 @@ class MarketStructureAPITests(unittest.TestCase):
             path = Path(temp) / "rows.json"
             path.write_text(json.dumps({"schema_version": 1, "records": manifest}), encoding="utf-8")
             reviewed = load_reviewed_rows(path)
-        with patch.dict(main.DATA, {"TEST": rows}, clear=True), patch.object(main, "REVIEWED_ROWS", reviewed):
+        with patch.dict(main.DATA, {"TEST": rows}, clear=True), patch.object(main, "REVIEWED_ROWS", reviewed), patch.object(main, "EQUITY_UNIVERSE", {"symbols": ["TEST"]}):
             with TestClient(main.app) as client:
                 unavailable = client.post("/v1/scan", json={"symbols": ["TEST"], "as_of": "2025-01-05"})
                 early = unavailable.json()["results"][0]

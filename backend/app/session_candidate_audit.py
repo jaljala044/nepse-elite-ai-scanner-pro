@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -15,12 +16,18 @@ CANDIDATE_FIELDS = (
 )
 
 
-def audit_session_candidates(candidate_csv: str | Path, calendar_csv: str | Path) -> dict[str, Any]:
+def audit_session_candidates(
+    candidate_csv: str | Path,
+    calendar_csv: str | Path,
+    source_root: str | Path | None = None,
+) -> dict[str, Any]:
     """Audit candidate inventory consistency without promoting any date."""
     rows: list[dict[str, str]] = []
     seen: set[date] = set()
     duplicates: list[str] = []
     malformed: list[dict[str, Any]] = []
+    source_failures: list[dict[str, Any]] = []
+    source_verified = 0
     with Path(candidate_csv).open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         missing = set(CANDIDATE_FIELDS) - set(reader.fieldnames or [])
@@ -51,7 +58,24 @@ def audit_session_candidates(candidate_csv: str | Path, calendar_csv: str | Path
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "candidate_status_not_unverified"})
             if not all((raw.get(k) or "").strip() for k in ("source_repository", "source_revision", "source_path", "lineage")):
                 malformed.append({"line": line, "date": day.isoformat(), "reason": "missing_source_lineage"})
-            rows.append({k: (v or "").strip() for k, v in raw.items()})
+            candidate = {k: (v or "").strip() for k, v in raw.items()}
+            rows.append(candidate)
+            if source_root is not None and candidate.get("source_path"):
+                source_path = Path(source_root) / candidate["source_path"]
+                try:
+                    payload = source_path.read_bytes()
+                    actual_size = len(payload)
+                    actual_blob = hashlib.sha1(
+                        b"blob " + str(actual_size).encode("ascii") + b"\\0" + payload
+                    ).hexdigest()
+                    if actual_size != size:
+                        source_failures.append({"line": line, "date": day.isoformat(), "reason": "source_byte_count_mismatch", "expected": size, "actual": actual_size})
+                    elif actual_blob != digest:
+                        source_failures.append({"line": line, "date": day.isoformat(), "reason": "git_blob_sha1_mismatch", "expected": digest, "actual": actual_blob})
+                    else:
+                        source_verified += 1
+                except OSError:
+                    source_failures.append({"line": line, "date": day.isoformat(), "reason": "source_file_missing", "path": candidate["source_path"]})
 
     evidence = load_calendar(calendar_csv)
     candidate_dates = {date.fromisoformat(row["date"]) for row in rows if row.get("date")}
@@ -82,6 +106,9 @@ def audit_session_candidates(candidate_csv: str | Path, calendar_csv: str | Path
         "unique_candidate_dates": len(candidate_dates),
         "duplicate_dates": sorted(set(duplicates)),
         "malformed_rows": malformed,
+        "source_files_verified": source_verified,
+        "source_file_failures": source_failures,
+        "source_file_verification_required": source_root is not None,
         "date_window": {"first": expected_window[0], "last": expected_window[1]},
         "counts_by_year": {str(k): by_year[k] for k in sorted(by_year)},
         "counts_by_weekday": {k: by_weekday[k] for k in sorted(by_weekday)},
@@ -91,6 +118,6 @@ def audit_session_candidates(candidate_csv: str | Path, calendar_csv: str | Path
         "verified_open_overlaps": open_overlaps,
         "canonical_open_dates_promoted": 0,
         "promotion_allowed": False,
-        "gate_pass": bool(rows) and not duplicates and not malformed and not weekday_violations and not closed_conflicts,
+        "gate_pass": bool(rows) and source_root is not None and source_verified == len(rows) and not source_failures and not duplicates and not malformed and not weekday_violations and not closed_conflicts,
         "policy": "Candidate archive dates are not exchange-confirmed sessions. This audit never promotes dates; only independently reviewed date-scoped evidence may do so.",
     }

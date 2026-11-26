@@ -40,7 +40,9 @@ def _find_channel(window: dict, broker_code: str) -> dict | None:
 def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
                                   execution_channel_windows: dict,
                                   market_context: dict,
-                                  decision_time: str) -> dict:
+                                  decision_time: str,
+                                  as_of_session: str,
+                                  minimum_daily_flow_multiple: float) -> dict:
     """Evaluate a transparent candidate using complete broker windows and context.
 
     Context must be supplied by separately verified NEPSE market-data pipelines.
@@ -51,6 +53,12 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
     if not isinstance(symbol, str) or not symbol.strip():
         raise ValueError("symbol is required")
     cutoff = _aware(decision_time, "decision_time")
+    try:
+        as_of_session = datetime.fromisoformat(as_of_session).date().isoformat()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("as_of_session must be YYYY-MM-DD") from exc
+    if isinstance(minimum_daily_flow_multiple, bool) or not isinstance(minimum_daily_flow_multiple, (int, float)) or not math.isfinite(minimum_daily_flow_multiple) or minimum_daily_flow_multiple <= 0:
+        raise ValueError("minimum_daily_flow_multiple must be finite and positive")
     if not isinstance(execution_channel_windows, dict) or not isinstance(market_context, dict):
         raise ValueError("broker windows and market_context must be objects")
 
@@ -69,8 +77,8 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         return _insufficient(broker_code, symbol, "missing_nepse_market_context", context_missing)
     if market_context.get("status") != "verified":
         return _insufficient(broker_code, symbol, "nepse_market_context_not_verified")
-    if market_context.get("as_of_session") != market_context.get("as_of_session"):
-        return _insufficient(broker_code, symbol, "market_context_session_missing")
+    if market_context.get("as_of_session") != as_of_session:
+        return _insufficient(broker_code, symbol, "market_context_session_mismatch")
     if market_context.get("price_extension_status") not in {"not_extended", "extended"}:
         return _insufficient(broker_code, symbol, "price_extension_context_unavailable")
     components = market_context.get("component_statuses")
@@ -104,6 +112,8 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
             return _insufficient(broker_code, symbol, "execution_channel_not_observed", [horizon])
         if profile.get("identity_status") != "execution_channel_only":
             return _insufficient(broker_code, symbol, "execution_channel_identity_boundary_missing", [horizon])
+        if profile.get("prior_20_session_count") != 20:
+            return _insufficient(broker_code, symbol, "insufficient_20_session_baseline", [horizon])
         selected[horizon] = profile
 
     daily = selected["1D"]
@@ -113,12 +123,16 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         daily.get("flow_class") == "net_buyer"
         and weekly.get("flow_class") == "net_buyer"
         and monthly.get("flow_class") == "net_buyer"
+        and isinstance(daily.get("latest_buy_vs_prior_20_avg_ratio"), (int, float))
+        and daily["latest_buy_vs_prior_20_avg_ratio"] >= minimum_daily_flow_multiple
         and market_context["price_extension_status"] == "not_extended"
     )
     exit_pattern = (
         daily.get("flow_class") == "net_seller"
         and weekly.get("flow_class") == "net_buyer"
         and monthly.get("flow_class") == "net_buyer"
+        and isinstance(daily.get("latest_sell_vs_prior_20_avg_ratio"), (int, float))
+        and daily["latest_sell_vs_prior_20_avg_ratio"] >= minimum_daily_flow_multiple
         and market_context["price_extension_status"] == "extended"
     )
     if entry_pattern:
@@ -140,6 +154,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         "decision_time": cutoff.isoformat(),
         "rule_id": RULE_VERSION,
         "calibration_status": "uncalibrated_research_rule",
+        "minimum_daily_flow_multiple": minimum_daily_flow_multiple,
         "confidence": None,
         "horizon_flow": {
             horizon: {
@@ -149,6 +164,8 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
                 "net_amount": selected[horizon]["net_amount"],
                 "gross_participation_pct": selected[horizon]["gross_participation_pct"],
                 "active_sessions": selected[horizon]["active_sessions"],
+                "latest_buy_vs_prior_20_avg_ratio": selected[horizon]["latest_buy_vs_prior_20_avg_ratio"],
+                "latest_sell_vs_prior_20_avg_ratio": selected[horizon]["latest_sell_vs_prior_20_avg_ratio"],
             }
             for horizon in required
         },

@@ -42,9 +42,10 @@ def _read_universe(path: str | Path) -> list[dict[str, Any]]:
                 raise ValueError(f"{path}:{line}: target_in_scope must be true or false")
             if scope == "true" and kind not in {"equity", "mutual_fund"}:
                 raise ValueError(f"{path}:{line}: target universe permits only equity and mutual_fund")
-            start = date.fromisoformat(raw["valid_from"].strip())
+            start_text = (raw.get("valid_from") or "").strip()
+            start = date.fromisoformat(start_text) if start_text else None
             end = date.fromisoformat(raw["valid_to"].strip()) if (raw.get("valid_to") or "").strip() else None
-            if end is not None and end < start:
+            if end is not None and start is not None and end < start:
                 raise ValueError(f"{path}:{line}: valid_to precedes valid_from")
             rows.append({
                 "security_id": security_id, "symbol": symbol, "instrument_type": kind,
@@ -134,9 +135,11 @@ def build_security_coverage_report(
                         "reason": "symbol_not_in_target_universe_snapshot",
                     })
         for security in sorted(target, key=lambda row: (row["instrument_type"], row["symbol"], row["security_id"])):
+            lifecycle_verified = security["valid_from"] is not None
             expected = [
                 day for day in sessions
-                if security["valid_from"] <= day and (security["valid_to"] is None or day <= security["valid_to"])
+                if lifecycle_verified and security["valid_from"] <= day
+                and (security["valid_to"] is None or day <= security["valid_to"])
             ]
             found = observed.get(security["symbol"], Counter())
             observed_dates = {date.fromisoformat(day) for day, count in found.items() if count > 0}
@@ -152,14 +155,15 @@ def build_security_coverage_report(
                     unknown_calendar_candidates.add(day.isoformat())
                 elif day in verified_closed:
                     unexpected_observations.append({"symbol": security["symbol"], "date": day.isoformat(), "reason": "observation_on_verified_closed_date"})
-                elif day not in set(expected):
+                elif lifecycle_verified and day not in set(expected):
                     unexpected_observations.append({"symbol": security["symbol"], "date": day.isoformat(), "reason": "outside_security_effective_interval_or_not_verified_open"})
             per_security.append({
                 "security_id": security["security_id"],
                 "symbol": security["symbol"],
                 "instrument_type": security["instrument_type"],
-                "valid_from": security["valid_from"].isoformat(),
+                "valid_from": security["valid_from"].isoformat() if security["valid_from"] else None,
                 "valid_to": security["valid_to"].isoformat() if security["valid_to"] else None,
+                "lifecycle_status": "verified_start_date" if lifecycle_verified else "unverified_missing_valid_from",
                 "expected_verified_sessions": len(expected),
                 "observed_expected_sessions": len(matched),
                 "missing_sessions": missing,
@@ -176,6 +180,8 @@ def build_security_coverage_report(
             "unexpected_observations": unexpected_observations,
             "unknown_symbol_observation_count": sum(row["row_count"] for row in unknown_symbol_observations),
             "unknown_symbol_observations": unknown_symbol_observations,
+            "lifecycle_unverified_security_count": sum(1 for row in per_security if row["lifecycle_status"] != "verified_start_date"),
+            "lifecycle_unverified_symbols": [row["symbol"] for row in per_security if row["lifecycle_status"] != "verified_start_date"],
             "per_security": per_security,
         })
 
@@ -187,6 +193,8 @@ def build_security_coverage_report(
         "target_security_count": len({row["security_id"] for row in target}),
         "target_equity_count": len({row["security_id"] for row in target if row["instrument_type"] == "equity"}),
         "target_mutual_fund_count": len({row["security_id"] for row in target if row["instrument_type"] == "mutual_fund"}),
+        "target_equity_lifecycle_verified_count": sum(1 for row in target if row["instrument_type"] == "equity" and row["valid_from"] is not None),
+        "target_equity_lifecycle_unverified_count": sum(1 for row in target if row["instrument_type"] == "equity" and row["valid_from"] is None),
         "expected_target_equity_count": 281,
         "expected_target_mutual_fund_count": 47,
         "target_universe_counts_match": (
@@ -206,6 +214,7 @@ def build_security_coverage_report(
         "promotion_allowed": False,
         "limitations": [
             "Expected sessions include only explicit verified_open or verified_exceptional_open dates.",
+            "A missing valid_from is represented as unverified lifecycle; no expected-session denominator or missing-session claim is generated for that security.",
             "Unknown dates are excluded from the denominator and reported separately; no weekday or file-presence inference is used.",
             "Each publisher is reported separately; coverage ratios from different sources are never merged.",
             "This report measures supplied source rows, not proof of complete market capture or data rights.",

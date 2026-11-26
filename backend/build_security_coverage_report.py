@@ -62,6 +62,8 @@ def _read_universe(path: str | Path) -> list[dict[str, Any]]:
         for right in rows[index + 1:]:
             if not right["target_in_scope"] or left["symbol"] != right["symbol"]:
                 continue
+            if left["valid_from"] is None or right["valid_from"] is None:
+                raise ValueError(f"cannot verify lifecycle overlap for in-scope symbol {left['symbol']}: missing valid_from")
             left_end, right_end = left["valid_to"] or date.max, right["valid_to"] or date.max
             if left["valid_from"] <= right_end and right["valid_from"] <= left_end:
                 raise ValueError(f"overlapping in-scope symbol {left['symbol']}")

@@ -14,14 +14,15 @@ def _timestamp(value):
 
 def freeze_signal(*,symbol,decision_time,horizon,action,methodology,evidence,details):
     cutoff=_timestamp(decision_time)
-    if not symbol or not methodology or horizon not in HORIZONS or action not in ACTIONS:
+    if (not isinstance(symbol, str) or not symbol.strip()
+            or not isinstance(methodology, str) or not methodology.strip()
+            or horizon not in HORIZONS or action not in ACTIONS):
         raise ValueError("invalid signal identity")
-    if action not in ACTIONS:
-        raise ValueError("unsupported research action")
-    if not isinstance(evidence,list) or not isinstance(details,dict):
+    if not isinstance(evidence, list) or not isinstance(details, dict):
         raise ValueError("invalid evidence or details")
     for item in evidence:
-        if not item.get("evidence_id") or _timestamp(item["available_at"])>cutoff:
+        if (not isinstance(item, dict) or not isinstance(item.get("evidence_id"), str)
+                or not item["evidence_id"].strip() or _timestamp(item.get("available_at")) > cutoff):
             raise ValueError("missing or future evidence")
     payload={"schema_version":1,"symbol":symbol,"decision_time":cutoff.isoformat(),
              "horizon":horizon,"action":action,"methodology":methodology,

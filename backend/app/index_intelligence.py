@@ -58,7 +58,7 @@ def index_intelligence(rows, *, sessions, benchmark, expected_indices, calendar_
 # Evidence-gated point-in-time index trend metrics. The legacy function above is
 # retained for existing research consumers; new Part 2 integrations should use
 # this function and pass only source-validated exchange-session records.
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from statistics import stdev
 import math
 

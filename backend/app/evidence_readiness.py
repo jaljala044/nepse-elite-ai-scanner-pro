@@ -133,6 +133,8 @@ def build_evidence_readiness(environ: Mapping[str, str] | None = None) -> dict[s
         status = "blocked"
     elif canonical_status == "ready_for_internal_read":
         status = "ready_for_internal_read"
+    elif canonical_status == "no_promoted_records":
+        status = "no_promoted_records"
     elif not missing:
         status = "no_promoted_records"
     else:

@@ -1,10 +1,18 @@
-name: Frontend build and smoke checks
+name: Frontend build and deployment image checks
 on:
-  push:
+  pull_request:
     paths:
-      - 'frontend/**'
-      - 'backend/app/main.py'
-      - '.github/workflows/frontend-build.yml'
+      - "frontend/**"
+      - "backend/Dockerfile"
+      - "backend/app/**"
+      - ".github/workflows/frontend-build.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/Dockerfile"
+      - "backend/app/**"
+      - ".github/workflows/frontend-build.yml"
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,18 +23,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Install pinned chart dependency
         working-directory: frontend
-        run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Syntax checks and isolated build
+        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Syntax checks and frontend build
         working-directory: frontend
         run: |
           npm run check
           npm run build
+          test -s public-build/index.html
+          test -s public-build/scanner.js
+          test -s public-build/styles.css
           test -s public-build/vendor/lightweight-charts.standalone.production.mjs
           test -s public-build/vendor/LICENSE
           test -s public-build/vendor/NOTICE
+      - name: Build deployable application image
+        run: docker build -f backend/Dockerfile -t nepse-research:ci .
       - uses: actions/upload-artifact@v4
         with:
           name: nepse-research-terminal

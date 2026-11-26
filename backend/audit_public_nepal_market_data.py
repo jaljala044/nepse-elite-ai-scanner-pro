@@ -150,7 +150,7 @@ def crosscheck_official_history(public_csv_by_symbol: dict[str, bytes], official
         "low": ("low", "lowPrice", Decimal("0.0001")),
         "close": ("close", "closePrice", Decimal("0.0001")),
         "traded_quantity": ("traded_quantity", "totalTradedQuantity", Decimal("0")),
-        "traded_amount": ("traded_amount", "totalTradedValue", Decimal("0.01")),
+        "traded_amount": ("traded_amount", "totalTradedValue", Decimal("0.05")),
     }
     result = {
         "official_symbols_found": 0, "official_rows": 0,

@@ -125,6 +125,21 @@ class OfficialBulkSymbolScopeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "bulk symbol/aggregate totals"):
                 audit_bulk_scope(*args)
 
+    def test_target_candidate_id_mismatch_remains_unknown(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = self._fixture(Path(tmp))
+            candidates = args[6]
+            rows = list(csv.DictReader(candidates.open()))
+            rows[0]["official_snapshot_id"] = "999"
+            with candidates.open("w", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+            report = audit_bulk_scope(*args)
+        counts = report["dates"]["2026-11-19"]["scope_class_counts"]
+        self.assertEqual(counts["UNKNOWN_SECURITY_ID_MISMATCH"], 1)
+        self.assertNotIn("OUT_OF_SCOPE_MUTUAL_FUND", counts)
+
     def test_snapshot_security_id_mismatch_remains_unknown(self):
         with tempfile.TemporaryDirectory() as tmp:
             args = self._fixture(Path(tmp))

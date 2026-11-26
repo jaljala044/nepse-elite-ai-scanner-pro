@@ -40,7 +40,7 @@ class BrokerMemoryStoreTests(unittest.TestCase):
                     "amount": "100", "quantity": "2",
                     "identity_status": "verified", "broker_entity_id": "BROKER-B",
                     "source_broker_code": "22", "source_id": "floorsheet-source",
-                    "source_payload_sha256": ("a" * 62) + day[-2:], "source_row_number": 3,
+                    "source_payload_sha256": ("a" * 62) + day[-2:], "source_row_number": 2,
                     "evidence_id": "evidence-sell-" + day,
                     "available_at": day + "T15:00:00+05:45",
                     "source_validation_status": "verified",

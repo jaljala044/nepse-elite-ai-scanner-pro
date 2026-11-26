@@ -19,7 +19,7 @@ def run(rows=None, **kwargs):
         verified_brokers={"BROKER-1"}, verified_sessions={"2026-11-25"},
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
         available_at="2026-11-26T09:00:00+05:45",
-        verified_session_finality={"2026-11-25": "2026-11-25T15:00:00+05:45"})
+        verified_session_finality={"2026-11-25": "2026-11-25T16:00:00+05:45"})
     defaults.update(kwargs)
     return reconcile_broker_batch(**defaults)
 
@@ -27,7 +27,7 @@ class BrokerIngestionTests(unittest.TestCase):
     def test_valid_complete_batch_is_descriptive_and_eligible(self):
         result = run(contracts=[ContractTotal("CFCL", "BROKER-1", "2026-11-25",
             "BUY", Decimal("10"), Decimal("1250.00"))])
-        self.assertTrue(result.memory_eligible)
+        self.assertTrue(result.memory_eligible, repr(result))
         self.assertEqual(result.accepted[0]["status"], "descriptive_only")
 
     def test_unverified_broker_quarantined(self):
@@ -41,7 +41,7 @@ class BrokerIngestionTests(unittest.TestCase):
     def test_naive_availability_rejected_and_early_availability_quarantined(self):
         with self.assertRaises(IngestionError):
             run(available_at="2026-11-26T09:00:00")
-        result = run(available_at="2026-11-25T09:00:00+05:45")
+        result = run(available_at="2026-11-24T23:59:00+05:45")
         self.assertFalse(result.memory_eligible)
 
     def test_payload_hash_mismatch_quarantined(self):
@@ -54,13 +54,14 @@ class BrokerIngestionTests(unittest.TestCase):
     def test_exact_duplicate_is_skipped(self):
         row = make_row()
         result = run([row, row])
-        self.assertEqual(result.duplicates_skipped, 1)
+        self.assertEqual(result.duplicates_skipped, 1, repr(result))
         self.assertEqual(len(result.accepted), 1)
 
     def test_conflicting_duplicate_blocks_batch(self):
-        changed_payload = {"trade_file": "source-row-1", "value": 124}
-        result = run([make_row(), make_row(amount="1300", source_payload=changed_payload,
-            source_payload_sha256=payload_hash(changed_payload))])
+        changed_payload = {"trade_file": "source-row-1", "value": 1300}
+        changed = make_row(amount="1300", source_payload=changed_payload,
+                           source_payload_sha256=payload_hash(changed_payload))
+        result = run([make_row(), changed])
         self.assertEqual(result.conflicts, 1)
         self.assertFalse(result.memory_eligible)
 

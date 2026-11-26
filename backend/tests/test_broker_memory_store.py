@@ -94,6 +94,44 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         latest = get_latest_broker_memory(symbol="NABIL")
         self.assertEqual(latest["features"]["security_features"]["NABIL"]["1W"]["observed_sessions"], 5)
 
+    def test_daily_channel_profile_uses_exact_prior_20_session_baseline(self):
+        sessions = [(date(2026, 1, 1) + timedelta(days=i)).isoformat() for i in range(21)]
+        rows = []
+        for day in sessions:
+            suffix = day[-2:]
+            rows.extend([
+                {
+                    "trade_date": day, "symbol": "NABIL", "side": "buy",
+                    "amount": "100", "quantity": "1", "identity_status": "unmapped",
+                    "broker_entity_id": None, "source_broker_code": "11",
+                    "source_id": "floorsheet-source", "source_payload_sha256": "a" * 62 + suffix,
+                    "source_row_number": 2, "evidence_id": "buy-" + day,
+                    "available_at": day + "T15:00:00+05:45",
+                    "source_validation_status": "verified",
+                    "session_calendar_status": "confirmed_open",
+                    "floorsheet_coverage_status": "verified_complete",
+                },
+                {
+                    "trade_date": day, "symbol": "NABIL", "side": "sell",
+                    "amount": "100", "quantity": "1", "identity_status": "unmapped",
+                    "broker_entity_id": None, "source_broker_code": "22",
+                    "source_id": "floorsheet-source", "source_payload_sha256": "b" * 62 + suffix,
+                    "source_row_number": 3, "evidence_id": "sell-" + day,
+                    "available_at": day + "T15:00:00+05:45",
+                    "source_validation_status": "verified",
+                    "session_calendar_status": "confirmed_open",
+                    "floorsheet_coverage_status": "verified_complete",
+                },
+            ])
+        persist_broker_memory(
+            rows, session_dates=sessions,
+            decision_time=sessions[-1] + "T16:00:00+05:45",
+        )
+        profile = get_latest_broker_memory(symbol="NABIL", broker_code="11")
+        daily = next(item for item in profile["execution_channel_matches"] if item["horizon"] == "1D")
+        self.assertEqual(daily["prior_20_session_count"], 20)
+        self.assertEqual(daily["latest_buy_vs_prior_20_avg_ratio"], 1.0)
+
     def test_broker_filter_returns_observed_execution_channel_profile(self):
         self.persist()
         profile = get_latest_broker_memory(broker_entity_id="BROKER-A")

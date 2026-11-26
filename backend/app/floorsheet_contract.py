@@ -12,6 +12,29 @@ import re
 from typing import Iterable
 
 
+_THOUSANDS_GROUPED_DECIMAL = re.compile(r"^[+-]?\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?$")
+
+
+def _parse_source_decimal(value, field: str) -> Decimal:
+    """Parse plain decimals or strictly grouped thousands separators.
+
+    Commas are removed only when every group after the first has exactly three
+    digits. Ambiguous or malformed grouping is rejected, never guessed.
+    """
+    text = str(value).strip()
+    if "," in text:
+        if not _THOUSANDS_GROUPED_DECIMAL.fullmatch(text):
+            raise ValueError(f"{field} has invalid thousands grouping: {text!r}")
+        text = text.replace(",", "")
+    try:
+        result = Decimal(text)
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be a valid decimal") from exc
+    if not result.is_finite():
+        raise ValueError(f"{field} must be finite")
+    return result
+
+
 @dataclass(frozen=True)
 class FloorsheetContract:
     source_id: str
@@ -68,9 +91,9 @@ class FloorsheetContract:
         if any(not isinstance(row.get(field), str) or not row[field].strip() for field in text_fields):
             raise ValueError("trade date, contract, symbol and broker codes must be nonblank strings")
         try:
-            quantity = Decimal(str(row["quantity"]))
-            rate = Decimal(str(row["rate"]))
-            amount = Decimal(str(row["amount"]))
+            quantity = _parse_source_decimal(row["quantity"], "quantity")
+            rate = _parse_source_decimal(row["rate"], "rate")
+            amount = _parse_source_decimal(row["amount"], "amount")
         except (KeyError, InvalidOperation, TypeError, ValueError) as exc:
             raise ValueError("quantity, rate and amount must be valid decimals") from exc
         return cls(source_id, payload_sha256.lower(), row_number, row["trade_date"],

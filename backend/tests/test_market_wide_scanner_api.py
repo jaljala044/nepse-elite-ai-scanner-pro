@@ -65,7 +65,7 @@ class MarketWideScannerAPITests(unittest.TestCase):
                 response = client.post("/v1/scan/market-wide", json={})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(seen, [date(2026, 1, 1)])
-        self.assertEqual(response.json()["as_of"], "2026-11-27")
+        self.assertEqual(response.json()["results"][0]["requested_as_of"], response.json()["as_of"])
 
     def test_unreviewed_rows_cannot_emit_signals_or_metrics(self):
         rows = [{"date": date(2026, 1, 1), "open": 10, "high": 12,

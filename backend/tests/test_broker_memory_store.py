@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.broker_memory_store import (
     broker_memory_status,
+    get_broker_memory_lineage,
     get_latest_broker_memory,
     persist_broker_memory,
 )
@@ -168,6 +169,17 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(profile["observation_count"], 42)
         self.assertEqual(len(profile["input_lineage_sha256"]), 64)
         self.assertEqual(profile["selected_early_patterns"][0]["status"], "EARLY_ENTRY_CANDIDATE")
+
+    def test_source_lineage_drilldown_is_paginated_and_filterable_by_code(self):
+        self.persist()
+        page = get_broker_memory_lineage(symbol="NABIL", broker_code="11", limit=3)
+        self.assertEqual(page["total_observations"], 5)
+        self.assertEqual(len(page["observations"]), 3)
+        self.assertEqual(page["next_offset"], 3)
+        self.assertTrue(all(item["side"] == "buy" for item in page["observations"]))
+        next_page = get_broker_memory_lineage(symbol="NABIL", broker_code="11", limit=3, offset=3)
+        self.assertEqual(len(next_page["observations"]), 2)
+        self.assertIsNone(next_page["next_offset"])
 
     def test_broker_filter_returns_observed_execution_channel_profile(self):
         self.persist()

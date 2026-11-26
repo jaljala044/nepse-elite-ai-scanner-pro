@@ -283,5 +283,73 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             self.assertEqual(result["overlap_mismatch_rows"], 1)
             self.assertEqual(result["gate"], "FAIL")
 
+
+    def test_srijankarki_archive_matches_official_fields_and_validates_open(self):
+        official = [{
+            "businessDate": "2024-01-02", "symbol": "TEST",
+            "highPrice": 11, "lowPrice": 9, "closePrice": 10.5,
+            "totalTradedQuantity": 100, "totalTradedValue": 1050,
+        }]
+        daily = {
+            "2024-01-02": (
+                b"date,symbol,open,high,low,close,volume,turnover\\n"
+                b"2024-01-02,TEST,10,11,9,10.5,100,1050\\n"
+            )
+        }
+        result = compare_srijankarki_daily_csvs(official, daily)
+        self.assertEqual(result["official_rows_matched_by_date"], 1)
+        self.assertEqual(result["fully_matching_rows"], 1)
+        self.assertEqual(result["field_comparisons"], 5)
+        self.assertEqual(result["field_mismatches"], 0)
+        self.assertEqual(result["open_values_observed"], 1)
+        self.assertEqual(result["gate"], "RECONCILED_REVIEW_ONLY")
+
+    def test_srijankarki_archive_counts_price_mismatches(self):
+        official = [{
+            "businessDate": "2024-01-02", "symbol": "TEST",
+            "highPrice": 11, "lowPrice": 9, "closePrice": 10.5,
+            "totalTradedQuantity": 100, "totalTradedValue": 1050,
+        }]
+        daily = {
+            "2024-01-02": (
+                b"date,symbol,open,high,low,close,volume,turnover\\n"
+                b"2024-01-02,TEST,10,11,9,10.5,101,1050\\n"
+            )
+        }
+        result = compare_srijankarki_daily_csvs(official, daily)
+        self.assertEqual(result["field_mismatches"], 1)
+        self.assertEqual(result["mismatches_by_field"]["volume"], 1)
+        self.assertEqual(result["gate"], "FAIL")
+
+    def test_srijankarki_archive_rejects_invalid_open_bounds(self):
+        official = [{
+            "businessDate": "2024-01-02", "symbol": "TEST",
+            "highPrice": 11, "lowPrice": 9, "closePrice": 10.5,
+            "totalTradedQuantity": 100, "totalTradedValue": 1050,
+        }]
+        daily = {
+            "2024-01-02": (
+                b"date,symbol,open,high,low,close,volume,turnover\\n"
+                b"2024-01-02,TEST,12,11,9,10.5,100,1050\\n"
+            )
+        }
+        result = compare_srijankarki_daily_csvs(official, daily)
+        self.assertEqual(result["invalid_ohlc_rows"], 1)
+        self.assertEqual(result["gate"], "FAIL")
+
+    def test_srijankarki_archive_missing_zero_activity_row_is_not_active_gap(self):
+        official = [{
+            "businessDate": "2024-01-02", "symbol": "TEST",
+            "highPrice": 0, "lowPrice": 0, "closePrice": 0,
+            "totalTradedQuantity": 0, "totalTradedValue": 0,
+        }]
+        daily = {
+            "2024-01-02": b"date,symbol,open,high,low,close,volume,turnover\\n"
+        }
+        result = compare_srijankarki_daily_csvs(official, daily)
+        self.assertEqual(result["missing_public_zero_activity_rows"], 1)
+        self.assertEqual(result["missing_public_active_rows"], 0)
+        self.assertEqual(result["gate"], "RECONCILED_REVIEW_ONLY")
+
 if __name__ == "__main__":
     unittest.main()

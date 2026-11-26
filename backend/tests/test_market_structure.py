@@ -130,7 +130,7 @@ class MarketStructureAPITests(unittest.TestCase):
                 self.assertEqual(swing["date"], "2025-01-05")
                 self.assertEqual(swing["available_at"], "2025-01-06T14:00:00+00:00")
                 order_block = next(e for e in events if e["type"] == "order_block")
-                self.assertIn("fixture-3", {item["evidence_id"] for item in order_block["evidence"]})
+                self.assertIn("fixture-18", {item["evidence_id"] for item in order_block["evidence"]})
 
 
 class LiquidityRangeTests(unittest.TestCase):

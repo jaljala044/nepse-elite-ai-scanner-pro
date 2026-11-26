@@ -56,7 +56,7 @@ class WyckoffFeatureTests(unittest.TestCase):
         rows = flat_history()
         rows.append({
             "session_date": "2026-02-15", "open": 101.0, "high": 103.0,
-            "low": 100.5, "close": 102.0, "volume": 2000,
+            "low": 100.5, "close": 102.8, "volume": 2000,
         })
         rows.append({
             "session_date": "2026-02-16", "open": 102.0, "high": 102.5,

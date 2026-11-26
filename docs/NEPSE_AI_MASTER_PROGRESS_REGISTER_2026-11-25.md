@@ -1335,3 +1335,39 @@ Cumulative latest 100 shared dates: 5,328,566 shared exact contract rows, 53,014
 - 91/91 observed buyer/seller broker codes mapped to `brokers.json.memberCode`; all matched directory entries were marked active in that snapshot. This is a current directory candidate, not historical legal-identity proof.
 - Report: [Priority 93 Yonepse reference mapping audit](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/docs/PRIORITY_93_YONEPSE_REFERENCE_MAPPING_AUDIT_2026-11-25.md), commit `7275800d84e26b09ae978a61d372e53f33941d3d`.
 - Official dated instrument registry, four unresolved stock IDs, and effective-dated broker identity remain open. No canonical promotion.
+
+
+## Work-session update — 2026-11-26 (connected GitHub review)
+
+### Verified corrections and actions
+
+1. **SocrateAI floorsheet audit report — existing artifact verified, prior empty-file claim corrected.**
+   - Historical-data-vault workflow run: `45419878883`, completed successfully.
+   - SocrateAI audit step: 120 expected / 120 acquired / 120 audited dates; 6,407,328 rows; zero invalid days; zero file errors; status `complete_row_validated_window`.
+   - The committed `data/reports/socrateai-floorsheet-window-audit.json` blob is 1,126,238 bytes. A content-fetch response was empty because the file exceeds the connector's retrieval limit; the Git tree confirms the non-zero blob size.
+   - Corrected automation issue #2 with this evidence. Its first acceptance criterion (non-empty machine-generated audit report) is satisfied. Calendar, missing-date, index-anomaly, provenance-independence and rights gates remain open.
+
+2. **Daily floorsheet collector — dependency root cause isolated; repair proposed, not yet production-verified.**
+   - Latest scheduled run `45607824763` failed before network access with `ModuleNotFoundError: No module named 'nepse'`.
+   - Workflow installed PyPI `nepse-scraper`, which is not the upstream package that exports `from nepse import AsyncNepse`; it also used Python 3.10 although the upstream NepseUnofficialApi project requires Python >=3.11.
+   - Open PR: https://github.com/jaljala044/nepse-automation/pull/3. It switches to Python 3.11, pins the upstream client to commit `180a550c60f1959983b854659e650a4c189a3c0f`, and adds an import smoke-test workflow.
+   - The PR has not yet been executed in CI or merged. No live NEPSE fetch or Google Sheets write is claimed. TLS verification remains enabled. Staged worksheet replacement, raw-response hashing and session-date verification remain required before production approval.
+
+3. **Active-equity universe — third discrepancy identified and documented.**
+   - The 2026-11-26 company-list CSV has 281 rows but 278 unique active-equity symbols: USLB is repeated once and SYPNL twice.
+   - The 278 unique symbols exactly match the 278-symbol equity candidate list.
+   - The separate 281-symbol provisional OHLCV coverage set differs by NESDO, ULBSL and YMHL.
+   - The 2026-11-25 security snapshot records status A and IDs NESDO/8041, ULBSL/8063 and YMHL/9342. That snapshot does not independently prove their instrument type or lifecycle dates.
+   - Documentation correction merged in main via PR #16, merge commit `ca33e16ce84bcb393ba760d7f46eff1fbcaa6be7`. These three remain candidates, not canonical universe promotions.
+
+### Data-safety statement
+
+No raw OHLCV or floorsheet records were changed in this work session. The owner-finalized 2025-07-28 records for BGWT, MEHL, RAWA, RHGCL and ULHC remain authoritative and unchanged. No canonical data promotion or P2 model-training approval is made.
+
+### Next execution priorities
+
+1. Verify instrument type and effective lifecycle evidence for NESDO, ULBSL and YMHL; obtain a complete row-level official instrument register rather than relying on the duplicated rendered table.
+2. Run and inspect the dependency smoke test for automation PR #3, then address the collector's staged-write/raw-capture/session-date safeguards before any production run.
+3. Continue the 616-session calendar recovery and primary NEPSE notice capture.
+4. Continue the OHLCV exception and corporate-action review without overwriting raw values or owner-finalized records.
+5. Continue floorsheet source lineage, missing-date and index-anomaly adjudication; keep canonical promotion blocked until all gates pass.

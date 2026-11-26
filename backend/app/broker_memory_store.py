@@ -443,6 +443,7 @@ def broker_memory_status() -> dict:
             "latest_as_of_trade_date": str(latest) if latest else None,
             "horizons": list(HORIZONS),
             "live_ingestion_connected": False,
+            "early_pattern_engine": "uncalibrated_research_rule_not_yet_wired_to_live_context",
             "production_recommendations_enabled": False,
         }
     finally:

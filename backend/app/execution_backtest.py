@@ -78,7 +78,11 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
                 "path_status": outcome.get("status"), "path_reason": outcome.get("reason")}
     by_day = {str(row["date"]): row for row in rows}
     entry_day = outcome.get("entry_reference_date")
-    exit_day = outcome.get("exit_reference_date") or str(evaluation_date)
+    decision_day = date.fromisoformat(str(signal.get("details", {}).get("decision_date")))
+    future_window = [date.fromisoformat(str(day)) for day in verified_sessions
+                     if decision_day < date.fromisoformat(str(day)) <= date.fromisoformat(str(evaluation_date))]
+    future_window = sorted(future_window)[:outcome.get("sessions_observed", 0)]
+    exit_day = outcome.get("exit_reference_date") or (future_window[-1].isoformat() if future_window else None)
     if entry_day not in by_day or exit_day not in by_day:
         return {**base, "reason": "entry_or_exit_bar_missing"}
     entry_bar, exit_bar = by_day[entry_day], by_day[exit_day]

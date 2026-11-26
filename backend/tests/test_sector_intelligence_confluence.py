@@ -4,7 +4,7 @@ from app.sector_intelligence_confluence import build_sector_intelligence_conflue
 
 
 CUTOFF = "2026-11-26T14:30:00+05:45"
-CURRENT_DATES = ["2026-11-19", "2026-11-22", "2026-11-23", "2026-11-26", "2026-11-26"]
+CURRENT_DATES = ["2026-11-22", "2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26"]
 
 
 def market_fixture():

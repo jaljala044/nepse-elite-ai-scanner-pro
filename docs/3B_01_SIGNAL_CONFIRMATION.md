@@ -596,8 +596,9 @@ upstream data rights or authorize canonical promotion.
 
 The audit downloaded all 29 SocrateAI unadjusted daily CSVs for the pinned
 official review dates and compared the 281 captured equity candidates. The
-SocrateAI source commit and full per-row exceptions are retained in audit
-artifact run 45894916469:
+SocrateAI source snapshot was pinned to commit
+`70324524df83eaa7c2964441ad4026d6ab00cc7e`; its full per-row exceptions are
+retained in audit artifact run 45894916469:
 https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45894916469
 
 | Measure | Result |

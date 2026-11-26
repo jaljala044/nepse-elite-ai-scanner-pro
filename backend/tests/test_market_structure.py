@@ -123,3 +123,33 @@ class MarketStructureAPITests(unittest.TestCase):
                 self.assertEqual(swing["available_at"], "2025-01-06T14:00:00+00:00")
                 order_block = next(e for e in events if e["type"] == "order_block")
                 self.assertIn("fixture-3", {item["evidence_id"] for item in order_block["evidence"]})
+
+
+class LiquidityRangeTests(unittest.TestCase):
+    def test_equal_high_confirmation_is_causal(self):
+        rows = bars([(10,8,9),(12,9,11),(10,8,9),(12.04,9,11),(10,8.5,9)])
+        events = detect_structure(rows,1)["events"]
+        equal = next(e for e in events if e["type"] == "equal_highs")
+        self.assertEqual(equal["date"], "2025-01-05")
+        self.assertEqual(equal["liquidity_side"], "buy_side")
+        self.assertEqual((equal["lower"],equal["upper"]),(12,12.04))
+        self.assertFalse(any(e["type"]=="equal_highs" for e in detect_structure(rows[:-1],1)["events"]))
+        self.assertFalse(any(e["type"]=="equal_highs" for e in detect_structure(rows,1,0)["events"]))
+
+    def test_equal_lows_and_discount(self):
+        rows = bars([(11,9,10),(10,8,9),(12,9,11),(10,8.02,9),(11,9,9.5)])
+        result = detect_structure(rows,1)
+        equal = next(e for e in result["events"] if e["type"]=="equal_lows")
+        self.assertEqual(equal["liquidity_side"],"sell_side")
+        self.assertEqual(result["dealing_range"]["location"],"discount")
+        self.assertAlmostEqual(result["dealing_range"]["equilibrium"],10.01)
+
+    def test_broken_range_is_not_reused(self):
+        rows = bars([(10,8,9),(12,9,11),(10,7,9),(11,8,10),(14,10,13)])
+        self.assertIsNotNone(detect_structure(rows[:-1],1)["dealing_range"])
+        self.assertIsNone(detect_structure(rows,1)["dealing_range"])
+
+    def test_invalid_tolerance(self):
+        for value in (-0.1,0.1,float("nan")):
+            with self.assertRaises(ValueError):
+                detect_structure([],1,value)

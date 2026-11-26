@@ -54,3 +54,17 @@ Additional source URLs:
 - https://eng.merolagani.com/AnnouncementDetail.aspx?id=61940
 - https://www.sharesansar.com/index.php/newsdetail/pokhara-finance-and-samriddhi-finance-to-begin-unified-operations-from-ashadh-26-after-merger-approval-2026-06-26
 - https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09
+
+
+## Follow-up evidence expansion — explicit trading-suspension dates
+
+Five predecessor records now have explicitly reported trading-suspension effective dates in the machine-readable identity evidence file:
+
+| Predecessor symbol(s) | Suspension effective date | Evidence |
+|---|---:|---|
+| BPW | 2024-03-06 | ShareSansar notice: https://www.sharesansar.com/newsdetail/for-the-purpose-of-joint-integrated-transaction-share-trading-of-samudayik-laghubitta-and-bpw-laghubitta-to-be-halted-from-falgun-24-2024-03-06 |
+| MMFDB, NLBBL | 2024-03-13 | ShareSansar notice: https://www.sharesansar.com/newsdetail/nerude-laghubitta-and-mirmire-laghubitta-trading-to-be-halted-from-falgun-30-2024-03-12 |
+| SAMAJ | 2025-10-19 | NEPSE suspension effective Kartik 2, 2082: https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-gblbs-and-samaj-shares-ahead-of-merger-implementation-2025-10-17 |
+| SFCL | 2026-07-10 | NEPSE suspension effective Ashar 26, 2083: https://www.sharesansar.com/index.php/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09 |
+
+**Interpretation guardrail:** a suspension effective date is not necessarily the last date with an actual trade. These dates must not be used as last-trading dates, successor first-trading dates, or stable-ID boundaries without separate trade-history and listing evidence. JALPA/KLBSL and MKLB/SAMATA remain without separately verified suspension-effective dates. All affected `stable_id` and `effective_date_verified` values remain unchanged.

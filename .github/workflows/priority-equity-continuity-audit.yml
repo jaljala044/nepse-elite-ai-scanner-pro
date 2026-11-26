@@ -15,6 +15,7 @@ on:
       - 'backend/classify_extended_history_gaps.py'
       - 'backend/inventory_corporate_action_sources.py'
       - 'backend/build_corporate_action_review_queue.py'
+      - 'backend/reconcile_extended_recovery_candidates.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -84,6 +85,9 @@ jobs:
       - name: Build corporate action event review queue
         run: |
           python backend/build_corporate_action_review_queue.py --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --inventory /tmp/audit/corporate_action_inventory.csv --output /tmp/audit/corporate_action_review_queue.csv
+      - name: Reconcile extended recovery candidates
+        run: |
+          python backend/reconcile_extended_recovery_candidates.py --gaps /tmp/audit/extended_secondary_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/extended_recovery_reconciliation.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

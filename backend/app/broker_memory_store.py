@@ -362,6 +362,11 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                     as_of_session=body_as_of_session,
                     minimum_daily_flow_multiple=minimum_daily_flow_multiple,
                 ))
+        observation_ids = sorted(
+            hashlib.sha256(_canonical(row).encode()).hexdigest()
+            for row in historical_rows
+        )
+        lineage_digest = hashlib.sha256("|".join(observation_ids).encode()).hexdigest()
         body = {
             "schema_version": 1,
             "feature_version": "broker-footprint-v1",
@@ -371,26 +376,7 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             "observation_count": len(historical_rows),
             "source_count": len({row["source_id"] for row in historical_rows}),
             "source_payload_hashes": sorted({row["source_payload_sha256"] for row in historical_rows}),
-            "input_observation_ids": sorted(
-                hashlib.sha256(_canonical(row).encode()).hexdigest()
-                for row in historical_rows
-            ),
-            "input_lineage": sorted(
-                [{
-                    "trade_date": row["trade_date"],
-                    "symbol": row["symbol"],
-                    "side": row["side"],
-                    "source_id": row["source_id"],
-                    "source_payload_sha256": row["source_payload_sha256"],
-                    "source_row_number": row["source_row_number"],
-                    "evidence_id": row["evidence_id"],
-                    "source_rights_status": row["source_rights_status"],
-                    "rights_evidence_id": row["rights_evidence_id"],
-                    "available_at": row["available_at"],
-                } for row in historical_rows],
-                key=lambda item: (item["trade_date"], item["symbol"], item["source_id"],
-                                  item["source_payload_sha256"], item["source_row_number"], item["side"])
-            ),
+            "input_lineage_sha256": lineage_digest,
             "features": features,
             "execution_channel_features": channel_features,
             "early_patterns": early_patterns,

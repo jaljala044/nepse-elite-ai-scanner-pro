@@ -5,9 +5,12 @@ from app.horizon_outcomes import evaluate_outcomes, HORIZONS
 def fixture():
     days=[date(2025,1,1)+timedelta(days=i) for i in range(25)]
     rows=[dict(date=d,open=100+i,high=102+i,low=99+i,close=100+i,volume=100) for i,d in enumerate(days)]
-    reviewed={("TEST",str(r["date"])):dict(r,date=str(r["date"]),instrument_type="equity",
-        security_status="active",session_status="verified_open",source_id="sharehub",
-        evidence_id="synthetic",available_at=f'{r["date"]}T11:00:00Z') for r in rows}
+    reviewed={("TEST",str(r["date"])):dict(r,symbol="TEST",date=str(r["date"]),security_id="fixture-security",
+        instrument_type="equity",security_status="active",lifecycle_evidence_id="fixture-lifecycle",
+        session_status="verified_open",session_evidence_id="fixture-session",source_id="sharehub",
+        evidence_id="synthetic",source_payload_sha256="a"*64,price_basis_reviewed=True,
+        price_basis_status="verified_unadjusted_no_actions",corporate_action_status="clear",
+        corporate_action_evidence_id="fixture-action-review",available_at=f'{r["date"]}T11:00:00Z') for r in rows}
     return days,rows,reviewed
 
 class HorizonTests(unittest.TestCase):

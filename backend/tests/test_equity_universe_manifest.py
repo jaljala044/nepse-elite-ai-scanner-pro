@@ -2,7 +2,9 @@ import csv
 import unittest
 from pathlib import Path
 
-from app.equity_universe_manifest import (\n    load_equity_universe_manifest, validate_equity_manifest_rows,\n)
+from app.equity_universe_manifest import (
+    load_equity_universe_manifest, validate_equity_manifest_rows,
+)
 
 
 class EquityUniverseManifestTests(unittest.TestCase):

@@ -118,6 +118,8 @@ def audit_historical_identity_readiness(
         parsed = urlparse(row["source_url"])
         if parsed.scheme not in {"https", "http"} or not parsed.netloc:
             raise ValueError(f"{row['symbol']}: invalid event source URL")
+        if row["evidence_tier"] == "primary_nepse_notice" and parsed.hostname != "www.nepalstock.com" and parsed.hostname != "nepalstock.com.np":
+            raise ValueError(f"{row['symbol']}: primary event source is not an official NEPSE host")
 
     benh = lifecycle.get("BENH")
     if benh is None:
@@ -133,7 +135,12 @@ def audit_historical_identity_readiness(
         raise ValueError("BENH raw response SHA-256 differs from pinned manifest")
     payload = json.loads(benh_file.read_text(encoding="utf-8"))
     history_rows = payload.get("content") if isinstance(payload, dict) else payload
-    by_day = {str(row.get("businessDate", ""))[:10]: row for row in history_rows}
+    by_day = {}
+    for row in history_rows:
+        day = str(row.get("businessDate", ""))[:10]
+        if not day or day in by_day:
+            raise ValueError("BENH official history response has blank/duplicate dates")
+        by_day[day] = row
     zero, first_trade = by_day.get("2026-10-14"), by_day.get("2026-10-15")
     if zero is None or first_trade is None:
         raise ValueError("BENH 14/15-Oct official history rows missing")
@@ -141,6 +148,15 @@ def audit_historical_identity_readiness(
         raise ValueError("BENH 14-Oct must remain explicit zero activity")
     if (str(first_trade.get("totalTrades")), str(first_trade.get("totalTradedQuantity")), str(first_trade.get("totalTradedValue"))) != ("9", "90", "26634"):
         raise ValueError("BENH 15-Oct first positive row changed")
+    positive_dates = sorted(
+        str(row.get("businessDate", ""))[:10]
+        for row in history_rows
+        if float(row.get("totalTrades", 0) or 0) > 0
+        or float(row.get("totalTradedQuantity", 0) or 0) > 0
+        or float(row.get("totalTradedValue", 0) or 0) > 0
+    )
+    if not positive_dates or positive_dates[0] != "2026-10-15":
+        raise ValueError("BENH first positive official history date changed")
     if benh["valid_from"] != "2026-10-15" or benh["valid_from_evidence_status"] != "verified_secondary_first_trade_archive_match":
         raise ValueError("BENH lifecycle first-trade context changed; review before classification")
 
@@ -189,6 +205,7 @@ def audit_historical_identity_readiness(
             "raw_file": "symbols/BENH/response-01.bin",
             "response_sha256": benh_hash,
             "response_row_count": len(history_rows),
+            "first_positive_activity_date": positive_dates[0],
             "2026-10-14": {"trades": "0", "shares": "0", "turnover": "0", "status": "EXPLICIT_ZERO_ACTIVITY"},
             "2026-10-15": {"trades": "9", "shares": "90", "turnover": "26634", "status": "FIRST_POSITIVE_ACTIVITY_ROW"},
             "lifecycle_valid_from": benh["valid_from"],

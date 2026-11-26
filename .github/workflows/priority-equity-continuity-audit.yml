@@ -6,6 +6,7 @@ on:
       - 'backend/classify_historical_continuity_gaps.py'
       - 'backend/crosscheck_unresolved_equity_gaps.py'
       - 'backend/crosscheck_sharesansar_no_trade.py'
+      - 'backend/build_historical_research_overlay.py'
       - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
       - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
       - '.github/workflows/priority-equity-continuity-audit.yml'
@@ -42,6 +43,9 @@ jobs:
         run: |
           git clone --filter=blob:none --no-checkout https://github.com/srijankarki07/nepse-data.git /tmp/sharesansar
           python backend/crosscheck_sharesansar_no_trade.py --gaps /tmp/audit/unresolved_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/sharesansar_crosscheck.csv
+      - name: Build separate historical research overlay
+        run: |
+          python backend/build_historical_research_overlay.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --candidates data/reference/july24_historical_recovery_candidates_2026-11-26.csv --secondary /tmp/sharesansar --gaps /tmp/audit/classified_gaps.csv --output /tmp/audit/research_overlay.csv --coverage /tmp/audit/stock_coverage.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

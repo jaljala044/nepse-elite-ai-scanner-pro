@@ -100,11 +100,11 @@ class CanonicalScannerBridgeTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def load(self):
+    def load(self, decision_time=None):
         return load_canonical_evidence_records(
             database_path=self.db, ledger_path=self.ledger,
             registry=self.registry, trusted_registry_sha256=self.registry["registry_sha256"],
-            reviewer_keys=self.reviewer_keys, decision_time=self.decision_time,
+            reviewer_keys=self.reviewer_keys, decision_time=decision_time or self.decision_time,
         )
 
     def test_promoted_record_reaches_feature_pipeline(self):
@@ -154,7 +154,29 @@ class CanonicalScannerBridgeTests(unittest.TestCase):
         )
         self.assertTrue(revoked["accepted"], revoked["reasons"])
         append_promotion_event(self.ledger, revoked)
-        self.assertEqual(self.load()["records"], [])
+        self.assertEqual(self.load("2026-11-26T00:05:00Z")["records"], [])
+        self.assertEqual(len(self.load("2026-11-26T00:02:00Z")["records"]), 1)
+
+
+    def test_future_signed_revocation_does_not_change_historical_snapshot(self):
+        future_validation = {
+            "validation_id": "validation-revoke-future", "reviewer": "reviewer-1",
+            "evidence_refs": {"revocation_basis": ["future-evidence"]},
+            "validated_at": "2026-11-26T00:05:00Z",
+        }
+        future_validation["signature"] = hmac.new(
+            self.reviewer_keys["reviewer-1"], _validation_signature_payload(future_validation),
+            hashlib.sha256,
+        ).hexdigest()
+        future = build_promotion_event(
+            decision_id="decision-revoke-future", action="revoke", record=self.record,
+            registry=self.registry, raw_payload_sha256=self.digest,
+            validation=future_validation, decision_time="2026-11-26T00:06:00Z",
+            trusted_registry_sha256=self.registry["registry_sha256"],
+            reviewer_keys=self.reviewer_keys,
+        )
+        append_promotion_event(self.ledger, future)
+        self.assertEqual(len(self.load("2026-11-26T00:02:00Z")["records"]), 1)
 
     def test_unsigned_revocation_cannot_remove_active_promotion(self):
         invalid = build_promotion_event(

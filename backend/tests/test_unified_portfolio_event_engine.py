@@ -98,3 +98,23 @@ class UnifiedPortfolioEventTests(unittest.TestCase):
         self.assertEqual(result["sized_trades"][0]["quantity"], 2)
         self.assertEqual(result["equity_curve"][2]["holdings"]["ABC"], 2)
         self.assertEqual(result["ending_equity"], 998)
+
+
+    def test_linked_exit_uses_sized_quantity(self):
+        buy = dict(trade("BUY", 0, 2), auto_size=True, stop=90,
+                   liquidity_quantity_cap=3, fees=2, signal_id="synthetic-signal")
+        sell = dict(trade("SELL", 2, 4), exit_entry_id="BUY",
+                    signal_id="synthetic-signal")
+        result = run_unified_portfolio_event_ledger(
+            initial_cash=1000, initial_holdings={}, trades=[buy, sell],
+            corporate_actions=[],
+            price_rows_by_symbol={"ABC": [{"date": d, "close": 100} for d in DAYS]},
+            portfolio_sessions=DAYS, as_of_date=DAYS[-1],
+            evidence_cutoff="2025-01-10T00:00:00+00:00",
+            sector_by_symbol={"ABC": "finance"},
+            risk_limits=dict(max_position_pct=0.5, max_sector_pct=0.5,
+                             risk_per_trade_pct=0.025, max_positions=2,
+                             max_drawdown_pct=0.15))
+        self.assertEqual([t["quantity"] for t in result["executed_trade_scenarios"]], [2, 2])
+        self.assertEqual(result["equity_curve"][-1]["holdings"], {})
+        self.assertEqual(result["ending_equity"], 998)

@@ -1821,3 +1821,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Full backend suite: **754 tests passed** on commit `c9c1adc5f771ec5931da2f85c9eec6a0bebfea6f` (GitHub Actions run [#1284](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45836505027)).
 - Backend contract tests [#732](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45836504981), historical data integrity [#150](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45836505013), and integrated evidence audit [#262](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45836504966) also succeeded on the same commit.
 - This closes the generic UNKNOWN policy regression-validation task only. Canonical data, full market calendar, floorsheet provenance/coverage, training, and production promotion gates remain open.
+
+
+### Five-symbol floorsheet spot reconciliation — 2026-11-26
+
+- Compared the available 2026-11-19 and 2026-11-20 floorsheet CSV samples with NESDO, SYPNL, ULBSL, USLB and YMHL.
+- Positive contract observations in the available 500-record files: NESDO 1 and SYPNL 38 on 2026-11-19; SYPNL 4 and YMHL 2 on 2026-11-20. These support TRADED for those symbol/date pairs within the supplied records.
+- Both files contain exactly 500 records; completeness/full-day coverage is not established. Missing symbols in these samples (including ULBSL and USLB) remain UNKNOWN, never NO_TRADE.
+- Updated data audit flags so rows on calendar-closed dates and adjacent identical OHLCV rows explicitly carry `resolution_status=UNKNOWN` and a reason. No raw OHLCV rows were altered.
+- Data repo commits: [audit flag semantics ee3ef59](https://github.com/jaljala044/nepse-smc-data/commit/ee3ef5944e1b89cc06918f5d005c8d5cdcd79940); [floorsheet reconciliation report 48aec5c](https://github.com/jaljala044/nepse-smc-data/commit/48aec5c6d7b8dbe5e48962c603f61b6176005667).
+- Remaining: complete day-wide floorsheets, source provenance, exchange-confirmed calendar and per-security contract-to-OHLCV reconciliation. Canonical promotion and training remain blocked.

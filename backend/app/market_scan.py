@@ -56,6 +56,7 @@ def run_market_scan(
                 "ranking_eligible": False,
                 "buy_list_eligible": False,
                 "as_of": as_of.isoformat() if as_of else None,
+                "requested_as_of": as_of.isoformat() if as_of else None,
                 "observations": 0,
                 "latest_available_observation": None,
                 "latest_observation_calendar_age_days": None,

@@ -1,6 +1,6 @@
 import unittest
 from decimal import Decimal
-from app.footprint_features import market_breadth, security_footprint, broker_participation_summary
+from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 
 
 class FootprintFeatureTests(unittest.TestCase):
@@ -85,9 +85,131 @@ class FootprintFeatureTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "finite and non-negative"):
             broker_participation_summary(rows)
 
+
+    def test_broker_footprint_ranks_verified_buyers_and_sellers_by_window(self):
+        rows = []
+        for day in range(1, 6):
+            trade_date = f"2026-11-{day:02d}"
+            for contract, buyer, seller, amount in (
+                ("A", "BROKER-A", "BROKER-B", "100"),
+                ("B", "BROKER-B", "BROKER-A", "20"),
+            ):
+                rows.extend([
+                    {"trade_date": trade_date, "symbol": "NABIL", "side": "buy",
+                     "amount": amount, "quantity": "1", "identity_status": "verified",
+                     "broker_entity_id": buyer, "source_broker_code": buyer},
+                    {"trade_date": trade_date, "symbol": "NABIL", "side": "sell",
+                     "amount": amount, "quantity": "1", "identity_status": "verified",
+                     "broker_entity_id": seller, "source_broker_code": seller},
+                ])
+        result = broker_footprint_features(rows)
+        daily = result["security_features"]["NABIL"]["1D"]
+        self.assertEqual(daily["status"], "observed")
+        self.assertEqual(daily["top_net_buyers"][0]["broker_entity_id"], "BROKER-A")
+        self.assertEqual(daily["top_net_sellers"][0]["broker_entity_id"], "BROKER-B")
+        self.assertEqual(daily["verified_amount_coverage_pct"], 100)
+        self.assertEqual(result["market_windows"]["1W"]["observed_sessions"], 5)
+
+    def test_unresolved_broker_amount_remains_in_coverage_and_blocks_score(self):
+        rows = [
+            {"trade_date": "2026-11-24", "symbol": "NABIL", "side": "buy",
+             "amount": "100", "quantity": "1", "identity_status": "verified",
+             "broker_entity_id": "BROKER-A", "source_broker_code": "11"},
+            {"trade_date": "2026-11-24", "symbol": "NABIL", "side": "sell",
+             "amount": "900", "quantity": "9", "identity_status": "unmapped",
+             "broker_entity_id": None, "source_broker_code": "99"},
+        ]
+        result = broker_footprint_features(rows)
+        daily = result["security_features"]["NABIL"]["1D"]
+        self.assertEqual(daily["verified_amount_coverage_pct"], 10)
+        self.assertIsNone(daily["score"])
+        self.assertEqual(daily["unresolved_party_observation_count"], 1)
+        self.assertEqual(daily["status"], "insufficient_identity_coverage_or_history")
+
+
+    def test_broker_persistence_requires_complete_1w_1m_3m_windows(self):
+        from datetime import date, timedelta
+        rows = []
+        start = date(2026, 1, 1)
+        for i in range(63):
+            trade_date = (start + timedelta(days=i)).isoformat()
+            for buyer, seller, amount in (("B1", "B2", "100"), ("B2", "B1", "20")):
+                rows.extend([
+                    {"trade_date": trade_date, "symbol": "NABIL", "side": "buy",
+                     "amount": amount, "quantity": "1", "identity_status": "verified",
+                     "broker_entity_id": buyer, "source_broker_code": buyer},
+                    {"trade_date": trade_date, "symbol": "NABIL", "side": "sell",
+                     "amount": amount, "quantity": "1", "identity_status": "verified",
+                     "broker_entity_id": seller, "source_broker_code": seller},
+                ])
+        result = broker_footprint_features(rows)
+        persistence = result["security_features"]["NABIL"]["persistent_broker_flow"]
+        b1 = next(item for item in persistence if item["broker_entity_id"] == "B1")
+        b2 = next(item for item in persistence if item["broker_entity_id"] == "B2")
+        self.assertEqual(b1["classification"], "strong_accumulation")
+        self.assertEqual(b2["classification"], "heavy_distribution")
+        self.assertEqual(set(b1["observed_complete_windows"]), {"1W", "1M", "3M"})
+
+    def test_partial_multi_month_history_does_not_claim_persistent_accumulation(self):
+        rows = [
+            {"trade_date": f"2026-11-{day:02d}", "symbol": "NABIL", "side": side,
+             "amount": "100", "quantity": "1", "identity_status": "verified",
+             "broker_entity_id": broker, "source_broker_code": broker}
+            for day in range(1, 6)
+            for side, broker in (("buy", "B1"), ("sell", "B2"))
+        ]
+        result = broker_footprint_features(rows)
+        persistence = result["security_features"]["NABIL"]["persistent_broker_flow"]
+        self.assertTrue(all(item["classification"] == "insufficient_history" for item in persistence))
+
+    def test_broker_footprint_refuses_missing_party_schema(self):
+        result = broker_footprint_features([{"side": "buy", "amount": "100"}])
+        self.assertEqual(result["status"], "insufficient_evidence")
+        self.assertIsNone(result["score"])
+
+    def test_broker_footprint_rejects_unresolved_entity_assignment(self):
+        rows = [{
+            "trade_date": "2026-11-24", "symbol": "NABIL", "side": "buy",
+            "amount": "100", "quantity": "1", "identity_status": "ambiguous",
+            "broker_entity_id": "BROKER-A", "source_broker_code": "11",
+        }]
+        with self.assertRaisesRegex(ValueError, "unresolved identity"):
+            broker_footprint_features(rows)
+
     def test_empty_broker_summary_is_insufficient(self):
         self.assertEqual(broker_participation_summary([])["status"], "insufficient_evidence")
 
+
+
+    def test_broker_breadth_score_uses_net_broker_counts_not_zero_sum_amount(self):
+        rows = []
+        for broker, side, amount in (
+            ("A", "buy", "100"), ("A", "sell", "10"),
+            ("B", "buy", "10"), ("B", "sell", "100"),
+        ):
+            rows.append({
+                "trade_date": "2026-11-24", "symbol": "NABIL", "side": side,
+                "amount": amount, "quantity": "1", "identity_status": "verified",
+                "broker_entity_id": broker, "source_broker_code": broker,
+            })
+        daily = broker_footprint_features(rows, minimum_sessions=1)["security_features"]["NABIL"]["1D"]
+        self.assertEqual(daily["verified_net_amount"], "0")
+        self.assertEqual(daily["net_buyer_count"], 1)
+        self.assertEqual(daily["net_seller_count"], 1)
+        self.assertEqual(daily["score"], 50)
+
+    def test_broker_breadth_score_is_withheld_when_identity_coverage_fails(self):
+        rows = [
+            {"trade_date": "2026-11-24", "symbol": "NABIL", "side": "buy",
+             "amount": "100", "quantity": "1", "identity_status": "verified",
+             "broker_entity_id": "A", "source_broker_code": "11"},
+            {"trade_date": "2026-11-24", "symbol": "NABIL", "side": "sell",
+             "amount": "900", "quantity": "9", "identity_status": "unmapped",
+             "broker_entity_id": None, "source_broker_code": "99"},
+        ]
+        daily = broker_footprint_features(rows, minimum_sessions=1)["security_features"]["NABIL"]["1D"]
+        self.assertIsNone(daily["score"])
+        self.assertEqual(daily["status"], "insufficient_identity_coverage_or_history")
 
 if __name__ == "__main__":
     unittest.main()

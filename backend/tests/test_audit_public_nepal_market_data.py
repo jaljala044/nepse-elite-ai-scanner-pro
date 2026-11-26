@@ -120,8 +120,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         }]
         daily = {
             "2026-11-26": (
-                b"date,close,open,high,low,volume,symbol\\n"
-                b"2026-11-26,561,550,570.8,550,87614,CFCL\\n"
+                b"date,close,open,high,low,volume,symbol\n"
+                b"2026-11-26,561,550,570.8,550,87614,CFCL\n"
             )
         }
         result = compare_socrateai_daily_csvs(official, daily)
@@ -138,8 +138,8 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         }]
         daily = {
             "2026-11-18": (
-                b"date,close,open,high,low,volume,symbol\\n"
-                b"2026-11-18,589.9,598.5,640,589.9,307567,CFCL\\n"
+                b"date,close,open,high,low,volume,symbol\n"
+                b"2026-11-18,589.9,598.5,640,589.9,307567,CFCL\n"
             )
         }
         result = compare_socrateai_daily_csvs(official, daily)

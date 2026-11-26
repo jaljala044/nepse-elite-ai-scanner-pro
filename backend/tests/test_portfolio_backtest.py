@@ -5,11 +5,11 @@ from app.portfolio_backtest import run_portfolio_backtest
 
 class PortfolioBacktestTests(unittest.TestCase):
     def setUp(self):
-        self.days = [(date(2025, 1, 1) + timedelta(days=i)).isoformat() for i in range(8)]
+        self.days = [(date(2025, 1, 1) + timedelta(days=i)).isoformat() for i in range(10)]
         self.rows = {"AAA": [
             {"date": day, "open": 100, "high": 110, "low": 95,
              "close": close, "volume": 10000}
-            for day, close in zip(self.days, [100, 100, 105, 110, 110, 110, 110, 110])
+            for day, close in zip(self.days, [100, 100, 105, 110, 110, 110, 110, 110, 110, 110])
         ]}
         self.signal = {
             "classification": "research_only_not_execution", "symbol": "AAA",
@@ -54,7 +54,7 @@ class PortfolioBacktestTests(unittest.TestCase):
         self.assertEqual(result["initial_capital"], 10000)
         self.assertAlmostEqual(result["ending_equity"], 10100)
         self.assertAlmostEqual(result["net_return_pct"], 1.0)
-        self.assertEqual(len(result["equity_curve"]), 8)
+        self.assertEqual(len(result["equity_curve"]), 10)
         self.assertEqual(result["trades"][0]["cash_settlement_date"], self.days[5])
         self.assertEqual(result["cash_settlement"]["unsettled_receivable_count"], 0)
         self.assertEqual(result["classification"],
@@ -83,8 +83,8 @@ class PortfolioBacktestTests(unittest.TestCase):
         def delayed_runner(**kwargs):
             symbol = kwargs["signal"]["symbol"]
             qty = min(kwargs["quantity"], 1000)
-            entry_day = self.days[1] if symbol == "AAA" else self.days[4]
-            exit_day = self.days[3] if symbol == "AAA" else self.days[6]
+            entry_day = self.days[1] if symbol == "AAA" else self.days[6]
+            exit_day = self.days[3] if symbol == "AAA" else self.days[7]
             return {
                 "status": "scenario_completed", "entry_session": entry_day,
                 "exit_session": exit_day, "scenario_quantity": qty,
@@ -104,7 +104,7 @@ class PortfolioBacktestTests(unittest.TestCase):
         )
         self.assertEqual(result["trade_count"], 2)
         self.assertEqual(result["trades"][0]["cash_settlement_date"], self.days[5])
-        self.assertEqual(result["trades"][1]["entry_date"], self.days[5])
+        self.assertEqual(result["trades"][1]["entry_date"], self.days[6])
 
     def test_drawdown_breaker_blocks_later_entries(self):
         second = dict(self.signal, symbol="BBB", decision_time=self.days[2] + "T15:00:00+05:45")

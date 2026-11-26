@@ -21,8 +21,70 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
     """Filter every input by availability before deriving any feature."""
     snapshot = build_as_of_snapshot(records, decision_time)
     rows = snapshot["records"]
-    prices = [r for r in rows if r.get("record_type") == "ohlcv"]
-    broker_rows = [r for r in rows if r.get("record_type") == "broker"]
+    raw_prices = [r for r in rows if r.get("record_type") == "ohlcv"]
+    raw_broker_rows = [r for r in rows if r.get("record_type") == "broker"]
+
+    # Scoring requires canonical-session alignment and source/price-basis evidence.
+    from datetime import date
+    valid_calendar = False
+    canonical_sessions = set()
+    if isinstance(session_dates, list) and session_dates:
+        try:
+            normalized_calendar = [date.fromisoformat(str(item)).isoformat() for item in session_dates]
+            valid_calendar = normalized_calendar == sorted(normalized_calendar) and len(normalized_calendar) == len(set(normalized_calendar))
+            canonical_sessions = set(normalized_calendar) if valid_calendar else set()
+        except (TypeError, ValueError):
+            valid_calendar = False
+
+    def valid_digest(value):
+        digest = str(value or "").lower()
+        return len(digest) == 64 and all(ch in "0123456789abcdef" for ch in digest)
+
+    price_contract_failures = []
+    prices = []
+    for index, row in enumerate(raw_prices):
+        day = str(row.get("session_date", ""))
+        admitted = (
+            valid_calendar and day in canonical_sessions
+            and row.get("source_validation_status") == "verified"
+            and isinstance(row.get("source_id"), str) and bool(row["source_id"].strip())
+            and valid_digest(row.get("source_payload_sha256"))
+            and row.get("price_basis_status") in {"verified_unadjusted_no_actions", "verified_adjusted"}
+            and row.get("corporate_action_status") in {"clear", "adjusted_verified"}
+        )
+        if admitted:
+            prices.append(row)
+        else:
+            price_contract_failures.append({"row_index": index, "symbol": row.get("symbol"),
+                "session_date": row.get("session_date"), "reason": "session_provenance_or_price_basis_unverified"})
+
+    broker_contract_failures = []
+    broker_rows = []
+    for index, row in enumerate(raw_broker_rows):
+        day = str(row.get("trade_date", ""))
+        admitted = (
+            valid_calendar and day in canonical_sessions
+            and row.get("session_calendar_status") == "confirmed_open"
+            and row.get("floorsheet_coverage_status") == "verified_complete"
+            and row.get("source_validation_status") == "verified"
+            and isinstance(row.get("source_id"), str) and bool(row["source_id"].strip())
+            and valid_digest(row.get("source_payload_sha256"))
+        )
+        if admitted:
+            broker_rows.append(row)
+        else:
+            broker_contract_failures.append({"row_index": index, "symbol": row.get("symbol"),
+                "trade_date": row.get("trade_date"), "reason": "session_or_complete_floorsheet_provenance_unverified"})
+
+    input_contracts = {
+        "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
+        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(prices),
+                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and len(prices) == len(raw_prices),
+                  "exclusions": price_contract_failures},
+        "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
+                  "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
+                  "exclusions": broker_contract_failures},
+    }
     by_symbol = {}
     for row in prices:
         by_symbol.setdefault(str(row.get("symbol", "")).upper(), []).append(row)
@@ -138,21 +200,29 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         # Preserve complete upstream evidence objects. The scoring adapter
         # accepts only status='observed' plus a numeric score; unavailable,
         # partial and experimental outputs remain missing.
+        price_score_gate = input_contracts["ohlcv"]["score_eligible"]
+        broker_score_gate = input_contracts["broker_floorsheet"]["score_eligible"]
         feature_bundle = {
-            "wyckoff": wyckoff_features[symbol],
-            "trend": trend_features[symbol],
+            "wyckoff": ({**wyckoff_features[symbol], "status": "input_contract_unverified", "score": None}
+                        if not price_score_gate else wyckoff_features[symbol]),
+            "trend": ({**trend_features[symbol], "status": "input_contract_unverified", "score": None}
+                      if not price_score_gate else trend_features[symbol]),
             "relative_strength": {
                 "status": rs_item.get("score_status", "insufficient_evidence"),
                 "score": rs_item.get("score"),
                 "as_of_session": rs_item.get("as_of_session"),
                 "rank": rs_item.get("rank"),
             },
-            "broker": broker_item,
-            "volume": volume_features[symbol],
-            "liquidity": liquidity_item,
+            "broker": ({**broker_item, "status": "floorsheet_coverage_unverified", "score": None}
+                       if not broker_score_gate else broker_item),
+            "volume": ({**volume_features[symbol], "status": "input_contract_unverified", "score": None}
+                       if not price_score_gate else volume_features[symbol]),
+            "liquidity": ({**liquidity_item, "status": "input_contract_unverified", "score": None}
+                          if not price_score_gate else liquidity_item),
             "sector": {
-                "status": sector_item.get("score_status", "insufficient_evidence"),
-                "score": sector_item.get("score"),
+                "status": (sector_item.get("score_status", "insufficient_evidence")
+                           if price_score_gate else "input_contract_unverified"),
+                "score": sector_item.get("score") if price_score_gate else None,
                 "sector_code": sector_code,
                 "score_coverage_pct": sector_item.get("score_coverage_pct"),
             },
@@ -196,6 +266,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         latest_by_symbol.append(latest)
     return {
         "decision_time": snapshot["decision_time"],
+        "input_contracts": input_contracts,
         "included_input_count": snapshot["included_count"],
         "excluded_input_count": snapshot["excluded_count"],
         "max_input_available_at": snapshot["max_input_available_at"],

@@ -29,3 +29,39 @@ def evaluate_idpat_v3(rows, *, eligible=False):
     return {"status": "specification_unverified" if result["status"] == "research_features_ready" else result["status"],
             "score": None, "signals": [], "research_features": result,
             "limitations": ["Original IDPAT V3.0 thresholds, rules and weights are not yet verified."]}
+
+
+def evaluate_provisional(rows, *, eligible=False, volume_threshold=1.5, weights=(25,25,25,25)):
+    """Experimental rule score, not original IDPAT V3 or probability of profit."""
+    from math import isfinite
+    if not isfinite(volume_threshold) or volume_threshold <= 0 or len(weights) != 4 or any(not isfinite(w) or w < 0 for w in weights) or sum(weights) <= 0:
+        raise ValueError("invalid provisional configuration")
+    base = {"method": "nepse_provisional_v1", "score": None, "signals": [],
+            "limitations": ["Experimental thresholds; not original IDPAT V3.0, not backtested.",
+                            "Daily OHLCV proxies; no institutional-flow inference."]}
+    if not eligible:
+        return dict(base, status="eligibility_unverified")
+    result = research_features(rows)
+    if result["status"] != "research_features_ready":
+        return dict(base, status=result["status"])
+    bars = sorted(rows,key=lambda r:str(r["date"]))
+    f = result["features"]
+    prior = bars[-21:-1]
+    resistance = max(float(r["high"]) for r in prior)
+    support = min(float(r["low"]) for r in prior)
+    rv = f["relative_volume20"]
+    checks = {"trend": f["close"] > f["sma20"],
+              "momentum": f["return20_pct"] > 0,
+              "volume": rv is not None and rv >= volume_threshold,
+              "range_breakout": f["close"] > resistance}
+    components = [{"rule": name,"passed": passed,"weight": w,
+                   "points": w if passed else 0} for (name,passed),w in zip(checks.items(),weights)]
+    sweep = float(bars[-1]["low"]) < support and f["close"] > support
+    return dict(base,status="research_scored",as_of=result["as_of"],
+                score=round(100*sum(x["points"] for x in components)/sum(weights),2),
+                components=components,features=f,
+                signals=[k for k,v in checks.items() if v],
+                context={"prior20_high":resistance,"prior20_low":support,
+                         "range_low_sweep_proxy":sweep,
+                         "invalidation_reference":support},
+                configuration={"volume_threshold":volume_threshold,"weights":list(weights)})

@@ -36,7 +36,9 @@
       },
       "last_recorded_trade_date": "2024-03-06",
       "last_recorded_trade_source": "https://laganilab.com/nepse-company/BPW/",
-      "last_recorded_trade_basis": "Laganilab historical company page explicitly reports last recorded trade March 6, 2024; secondary-source evidence. OHLCV archive contains a nonzero-volume row on this date."
+      "last_recorded_trade_basis": "Laganilab historical company page explicitly reports last recorded trade March 6, 2024; secondary-source evidence. OHLCV archive contains a nonzero-volume row on this date.",
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "JALPA",
@@ -80,7 +82,9 @@
           "1406.20",
           "1391"
         ]
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "KLBSL",
@@ -124,7 +128,9 @@
           "1406.20",
           "1391"
         ]
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "MKLB",
@@ -168,7 +174,9 @@
           "600.70",
           "121"
         ]
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "MMFDB",
@@ -201,7 +209,9 @@
       },
       "last_recorded_trade_date": "2024-03-12",
       "last_recorded_trade_source": "https://merolagani.com/CompanyDetail.aspx?symbol=MMFDB",
-      "last_recorded_trade_basis": "Merolagani reports Last Traded On 2024/03/12 02:58:52; ShareSansar historical company page independently shows the 2024-03-12 close and volume. Secondary-source evidence."
+      "last_recorded_trade_basis": "Merolagani reports Last Traded On 2024/03/12 02:58:52; ShareSansar historical company page independently shows the 2024-03-12 close and volume. Secondary-source evidence.",
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "NLBBL",
@@ -234,7 +244,9 @@
       },
       "last_recorded_trade_date": "2024-03-12",
       "last_recorded_trade_source": "https://merolagani.com/CompanyDetail.aspx?symbol=NLBBL",
-      "last_recorded_trade_basis": "Merolagani reports Last Traded On 2024/03/12 02:59:57; ShareSansar historical company page independently shows the 2024-03-12 close and volume. Secondary-source evidence."
+      "last_recorded_trade_basis": "Merolagani reports Last Traded On 2024/03/12 02:59:57; ShareSansar historical company page independently shows the 2024-03-12 close and volume. Secondary-source evidence.",
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "SABSL",
@@ -266,7 +278,9 @@
           "2024-07-12",
           "2024-07-13"
         ]
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "SDLBSL",
@@ -298,7 +312,9 @@
           "2024-07-12",
           "2024-07-13"
         ]
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "SAMAJ",
@@ -334,7 +350,9 @@
           "2025-10-18"
         ],
         "caution": "Rows on 17 and 18 October repeat 16 October OHLCV exactly; do not treat them as new sessions or trades."
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "SFCL",
@@ -365,7 +383,9 @@
           "370.00",
           "5290"
         ]
-      }
+      },
+      "historical_security_id_status": "not_present_in_2026-11-25_snapshot",
+      "historical_security_id_note": "Absence from this current snapshot is not evidence that the former symbol had no security ID; historical ID and validity interval remain unresolved."
     },
     {
       "symbol": "CMF1",
@@ -600,7 +620,13 @@
         "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
         "confidence": "medium"
       },
-      "first_trading_date_verified": false
+      "first_trading_date_verified": false,
+      "current_snapshot_security_id": "2804",
+      "current_snapshot_security_name": "Samudayik Laghubitta Bittiya Sanstha Limited",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     },
     {
       "symbol": "NMLBBL",
@@ -626,7 +652,13 @@
         "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
         "confidence": "medium"
       },
-      "first_trading_date_verified": false
+      "first_trading_date_verified": false,
+      "current_snapshot_security_id": "396",
+      "current_snapshot_security_name": "Nerude Mirmire Laghubitta Bittiya Sanstha Limited",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     },
     {
       "symbol": "MATRI",
@@ -651,7 +683,13 @@
         "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
         "confidence": "medium"
       },
-      "first_trading_date_verified": false
+      "first_trading_date_verified": false,
+      "current_snapshot_security_id": "694",
+      "current_snapshot_security_name": "Matribhumi Lagubitta Bittiya Sanstha Limited",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     },
     {
       "symbol": "SMATA",
@@ -677,7 +715,13 @@
         ],
         "source_class": "project OHLCV archive",
         "confidence": "high for pre-existing ticker trading"
-      }
+      },
+      "current_snapshot_security_id": "2761",
+      "current_snapshot_security_name": "Samata Gharelu Laghubitta Bittiya Sanstha Limited",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     },
     {
       "symbol": "SMPDA",
@@ -701,7 +745,13 @@
         "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
         "confidence": "medium"
       },
-      "first_trading_date_verified": false
+      "first_trading_date_verified": false,
+      "current_snapshot_security_id": "2896",
+      "current_snapshot_security_name": "Sampada Laghubitta Bittiya Sanstha Limited",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     },
     {
       "symbol": "GBLBS",
@@ -726,7 +776,13 @@
         "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
         "confidence": "medium"
       },
-      "first_trading_date_verified": false
+      "first_trading_date_verified": false,
+      "current_snapshot_security_id": "583",
+      "current_snapshot_security_name": "Grameen Bikas Laghubitta Bittiya Sanstha Ltd.",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     },
     {
       "symbol": "PFL",
@@ -751,7 +807,13 @@
         "source_class": "project OHLCV archive; secondary historical dataset; not independently verified against contract-level floorsheet",
         "confidence": "medium"
       },
-      "first_trading_date_verified": false
+      "first_trading_date_verified": false,
+      "current_snapshot_security_id": "236",
+      "current_snapshot_security_name": "Pokhara Finance Ltd.",
+      "current_snapshot_status": "A",
+      "current_snapshot_date": "2026-11-25",
+      "current_snapshot_source": "jaljala044/nepse-smc-data/reference/nepse_security_id_snapshot_2026-11-25.csv",
+      "current_snapshot_source_blob_sha": "eed3bbb3152e83d4abcb0ee8d03d720c33c63cef"
     }
   ],
   "remaining_without_provider_evidence": [],

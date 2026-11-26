@@ -1993,3 +1993,13 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - Provenance caveat: the same run log says `HF_BRONZE_REPO not set - raw responses not archived this run`. Therefore upstream count/quality evidence is strong, but page-level raw replay evidence is missing.
 - Revised date status: `UPSTREAM_COUNT_RECONCILED_THIRD_PARTY_CAPTURE`; positive trades can be treated as third-party evidence, but symbol absence remains UNKNOWN until contract-level comparison or raw bronze recovery. Do not merge the 500-row extract or enable broker/manipulation scoring based on this alone.
 - Detailed audit updated: https://github.com/jaljala044/nepse-smc-data/commit/04b48672f7bb9631bbb414ef7e78b75d8876f3ee
+
+
+### 2026-11-20 floorsheet completeness — resolved by exact cross-source reconciliation
+
+- Independent NEPSE pipeline run [44748903787](https://github.com/ANKITSANJYAL/nepse-pipeline/actions/runs/44748903787): upstream total 39,966; 80/80 pages; held 39,966/39,966; zero rejected/empty; all quality checks PASS.
+- Downloaded the pipeline Parquet and SocrateAI CSV in data-repo CI. Exact normalized trade multiset match: **39,966/39,966, zero unmatched on either side**. Both have 352 symbols, 10,602,468 shares and NPR 3,887,563,470.82 turnover. Data audit workflow [45843030655](https://github.com/jaljala044/nepse-smc-data/actions/runs/45843030655) passed.
+- The apparent 500-row extract mismatch is explained: 500/500 trade identities are contained in the full session file, with 39,466 additional full-session rows and zero unmatched local identities. Amount field is abbreviated/rounded: 210 exact; 46 within NPR 1; 138 within NPR 10; 21 within NPR 100; 85 above NPR 100. It is a partial sample, not a conflicting full-session source.
+- **UNL on 2026-11-20: TRADED** — 4 contracts, 50 shares, NPR 2,408,700.00 turnover. Contract rows are recorded in the data-repo audit and machine-readable manifest. This does not resolve UNL on 2026-11-26 or other dates.
+- Date status: `VERIFIED_COMPLETE_BY_INDEPENDENT_UPSTREAM_CAPTURE`. Caveat: pipeline raw bronze repository was not configured for that run, so raw page replay is unavailable. Scope is one date only; other dates in the 281-equity completeness project remain to be audited. No global canonical promotion or model training.
+- Data audit report/manifest commit: https://github.com/jaljala044/nepse-smc-data/commit/53fbed2fee581c97822a6e3b90322719aacb656d and manifest commit 3de09c870c8d2f2618898072c2e029ff1f541743.

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEPSE Scanner | Research Terminal</title><link rel="stylesheet" href="styles.css"><script src="app.js" defer></script></head>
+<body><header><div class="brand"><span class="logo">N</span><div>NEPSE SCANNER<small>Institutional research terminal</small></div></div><span class="pill">RESEARCH ONLY</span></header>
+<nav aria-label="Dashboard navigation"><a href="#overview">Overview</a><a href="#modules">Research engines</a><a href="#coverage">Data integrity</a><a href="#universe">Equity universe</a></nav>
+<main><section id="overview"><div class="heading"><div><p class="eyebrow">MARKET INTELLIGENCE</p><h1>Research dashboard</h1><p>Evidence-first analytics. No automated trade recommendations.</p></div><button id="refresh">Refresh data</button></div>
+<p id="connection" role="status" aria-live="polite">Connecting to research API…</p>
+<div class="metrics"><article><small>Candidate equities</small><strong id="equities">—</strong></article><article><small>Canonical reviewed rows</small><strong id="reviewed">—</strong></article><article><small>AI recommendations</small><strong id="ai">OFF</strong></article><article><small>Production rankings</small><strong id="ranking">OFF</strong></article></div></section>
+<section id="modules"><h2>Research engines</h2><div id="module-list" class="modules"><p>Awaiting API data.</p></div></section>
+<section id="coverage"><h2>Data integrity and validation</h2><div class="panel"><dl><dt>Universe availability</dt><dd id="universe-status">Unknown</dd><dt>Independent strategy validation</dt><dd id="validation">Unknown</dd><dt>Missing evidence policy</dt><dd id="policy">UNKNOWN</dd><dt>Production recommendations</dt><dd id="production">Disabled</dd></dl></div></section>
+<section id="universe"><h2>Loaded equity universe</h2><div class="panel"><label for="filter">Filter loaded symbols</label><input id="filter" type="search" placeholder="Search symbol" maxlength="30"><p id="symbol-count">Unknown</p><div id="symbols" class="symbols"></div></div></section>
+</main><footer>NEPSE Scanner · Research only · No trade execution · Missing evidence is not a trading signal.</footer></body></html>

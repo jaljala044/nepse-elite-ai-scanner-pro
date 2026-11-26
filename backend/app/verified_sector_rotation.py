@@ -7,7 +7,7 @@ rotation labels only, never a trade signal.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from math import isfinite
 
 WINDOWS = {"1W": 5, "1M": 21, "3M": 63, "6M": 126}
@@ -98,7 +98,7 @@ def build_verified_sector_rotation(
         return {"status": "insufficient_evidence", "reason": "verified_calendar_below_127_sessions",
                 "calendar_sessions": len(calendar), "sectors": {}, "signals_enabled": False}
 
-    local_cutoff = cutoff.astimezone(timezone.utc).date().isoformat()
+    local_cutoff = cutoff.astimezone(timezone(timedelta(hours=5, minutes=45))).date().isoformat()
     calendar = [day for day in calendar if day <= local_cutoff]
     if len(calendar) < 127:
         return {"status": "insufficient_evidence", "reason": "calendar_before_decision_time_below_127_sessions",

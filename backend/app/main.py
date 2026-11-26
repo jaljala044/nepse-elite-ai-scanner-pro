@@ -230,11 +230,17 @@ def research_signal_performance(horizon: str | None = None, limit: int = 2000):
         h = item.get("horizon")
         payload = item.get("outcome", {})
         bucket = grouped.setdefault(h, {"sample_size": 0, "entry_touched": 0,
+            "stop_touched": 0, "target_touches": {"T1": 0, "T2": 0, "T3": 0},
             "positive_reference": 0, "negative_reference": 0,
             "returns": [], "statuses": {}})
         bucket["sample_size"] += 1
         status = payload.get("status", "unknown")
         bucket["statuses"][status] = bucket["statuses"].get(status, 0) + 1
+        if payload.get("entry_touched") is True:
+            bucket["stop_touched"] += int(payload.get("stop_touched") is True)
+            for target in payload.get("targets_touched", []):
+                if target in bucket["target_touches"]:
+                    bucket["target_touches"][target] += 1
         if payload.get("entry_touched") is True and payload.get("reference_return_pct") is not None:
             value = float(payload["reference_return_pct"])
             bucket["entry_touched"] += 1
@@ -246,6 +252,10 @@ def research_signal_performance(horizon: str | None = None, limit: int = 2000):
         vals = bucket.pop("returns")
         winners = [x for x in vals if x > 0]
         losers = [x for x in vals if x < 0]
+        bucket["entry_rate_pct"] = (100 * bucket["entry_touched"] / bucket["sample_size"]) if bucket["sample_size"] else None
+        bucket["stop_rate_pct"] = (100 * bucket["stop_touched"] / bucket["entry_touched"]) if bucket["entry_touched"] else None
+        bucket["target_hit_rate_pct"] = {target: (100 * count / bucket["entry_touched"])
+            if bucket["entry_touched"] else None for target, count in bucket["target_touches"].items()}
         bucket["win_rate_pct"] = (100 * len(winners) / len(vals)) if vals else None
         bucket["average_reference_return_pct"] = (sum(vals) / len(vals)) if vals else None
         bucket["average_win_pct"] = (sum(winners) / len(winners)) if winners else None

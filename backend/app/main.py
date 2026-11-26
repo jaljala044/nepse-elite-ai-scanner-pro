@@ -365,6 +365,40 @@ def reliability():
               "No independent holdout; incomplete broker, sector and corporate-action evidence",
               "Overlapping research observations, not portfolio performance"]}]}
 
+
+from fastapi import Request, Depends
+from .private_accounts import principal, watchlist, set_watchlist
+
+class WatchlistRequest(BaseModel):
+    symbols: list[str] = Field(max_length=300)
+
+@app.get("/v1/account/watchlist")
+def account_watchlist(owner: str = Depends(principal)):
+    return {"symbols":watchlist(owner)}
+
+@app.put("/v1/account/watchlist")
+def account_watchlist_update(payload: WatchlistRequest, owner: str = Depends(principal)):
+    try:
+        return {"symbols":set_watchlist(owner,payload.symbols)}
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+
+@app.middleware("http")
+async def private_deployment_gate(request: Request, call_next):
+    # Opt-in development API only. A deployed service must authenticate all non-health routes.
+    if os.getenv("NEPSE_DEPLOYMENT_MODE") == "private" and request.url.path != "/health":
+        try:
+            principal(request)
+        except HTTPException:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail":"Authentication required"},status_code=401)
+    response=await call_next(request)
+    response.headers["X-Content-Type-Options"]="nosniff"
+    response.headers["Referrer-Policy"]="no-referrer"
+    if request.url.path.startswith("/v1/account/"):
+        response.headers["Cache-Control"]="no-store"
+    return response
+
 # Mount only the built public frontend, never the repository or raw data.
 from fastapi.staticfiles import StaticFiles
 import os

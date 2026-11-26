@@ -65,9 +65,13 @@ def build_evidence_readiness(environ: Mapping[str, str] | None = None) -> dict[s
     else:
         try:
             registry = json.loads(registry_path.read_text(encoding="utf-8"))
-            registry_valid = verify_source_registry(registry, pinned_digest)
-            if not registry_valid:
-                blockers.append("source_registry_digest_mismatch")
+            if not isinstance(registry, dict) or not isinstance(registry.get("sources"), list):
+                blockers.append("source_registry_invalid")
+                registry = None
+            else:
+                registry_valid = verify_source_registry(registry, pinned_digest)
+                if not registry_valid:
+                    blockers.append("source_registry_digest_mismatch")
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
             blockers.append("source_registry_invalid")
 
@@ -79,7 +83,10 @@ def build_evidence_readiness(environ: Mapping[str, str] | None = None) -> dict[s
     if not keys:
         missing.append("reviewer_keys")
 
-    ledger = verify_promotion_ledger(ledger_path)
+    try:
+        ledger = verify_promotion_ledger(ledger_path)
+    except (OSError, UnicodeDecodeError, ValueError):
+        ledger = {"valid": False, "events": [], "errors": ["ledger_read_failed"]}
     if not ledger["valid"]:
         blockers.append("promotion_ledger_integrity_failure")
     if not ledger_path.is_file():
@@ -92,7 +99,7 @@ def build_evidence_readiness(environ: Mapping[str, str] | None = None) -> dict[s
     source_count = len(registry.get("sources", [])) if isinstance(registry, dict) else 0
     active_policies = [
         item for item in (registry or {}).get("sources", [])
-        if item.get("status") == "active"
+        if isinstance(item, dict) and item.get("status") == "active"
     ]
     canonical_policy_count = sum(
         bool(item.get("canonical_record_types")) for item in active_policies
@@ -118,7 +125,7 @@ def build_evidence_readiness(environ: Mapping[str, str] | None = None) -> dict[s
             canonical_status = "ready_for_internal_read" if canonical_count else "no_promoted_records"
             if not canonical_count:
                 missing.append("accepted_canonical_promotions")
-        except (OSError, ValueError):
+        except (OSError, ValueError, TypeError, KeyError):
             canonical_status = "blocked"
             blockers.append("canonical_evidence_verification_failed")
 

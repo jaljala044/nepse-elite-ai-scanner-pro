@@ -20,10 +20,26 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         symbol: security_footprint(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
     }
-    trend_features = {
-        symbol: minervini_trend_template(items)
-        for symbol, items in sorted(by_symbol.items()) if symbol
-    }
+    trend_features = {}
+    for symbol, items in sorted(by_symbol.items()):
+        if not symbol:
+            continue
+        required_ohlc = ("session_date", "close", "high", "low")
+        missing_rows = [
+            index for index, item in enumerate(items)
+            if any(key not in item or item[key] is None for key in required_ohlc)
+        ]
+        if missing_rows:
+            trend_features[symbol] = {
+                "status": "insufficient_evidence",
+                "reason": "required_ohlc_fields_missing",
+                "missing_row_count": len(missing_rows),
+                "history_sessions": len(items),
+                "score": None,
+                "checks": {},
+            }
+        else:
+            trend_features[symbol] = minervini_trend_template(items)
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]

@@ -506,6 +506,63 @@ def get_latest_broker_memory(*, symbol: str | None = None,
         con.close()
 
 
+
+def get_broker_memory_lineage(*, symbol: str, broker_code: str | None = None,
+                              as_of: str | None = None,
+                              limit: int = 100, offset: int = 0) -> dict:
+    """Paginated evidence drill-down; raw party lineage remains outside snapshots."""
+    if not isinstance(symbol, str) or not symbol.strip():
+        raise ValueError("symbol is required for broker evidence drill-down")
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
+        raise ValueError("limit must be an integer from 1 to 500")
+    if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    conditions = ["symbol = ?"]
+    params: list[Any] = [symbol.strip().upper()]
+    if broker_code is not None:
+        if not isinstance(broker_code, str) or not broker_code.strip():
+            raise ValueError("broker_code must be nonblank when supplied")
+        conditions.append("json_extract_string(record_json, '$.source_broker_code') = ?")
+        params.append(broker_code.strip())
+    if as_of is not None:
+        conditions.append("trade_date <= ?")
+        params.append(date.fromisoformat(as_of))
+    where = " WHERE " + " AND ".join(conditions)
+    con = connect()
+    try:
+        _ensure_tables(con)
+        total = con.execute(
+            "SELECT count(*) FROM broker_memory_observations" + where, params
+        ).fetchone()[0]
+        rows = con.execute(
+            "SELECT record_json FROM broker_memory_observations" + where +
+            " ORDER BY trade_date DESC, source_row_number DESC, side LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+        fields = (
+            "trade_date", "symbol", "side", "source_broker_code", "identity_status",
+            "broker_entity_id", "amount", "quantity", "source_id",
+            "source_payload_sha256", "source_row_number", "evidence_id",
+            "source_rights_status", "rights_evidence_id", "available_at",
+        )
+        observations = []
+        for item in rows:
+            record = json.loads(str(item[0]))
+            observations.append({key: record.get(key) for key in fields})
+        return {
+            "status": "observed" if observations else "insufficient_evidence",
+            "symbol": symbol.strip().upper(),
+            "broker_code": broker_code.strip() if broker_code else None,
+            "total_observations": total,
+            "limit": limit,
+            "offset": offset,
+            "next_offset": offset + len(observations) if offset + len(observations) < total else None,
+            "observations": observations,
+        }
+    finally:
+        con.close()
+
+
 def broker_memory_status() -> dict:
     con = connect()
     try:

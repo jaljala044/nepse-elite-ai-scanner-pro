@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-26",
+  "base_candidate_blob": "45f71a3a81dbe883c8562cf6d7d9e8da9bf51bc4",
+  "base_equities": 278,
+  "base_funds": 47,
+  "additional_candidates": [
+    {
+      "symbol": "NESDO",
+      "security_id": "8041",
+      "status": "active_snapshot_candidate",
+      "ohlcv_file_present": true
+    },
+    {
+      "symbol": "ULBSL",
+      "security_id": "8063",
+      "status": "active_snapshot_candidate",
+      "ohlcv_file_present": true
+    },
+    {
+      "symbol": "YMHL",
+      "security_id": "9342",
+      "status": "active_snapshot_candidate",
+      "ohlcv_file_present": true,
+      "listing_date": "2026-06-19",
+      "sources": [
+        "https://www.sharesansar.com/eventdetail/listing-ipo-share-of-yambaling-hydropower-limited-ymhl-2026-06-19",
+        "https://nepsealpha.com/stocks/YMHL/info"
+      ]
+    }
+  ],
+  "candidate_equities": 281,
+  "candidate_funds": 47,
+  "manifest_verified": false,
+  "limitations": "Full dated membership and historical lifecycle validation outstanding; no raw data changes."
+}

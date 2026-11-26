@@ -13,6 +13,30 @@ class FloorsheetContractTests(unittest.TestCase):
             "quantity":"10", "rate":"100", "amount":amount,
         }, source_id="fixture", payload_sha256=self.digest, row_number=line)
 
+
+    def test_strict_thousands_grouping_is_normalized_without_precision_loss(self):
+        row = FloorsheetContract.from_mapping({
+            "trade_date": "2026-11-24", "contract_id": "C-GROUPED",
+            "symbol": "NABIL", "buyer_broker_code": "11",
+            "seller_broker_code": "42", "quantity": "14,670,177",
+            "rate": "3,878.00", "amount": "56,878,545,126.00",
+        }, source_id="fixture", payload_sha256=self.digest, row_number=1)
+        self.assertEqual(row.quantity, Decimal("14670177"))
+        self.assertEqual(row.rate, Decimal("3878.00"))
+        self.assertEqual(row.amount, Decimal("56878545126.00"))
+
+    def test_malformed_thousands_grouping_is_rejected_not_guessed(self):
+        for value in ("38,78.00", "1,23,456", "1234,567", "1,000,00"):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "valid decimals"
+            ):
+                FloorsheetContract.from_mapping({
+                    "trade_date": "2026-11-24", "contract_id": "C-BAD",
+                    "symbol": "NABIL", "buyer_broker_code": "11",
+                    "seller_broker_code": "42", "quantity": "10",
+                    "rate": value, "amount": "1000",
+                }, source_id="fixture", payload_sha256=self.digest, row_number=1)
+
     def test_unique_contract_and_amount_check(self):
         result = reconcile_floorsheet_rows([self.row()])
         self.assertEqual(result["counts"]["unique"], 1)

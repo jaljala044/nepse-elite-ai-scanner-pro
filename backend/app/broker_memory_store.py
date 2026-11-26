@@ -510,27 +510,46 @@ def get_latest_broker_memory(*, symbol: str | None = None,
 def get_broker_memory_lineage(*, symbol: str, broker_code: str | None = None,
                               as_of: str | None = None,
                               limit: int = 100, offset: int = 0) -> dict:
-    """Paginated evidence drill-down; raw party lineage remains outside snapshots."""
+    """Paginated evidence drill-down anchored to the selected immutable snapshot."""
     if not isinstance(symbol, str) or not symbol.strip():
         raise ValueError("symbol is required for broker evidence drill-down")
     if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
         raise ValueError("limit must be an integer from 1 to 500")
     if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
         raise ValueError("offset must be a non-negative integer")
-    conditions = ["symbol = ?"]
-    params: list[Any] = [symbol.strip().upper()]
-    if broker_code is not None:
-        if not isinstance(broker_code, str) or not broker_code.strip():
-            raise ValueError("broker_code must be nonblank when supplied")
-        conditions.append("json_extract_string(record_json, '$.source_broker_code') = ?")
-        params.append(broker_code.strip())
-    if as_of is not None:
-        conditions.append("trade_date <= ?")
-        params.append(date.fromisoformat(as_of))
-    where = " WHERE " + " AND ".join(conditions)
     con = connect()
     try:
         _ensure_tables(con)
+        if as_of is not None:
+            requested_date = date.fromisoformat(as_of)
+            snapshot = con.execute(
+                """SELECT as_of_trade_date, decision_time FROM broker_memory_snapshots
+                   WHERE as_of_trade_date <= ?
+                   ORDER BY as_of_trade_date DESC, decision_time DESC LIMIT 1""",
+                [requested_date],
+            ).fetchone()
+        else:
+            snapshot = con.execute(
+                """SELECT as_of_trade_date, decision_time FROM broker_memory_snapshots
+                   ORDER BY as_of_trade_date DESC, decision_time DESC LIMIT 1"""
+            ).fetchone()
+        if snapshot is None:
+            return {
+                "status": "insufficient_evidence", "symbol": symbol.strip().upper(),
+                "broker_code": broker_code.strip() if broker_code else None,
+                "total_observations": 0, "limit": limit, "offset": offset,
+                "next_offset": None, "snapshot_as_of_trade_date": None,
+                "observations": [],
+            }
+        snapshot_date, snapshot_decision_time = snapshot
+        conditions = ["symbol = ?", "trade_date <= ?", "available_at <= ?"]
+        params: list[Any] = [symbol.strip().upper(), snapshot_date, snapshot_decision_time]
+        if broker_code is not None:
+            if not isinstance(broker_code, str) or not broker_code.strip():
+                raise ValueError("broker_code must be nonblank when supplied")
+            conditions.append("json_extract_string(record_json, '$.source_broker_code') = ?")
+            params.append(broker_code.strip())
+        where = " WHERE " + " AND ".join(conditions)
         total = con.execute(
             "SELECT count(*) FROM broker_memory_observations" + where, params
         ).fetchone()[0]
@@ -553,6 +572,8 @@ def get_broker_memory_lineage(*, symbol: str, broker_code: str | None = None,
             "status": "observed" if observations else "insufficient_evidence",
             "symbol": symbol.strip().upper(),
             "broker_code": broker_code.strip() if broker_code else None,
+            "snapshot_as_of_trade_date": str(snapshot_date),
+            "snapshot_decision_time": snapshot_decision_time.isoformat(),
             "total_observations": total,
             "limit": limit,
             "offset": offset,

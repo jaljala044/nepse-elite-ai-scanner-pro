@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary
+from app.trend_features import minervini_trend_template
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
@@ -30,7 +31,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "max_input_available_at": snapshot["max_input_available_at"],
         "point_in_time_eligible": snapshot["point_in_time_eligible"],
         "market_breadth": market_breadth(latest_by_symbol, expected_symbols),
-        "security_features": security_features,
+        "security_features": security_features,\n        "trend_features": trend_features,
         "broker_participation": broker_participation_summary(broker_rows),
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

@@ -30,6 +30,8 @@ class BrokerMemoryStoreTests(unittest.TestCase):
                     "evidence_id": "evidence-buy-" + day,
                     "available_at": day + "T15:00:00+05:45",
                     "source_validation_status": "verified",
+                    "source_rights_status": "research_only",
+                    "rights_evidence_id": "rights-review-floorsheet",
                     "session_calendar_status": "confirmed_open",
                     "floorsheet_coverage_status": "verified_complete",
                 },
@@ -175,6 +177,17 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         bad = [dict(row) for row in self.rows]
         bad[0]["floorsheet_coverage_status"] = "partial"
         with self.assertRaisesRegex(ValueError, "coverage is not verified complete"):
+            self.persist(rows=bad)
+
+    def test_rejects_unknown_or_prohibited_source_rights(self):
+        bad = [dict(row) for row in self.rows]
+        bad[0]["source_rights_status"] = "unknown"
+        with self.assertRaisesRegex(ValueError, "source rights are not cleared"):
+            self.persist(rows=bad)
+        bad = [dict(row) for row in self.rows]
+        bad[0]["source_rights_status"] = "redistribution_permitted"
+        bad[0]["rights_evidence_id"] = None
+        with self.assertRaisesRegex(ValueError, "redistribution permission requires rights evidence"):
             self.persist(rows=bad)
 
     def test_rejects_unverified_session_and_unknown_date(self):

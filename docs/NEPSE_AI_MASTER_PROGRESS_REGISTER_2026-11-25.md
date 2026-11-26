@@ -2325,7 +2325,7 @@ Build and validate the effective-dated security identity and corporate-action re
 
 - Rechecked PR #112 against the live GitHub refs. Feature branch: `feat/3a-smart-scanners-opportunity-detection`; current `main` head observed as `00a92fd23e924b1a3b28858e33baa578bf87ccfb`.
 - Current compare: **51 commits ahead / 25 commits behind**; merge base remains `80aa212351dfefc1b58d21d3e4f318c07d606260`. This supersedes the earlier 50-ahead / 24-behind observation.
-- GitHub currently reports PR #112 as open, draft, and mergeable. “Mergeable” is GitHub’s merge-conflict assessment; it is not authorization to merge and does not mean the branch has been reconciled or the feature accepted.
+- PR #112 remains open and draft. GitHub’s `mergeable` indicator varied between true and false across successive reads; treat that field as transient. The authoritative branch comparison remains `diverged` at 52 commits ahead / 25 behind. This is not authorization to merge and does not mean the branch has been reconciled or the feature accepted.
 - Updated PR description to remove the stale CI-pending statement and record the current divergence and CI results. No code, data, or branch history was rewritten.
 - The three CI workflows remain verified on application/test head `061581beb837601bbc6c47fca0316d8f30df8025`; the current PR head `a17d72512473b761e3164c7fa1320ab8760b8a5b` adds documentation only after that tested head.
 - **Next gate:** reconcile the feature branch with current `main` using a reviewed merge/rebase, then rerun all relevant CI on the reconciled head. Do not force-update or merge without explicit authorization.

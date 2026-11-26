@@ -51,5 +51,48 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
         self.assertEqual(result["rows"], 0)
 
 
+    def test_official_history_overlap_compares_five_independent_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "symbols"
+            symbol_dir = root / "TEST"
+            symbol_dir.mkdir(parents=True)
+            raw = json.dumps({"content": [{
+                "businessDate": "2024-01-02", "highPrice": 11, "lowPrice": 9,
+                "closePrice": 10.5, "totalTradedQuantity": 100,
+                "totalTradedValue": 1050,
+            }]}).encode()
+            (symbol_dir / "response-01.bin").write_bytes(raw)
+            sha = hashlib.sha256(raw).hexdigest()
+            (root.parent / "SHA256SUMS").write_text(
+                f"{sha}  symbols/TEST/response-01.bin\\n", encoding="utf-8"
+            )
+            public = HEADER + b"2024-01-02,10,11,9,10.5,nan,100,1050,A\\n"
+            result = crosscheck_official_history({"TEST": public}, root)
+            self.assertEqual(result["status"], "COMPLETED")
+            self.assertEqual(result["official_rows"], 1)
+            self.assertEqual(result["fully_matching_rows"], 1)
+            self.assertEqual(result["field_comparisons"], 5)
+            self.assertEqual(result["field_mismatches"], 0)
+
+    def test_official_history_mismatch_is_counted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "symbols"
+            symbol_dir = root / "TEST"
+            symbol_dir.mkdir(parents=True)
+            raw = json.dumps({"content": [{
+                "businessDate": "2024-01-02", "highPrice": 11, "lowPrice": 9,
+                "closePrice": 10.5, "totalTradedQuantity": 100,
+                "totalTradedValue": 1050,
+            }]}).encode()
+            (symbol_dir / "response-01.bin").write_bytes(raw)
+            sha = hashlib.sha256(raw).hexdigest()
+            (root.parent / "SHA256SUMS").write_text(
+                f"{sha}  symbols/TEST/response-01.bin\\n", encoding="utf-8"
+            )
+            public = HEADER + b"2024-01-02,10,11,9,10.5,nan,101,1050,A\\n"
+            result = crosscheck_official_history({"TEST": public}, root)
+            self.assertEqual(result["field_mismatches"], 1)
+            self.assertEqual(result["mismatches_by_field"]["traded_quantity"], 1)
+
 if __name__ == "__main__":
     unittest.main()

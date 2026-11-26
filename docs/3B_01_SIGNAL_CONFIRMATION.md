@@ -312,3 +312,51 @@ No commercial API credentials or licences are available in the project.
 No paid endpoint was called and no vendor data was imported. This comparison
 narrows the procurement path but does not satisfy the real-data acceptance
 gate.
+
+### Freely downloadable public dataset candidate — 2026-11-27
+
+The public repository `binayabaral/nepal-market-data` is a practical
+no-cost candidate for a quarantined research copy:
+https://github.com/binayabaral/nepal-market-data
+https://binayabaral.github.io/nepal-market-data/
+
+Its publisher states that the dataset is MIT-licensed and exposes per-symbol
+CSV files without authentication. The documented schema includes
+`published_date, open, high, low, close, per_change, traded_quantity,
+traded_amount, status`. The repository tree contains 472 NEPSE CSV files
+including the index and a symbol reference table. Its reference master
+distinguishes ordinary shares from debentures, promoter shares, funds and
+merged instruments; scanner ingestion must not treat every CSV as an
+ordinary equity.
+
+The publisher explicitly attributes NEPSE stock prices to ShareSansar and
+historical backfill to `Aabishkar2/nepse-data`. The latter README describes
+the same nine-column schema and says it is MIT licensed, but no LICENSE file
+was present at the inspected repository root. The downstream MIT declaration
+is therefore recorded as the publisher's licence statement, not independent
+proof of rights in upstream ShareSansar material. The archive is unofficial,
+best-effort and explicitly disclaims accuracy/completeness guarantees.
+Its prices are unadjusted for bonus issues, rights issues and splits.
+
+A bounded structural sample was inspected directly from
+`data/nepse/ADBL.csv`:
+- 3,684 rows, 2010-09-16 through 2026-11-26.
+- 0 duplicate dates and 0 non-finite numeric rows.
+- 405 rows (11.0%) violate basic OHLC bounds (high below open/close/low,
+  or low above open/close/high, or non-positive low).
+- 112 rows have zero turnover.
+- The reference master classifies ADBL as an ordinary, listed commercial bank.
+
+This single-symbol check is not a full-archive audit. However, the observed
+OHLC violations are sufficient to reject this sample as signal-engine input
+until row-level correction/reconciliation is completed. Do not import it into
+the canonical reviewed-row manifest or represent it as verified exchange
+data. It may be retained as a public, secondary research candidate for
+quarantine and cross-source diagnostics only.
+
+Decision: use freely accessible public files for source discovery and
+quarantined diagnostics; do not bypass the existing eligibility gate. A
+candidate dataset becomes eligible only after full-universe schema and
+duplicate checks, OHLCV validation, instrument/lifecycle filtering,
+corporate-action handling, overlap reconciliation against independent
+evidence, and a documented decision on upstream data-use rights.

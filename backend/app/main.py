@@ -300,3 +300,11 @@ def history(symbol: str):
     if rows is None:
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
+
+@app.get("/v1/volume-profile/{symbol}")
+def volume_profile(symbol: str, start: date, end: date):
+    from .volume_profile_store import load_profile
+    symbol=symbol.upper()
+    if EQUITY_UNIVERSE is None or symbol not in EQUITY_UNIVERSE["symbols"]:
+        return {"status":"unavailable","symbol":symbol,"levels":[],"reason":"equity_universe_gate"}
+    return load_profile(symbol,start,end)

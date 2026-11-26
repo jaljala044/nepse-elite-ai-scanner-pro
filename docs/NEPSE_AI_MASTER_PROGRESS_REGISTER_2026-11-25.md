@@ -2023,3 +2023,15 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - These two dates are `CROSS_SOURCE_PARITY_CONFIRMED_COMPLETENESS_NOT_YET_VERIFIED`: no date-specific upstream totalElements/full-pagination capture logs recovered. Positive UNL trades are evidenced; absences remain UNKNOWN.
 - 2026-11-20 remains the only date in this batch with verified upstream totalElements=39,966, 80/80 pages and exact full-session cross-source match.
 - Detailed report and JSON manifest commits: https://github.com/jaljala044/nepse-smc-data/commit/fcb3ae9e534129d4469b5f1d863a096940f00069 and 96ed31e5db64d5b2b7202d821d51ea50c9f0aea4.
+
+
+## 2026-11-26 — floorsheet coverage integration readiness
+
+- Reviewed the current date × security classifier, its seven unit tests, explicit Urek/Samir source profiles, archive acquisition utility, 2026-11-24 Samir/Mero capture audit, SocrateAI same-day comparison and broker-code coverage review.
+- Added [FLOORSHEET_COVERAGE_INTEGRATION_READINESS_2026-11-26.md](FLOORSHEET_COVERAGE_INTEGRATION_READINESS_2026-11-26.md), commit `ef2cbb98098f6d2be359f249707ad84984ed182e`.
+- Confirmed the 2026-11-24 SocrateAI file has 52,387 unique contracts and contains all 52,369 Samir contracts plus 18 records that reconcile the published MeroLagani quantity/amount totals. This is same-day consistency evidence, not independent source lineage or an exchange completeness certificate.
+- Confirmed Samir's date field is generated from scraper `date.today()`; it must not be treated as an independently verified exchange trade date without page/date evidence.
+- Confirmed 91 observed broker codes match the current CDSC CM-number directory, but effective-dated historical broker entity identity remains unresolved. Broker codes are execution-channel identifiers, not beneficial-owner evidence.
+- **No archive-to-classifier adapter or populated 281-equity coverage matrix was claimed or promoted.** Current pinned sample does not justify setting `complete_verified` / `reconciled` daily evidence, and exact point-in-time instrument lifecycle plus primary session calendar remain incomplete.
+- Classifier remains review-only; unknown is mandatory when capture, controls, session or lifecycle evidence is incomplete. Canonical promotion, broker scoring and BUY authorization remain blocked.
+- Next implementation gate: resolve source-use rights and acquire reproducible pinned daily raw bytes; then parse source-specific schemas, reconcile contract IDs and daily controls, and join only to verified sessions and effective-dated instrument IDs.

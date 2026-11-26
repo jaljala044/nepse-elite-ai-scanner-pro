@@ -56,3 +56,14 @@ Added `data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv` for 
 - YMHL has a verified-secondary notice-based first trading date of 2026-06-22 (listing notice dated 2026-06-19).
 - The other 280 `valid_from` values are intentionally blank and marked `unverified`; no earliest-archive-row inference was used.
 - The file is a coverage input, not a claim that only YMHL has a known listing date. It reflects only the lifecycle evidence already captured in this repository.
+
+
+## First-trade date reconciliation update — 2026-11-26
+
+A dated cross-check in `jaljala044/nepse-smc-data/reference/first_trade_boundary_reconciliation_2026-11-26.md` reconciled eight additional equities using secondary published first-trade/debut reports and matching first positive-volume archive rows: APHL (2026-06-10), KHPL (2026-05-26), SKHL (2026-03-25), BJHL (2026-03-22), SOHL (2026-03-15), HFIN (2026-03-12), SABBL (2026-02-16), and RSML (2026-02-16). The dates were added to the lifecycle input with status `verified_secondary_first_trade_archive_match`, source URI and limitation notes. Together with YMHL (2026-06-22), 9/281 lifecycle starts are populated; 272 remain unknown. These are secondary evidence, not exchange-authenticated raw floorsheet records.
+
+## OHLCV archive audit implementation
+
+The data repository's read-only audit script now reports per-symbol file presence, SHA-256, archive boundaries, first/last positive-volume observations, malformed rows, duplicate dates, out-of-order dates, OHLC-bound violations, non-positive volume, adjacent identical OHLCV rows, and calendar status counts. It emits `summary.csv`, `row_flags.csv` and `totals.json` as workflow artifacts. It does not infer listing dates from archive boundaries or treat candidate weekdays as confirmed sessions. Script commit: [711e4e2](https://github.com/jaljala044/nepse-smc-data/commit/711e4e2162c886bf1506f18967073dbc42bd30b9).
+
+**Current status:** implementation committed; full 281-security workflow artifact not yet verified. Existing comparison matches 276/281 equities; NESDO, SYPNL, ULBSL, USLB and YMHL are missing from compared OHLCV filenames. Calendar remains partial (225 sampled observed-open dates, 150 closed dates, 26 candidate weekdays). Canonical promotion and training remain blocked.

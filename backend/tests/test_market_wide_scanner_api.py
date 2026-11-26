@@ -42,6 +42,10 @@ class MarketWideScannerAPITests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["scanner_id"], "3A.01")
         self.assertEqual(payload["candidate_universe_count"], 1)
+        provenance = payload["candidate_universe_provenance"]
+        self.assertFalse(provenance["membership_authoritatively_verified"])
+        self.assertFalse(provenance["promotion_allowed"])
+        self.assertIn("secondary-provider snapshot", provenance["warning"])
         self.assertEqual(payload["symbols_without_observations"], 1)
         self.assertEqual(payload["results"][0]["status"], "insufficient_data")
         self.assertFalse(payload["ranking_enabled"])

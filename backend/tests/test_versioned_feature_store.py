@@ -26,6 +26,8 @@ class VersionedFeatureStoreTests(unittest.TestCase):
         joined = snapshot["security_and_action_joins"]["AAA"]
         self.assertEqual(joined["security_id"], "SEC-A")
         self.assertEqual(joined["corporate_action_count"], 1)
+        self.assertEqual(snapshot["features"]["trend_features"]["AAA"]["status"], "insufficient_evidence")
+        self.assertIsNone(snapshot["features"]["trend_features"]["AAA"]["score"])
         self.assertFalse(snapshot["ohlcv_adjustment_applied"])
         with tempfile.TemporaryDirectory() as tmp:
             first = persist_versioned_snapshot(tmp, snapshot)

@@ -91,7 +91,7 @@ class MarketScanOrchestrationTests(unittest.TestCase):
     def test_empty_universe_is_safe(self):
         result = run_market_scan([], {}, as_of=None, scan_symbol=lambda *args: {})
         self.assertEqual(result["candidate_universe_count"], 0)
-        self.assertEqual(result["coverage_pct"], 0.0)
+        self.assertEqual(result["observation_coverage_pct"], 0.0)
         self.assertEqual(result["results"], [])
         self.assertFalse(result["ranking_enabled"])
 

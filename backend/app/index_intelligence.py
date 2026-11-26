@@ -53,3 +53,174 @@ def index_intelligence(rows, *, sessions, benchmark, expected_indices, calendar_
                 as_of=days[-1],benchmark=benchmark,indices=out,
                 methodology="21-session relative return and five-session change; not proprietary RRG",
                 independent_validation=False)
+
+
+# Evidence-gated point-in-time index trend metrics. The legacy function above is
+# retained for existing research consumers; new Part 2 integrations should use
+# this function and pass only source-validated exchange-session records.
+from datetime import datetime, timezone
+from statistics import stdev
+import math
+
+_VERIFIED_RETURN_WINDOWS = {"1w": 5, "1m": 21, "3m": 63, "6m": 126}
+_VERIFIED_SMA_WINDOWS = (20, 50, 100, 150, 200)
+_VERIFIED_FULL_HISTORY = 253
+
+
+def _aware_utc(value, field):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field}_must_be_timezone_aware")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError(f"{field}_must_be_timezone_aware") from None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field}_must_be_timezone_aware")
+    return parsed.astimezone(timezone.utc)
+
+
+def _sha256(value):
+    text = str(value or "").lower()
+    return len(text) == 64 and all(ch in "0123456789abcdef" for ch in text)
+
+
+def build_verified_index_intelligence(rows, *, index_code="NEPSE", decision_time):
+    """Calculate point-in-time returns, moving averages and volatility.
+
+    Admits only verified final index_ohlcv rows available by decision_time.
+    The function is descriptive only: it does not infer missing sessions,
+    produce a score/probability, or authorize a trade.
+    """
+    if not isinstance(index_code, str) or not index_code.strip():
+        raise ValueError("index_code_required")
+    cutoff = _aware_utc(decision_time, "decision_time")
+    if not isinstance(rows, list):
+        raise ValueError("rows_must_be_a_list")
+
+    accepted = {}
+    excluded = {
+        "wrong_index_or_record_type": 0,
+        "unverified_or_nonfinal": 0,
+        "invalid_provenance": 0,
+        "not_available_by_cutoff": 0,
+    }
+    source_ids = set()
+    for i, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError(f"row_{i}_must_be_an_object")
+        if row.get("record_type") != "index_ohlcv" or row.get("index_code") != index_code:
+            excluded["wrong_index_or_record_type"] += 1
+            continue
+        if row.get("source_validation_status") != "verified" or row.get("finality_status") != "final":
+            excluded["unverified_or_nonfinal"] += 1
+            continue
+        source_id = row.get("source_id")
+        if not isinstance(source_id, str) or not source_id.strip() or not _sha256(row.get("source_payload_sha256")):
+            excluded["invalid_provenance"] += 1
+            continue
+        try:
+            available = _aware_utc(row.get("available_at"), "available_at")
+        except ValueError:
+            excluded["not_available_by_cutoff"] += 1
+            continue
+        if available > cutoff:
+            excluded["not_available_by_cutoff"] += 1
+            continue
+        try:
+            session = date.fromisoformat(str(row["session_date"])).isoformat()
+            close = float(row["close"])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ValueError(f"row_{i}_invalid_session_or_close") from None
+        if isinstance(row.get("close"), bool) or not math.isfinite(close) or close <= 0:
+            raise ValueError(f"row_{i}_invalid_session_or_close")
+        if session in accepted:
+            raise ValueError(f"duplicate_index_session:{session}")
+        accepted[session] = close
+        source_ids.add(source_id)
+
+    dates = sorted(accepted)
+    closes = [accepted[day] for day in dates]
+    count = len(closes)
+    metrics = {}
+    missing = []
+    for name, intervals in _VERIFIED_RETURN_WINDOWS.items():
+        if count > intervals:
+            metrics[f"return_{name}_pct"] = round((closes[-1] / closes[-intervals-1] - 1) * 100, 4)
+            metrics[f"return_{name}_start_session"] = dates[-intervals-1]
+        else:
+            metrics[f"return_{name}_pct"] = None
+            metrics[f"return_{name}_start_session"] = None
+            missing.append(f"return_{name}")
+
+    averages = {}
+    for window in _VERIFIED_SMA_WINDOWS:
+        key = f"sma_{window}"
+        averages[key] = round(sum(closes[-window:]) / window, 4) if count >= window else None
+        if averages[key] is None:
+            missing.append(key)
+    metrics["moving_averages"] = averages
+
+    if count >= 220:
+        current_200 = sum(closes[-200:]) / 200
+        prior_200 = sum(closes[-220:-20]) / 200
+        metrics["sma_200_slope_20_sessions_pct"] = round((current_200 / prior_200 - 1) * 100, 4)
+        metrics["sma_200_rising"] = current_200 > prior_200
+    else:
+        metrics["sma_200_slope_20_sessions_pct"] = None
+        metrics["sma_200_rising"] = None
+        missing.append("sma_200_slope")
+
+    if count >= _VERIFIED_FULL_HISTORY:
+        high = max(closes[-_VERIFIED_FULL_HISTORY:])
+        metrics["high_52w"] = round(high, 4)
+        metrics["distance_from_52w_high_pct"] = round((closes[-1] / high - 1) * 100, 4)
+    else:
+        metrics["high_52w"] = None
+        metrics["distance_from_52w_high_pct"] = None
+        missing.append("52w_high")
+
+    if count >= 21:
+        daily_returns = [closes[i] / closes[i - 1] - 1 for i in range(count - 20, count)]
+        daily_vol = stdev(daily_returns)
+        metrics["volatility_20d_pct"] = round(daily_vol * 100, 4)
+        metrics["volatility_20d_annualized_pct"] = round(daily_vol * math.sqrt(250) * 100, 4)
+    else:
+        metrics["volatility_20d_pct"] = None
+        metrics["volatility_20d_annualized_pct"] = None
+        missing.append("volatility_20d")
+
+    current = closes[-1] if closes else None
+    sma = averages
+    if current is None or sma["sma_50"] is None or sma["sma_150"] is None or sma["sma_200"] is None:
+        regime = "unknown"
+    elif current > sma["sma_50"] > sma["sma_150"] > sma["sma_200"] and metrics["sma_200_rising"] is True:
+        regime = "strong_uptrend"
+    elif current < sma["sma_200"] and metrics["sma_200_rising"] is False:
+        regime = "downtrend"
+    else:
+        regime = "mixed_or_sideways"
+
+    complete = count >= _VERIFIED_FULL_HISTORY and not missing
+    return {
+        "status": "observed" if complete else "insufficient_evidence",
+        "mode": "descriptive_only",
+        "index_code": index_code,
+        "as_of_session": dates[-1] if dates else None,
+        "decision_time": cutoff.isoformat(),
+        "history_sessions": count,
+        "source_ids": sorted(source_ids),
+        "excluded_rows": excluded,
+        "current_close": closes[-1] if closes else None,
+        "regime": regime,
+        "metrics": metrics,
+        "missing_metrics": sorted(set(missing)),
+        "production_score": None,
+        "probability": None,
+        "action": "NOT_EVALUATED",
+        "limitations": [
+            "A 253-session verified history is required for complete 52-week index context.",
+            "Missing sessions are not interpolated or forward-filled.",
+            "Index regime is descriptive, not a forecast or trade signal.",
+            "Sub-indices require separately verified index identities and records.",
+        ],
+    }

@@ -173,6 +173,68 @@ class BrokerMemoryStore:
             "results": results,
         }
 
+    def append_many_atomic(self, snapshots: Iterable[dict], *, key_prefix: str,
+                           methodology_version: str = "p4.34-v1",
+                           available_at: datetime | None = None) -> dict:
+        """Atomically append a complete set; any conflict rolls back every insert."""
+        if not isinstance(key_prefix, str) or not key_prefix.strip():
+            raise ValueError("key_prefix must be nonblank")
+        if not isinstance(methodology_version, str) or not methodology_version.strip():
+            raise ValueError("methodology_version must be nonblank")
+        available_at = available_at or datetime.now(timezone.utc)
+        if available_at.tzinfo is None or available_at.utcoffset() is None:
+            raise ValueError("available_at must be timezone-aware")
+        prepared = {}
+        received = 0
+        for snapshot in snapshots:
+            received += 1
+            self._validate_snapshot(snapshot)
+            identity = "|".join((key_prefix, str(snapshot["security_id"]),
+                str(snapshot["broker_entity_id"]), str(snapshot["as_of_date"]),
+                str(snapshot["window"])))
+            payload = _canonical_json(snapshot)
+            digest = _sha256(payload)
+            snapshot_id = _sha256(identity + ":" + digest)
+            if identity in prepared and prepared[identity]["payload_sha256"] != digest:
+                raise IdempotencyConflict("batch contains conflicting duplicate snapshot keys")
+            prepared[identity] = {"snapshot": snapshot, "payload": payload,
+                "payload_sha256": digest, "snapshot_id": snapshot_id}
+        con = self._connect()
+        inserted, replayed, results = 0, 0, []
+        try:
+            con.execute("BEGIN TRANSACTION")
+            for identity, item in prepared.items():
+                existing = con.execute(
+                    "SELECT snapshot_id, payload_sha256 FROM broker_memory_snapshots WHERE idempotency_key = ?",
+                    [identity]).fetchone()
+                if existing and existing[1] != item["payload_sha256"]:
+                    raise IdempotencyConflict(
+                        "idempotency key already exists with different immutable content")
+                item["existing"] = existing
+            created_at = datetime.now(timezone.utc)
+            for identity, item in prepared.items():
+                if item["existing"]:
+                    replayed += 1
+                    results.append({"snapshot_id": item["existing"][0], "inserted": False,
+                        "idempotent_replay": True, "payload_sha256": item["payload_sha256"]})
+                    continue
+                snap = item["snapshot"]
+                con.execute("INSERT INTO broker_memory_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+                    item["snapshot_id"], identity, date.fromisoformat(snap["as_of_date"]),
+                    available_at, snap["security_id"], snap["broker_entity_id"], snap["window"],
+                    item["payload"], item["payload_sha256"], methodology_version, created_at])
+                inserted += 1
+                results.append({"snapshot_id": item["snapshot_id"], "inserted": True,
+                    "idempotent_replay": False, "payload_sha256": item["payload_sha256"]})
+            con.execute("COMMIT")
+        except Exception:
+            con.execute("ROLLBACK")
+            raise
+        finally:
+            con.close()
+        return {"received": received, "unique_snapshots": len(prepared),
+            "inserted": inserted, "replayed": replayed, "results": results}
+
     def get_as_of(self, *, security_id: str, broker_entity_id: str,
                   as_of_date: str, available_by: datetime | None = None) -> list[dict]:
         """Return snapshots visible by both event cutoff and availability cutoff."""

@@ -11,6 +11,7 @@ import csv
 import hashlib
 import io
 import json
+from decimal import Decimal, InvalidOperation
 import os
 import re
 from collections import Counter, defaultdict
@@ -133,6 +134,138 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
     return result
 
 
+def crosscheck_official_history(public_csv_by_symbol: dict[str, bytes], official_root: Path) -> dict:
+    """Compare public CSV fields against pinned official NEPSE per-security captures."""
+    evidence_root = official_root.parent
+    manifest_path = evidence_root / "SHA256SUMS"
+    manifest = {}
+    if manifest_path.exists():
+        for line in manifest_path.read_text(encoding="utf-8").splitlines():
+            parts = line.strip().split(None, 1)
+            if len(parts) == 2:
+                manifest[parts[1].lstrip("* ")] = parts[0].lower()
+
+    fields = {
+        "high": ("high", "highPrice", Decimal("0.0001")),
+        "low": ("low", "lowPrice", Decimal("0.0001")),
+        "close": ("close", "closePrice", Decimal("0.0001")),
+        "traded_quantity": ("traded_quantity", "totalTradedQuantity", Decimal("0")),
+        "traded_amount": ("traded_amount", "totalTradedValue", Decimal("0.01")),
+    }
+    result = {
+        "official_symbols_found": 0, "official_rows": 0,
+        "public_rows_matched_by_date": 0, "fully_matching_rows": 0,
+        "field_comparisons": 0, "field_mismatches": 0,
+        "mismatches_by_field": {name: 0 for name in fields},
+        "missing_public_symbol_files": [], "missing_public_active_rows": 0,
+        "missing_public_zero_activity_rows": 0, "hash_or_parse_errors": [],
+        "per_symbol": [], "mismatch_examples": [],
+        "fields_compared": list(fields),
+        "not_compared": ["open", "per_change", "status"],
+    }
+    if not official_root.exists():
+        result["status"] = "OFFICIAL_CAPTURE_NOT_PRESENT"
+        return result
+
+    for symbol_dir in sorted(p for p in official_root.iterdir() if p.is_dir()):
+        symbol = symbol_dir.name
+        response_path = symbol_dir / "response-01.bin"
+        if not response_path.exists():
+            continue
+        result["official_symbols_found"] += 1
+        relative = str(response_path.relative_to(evidence_root)).replace("\\", "/")
+        raw = response_path.read_bytes()
+        expected_sha = manifest.get(relative)
+        actual_sha = hashlib.sha256(raw).hexdigest()
+        if not expected_sha or expected_sha != actual_sha:
+            result["hash_or_parse_errors"].append({
+                "symbol": symbol, "error": "official_response_sha256_missing_or_mismatched",
+                "path": relative,
+            })
+            continue
+        try:
+            official_rows = json.loads(raw.decode("utf-8")).get("content")
+            if not isinstance(official_rows, list):
+                raise ValueError("official response missing content array")
+        except Exception as exc:
+            result["hash_or_parse_errors"].append({
+                "symbol": symbol, "error": f"official_json_invalid:{type(exc).__name__}",
+            })
+            continue
+        public_content = public_csv_by_symbol.get(symbol)
+        if public_content is None:
+            result["missing_public_symbol_files"].append(symbol)
+            for row in official_rows:
+                result["official_rows"] += 1
+                if float(row.get("totalTradedQuantity") or 0) > 0 or float(row.get("totalTradedValue") or 0) > 0:
+                    result["missing_public_active_rows"] += 1
+                else:
+                    result["missing_public_zero_activity_rows"] += 1
+            continue
+
+        public_rows = {}
+        reader = csv.DictReader(io.StringIO(public_content.decode("utf-8-sig")))
+        for row in reader:
+            if row.get("published_date"):
+                public_rows[row["published_date"]] = row
+        symbol_summary = {
+            "symbol": symbol, "official_rows": len(official_rows),
+            "matched_dates": 0, "fully_matching_rows": 0,
+            "field_mismatches": 0, "missing_public_active_rows": 0,
+            "missing_public_zero_activity_rows": 0,
+        }
+        for official in official_rows:
+            result["official_rows"] += 1
+            day = str(official.get("businessDate", ""))[:10]
+            public = public_rows.get(day)
+            quantity = Decimal(str(official.get("totalTradedQuantity", 0) or 0))
+            turnover = Decimal(str(official.get("totalTradedValue", 0) or 0))
+            if public is None:
+                if quantity > 0 or turnover > 0:
+                    result["missing_public_active_rows"] += 1
+                    symbol_summary["missing_public_active_rows"] += 1
+                else:
+                    result["missing_public_zero_activity_rows"] += 1
+                    symbol_summary["missing_public_zero_activity_rows"] += 1
+                continue
+            result["public_rows_matched_by_date"] += 1
+            symbol_summary["matched_dates"] += 1
+            row_mismatches = []
+            for field, (public_key, official_key, tolerance) in fields.items():
+                try:
+                    left = Decimal(str(public[public_key]))
+                    right = Decimal(str(official[official_key]))
+                    if not left.is_finite() or not right.is_finite():
+                        raise InvalidOperation("non-finite value")
+                    result["field_comparisons"] += 1
+                    if abs(left - right) > tolerance:
+                        result["field_mismatches"] += 1
+                        result["mismatches_by_field"][field] += 1
+                        row_mismatches.append({
+                            "field": field, "public": str(left), "official": str(right),
+                        })
+                except (InvalidOperation, TypeError, ValueError) as exc:
+                    result["field_mismatches"] += 1
+                    result["mismatches_by_field"][field] += 1
+                    row_mismatches.append({"field": field, "error": str(exc)})
+            if row_mismatches:
+                symbol_summary["field_mismatches"] += len(row_mismatches)
+                if len(result["mismatch_examples"]) < 100:
+                    result["mismatch_examples"].append({
+                        "symbol": symbol, "date": day, "mismatches": row_mismatches,
+                    })
+            else:
+                result["fully_matching_rows"] += 1
+                symbol_summary["fully_matching_rows"] += 1
+        result["per_symbol"].append(symbol_summary)
+
+    result["status"] = "COMPLETED"
+    result["match_rate_pct"] = round(
+        result["fully_matching_rows"] / result["public_rows_matched_by_date"] * 100, 4
+    ) if result["public_rows_matched_by_date"] else None
+    return result
+
+
 def audit_public_archive(*, workers: int = 8) -> dict:
     headers = {"User-Agent": "NEPSE-ELITE-public-archive-audit/1.0",
                "Accept": "application/vnd.github+json"}
@@ -187,14 +320,16 @@ def audit_public_archive(*, workers: int = 8) -> dict:
                 raise ValueError("unexpected Git LFS pointer")
             result = audit_symbol_csv(response.content, symbol, path)
             result["git_blob_sha"] = blob_sha
-            return result
+            return result, response.content
 
-        audited, errors = [], []
+        audited, errors, public_csv_by_symbol = [], [], {}
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(download_and_audit, target): target for target in symbol_targets}
             for future in as_completed(futures):
                 try:
-                    audited.append(future.result())
+                    result, content = future.result()
+                    audited.append(result)
+                    public_csv_by_symbol[result["symbol"]] = content
                 except Exception as exc:
                     symbol, path, _ = futures[future]
                     errors.append({"symbol": symbol, "path": path,
@@ -207,6 +342,10 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "fractional_volume", "negative_turnover", "zero_turnover_with_volume",
         "invalid_per_change",
     )}
+    official_crosscheck = crosscheck_official_history(
+        public_csv_by_symbol,
+        Path("data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/symbols"),
+    )
     bad_symbols = [item["symbol"] for item in audited if any(
         item.get(key, 0) for key in (
             "duplicate_dates", "invalid_dates", "out_of_order_transitions",
@@ -234,7 +373,12 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "totals": totals,
         "symbols_with_any_quality_issue": len(set(bad_symbols)),
         "symbol_results": audited,
-        "gate": "FAIL" if quality_failed else "STRUCTURAL_PASS_ONLY",
+        "official_history_crosscheck": official_crosscheck,
+        "gate": "FAIL" if quality_failed or official_crosscheck.get("field_mismatches", 0)
+                or official_crosscheck.get("missing_public_active_rows", 0)
+                or official_crosscheck.get("hash_or_parse_errors")
+                or official_crosscheck.get("missing_public_symbol_files")
+                else "STRUCTURAL_PASS_ONLY",
         "limitations": [
             "Publisher describes this as unofficial, best-effort data scraped from public sources; source completeness and correctness are not guaranteed.",
             "Publisher attributes NEPSE OHLCV to ShareSansar and historical backfill to Aabishkar2/nepse-data; upstream data sublicensing rights are not independently established by the repository's MIT code/data notice.",

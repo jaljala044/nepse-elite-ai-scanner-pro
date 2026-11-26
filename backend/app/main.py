@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .scanner import analyze
+from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .storage import DATA, IMPORTS, store_rows, snapshot
 
@@ -56,6 +57,8 @@ def scan(request: ScanRequest):
             result["metrics"] = {}
             if result["status"] == "screened":
                 result["status"] = "eligibility_unverified"
+        result["idpat_v3"] = evaluate_idpat_v3(rows, eligible=not errors)
+        result["provisional_research"] = evaluate_provisional(rows, eligible=not errors)
         results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}

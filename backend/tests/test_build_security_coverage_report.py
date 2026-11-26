@@ -64,6 +64,27 @@ class SecurityCoverageReportTests(unittest.TestCase):
         self.assertEqual(report["source_specific_reports"][0]["unexpected_observations"][0]["reason"], "observation_on_verified_closed_date")
         self.assertFalse(report["promotion_allowed"])
 
+    def test_missing_lifecycle_start_is_reported_without_fabricated_missing_sessions(self):
+        self.write_inputs()
+        rows = list(csv.DictReader(self.universe.open(encoding="utf-8")))
+        rows[0]["valid_from"] = ""
+        self.write_csv(self.universe,
+            ["security_id", "symbol", "instrument_type", "valid_from", "valid_to", "target_in_scope"], rows)
+        self.write_csv(self.data, ["source_id","symbol","date"], [
+            {"source_id":"publisher-a","symbol":"AAA","date":"2026-01-02"},
+        ])
+        report = build_security_coverage_report(
+            self.universe, self.calendar, [self.data], date(2026,1,1), date(2026,1,5))
+        aaa = next(row for row in report["per_security"] if row["symbol"] == "AAA")
+        source = report["source_specific_reports"][0]
+        self.assertEqual(aaa["lifecycle_status"], "unverified_missing_valid_from")
+        self.assertIsNone(aaa["valid_from"])
+        self.assertEqual(aaa["expected_verified_sessions"], 0)
+        self.assertEqual(aaa["missing_sessions"], [])
+        self.assertIsNone(aaa["coverage_ratio"])
+        self.assertEqual(source["lifecycle_unverified_security_count"], 1)
+        self.assertEqual(source["unexpected_observations"], [])
+
     def test_source_file_bytes_are_pinned_in_report(self):
         self.write_inputs()
         report = build_security_coverage_report(

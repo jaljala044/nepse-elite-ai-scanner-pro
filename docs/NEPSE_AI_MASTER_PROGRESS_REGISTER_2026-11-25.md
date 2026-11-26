@@ -1494,3 +1494,12 @@ Project may be marked closed only after each open gate has a committed evidence 
 
 ### Immediate safety instruction
 Keep `NEPSE_FLOORSHEET_PRODUCTION_ENABLED` unset. Do not merge automation PR #3 or enable unattended writes until the dependency check passes and the collector is made non-destructive and independently validated.
+
+
+### Next-step execution — merger trading-suspension evidence (2026-11-26)
+- Added explicit secondary-source trading-suspension effective dates for BPW (2024-03-06), MMFDB/NLBBL (2024-03-13), SAMAJ (2025-10-19), and SFCL (2026-07-10) to `data/reference/nepse_historical_identity_evidence_2026-11-26.json`.
+- Each record includes the source URL and interpretation basis. These dates are not labelled as last-trading dates.
+- Data commit: `ba06db49fac96999da8f92a105bfac240b379c6e`.
+- Report update: `a3f626dcd4f5396a9e57e029dd0abf20d274bbcb`.
+- Evidence: ShareSansar notices dated 2024-03-06, 2024-03-12, 2025-10-17 and 2026-07-09 respectively.
+- JALPA/KLBSL and MKLB/SAMATA suspension-effective dates remain unresolved. Last actual trade dates, successor first trade dates and effective-dated security IDs remain open for all affected merger groups. No stable IDs or canonical mappings were promoted.

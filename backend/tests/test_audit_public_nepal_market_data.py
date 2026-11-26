@@ -6,7 +6,7 @@ from pathlib import Path
 
 from audit_public_nepal_market_data import (
     audit_symbol_csv, crosscheck_official_history, compare_socrateai_daily_csvs,
-    build_merged_official_history_root,
+    build_merged_official_history_root, compare_srijankarki_daily_csvs,
 )
 
 

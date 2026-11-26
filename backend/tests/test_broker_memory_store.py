@@ -96,15 +96,30 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         first_rows = [row for row in self.rows if row["trade_date"] in self.sessions[:3]]
         later_rows = [row for row in self.rows if row["trade_date"] in self.sessions[3:]]
         first = self.persist(rows=first_rows, decision_time=self.sessions[2] + "T16:00:00+05:45")
-        second = self.persist(rows=later_rows, decision_time=self.sessions[4] + "T16:00:00+05:45")
+        late_arriving = dict(
+            self.rows[2], source_id="late-correction-source",
+            source_payload_sha256="c" * 62 + self.sessions[1][-2:],
+            source_row_number=99, evidence_id="late-arriving-prior-session",
+            available_at=self.sessions[3] + "T15:30:00+05:45",
+        )
+        second = self.persist(
+            rows=later_rows + [late_arriving],
+            decision_time=self.sessions[4] + "T16:00:00+05:45",
+        )
         self.assertEqual(first["observation_count"], 6)
         first_week = first["features"]["security_features"]["NABIL"]["1W"]
         self.assertEqual(first_week["expected_covered_sessions"], 3)
         self.assertFalse(first_week["window_complete"])
-        self.assertEqual(second["observation_count"], 10)
-        self.assertEqual(broker_memory_status()["observation_count"], 10)
+        self.assertEqual(second["observation_count"], 11)
+        self.assertEqual(broker_memory_status()["observation_count"], 11)
         latest = get_latest_broker_memory(symbol="NABIL")
         self.assertEqual(latest["features"]["security_features"]["NABIL"]["1W"]["observed_sessions"], 5)
+        old_lineage = get_broker_memory_lineage(symbol="NABIL", as_of=self.sessions[2])
+        self.assertEqual(old_lineage["total_observations"], 6)
+        latest_lineage = get_broker_memory_lineage(symbol="NABIL")
+        self.assertEqual(latest_lineage["total_observations"], 11)
+        self.assertTrue(any(item["evidence_id"] == "late-arriving-prior-session"
+                            for item in latest_lineage["observations"]))
 
     def test_daily_channel_profile_uses_exact_prior_20_session_baseline(self):
         sessions = [(date(2026, 1, 1) + timedelta(days=i)).isoformat() for i in range(21)]

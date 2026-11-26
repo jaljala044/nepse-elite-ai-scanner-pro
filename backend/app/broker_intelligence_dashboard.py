@@ -198,11 +198,13 @@ def build_broker_intelligence_dashboard(
         except (TypeError, ValueError):
             candidate_rows.append({"symbol": candidate.get("symbol"), "status": "withheld",
                                    "classification": "UNKNOWN", "action": "NO_TRADE",
+                                   "probability": None,
                                    "reason": "candidate_timestamp_or_date_invalid"})
             continue
         if candidate_day > cutoff_date or candidate_available > cutoff_time:
             candidate_rows.append({"symbol": candidate.get("symbol"), "status": "withheld",
                                    "classification": "UNKNOWN", "action": "NO_TRADE",
+                                   "probability": None,
                                    "reason": "candidate_not_available_as_of_cutoff"})
             continue
         candidate_rows.append({

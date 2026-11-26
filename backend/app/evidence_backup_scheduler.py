@@ -49,7 +49,7 @@ def _append_receipt(path: Path, event: dict[str, Any]) -> dict[str, Any]:
     previous = GENESIS
     if path.exists() and path.stat().st_size:
         audit = audit_backup_schedule(path)
-        if audit["status"] != "verified":
+        if audit["ledger_status"] != "verified":
             raise ValueError("backup receipt ledger invalid; refusing append")
         previous = audit["latest_event_sha256"]
     event["previous_event_sha256"] = previous
@@ -76,6 +76,7 @@ def audit_backup_schedule(
     path = Path(receipt_path).expanduser()
     result: dict[str, Any] = {
         "status": "attention_required",
+        "ledger_status": "missing" if not path.is_file() else "invalid",
         "events_checked": 0,
         "latest_event_sha256": GENESIS,
         "latest_success_at_utc": None,
@@ -112,6 +113,7 @@ def audit_backup_schedule(
     if not result["events_checked"]:
         result["issues"].append("backup_receipt_ledger_empty")
         return result
+    result["ledger_status"] = "verified"
     if result["latest_run_status"] != "backup_verified":
         result["issues"].append("latest_backup_run_failed")
     if not result["latest_success_at_utc"]:
@@ -160,6 +162,7 @@ def run_scheduled_backup(
     backup_report: dict[str, Any] | None = None
     output_digest: str | None = None
     pre_ok = False
+    pre_attempted = False
     resume_ok = False
     try:
         try:
@@ -167,6 +170,7 @@ def run_scheduled_backup(
         except BlockingIOError as exc:
             raise RuntimeError("another scheduled backup is already running") from exc
         try:
+            pre_attempted = True
             pre_result = subprocess.run(pre, capture_output=True, text=True, timeout=timeout, check=False)
             if pre_result.returncode != 0:
                 issue = f"writer_quiesce_failed:{pre_result.returncode}"
@@ -187,7 +191,7 @@ def run_scheduled_backup(
         except OSError as exc:
             issue = f"backup_command_start_failed:{type(exc).__name__}"
         finally:
-            if pre_ok:
+            if pre_attempted:
                 try:
                     resume_result = subprocess.run(resume, capture_output=True, text=True, timeout=timeout, check=False)
                     resume_ok = resume_result.returncode == 0

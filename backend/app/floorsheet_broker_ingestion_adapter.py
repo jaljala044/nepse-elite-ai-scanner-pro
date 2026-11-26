@@ -19,6 +19,36 @@ class FloorsheetBrokerAdapterError(ValueError):
     """Invalid source evidence or adapter configuration."""
 
 
+# P4.43: these sessions have unresolved archive-wide contract identity defects.
+# Conservative session-wide hold prevents transformed rows or renamed sources bypassing
+# the archive quarantine. Release requires a separately reviewed evidence-backed change.
+P443_HELD_SESSIONS = frozenset({"2024-08-14", "2024-08-18"})
+P443_HELD_ARCHIVE_HASHES = frozenset({
+    "205d9aaa6184efdf222102c856737a114fb060a4a9f19d7fb2c38d7ff8340142",
+    "7bf52ca5f7b029f9188b34dc5276e805eede2ce2b65c50edf8e45e251d264ffb",
+    "441f2b64106b48086a0326604ab92c40f2e02fa163bca97cfe17385c9f88ebc8",
+    "beee6326be30d364eb6b0c55a2c36d9aa847daeb0af1bf5ddb2e4d3b82850433",
+})
+
+
+def _enforce_p443_quarantine(row: Mapping[str, Any]) -> None:
+    day = row.get("trade_date")
+    if not isinstance(day, str):
+        raise FloorsheetBrokerAdapterError("missing_trade_date")
+    try:
+        parsed = date.fromisoformat(day)
+    except ValueError:
+        raise FloorsheetBrokerAdapterError("invalid_trade_date") from None
+    if parsed.isoformat() != day:
+        raise FloorsheetBrokerAdapterError("noncanonical_trade_date")
+    if day in P443_HELD_SESSIONS:
+        raise FloorsheetBrokerAdapterError("p443_session_quarantined:" + day)
+    for field in ("source_payload_sha256", "source_archive_sha256"):
+        value = row.get(field)
+        if isinstance(value, str) and value.strip().lower() in P443_HELD_ARCHIVE_HASHES:
+            raise FloorsheetBrokerAdapterError("p443_archive_quarantined")
+
+
 def _threshold(value: Any) -> Decimal:
     try:
         result = Decimal(str(value))
@@ -89,6 +119,7 @@ def adapt_floorsheet_parties_to_broker_batch(
     for row in rows:
         if not isinstance(row, dict):
             raise FloorsheetBrokerAdapterError("party_row_must_be_an_object")
+        _enforce_p443_quarantine(row)
         key = (row.get("source_id"), row.get("trade_date"), row.get("contract_id"))
         contracts[key].append(row)
     for key, parties in contracts.items():

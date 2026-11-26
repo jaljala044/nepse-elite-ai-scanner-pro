@@ -894,12 +894,13 @@ def main() -> None:
         "ordinary_listed_files_audited", "missing_files", "download_errors",
         "date_range", "totals", "symbols_with_any_quality_issue",
     )}, indent=2))
-    print(json.dumps({"official_history_crosscheck": {
+    print(json.dumps({"official_capture_merge": report["official_capture_merge"],
+        "official_history_crosscheck": {
         key: report["official_history_crosscheck"].get(key)
         for key in ("status", "official_symbols_found", "official_rows",
                     "public_rows_matched_by_date", "fully_matching_rows",
                     "match_rate_pct", "field_comparisons", "field_mismatches",
-                    "mismatches_by_field", "missing_public_active_rows",
+                    "mismatches_by_field", "field_error_stats", "missing_public_active_rows",
                     "missing_public_zero_activity_rows", "missing_public_symbol_files",
                     "hash_or_parse_errors", "mismatch_examples")
     }, "socrateai_history_crosscheck": {

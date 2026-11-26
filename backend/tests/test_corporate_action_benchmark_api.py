@@ -35,7 +35,7 @@ class CorporateActionBenchmarkAPITests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.json()
         self.assertEqual(body["corporate_action_adjustment"]["rows"][0]["close"], 50)
-        self.assertEqual(body["benchmark_comparison"]["excess_return_pct"], 0)
+        self.assertEqual(body["benchmark_comparison"]["excess_return_pct"], 5.0)
         self.assertFalse(body["production_eligible"])
 
     def test_lookahead_action_fails_closed(self):

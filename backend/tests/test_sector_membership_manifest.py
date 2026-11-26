@@ -68,6 +68,13 @@ class SectorMembershipManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "membership_record_0_invalid_identity"):
             self.audit(manifest)
 
+    def test_padded_allowed_sector_code_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "allowed_sector_codes_required"):
+            audit_sector_membership_manifest(
+                fixture(), expected_symbols=["AAA", "BBB"],
+                allowed_sector_codes={"BANK ", "HYDRO"}, decision_time=CUTOFF,
+            )
+
     def test_invalid_expected_symbol_type_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "expected_symbols_must_be_unique_nonempty"):
             audit_sector_membership_manifest(

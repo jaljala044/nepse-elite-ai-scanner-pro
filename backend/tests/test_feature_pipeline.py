@@ -20,5 +20,29 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertEqual(result["interpretation"], "descriptive_only_not_a_trading_signal")
 
 
+    def test_point_in_time_snapshot_includes_minervini_template(self):
+        from datetime import date, timedelta
+        start = date(2025, 1, 1)
+        rows = []
+        for i in range(260):
+            session = start + timedelta(days=i)
+            close = 100.0 + i
+            rows.append({
+                "record_type": "ohlcv", "symbol": "AAA",
+                "session_date": session.isoformat(),
+                "available_at": session.isoformat() + "T16:00:00Z",
+                "open": close, "high": close + 2, "low": close - 2,
+                "close": close, "previous_close": close - 1,
+                "volume": 1000,
+            })
+        result = build_feature_snapshot(
+            rows, (start + timedelta(days=260)).isoformat() + "T12:00:00Z", ["AAA"]
+        )
+        trend = result["trend_features"]["AAA"]
+        self.assertEqual(trend["status"], "observed")
+        self.assertEqual(trend["score"], 100)
+        self.assertEqual(trend["history_sessions"], 260)
+
+
 if __name__ == "__main__":
     unittest.main()

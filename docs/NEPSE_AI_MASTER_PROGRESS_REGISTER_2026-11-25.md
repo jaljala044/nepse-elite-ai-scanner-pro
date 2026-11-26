@@ -1549,3 +1549,11 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Evidence combines Laganilab/Merolagani historical company pages with ShareSansar dated company-history observations. BPW's last-trade date coincides with the reported suspension-effective date; MMFDB/NLBBL last-trade dates precede the reported 2024-03-13 suspension date.
 - Updated evidence report: `docs/PRIORITY_97_HISTORICAL_EQUITY_MERGER_TIMELINES_2026-11-26.md`.
 - Evidence remains secondary-source level; no historical predecessor security IDs, effective intervals, or legal stable IDs are certified. No canonical promotion, training promotion, or price-history splice is authorized.
+
+
+### Priority 97 follow-up — successor-side listing evidence (2026-11-26)
+
+- Added secondary-source listing observations for post-merger SLBSL (256,050 shares) and NMLBBL (13,977,643 shares), both reported listed on 2024-05-17 by ShareSansar.
+- The report gives opening price ranges for first transactions, but does not establish the first executed trading session. NMLBBL's company profile records operation date 2024-05-19; this is kept separate from exchange trading date.
+- first_trading_date remains null for both. Next evidence needed: dated daily OHLCV/floorsheet first trade row or explicit exchange/secondary notice confirming first execution.
+- No stable IDs/effective intervals inferred; no canonical/training promotion or price splice. Priority 97 remains open.

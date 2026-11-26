@@ -64,9 +64,9 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             (symbol_dir / "response-01.bin").write_bytes(raw)
             sha = hashlib.sha256(raw).hexdigest()
             (root.parent / "SHA256SUMS").write_text(
-                f"{sha}  symbols/TEST/response-01.bin\\n", encoding="utf-8"
+                f"{sha}  symbols/TEST/response-01.bin\n", encoding="utf-8"
             )
-            public = HEADER + b"2024-01-02,10,11,9,10.5,nan,100,1050,A\\n"
+            public = HEADER + b"2024-01-02,10,11,9,10.5,nan,100,1050,A\n"
             result = crosscheck_official_history({"TEST": public}, root)
             self.assertEqual(result["status"], "COMPLETED")
             self.assertEqual(result["official_rows"], 1)
@@ -87,9 +87,9 @@ class PublicNepalMarketDataAuditTests(unittest.TestCase):
             (symbol_dir / "response-01.bin").write_bytes(raw)
             sha = hashlib.sha256(raw).hexdigest()
             (root.parent / "SHA256SUMS").write_text(
-                f"{sha}  symbols/TEST/response-01.bin\\n", encoding="utf-8"
+                f"{sha}  symbols/TEST/response-01.bin\n", encoding="utf-8"
             )
-            public = HEADER + b"2024-01-02,10,11,9,10.5,nan,101,1050,A\\n"
+            public = HEADER + b"2024-01-02,10,11,9,10.5,nan,101,1050,A\n"
             result = crosscheck_official_history({"TEST": public}, root)
             self.assertEqual(result["field_mismatches"], 1)
             self.assertEqual(result["mismatches_by_field"]["traded_quantity"], 1)

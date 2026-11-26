@@ -83,6 +83,20 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(profile["selected_broker_entity_id"], "BROKER-A")
         self.assertTrue(profile["broker_matches"])
         self.assertEqual(get_latest_broker_memory(broker_entity_id="NOT-FOUND"), None)
+        channel = get_latest_broker_memory(broker_code="11")
+        self.assertEqual(channel["selected_execution_channel_code"], "11")
+        self.assertTrue(channel["execution_channel_matches"])
+        self.assertEqual(channel["execution_channel_matches"][0]["identity_status"], "execution_channel_only")
+
+    def test_unmapped_execution_codes_are_remembered_without_entity_identity(self):
+        rows = [dict(row, identity_status="unmapped", broker_entity_id=None)
+                for row in self.rows]
+        result = self.persist(rows=rows)
+        self.assertEqual(result["features"]["status"], "insufficient_evidence")
+        channel = get_latest_broker_memory(broker_code="11")
+        self.assertIsNotNone(channel)
+        self.assertEqual(channel["execution_channel_matches"][0]["identity_status"], "execution_channel_only")
+        self.assertEqual(channel["execution_channel_matches"][0]["flow_class"], "net_buyer")
 
     def test_rejects_unverified_or_incomplete_floorsheet(self):
         bad = [dict(row) for row in self.rows]

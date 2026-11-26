@@ -53,6 +53,20 @@ class OfficialMarketSummaryAdapterTests(unittest.TestCase):
         self.assertFalse(result["rows"][0]["evidence_gate_passed"])
         self.assertFalse(result["promotion_allowed"])
 
+
+    def test_committed_nepse_capture_is_source_verified_but_not_finality_promoted(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        result = validate_official_market_summary_capture(
+            repo_root,
+            report_path="data/evidence/raw/nepse/market-summary-history/2026-11-26/capture-report.json",
+            raw_payload_path="data/evidence/raw/nepse/market-summary-history/2026-11-26/response-body.bin",
+            decision_time="2026-11-27T12:00:00+05:45",
+        )
+        self.assertEqual(result["record_count"], 229)
+        self.assertEqual(result["last_session"], "2026-11-26")
+        self.assertEqual(result["status"], "review_only")
+        self.assertFalse(result["promotion_allowed"])
+
     def test_raw_payload_hash_mismatch_is_rejected(self):
         (self.root / "body.bin").write_bytes(self.raw + b" ")
         with self.assertRaisesRegex(MarketSummaryCaptureError, "sha256_mismatch"):

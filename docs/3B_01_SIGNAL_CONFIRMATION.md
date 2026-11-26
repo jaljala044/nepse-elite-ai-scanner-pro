@@ -488,3 +488,51 @@ The audit implementation also corrects the meaning of `valid_rows`: a row is
 counted valid only if all strict structural checks pass, including OHLC,
 volume, turnover and percentage-change rules. The repeat run after this fix
 reports 402,234 valid rows, not merely rows with parseable numeric fields.
+
+#### Official NEPSE overlap reconciliation — 2026-11-27
+
+The full public archive was additionally compared with the project's pinned
+official NEPSE per-security history captures for the same recent window.
+The audit verified SHA-256 for each official raw response against the
+committed `SHA256SUMS` manifest before comparing rows.
+
+| Measure | Result |
+| --- | ---: |
+| Official symbols with captured response | 281 |
+| Official symbol-date rows | 8,142 |
+| Public rows found on official dates | 8,079 |
+| Official explicit zero-activity rows absent from public CSVs | 63 |
+| Public missing active rows | 0 |
+| Public symbol files missing for captured official symbols | 0 |
+| Compared fields per matched row | 5 (high, low, close, volume, turnover) |
+| Total field comparisons | 40,395 |
+| Fully matching rows after documented turnover-rounding tolerance | 8,078 / 8,079 (99.9876%) |
+| Material field mismatches | 1 |
+
+The publisher intentionally omits dates when a security did not trade; all
+63 unmatched official rows were explicit zero-activity rows, so those absences
+are consistent with the public archive's stated missing-rather-than-forward-
+fill policy. There were no missing public rows for official positive-activity
+dates.
+
+The one material mismatch is **CFCL on 2026-11-18**:
+- Public archive: close **636**.
+- Official NEPSE history: close **589.9**.
+- High (640), low (589.9), volume (307,576) and turnover (NPR 184,031,033.4)
+  agree between the two sources.
+- The public row is therefore not safe to use as-is even though it passes
+  basic OHLC bounds; the official close contradicts it.
+
+Three smaller turnover differences in the initial strict comparison were
+NPR 0.02–0.03, caused by the public CSV's one-decimal turnover formatting
+versus the official response's two-decimal precision. The audit now allows a
+0.05 NPR rounding tolerance for turnover. This leaves the single CFCL close
+mismatch unresolved. High, low, close, volume and turnover were compared;
+**open, percentage change and status were not independently cross-checked**.
+
+The comparison demonstrates strong agreement in this bounded recent window,
+but does not validate the full 1995–2026 archive, open prices, corporate
+actions, historical security identity, data-use rights or predictive value.
+The archive remains quarantined. Do not silently overwrite CFCL's public
+value or promote any other rows from this comparison into the canonical
+reviewed manifest.

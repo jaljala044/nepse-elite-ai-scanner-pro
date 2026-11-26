@@ -1,0 +1,29 @@
+name: Priority equity continuity audit
+on:
+  pull_request:
+    paths:
+      - 'backend/audit_priority_equity_continuity.py'
+      - '.github/workflows/priority-equity-continuity-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire public historical archive
+        run: git clone --mirror https://github.com/jaljala044/nepse-history-starter.git /tmp/nepse-history.git
+      - name: Audit remaining priority equities
+        run: |
+          python backend/audit_priority_equity_continuity.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --output /tmp/audit/remaining_223.csv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: remaining-223-equity-audit
+          path: /tmp/audit/remaining_223.csv
+          if-no-files-found: error

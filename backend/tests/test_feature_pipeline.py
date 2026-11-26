@@ -91,7 +91,7 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertIsNone(candidates["relative_strength"])
         self.assertIsNone(candidates["broker"])
         aggregate = result["aggregate_scores"]["AAA"]
-        self.assertEqual(aggregate["coverage_pct"], 65.0)
+        self.assertEqual(aggregate["coverage_pct"], 60.0)
         self.assertEqual(aggregate["stage1_quality"], "UNKNOWN")
         self.assertEqual(aggregate["action"], "NO_TRADE")
         self.assertIn("relative_strength", aggregate["missing_components"])

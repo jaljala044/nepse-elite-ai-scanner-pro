@@ -648,3 +648,100 @@ Volume differences are often small in absolute terms but include material
 relative exceptions. The high/low/close exceptions also include large price
 differences. Therefore, this is not simply a decimal-format issue and the
 archive cannot be treated as interchangeable with official NEPSE history.
+
+#### One-year official NEPSE history and merged-window reconciliation — 2026-11-27
+
+The official per-security history endpoint was captured for all 281 current
+ordinary-equity candidates over `2025-11-26` to `2026-11-26`. Every request
+returned a verified official HTTP 200 response and one page of data. The
+long-window request returned 61,665 rows over 228 dates, ending on
+`2026-11-25`; it did not include the final official session `2026-11-26`.
+The earlier, shorter official capture for `2026-10-05` to `2026-11-26`
+contains that final date.
+
+The audit now verifies both capture manifests and raw response SHA-256 hashes,
+checks all 7,861 overlapping symbol-date rows for exact equality, and merges
+the two windows in a temporary read-only evidence view. The overlap had zero
+mismatches. The combined result covers all 229 dates from the official
+market-summary archive:
+
+| Measure | Result |
+| --- | ---: |
+| Current equity candidates / current security-ID crosswalk matches | 281 / 281 |
+| Official market-summary session dates | 229 |
+| Long-window rows | 61,665 |
+| Short-window rows | 8,142 |
+| Overlapping rows compared / mismatches | 7,861 / 0 |
+| Combined official rows | 61,946 |
+| Expected symbol-date pairs | 64,349 |
+| Missing pairs classified before lifecycle valid-from | 2,403 |
+| Unexplained missing pairs after merge | 0 |
+| Unexpected or missing official dates | 0 / 0 |
+| Raw hash errors | 0 |
+
+The 2,403 pre-valid-from classifications use the project's lifecycle register,
+which currently relies on secondary listing/first-trade evidence for those
+symbols. They are contextualized, not proof of historical security identity.
+The capture still sets historical identity, full completeness, source rights,
+coverage admission and canonical promotion to false. The official endpoint
+does not provide opening price.
+
+- Official one-year capture and artifact: [run 45895789547](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45895789547)
+- Automated merged-window and public-source audit: [run 45896787276](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45896787276)
+
+#### One-year public archive reconciliation against official NEPSE
+
+The public archive audit now compares the merged 229-date official history
+against both freely accessible secondary archives.
+
+**binayabaral/nepal-market-data** at commit
+`944bc95872e46b299625091f6c9f32f57010e71a`:
+
+| Measure | Result |
+| --- | ---: |
+| Official rows | 61,946 |
+| Matched public rows | 61,306 |
+| Rows matching all five compared fields | 61,292 (99.9772%) |
+| Field comparisons / mismatches | 306,530 / 14 |
+| Close / traded-amount mismatches | 12 / 2 |
+| Missing public active rows | 164 |
+| Missing public zero-activity rows | 476 |
+| Missing symbol files / hash or parse errors | 0 / 0 |
+
+The 14 mismatches are not all rounding: close differences include CFCL
+(`2026-11-18`, NPR 46.1), ULBSL (`2026-03-01`, NPR 60), SAIL
+(`2026-03-01`, NPR 23) and SABBL (`2026-07-17`, NPR 12). The two
+turnover differences are NPR 0.2 and NPR 0.3. The 99.9772% match rate applies
+only to rows present in both sources; the 164 missing active rows remain
+unresolved.
+
+The full archive's independent structural gate still fails: 439,116 rows
+across 285 ordinary-listed files include 35,228 OHLC-bound violations,
+3,682 positive-volume/zero-turnover rows and two invalid percentage-change
+values; 181 symbols have at least one quality issue.
+
+**socrateai-official/nepse-open-data** at commit
+`70324524df83eaa7c2964441ad4026d6ab00cc7e`:
+
+| Measure | Result |
+| --- | ---: |
+| Official rows | 61,946 |
+| Public daily files expected / found | 229 / 229 |
+| Matched official rows | 61,423 |
+| Rows matching all four compared fields | 14,917 (24.2857%) |
+| Field comparisons / mismatches | 245,692 / 49,489 |
+| High / low / close / volume mismatches | 1,702 / 1,141 / 448 / 46,198 |
+| Duplicate symbol rows / invalid OHLC rows | 1,683 / 1 |
+| Missing public active / zero-activity rows | 47 / 476 |
+
+This second archive fails the extended cross-source gate. Its volume mismatch
+count is especially large, and the sample also contains price disagreements
+and duplicate symbol rows.
+
+**Decision:** binayabaral is the stronger of these two free secondary
+candidates for the fields compared, but it is not accepted as canonical data.
+The official history does not contain open, the secondary archive still has
+14 field mismatches and 164 missing active rows, its own structural gate
+fails, and upstream rights/corporate-action treatment are unresolved. No rows
+were imported or promoted. No backtest or production signal eligibility is
+claimed.

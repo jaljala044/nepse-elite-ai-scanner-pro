@@ -58,6 +58,8 @@ def run_market_scan(
                 "as_of": as_of.isoformat() if as_of else None,
                 "observations": 0,
                 "latest_available_observation": None,
+                "latest_observation_calendar_age_days": None,
+                "freshness_status": "no_observation",
                 "signals": [],
                 "metrics": {},
                 "limitations": ["no_ohlcv_observations_available"],
@@ -69,7 +71,12 @@ def run_market_scan(
         result = dict(result)
         result["symbol"] = symbol
         result["requested_as_of"] = as_of.isoformat() if as_of else None
-        result["latest_available_observation"] = _row_date(rows[-1]).isoformat()
+        latest_day = _row_date(rows[-1])
+        result["latest_available_observation"] = latest_day.isoformat()
+        result["latest_observation_calendar_age_days"] = (
+            (as_of - latest_day).days if as_of is not None else None
+        )
+        result["freshness_status"] = "calendar_age_only_session_status_unverified"
         result["observations"] = len(rows)
         results.append(result)
 
@@ -94,6 +101,7 @@ def run_market_scan(
         "disclaimer": (
             "Candidate-universe coverage is not authoritative exchange membership. "
             "Missing observations do not imply a closed session or an open session. "
-            "No ranking or recommendation is produced by this orchestration layer."
+            "Calendar age is descriptive only; no stale-session judgment is made without "
+            "verified session-calendar evidence. No ranking or recommendation is produced."
         ),
     }

@@ -103,6 +103,7 @@ class SourcePolicy:
     evidence_refs: tuple[str, ...]
     rights_state: str = "unknown"
     redistribution_allowed: bool = False
+    rights_evidence_ref: str | None = None
 
     def __post_init__(self) -> None:
         if not self.source_id.strip() or not self.publisher_name.strip():
@@ -131,8 +132,10 @@ class SourcePolicy:
         _utc(self.reviewed_at, "reviewed_at")
         if self.redistribution_allowed and self.rights_state != "redistribution_permitted":
             raise ValueError("redistribution requires explicit redistribution_permitted rights")
-        if self.rights_state == "redistribution_permitted" and not self.evidence_refs:
-            raise ValueError("redistribution requires rights evidence")
+        if self.redistribution_allowed and not (self.rights_evidence_ref or "").strip():
+            raise ValueError("redistribution requires a dedicated rights_evidence_ref")
+        if self.rights_state == "redistribution_permitted" and not (self.rights_evidence_ref or "").strip():
+            raise ValueError("permitted rights state requires a dedicated rights_evidence_ref")
 
 
 def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
@@ -147,12 +150,9 @@ def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
 
 
 def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bool:
-    """Verify a loaded registry against a digest pinned in trusted deployment config."""
     expected = _sha256(expected_sha256, "expected_registry_sha256")
-    body = {"schema_version": registry.get("schema_version"),
-            "sources": registry.get("sources")}
-    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
-    actual = hashlib.sha256(canonical.encode()).hexdigest()
+    body = {"schema_version": registry.get("schema_version"), "sources": registry.get("sources")}
+    actual = hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     return registry.get("registry_sha256") == actual == expected
 
 
@@ -161,9 +161,7 @@ def _validation_signature_payload(validation: dict[str, Any]) -> bytes:
     return json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def verify_reviewer_signature(validation: dict[str, Any],
-                              reviewer_keys: dict[str, bytes]) -> bool:
-    """Verify HMAC-SHA256 review attestation using server-held reviewer secrets."""
+def verify_reviewer_signature(validation: dict[str, Any], reviewer_keys: dict[str, bytes]) -> bool:
     reviewer = validation.get("reviewer")
     signature = validation.get("signature")
     key = reviewer_keys.get(reviewer) if isinstance(reviewer, str) else None
@@ -260,6 +258,8 @@ def build_promotion_event(
     reasons = []
     if not verify_source_registry(registry, trusted_registry_sha256):
         reasons.append("source_registry_digest_not_trusted")
+    if not verify_reviewer_signature(validation, reviewer_keys):
+        reasons.append("reviewer_signature_invalid_or_untrusted")
     if action == "promote":
         _, policy_reasons = resolve_source_policy(
             registry, source_id=record.get("source_id", ""),
@@ -268,8 +268,6 @@ def build_promotion_event(
             decision_time=decision_time,
         )
         reasons.extend(policy_reasons)
-        if not verify_reviewer_signature(validation, reviewer_keys):
-            reasons.append("reviewer_signature_invalid_or_untrusted")
         reasons.extend(validate_promotion_evidence(
             record, raw_payload_sha256=raw_payload_sha256,
             validation=validation, decision_time=decision_time,
@@ -277,8 +275,13 @@ def build_promotion_event(
     elif action == "revoke":
         if not record.get("record_id"):
             reasons.append("record_id_required_for_revocation")
-        if not validation.get("reviewer") or not validation.get("evidence_refs"):
+        if not validation.get("reviewer") or not validation.get("validation_id") or not validation.get("evidence_refs"):
             reasons.append("revocation_reviewer_and_evidence_required")
+        try:
+            if _utc(validation.get("validated_at"), "validated_at") > _utc(decision_time, "decision_time"):
+                reasons.append("revocation_validation_occurs_after_decision_time")
+        except (TypeError, ValueError):
+            reasons.append("invalid_revocation_validation_timestamp")
     body = {
         "schema_version": 1, "decision_id": decision_id, "action": action,
         "record_id": record.get("record_id"), "source_id": record.get("source_id"),
@@ -288,7 +291,7 @@ def build_promotion_event(
         "validation_id": validation.get("validation_id"),
         "reviewer": validation.get("reviewer"),
         "evidence_refs": validation.get("evidence_refs", {}),
-        "accepted": action == "promote" and not reasons,
+        "accepted": action in {"promote", "revoke"} and not reasons,
         "reasons": sorted(set(reasons)),
         "registry_sha256": registry.get("registry_sha256"),
         "validation_signature": validation.get("signature"),
@@ -363,6 +366,6 @@ def active_promoted_record_ids(path: str | Path) -> set[str]:
         record_id = event.get("record_id")
         if event.get("action") == "promote" and event.get("accepted") is True:
             state[record_id] = True
-        elif event.get("action") == "revoke":
+        elif event.get("action") == "revoke" and event.get("accepted") is True:
             state[record_id] = False
     return {record_id for record_id, active in state.items() if active and record_id}

@@ -14,9 +14,25 @@ def price_rows(n, fn=lambda i: 100 + i):
             "session_date": (start + timedelta(days=i)).isoformat(),
             "open": close, "high": close + 2, "low": close - 2,
             "close": close, "volume": 1000,
+            "source_validation_status": "verified",
+            "source_id": "equity-test-source",
+            "source_payload_sha256": "e" * 64,
+            "price_basis_status": "verified_unadjusted_no_actions",
+            "corporate_action_status": "clear",
         })
     return rows
 
+
+
+def benchmark_rows(n, fn=lambda i: 100 + i):
+    rows = price_rows(n, fn)
+    for row in rows:
+        row.update({
+            "record_type": "index_ohlcv", "index_code": "NEPSE",
+            "finality_status": "final", "source_validation_status": "verified",
+            "source_id": "nepse-final-test-source", "source_payload_sha256": "f" * 64,
+        })
+    return rows
 
 class MinerviniTrendTests(unittest.TestCase):
     def test_insufficient_252_sessions_is_null_not_zero(self):
@@ -45,11 +61,11 @@ class MinerviniTrendTests(unittest.TestCase):
 
 class RelativeStrengthTests(unittest.TestCase):
     def test_weighted_rs_and_percentile(self):
-        benchmark = price_rows(130, lambda i: 100 + i * 0.2)
+        benchmark = benchmark_rows(130, lambda i: 100 + i * 0.2)
         strong = price_rows(130, lambda i: 100 + i * 0.8)
         weak = price_rows(130, lambda i: 100 + i * 0.05)
         result = relative_strength_universe(
-            {"STRONG": strong, "WEAK": weak}, benchmark
+            {"STRONG": strong, "WEAK": weak}, benchmark, expected_symbols=["STRONG", "WEAK"]
         )
         self.assertEqual(result["eligible_symbols"], 2)
         self.assertGreater(
@@ -62,21 +78,21 @@ class RelativeStrengthTests(unittest.TestCase):
 
     def test_incomplete_history_excluded(self):
         result = relative_strength_universe(
-            {"SHORT": price_rows(100)}, price_rows(130)
+            {"SHORT": price_rows(100)}, benchmark_rows(130), expected_symbols=["SHORT"]
         )
         self.assertEqual(result["eligible_symbols"], 0)
         self.assertIn("SHORT", result["excluded_symbols"])
 
     def test_duplicate_benchmark_dates_rejected(self):
-        benchmark = price_rows(130)
+        benchmark = benchmark_rows(130)
         benchmark.append(dict(benchmark[-1]))
         with self.assertRaises(ValueError):
-            relative_strength_universe({"AAA": price_rows(130)}, benchmark)
+            relative_strength_universe({"AAA": price_rows(130)}, benchmark, expected_symbols=["AAA"])
 
     def test_stock_benchmark_session_mismatch_not_filled(self):
         stock = price_rows(130)
         stock = stock[:-10]
-        result = relative_strength_universe({"AAA": stock}, price_rows(130))
+        result = relative_strength_universe({"AAA": stock}, benchmark_rows(130), expected_symbols=["AAA"])
         self.assertEqual(result["eligible_symbols"], 0)
         self.assertIn("AAA", result["excluded_symbols"])
 

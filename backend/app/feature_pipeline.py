@@ -10,6 +10,7 @@ from app.smc_features import smc_features
 from app.sector_strength_features import sector_strength_features
 from app.liquidity_features import liquidity_tradability_features
 from app.scoring_engine import score_scan
+from app.relative_strength_features import relative_strength_universe
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
@@ -75,6 +76,26 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
     broker_footprint = broker_footprint_features(broker_rows)
+    if expected_symbols:
+        expected_rs_symbols = [str(symbol).strip().upper() for symbol in expected_symbols]
+        benchmark_rows = [
+            row for row in rows
+            if row.get("record_type") == "index_ohlcv"
+            and str(row.get("index_code", "")).upper() == "NEPSE"
+        ]
+        relative_strength = relative_strength_universe(
+            {symbol: by_symbol.get(symbol, []) for symbol in expected_rs_symbols},
+            benchmark_rows,
+            expected_symbols=expected_rs_symbols,
+        )
+    else:
+        relative_strength = {
+            "status": "insufficient_evidence",
+            "reason": "expected_equity_universe_not_supplied",
+            "eligible_symbols": 0,
+            "expected_symbols": 0,
+            "results": {},
+        }
     if sector_membership is not None and expected_sector_members is not None and session_dates is not None:
         sector_features = sector_strength_features(
             prices, sector_membership=sector_membership,
@@ -104,7 +125,12 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         component_candidates[symbol] = {
             "wyckoff": wyckoff_features[symbol].get("score") if wyckoff_features[symbol].get("status") == "observed" else None,
             "trend": trend_features[symbol].get("score") if trend_features[symbol].get("status") == "observed" else None,
-            "relative_strength": None,
+            "relative_strength": (
+                relative_strength.get("results", {}).get(symbol, {}).get("score")
+                if relative_strength.get("status") == "observed"
+                and relative_strength.get("results", {}).get(symbol, {}).get("score_status") == "observed"
+                else None
+            ),
             "broker": (broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("score")
                        if broker_footprint.get("security_features", {}).get(symbol, {}).get("1D", {}).get("status") == "observed" else None),
             "volume": volume_features[symbol].get("score") if volume_features[symbol].get("status") == "observed" else None,
@@ -158,6 +184,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "smc_features": smc_features_by_symbol,
         "component_candidates": component_candidates,
         "aggregate_scores": aggregate_scores,
+        "relative_strength": relative_strength,
         "broker_participation": broker_participation_summary(broker_rows),
         "broker_footprint": broker_footprint,
         "sector_strength": sector_features,

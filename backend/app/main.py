@@ -14,6 +14,9 @@ from .storage import DATA, IMPORTS, store_rows, snapshot
 from .broker_intelligence_dashboard import build_broker_intelligence_dashboard
 from .early_entry_exit_signals import generate_early_entry_exit_signals
 from .broker_pattern_detector import detect_broker_patterns
+from .index_intelligence import build_verified_index_intelligence
+from .verified_sector_rotation import build_verified_sector_rotation
+from .sector_intelligence_confluence import build_sector_intelligence_confluence
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -51,6 +54,26 @@ class BrokerPatternRequest(BaseModel):
     expected_sessions: list[str]
     complete_broker_sessions: list[str]
     decision_at: str
+
+class IndexIntelligenceRequest(BaseModel):
+    rows: list[dict]
+    verified_session_dates: list[str]
+    decision_time: str
+    index_code: str = "NEPSE"
+
+class SectorRotationRequest(BaseModel):
+    stock_rows: list[dict]
+    benchmark_rows: list[dict]
+    expected_sector_members: dict[str, list[str]]
+    sector_membership: dict[str, dict]
+    verified_session_dates: list[str]
+    decision_time: str
+
+class SectorConfluenceRequest(BaseModel):
+    market_rotation: dict
+    broker_rotation: dict
+    decision_time: str
+    minimum_broker_count: int = 1
 
 @app.get("/health")
 def health():
@@ -91,6 +114,43 @@ def broker_patterns(request: BrokerPatternRequest):
             expected_sessions=request.expected_sessions,
             complete_broker_sessions=request.complete_broker_sessions,
             decision_at=request.decision_at,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/index-intelligence")
+def index_intelligence_research(request: IndexIntelligenceRequest):
+    """Verified-input research calculator; caller-supplied rows are not independently sourced here."""
+    try:
+        return build_verified_index_intelligence(
+            request.rows, verified_session_dates=request.verified_session_dates,
+            index_code=request.index_code, decision_time=request.decision_time,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/sector-rotation")
+def sector_rotation_research(request: SectorRotationRequest):
+    """Verified-input sector rotation calculator; no BUY/SELL actions."""
+    try:
+        return build_verified_sector_rotation(
+            request.stock_rows, request.benchmark_rows,
+            expected_sector_members=request.expected_sector_members,
+            sector_membership=request.sector_membership,
+            verified_session_dates=request.verified_session_dates,
+            decision_time=request.decision_time,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/sector-confluence")
+def sector_confluence_research(request: SectorConfluenceRequest):
+    """Join price and broker-sector outputs descriptively; never infer ownership or intent."""
+    try:
+        return build_sector_intelligence_confluence(
+            request.market_rotation, request.broker_rotation,
+            decision_time=request.decision_time,
+            minimum_broker_count=request.minimum_broker_count,
         )
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc

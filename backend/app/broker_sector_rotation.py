@@ -131,7 +131,8 @@ def build_broker_sector_rotation(
                 return buy,sell,buy+sell,buy-sell
             pb,ps,pg,pn=sums(prior_covered)
             cb,cs,cg,cn=sums(current_covered)
-            # Denominator is total mapped-sector turnover for this broker/window.
+            # Denominator is the broker's total mapped-sector turnover,
+            # not the current sector's own turnover multiplied by sector count.
             prior_total=sum((
                 totals.get((broker, other_sector, day), {}).get("buy", Decimal(0))
                 + totals.get((broker, other_sector, day), {}).get("sell", Decimal(0))

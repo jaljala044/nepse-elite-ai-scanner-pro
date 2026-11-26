@@ -11,6 +11,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .broker_intelligence_dashboard import build_broker_intelligence_dashboard
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -27,9 +28,36 @@ class ScanRequest(BaseModel):
     symbols: list[str] | None = None
     as_of: date | None = None
 
+class BrokerDashboardRequest(BaseModel):
+    as_of_date: date
+    as_of_timestamp: str
+    rolling_profiles: dict
+    source_manifest: dict
+    sector_rotation_by_window: dict = Field(default_factory=dict)
+    candidates: list[dict] = Field(default_factory=list)
+
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
+
+@app.post("/v1/research/broker-dashboard")
+def broker_dashboard(request: BrokerDashboardRequest):
+    """Compose supplied upstream broker evidence into a read-only dashboard.
+
+    This endpoint does not ingest or verify source files. It propagates upstream
+    provenance assertions and withholds incomplete/late evidence.
+    """
+    try:
+        return build_broker_intelligence_dashboard(
+            as_of_date=request.as_of_date.isoformat(),
+            as_of_timestamp=request.as_of_timestamp,
+            rolling_profiles=request.rolling_profiles,
+            source_manifest=request.source_manifest,
+            sector_rotation_by_window=request.sector_rotation_by_window,
+            candidates=request.candidates,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 @app.get("/v1/research/readiness")
 def research_readiness():

@@ -11,6 +11,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .evidence_storage_config import inspect_evidence_storage
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -30,6 +31,11 @@ class ScanRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
+
+@app.get("/v1/evidence-storage-readiness")
+def evidence_storage_readiness():
+    """Operational storage diagnostics; never authorizes canonical evidence or BUYs."""
+    return inspect_evidence_storage()
 
 @app.get("/v1/symbols")
 def symbols():

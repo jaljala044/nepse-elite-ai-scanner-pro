@@ -1413,3 +1413,12 @@ No raw OHLCV or floorsheet records were changed in this work session. The owner-
 - For 2025-04-03, added HimalPress and Expert Nepal historical index-table records alongside Kathmandu Post. For 2026-11-20, added Nepse Decode's date-stamped daily summary and a NepseTrading date-specific close report alongside NepseIQ and ShareSansar.
 - Machine-readable cross-check updated in commit `3b96c0783426fe776c20ba6decf0faefd4615e8a`; detailed recovery report updated in commit `662b12bef6673666ff3e36a63e64d2186d909ab1`.
 - This increases secondary corroboration but does not satisfy the primary NEPSE date-by-date evidence requirement. All 616 dates remain candidate_unverified; zero canonical dates promoted; exact identity with the original extraction list remains unresolved; P2 training remains blocked.
+
+
+## Work-session update — 2026-11-26 (historical equity identity)
+
+- Expanded evidence for NESDO, ULBSL and YMHL: dated listing and first-trading timelines plus multiple provider classifications now recorded in `data/reference/nepse_equity_candidate_additions_2026-11-26.json` (commit `b78a9fca080b0763d8ffdcae2d6e1e826ab5ae5c`).
+- Added detailed assessment and guardrails to `docs/UNIVERSE_AND_SYMBOL_RECONCILIATION_REVIEW_2026-11-26.md` (commit `d3c7cdd5f03d12120347888360cd8247f1ffa5dc`).
+- NESDO and ULBSL are microfinance-sector equities, not mutual funds; YMHL is a hydropower equity. Listing dates are NESDO 2022-03-27, ULBSL 2022-05-26, YMHL 2026-06-19. First trading dates recorded as 2022-03-28, 2022-05-27 and 2026-06-22 respectively.
+- Their security IDs (8041, 8063, 9342) are supported by the 2026-11-25 snapshot and 2026-11-19 OHLCV capture. This does not prove unbroken historical stable-ID continuity or complete 281-member membership.
+- No raw OHLCV data or owner-finalized historical records changed; canonical manifest promotion remains blocked pending complete dated universe reconciliation and source-provenance gates.

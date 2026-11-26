@@ -127,7 +127,7 @@ The first backend foundation is now committed on `feat/broker-behaviour-memory-e
 - cumulative rebuild from all previously stored observations that were available at the decision time;
 - daily, weekly, monthly and yearly broker-flow windows, with additional 3M/6M/2Y descriptive windows in the underlying feature primitive;
 - separate execution-channel-code profiles, including unmapped codes, without promoting them to verified broker entities;
-- 20-session buy/sell baselines and daily activity acceleration fields for each execution channel;
+- 20-session buy/sell baselines, daily activity acceleration ratios and a 21-session daily execution-channel timeline for each code; buyer and seller party observations from the same contract row are kept distinct by side in immutable lineage;
 - a fail-closed, explicitly uncalibrated research-rule evaluator for early-entry/early-exit candidates, requiring complete 1D/1W/1M broker windows and verified NEPSE price/index/sector/breadth/liquidity/circuit/corporate-action context;
 - read-only shared API endpoints `GET /v1/broker-memory/status`, `GET /v1/broker-memory` and `GET /v1/broker-memory/patterns`;
 - a responsive web broker-memory explorer consuming the shared API;

@@ -122,7 +122,7 @@ def build_broker_sector_rotation(
     broker_ids=sorted({key[0] for key in totals})
     results=[]
     for broker in broker_ids:
-        sectors=sorted({sector for b,sector,_ in totals if b==broker})
+        sectors=sorted(set(security_sector_map.values()))
         sector_rows=[]
         for sector in sectors:
             def sums(days):

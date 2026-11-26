@@ -4,6 +4,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .decision_engine import evaluate_all_horizons
 from .structure_timeframes import evaluate_timeframes
 from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
@@ -80,6 +81,44 @@ def scan(request: ScanRequest):
             ]
         result["structure_timeframes"] = timeframes
         result["smc_confluence"] = evaluate_confluence(result["market_structure"], timeframes, eligible=not errors)
+
+        # Preview only: current Stage 1/2 modules do not certify all Stage 3
+        # gates or provide the eight-component score and horizon trade plans.
+        reviewed_for_stage3 = [
+            REVIEWED_ROWS[(symbol.upper(), str(row["date"]))]
+            for row in rows if not errors
+        ]
+        stage3_evidence_refs = [
+            f'{item["source_id"]}:{item["evidence_id"]}'
+            for item in reviewed_for_stage3
+            if item.get("source_id") and item.get("evidence_id")
+        ]
+        stage1_stage3 = {
+            "eligible": not errors,
+            "data_quality": "LOW",  # no calibrated HIGH/MEDIUM grade is exposed
+            "identity_valid": not errors,
+            "session_valid": not errors,
+            "source_valid": not errors,
+            "corporate_actions_clear": False,  # no complete action-clearance contract
+            "point_in_time_valid": not errors,
+            "liquidity_pass": False,  # execution depth/spread gate not connected
+            "market_tradeable": False,  # market-regime approval not connected
+        }
+        stage2_stage3 = {
+            "components": {},  # experimental SMC/IDPAT outputs are not Stage 2 weighted scores
+            "structure": {},
+        }
+        result["stage3_decisions"] = evaluate_all_horizons(
+            symbol.upper(), stage1_stage3, stage2_stage3, {},
+            evidence_refs=stage3_evidence_refs,
+        )
+        result["stage3_status"] = "fail_closed_preview"
+        result["stage3_limitations"] = [
+            "No BUY/HOLD/SELL action is activated by this preview.",
+            "The eight weighted Stage 2 components are not yet integrated.",
+            "Corporate-action, execution-liquidity and market-regime gates remain unapproved.",
+            "No evidence-backed horizon entry, stop or target plans are supplied.",
+        ]
         results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}

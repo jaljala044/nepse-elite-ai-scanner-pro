@@ -44,7 +44,8 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             ])
         self.write_csv(self.candidates,
             ["symbol","instrument_class_from_rendered_list","official_snapshot_id","official_snapshot_status"], [
-                {"symbol":"MF1","instrument_class_from_rendered_list":"Mutual Fund","official_snapshot_id":"2","official_snapshot_status":"A"},\n                {"symbol":"MF2","instrument_class_from_rendered_list":"Mutual Fund","official_snapshot_id":"6","official_snapshot_status":"A"},
+                {"symbol":"MF1","instrument_class_from_rendered_list":"Mutual Fund","official_snapshot_id":"2","official_snapshot_status":"A"},
+                {"symbol":"MF2","instrument_class_from_rendered_list":"Mutual Fund","official_snapshot_id":"6","official_snapshot_status":"A"},
             ])
         self.write_csv(self.snapshot,
             ["symbol","security_id","security_name","active_status","snapshot_date"], [
@@ -64,7 +65,8 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
         self.assertEqual(by_symbol["DEB1"]["scope_class"], "OUT_OF_SCOPE_DEBENTURE")
         self.assertEqual(by_symbol["BOND1"]["scope_class"], "OUT_OF_SCOPE_BOND")
         self.assertEqual(by_symbol["UNK1"]["scope_class"], "UNKNOWN_NO_SECURITY_SNAPSHOT_MATCH")
-        self.assertEqual(report["unobserved_mutual_fund_candidate_symbols"], ["MF2"])\n        self.assertFalse(report["policy"]["canonical_promotion_allowed"])
+        self.assertEqual(report["unobserved_mutual_fund_candidate_symbols"], ["MF2"])
+        self.assertFalse(report["policy"]["canonical_promotion_allowed"])
         self.assertFalse(report["policy"]["unknown_scope_promoted"])
 
     def test_equity_candidate_missing_crosswalk_is_not_auto_included(self):

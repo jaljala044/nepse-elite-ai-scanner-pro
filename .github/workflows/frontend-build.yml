@@ -44,11 +44,13 @@ jobs:
         run: |
           docker run -d --name nepse-terminal -p 8000:8000 nepse-research:ci
           python - <<'PY'
+          import json
           import time
-          from urllib.request import urlopen
+          from urllib.request import Request, urlopen
+          base = "http://127.0.0.1:8000"
           for attempt in range(30):
               try:
-                  with urlopen("http://127.0.0.1:8000/health", timeout=2) as response:
+                  with urlopen(base + "/health", timeout=2) as response:
                       assert response.status == 200
                   break
               except Exception:
@@ -59,10 +61,29 @@ jobs:
               ("/terminal/", b"NEPSE SCANNER"),
               ("/terminal/scanner.js", b"/v1/scan/market-wide"),
           ]:
-              with urlopen("http://127.0.0.1:8000" + path, timeout=5) as response:
+              with urlopen(base + path, timeout=5) as response:
                   body = response.read()
                   assert response.status == 200 and expected in body, path
-          print("Container health, terminal HTML and market-wide scanner asset passed.")
+          with urlopen(base + "/v1/research/readiness", timeout=5) as response:
+              readiness = json.loads(response.read())
+          assert readiness["universe_available"] is True, readiness
+          assert readiness["candidate_equities"] == 281, readiness
+          assert readiness["canonical_reviewed_rows"] == 0, readiness
+          with urlopen(base + "/v1/symbols", timeout=5) as response:
+              symbols = json.loads(response.read())
+          assert symbols["count"] == 0, symbols
+          assert symbols["candidate_universe_count"] == 281, symbols
+          request = Request(base + "/v1/scan/market-wide", data=b"{}", headers={"Content-Type": "application/json"}, method="POST")
+          with urlopen(request, timeout=30) as response:
+              scan = json.loads(response.read())
+          assert scan["scanner_id"] == "3A.01", scan
+          assert scan["candidate_universe_count"] == 281, scan
+          assert scan["symbols_with_observations"] == 0, scan
+          assert scan["symbols_without_observations"] == 281, scan
+          assert scan["observation_coverage_pct"] == 0.0, scan
+          assert scan["ranking_enabled"] is False, scan
+          assert len(scan["results"]) == 281, len(scan["results"])
+          print("Container health, packaged terminal, candidate manifest and full-universe fail-closed scan passed.")
           PY
       - name: Remove smoke-test container
         if: always()

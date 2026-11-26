@@ -53,6 +53,10 @@ jobs:
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_floorsheet_one_sided_scope.py' -v
 
+      - name: Test official NEPSE aggregate reconciliation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_official_market_summary_reconciliation.py' -v
+
       - name: Test floorsheet to EOD control reconciliation
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_floorsheet_eod_controls.py' -v

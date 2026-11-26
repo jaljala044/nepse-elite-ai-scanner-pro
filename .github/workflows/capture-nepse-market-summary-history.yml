@@ -1,6 +1,12 @@
 name: Capture official NEPSE market-summary history
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/capture_nepse_market_summary_history.py"
+      - "backend/tests/test_nepse_market_summary_history_capture.py"
+      - ".github/workflows/capture-nepse-market-summary-history.yml"
   workflow_dispatch:
   schedule:
     - cron: "0 10 * * 1-5"
@@ -33,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          capture_date="$(date -u +%Y-%m-%d)"
+          capture_date="$(TZ=Asia/Kathmandu date +%Y-%m-%d)"
           python backend/capture_nepse_market_summary_history.py --output-dir "evidence/nepse-market-summary-history/$capture_date" --candidate-csv data/evidence/candidates/nepse-616-session-date-candidates-2024-2026.csv
           status=$?
           echo "capture_date=$capture_date" >> "$GITHUB_OUTPUT"

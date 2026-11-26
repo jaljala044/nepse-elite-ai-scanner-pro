@@ -2175,3 +2175,19 @@ Reconcile the 279 observed equity candidates against independently verified 2026
 ### P5.2c execution note
 
 - The latest main-branch historical-integrity workflow [#45851207167](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45851207167) and the P4.17/P4.18 workflow [#45851300443](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45851300443) both completed successfully. The parser tests are included in the historical-integrity workflow; this does **not** mean the scheduled/live official market-summary capture has run or that any calendar dates were promoted.
+
+
+## P4.19 — three-date pinned archive comparison completed (2026-11-26)
+
+- Added `backend/audit_floorsheet_archive_window.py` and tests. The runner verifies exact Git blob SHA-1 + byte size for three pinned overlapping dates and computes full-file SHA-256 before parsing/comparison.
+- Dates: 2026-11-19, 2026-11-20 and 2026-11-24. Successful workflow: [#45851945767](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45851945767); artifact ID `15132514513`.
+- Across the three dates: **133,114 exact shared contracts**, **76 SocrateAI-only**, **0 Samir-only**, **0 shared-field conflicts**, **0 rejected rows** and **0 amount arithmetic exceptions**.
+- SocrateAI-only rows by date: 19 Nov 19 records / 2,450 shares / NPR 22,432.00; 20 Nov 39 records / 39,950 shares / NPR 4,814,040.21; 24 Nov 18 records / 7,831 shares / NPR 1,350,692.80. Aggregate: 76 records / 50,231 shares / NPR 6,187,165.01.
+- Do not generalize the P4.18 24-Nov out-of-scope classification to the 19-Nov and 20-Nov one-sided rows; P4.20 must classify those rows individually against dated scope evidence.
+- CI at commit `d3a391d1cd02ea9f35bb83864332103edbf96932`: backend tests **848 passed** (run 45851946021; log inspected). P4.17–P4.19 multi-date workflow passed (run 45851945767).
+- Detailed report: [P4.19 multi-date floorsheet reconciliation](docs/P4.19_MULTI_DATE_FLOORSHEET_ARCHIVE_RECONCILIATION_2026-11-26.md).
+- **Disposition:** three-date transaction-set consistency; source independence, official session status, per-security completeness and source rights remain unverified. Review-only; no canonical promotion.
+
+### P4.20 next
+
+Classify the 19-Nov and 20-Nov one-sided records by dated instrument scope, compare them with independent date-specific controls, and expand the overlap sample without treating any source-only row as a missing equity trade until its instrument class and source lineage are established.

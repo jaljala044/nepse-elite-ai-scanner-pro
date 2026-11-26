@@ -156,3 +156,10 @@ The repository does not currently expose a verified deployment target or deploym
 - Production Top 20 / Top 10: not authorized by the current empty reviewed-row manifest.
 - P&F and RRG: not verified as implemented.
 - Live continuous scanning: not connected or verified.
+
+### Candidate-universe drift check (2026-11-27)
+
+- Rechecked the current NepseAlpha traded-stocks page: its indexed table now reports **284 active-traded entries**, compared with **281 unique symbols** in the repository's 2026-11-26 manifest. This is a three-entry count difference, not yet a verified three-symbol change: the provider's current page and the dated CSV may use different snapshot times or inclusion rules.
+- The same provider page separately exposes a broader listed-security table with active and delisted rows; that table must not be conflated with actively traded equity membership.
+- The NEPSE primary stocklist page remains available only as an indexed snapshot dated 2026-10-15. No newer complete official active-equity snapshot or documented official API contract was located in this search.
+- Keep the dated 281-symbol file immutable as historical evidence. Do not silently append three securities, replace the candidate universe, or promote it to authoritative membership. Resolve symbol-level additions/removals against a date-aligned primary source before universe acceptance.

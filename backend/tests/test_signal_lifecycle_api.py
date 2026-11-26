@@ -50,5 +50,32 @@ class SignalLifecycleAPITests(unittest.TestCase):
                          "gross_price_reference_statistics_not_backtest")
 
 
+
+    def test_early_signal_endpoint_auto_freezes_each_horizon(self):
+        stamp = "2025-01-02T10:00:00+05:45"
+        def ev(source, **values):
+            return {"status":"verified","source_id":source,"coverage":"1","available_at":stamp,**values}
+        plan = {"setup":"momentum_breakout","entry_type":"breakout_retest",
+            "confirmation":"confirmed","entry":"100","stop":"94",
+            "targets":["112","118","125"],"invalidation_condition":"close_below_stop",
+            "level_status":"inferred_chart_level","evidence_dates":["2025-01-01","2025-01-02"]}
+        snapshot = {"symbol":"TEST","as_of_date":"2025-01-02","available_at":stamp,
+            "market":ev("MARKET",regime="bull"),
+            "sector":ev("SECTOR",alignment="leading_or_improving",excess_return_1m="2"),
+            "liquidity":ev("LIQ",median_turnover="5000000",median_spread_pct="0.5",
+                median_trade_count="50",median_displayed_depth="500000"),
+            "broker":ev("BROKER",net_amount="100000",positive_net_session_ratio="0.7"),
+            "price_volume":ev("OHLCV",structure="bullish_bos"),
+            "candidate":ev("CANDIDATE",classification="early_accumulation_candidate"),
+            "plans":{"t_plus_2":plan,"swing":plan,"positional":plan}}
+        payload = {"as_of_date":"2025-01-02","as_of_timestamp":"2025-01-02T12:00:00+05:45",
+                   "snapshot":snapshot}
+        response = self.client.post("/v1/research/early-signals", json=payload)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(set(response.json()["signal_tracking"]),
+                         {"t_plus_2","swing","positional"})
+        listed = self.client.get("/v1/research/signals")
+        self.assertEqual(len(listed.json()["signals"]), 3)
+
 if __name__ == "__main__":
     unittest.main()

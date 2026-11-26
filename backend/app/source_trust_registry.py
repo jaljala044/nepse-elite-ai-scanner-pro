@@ -270,6 +270,31 @@ def validate_promotion_evidence(
     return sorted(set(reasons))
 
 
+def validate_revocation_attestation(validation: dict[str, Any], decision_time: str) -> list[str]:
+    """Validate signed revocation metadata and ensure it existed by decision time."""
+    reasons = []
+    if not isinstance(validation, dict):
+        return ["revocation_attestation_missing"]
+    if not isinstance(validation.get("reviewer"), str) or not validation["reviewer"].strip():
+        reasons.append("revocation_reviewer_missing")
+    if not isinstance(validation.get("validation_id"), str) or not validation["validation_id"].strip():
+        reasons.append("revocation_validation_id_missing")
+    refs = validation.get("evidence_refs")
+    if not isinstance(refs, dict) or not refs:
+        reasons.append("revocation_evidence_refs_missing")
+    else:
+        for key, values in refs.items():
+            if not isinstance(key, str) or not key.strip() or not isinstance(values, list) or not values or any(not isinstance(value, str) or not value.strip() for value in values):
+                reasons.append("revocation_evidence_refs_invalid")
+                break
+    try:
+        if _utc(validation.get("validated_at"), "validated_at") > _utc(decision_time, "decision_time"):
+            reasons.append("revocation_validation_after_decision_time")
+    except (TypeError, ValueError):
+        reasons.append("revocation_validation_timestamp_invalid")
+    return sorted(set(reasons))
+
+
 def build_promotion_event(
     *, decision_id: str, action: str, record: dict[str, Any],
     registry: dict[str, Any], raw_payload_sha256: str,
@@ -300,8 +325,7 @@ def build_promotion_event(
     elif action == "revoke":
         if not record.get("record_id"):
             reasons.append("record_id_required_for_revocation")
-        if not validation.get("reviewer") or not validation.get("validation_id") or not validation.get("evidence_refs"):
-            reasons.append("revocation_reviewer_validation_and_evidence_required")
+        reasons.extend(validate_revocation_attestation(validation, decision_time))
         if not verify_reviewer_signature(validation, reviewer_keys):
             reasons.append("revocation_reviewer_signature_invalid_or_untrusted")
     body = {
@@ -364,9 +388,14 @@ def verify_promotion_ledger(path: str | Path) -> dict[str, Any]:
     events = []
     errors = []
     previous = None
+    previous_decision_time = None
     for number, line in enumerate(target.read_text(encoding="utf-8").splitlines(), start=1):
         try:
             event = json.loads(line)
+            current_decision_time = _utc(event.get("decision_time"), "decision_time")
+            if previous_decision_time is not None and current_decision_time < previous_decision_time:
+                errors.append(f"line_{number}:decision_time_regression")
+            previous_decision_time = current_decision_time
             if event.get("previous_event_sha256") != previous:
                 errors.append(f"line_{number}:previous_hash_mismatch")
             if event.get("event_sha256") != _event_hash(event):

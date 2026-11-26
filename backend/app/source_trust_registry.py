@@ -103,6 +103,7 @@ class SourcePolicy:
     evidence_refs: tuple[str, ...]
     rights_state: str = "unknown"
     redistribution_allowed: bool = False
+    rights_evidence_ref: str | None = None
 
     def __post_init__(self) -> None:
         if not self.source_id.strip() or not self.publisher_name.strip():
@@ -131,8 +132,10 @@ class SourcePolicy:
         _utc(self.reviewed_at, "reviewed_at")
         if self.redistribution_allowed and self.rights_state != "redistribution_permitted":
             raise ValueError("redistribution requires explicit redistribution_permitted rights")
-        if self.rights_state == "redistribution_permitted" and not self.evidence_refs:
-            raise ValueError("redistribution requires rights evidence")
+        if self.redistribution_allowed and not (self.rights_evidence_ref or "").strip():
+            raise ValueError("redistribution requires a dedicated rights_evidence_ref")
+        if self.rights_state == "redistribution_permitted" and not (self.rights_evidence_ref or "").strip():
+            raise ValueError("permitted rights state requires a dedicated rights_evidence_ref")
 
 
 def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
@@ -147,12 +150,9 @@ def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
 
 
 def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bool:
-    """Verify a loaded registry against a digest pinned in trusted deployment config."""
     expected = _sha256(expected_sha256, "expected_registry_sha256")
-    body = {"schema_version": registry.get("schema_version"),
-            "sources": registry.get("sources")}
-    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
-    actual = hashlib.sha256(canonical.encode()).hexdigest()
+    body = {"schema_version": registry.get("schema_version"), "sources": registry.get("sources")}
+    actual = hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     return registry.get("registry_sha256") == actual == expected
 
 
@@ -161,9 +161,7 @@ def _validation_signature_payload(validation: dict[str, Any]) -> bytes:
     return json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def verify_reviewer_signature(validation: dict[str, Any],
-                              reviewer_keys: dict[str, bytes]) -> bool:
-    """Verify HMAC-SHA256 review attestation using server-held reviewer secrets."""
+def verify_reviewer_signature(validation: dict[str, Any], reviewer_keys: dict[str, bytes]) -> bool:
     reviewer = validation.get("reviewer")
     signature = validation.get("signature")
     key = reviewer_keys.get(reviewer) if isinstance(reviewer, str) else None
@@ -260,6 +258,23 @@ def build_promotion_event(
     reasons = []
     if not verify_source_registry(registry, trusted_registry_sha256):
         reasons.append("source_registry_digest_not_trusted")
+    if not verify_reviewer_signature(validation, reviewer_keys):
+        reasons.append("reviewer_signature_invalid_or_untrusted")
+    expected_context = {
+        "decision_action": action,
+        "record_id": record.get("record_id"),
+        "source_id": record.get("source_id"),
+        "record_type": record.get("record_type"),
+        "source_payload_sha256": record.get("source_payload_sha256"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
+        "registry_sha256": registry.get("registry_sha256"),
+        "decision_time": _utc(decision_time, "decision_time").isoformat().replace("+00:00", "Z"),
+    }
+    if any(validation.get(key) != value for key, value in expected_context.items()):
+        reasons.append("review_attestation_context_mismatch")
     if action == "promote":
         _, policy_reasons = resolve_source_policy(
             registry, source_id=record.get("source_id", ""),
@@ -268,8 +283,6 @@ def build_promotion_event(
             decision_time=decision_time,
         )
         reasons.extend(policy_reasons)
-        if not verify_reviewer_signature(validation, reviewer_keys):
-            reasons.append("reviewer_signature_invalid_or_untrusted")
         reasons.extend(validate_promotion_evidence(
             record, raw_payload_sha256=raw_payload_sha256,
             validation=validation, decision_time=decision_time,
@@ -277,21 +290,29 @@ def build_promotion_event(
     elif action == "revoke":
         if not record.get("record_id"):
             reasons.append("record_id_required_for_revocation")
-        if not validation.get("reviewer") or not validation.get("evidence_refs"):
+        if not validation.get("reviewer") or not validation.get("validation_id") or not validation.get("evidence_refs"):
             reasons.append("revocation_reviewer_and_evidence_required")
+        try:
+            if _utc(validation.get("validated_at"), "validated_at") > _utc(decision_time, "decision_time"):
+                reasons.append("revocation_validation_occurs_after_decision_time")
+        except (TypeError, ValueError):
+            reasons.append("invalid_revocation_validation_timestamp")
     body = {
         "schema_version": 1, "decision_id": decision_id, "action": action,
         "record_id": record.get("record_id"), "source_id": record.get("source_id"),
         "record_type": record.get("record_type"),
         "source_payload_sha256": record.get("source_payload_sha256"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
         "decision_time": _utc(decision_time, "decision_time").isoformat().replace("+00:00", "Z"),
         "validation_id": validation.get("validation_id"),
         "reviewer": validation.get("reviewer"),
         "evidence_refs": validation.get("evidence_refs", {}),
-        "accepted": action == "promote" and not reasons,
+        "accepted": action in {"promote", "revoke"} and not reasons,
         "reasons": sorted(set(reasons)),
         "registry_sha256": registry.get("registry_sha256"),
         "validation_signature": validation.get("signature"),
+        "validation_attestation": validation,
     }
     return body
 
@@ -354,15 +375,68 @@ def verify_promotion_ledger(path: str | Path) -> dict[str, Any]:
             "last_event_sha256": previous, "errors": errors}
 
 
-def active_promoted_record_ids(path: str | Path) -> set[str]:
+def active_promoted_record_ids(
+    path: str | Path, *, registry: dict[str, Any],
+    trusted_registry_sha256: str, reviewer_keys: dict[str, bytes],
+) -> set[str]:
+    """Return only records whose ledger, pinned policy and signed attestations re-verify."""
     audit = verify_promotion_ledger(path)
     if not audit["valid"]:
         raise ValueError("promotion ledger integrity check failed")
+    if not verify_source_registry(registry, trusted_registry_sha256):
+        raise ValueError("source registry digest is not trusted")
     state: dict[str, bool] = {}
     for event in audit["events"]:
+        if event.get("accepted") is not True or event.get("action") not in {"promote", "revoke"}:
+            continue
+        attestation = event.get("validation_attestation")
+        if not isinstance(attestation, dict) or not verify_reviewer_signature(attestation, reviewer_keys):
+            raise ValueError("promotion ledger contains an invalid reviewer attestation")
+        if event.get("registry_sha256") != registry.get("registry_sha256"):
+            raise ValueError("promotion ledger registry digest mismatch")
+        context = {
+            "decision_action": event.get("action"),
+            "record_id": event.get("record_id"),
+            "source_id": event.get("source_id"),
+            "record_type": event.get("record_type"),
+            "source_payload_sha256": event.get("source_payload_sha256"),
+            "session_date": event.get("session_date"),
+            "available_at": event.get("available_at"),
+            "registry_sha256": event.get("registry_sha256"),
+            "decision_time": event.get("decision_time"),
+        }
+        if any(attestation.get(key) != value for key, value in context.items()):
+            raise ValueError("promotion ledger reviewer attestation context mismatch")
         record_id = event.get("record_id")
-        if event.get("action") == "promote" and event.get("accepted") is True:
+        if not record_id:
+            raise ValueError("promotion ledger event missing record_id")
+        if event["action"] == "promote":
+            _, policy_reasons = resolve_source_policy(
+                registry, source_id=event.get("source_id", ""),
+                record_type=event.get("record_type", ""),
+                session_date=event.get("session_date", ""),
+                decision_time=event.get("decision_time", ""),
+            )
+            validation_reasons = validate_promotion_evidence(
+                {
+                    "record_id": record_id,
+                    "source_id": event.get("source_id"),
+                    "record_type": event.get("record_type"),
+                    "source_payload_sha256": event.get("source_payload_sha256"),
+                    "session_date": event.get("session_date"),
+                    "available_at": event.get("available_at"),
+                },
+                raw_payload_sha256=event.get("source_payload_sha256", ""),
+                validation=attestation,
+                decision_time=event.get("decision_time", ""),
+            )
+            if policy_reasons or validation_reasons:
+                raise ValueError("promotion ledger event no longer satisfies source policy and validation")
             state[record_id] = True
-        elif event.get("action") == "revoke":
+        elif event["action"] == "revoke":
+            if not attestation.get("evidence_refs") or not attestation.get("reviewer"):
+                raise ValueError("promotion ledger contains an unsupported revocation")
+            if _utc(attestation.get("validated_at"), "validated_at") > _utc(event.get("decision_time"), "decision_time"):
+                raise ValueError("promotion ledger revocation is not point-in-time valid")
             state[record_id] = False
-    return {record_id for record_id, active in state.items() if active and record_id}
+    return {record_id for record_id, active in state.items() if active}

@@ -2012,3 +2012,14 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - CI run: https://github.com/jaljala044/nepse-smc-data/actions/runs/45843631263 (audit job and existing reconciliation tests both SUCCESS).
 - Merge commit: `57ee5507bef77e457bdbbb75a0963c25786cdc25`.
 - Superseded stale PR #15 closed; no duplicate open implementation remains.
+
+
+### Recent floorsheet parity expanded to three dates
+
+- Merged PR #17: https://github.com/jaljala044/nepse-smc-data/pull/17, commit `ad79a4493ca69df4ed16c29401c8f0e12c09627c`.
+- CI matrix run [45844039616](https://github.com/jaljala044/nepse-smc-data/actions/runs/45844039616) passed all date jobs and regression tests.
+- 2026-11-19: 40,837 Parquet rows; exact multiset match to SocrateAI CSV; 347 symbols; 9,437,842 shares; NPR 3,877,645,728.62; UNL 8 contracts / 80 shares / NPR 3,854,360.
+- 2026-11-24: 52,387 rows; exact multiset match; 350 symbols; 14,670,177 shares; NPR 5,553,019,249.46; UNL 8 contracts / 72 shares / NPR 3,501,589.
+- These two dates are `CROSS_SOURCE_PARITY_CONFIRMED_COMPLETENESS_NOT_YET_VERIFIED`: no date-specific upstream totalElements/full-pagination capture logs recovered. Positive UNL trades are evidenced; absences remain UNKNOWN.
+- 2026-11-20 remains the only date in this batch with verified upstream totalElements=39,966, 80/80 pages and exact full-session cross-source match.
+- Detailed report and JSON manifest commits: https://github.com/jaljala044/nepse-smc-data/commit/fcb3ae9e534129d4469b5f1d863a096940f00069 and 96ed31e5db64d5b2b7202d821d51ea50c9f0aea4.

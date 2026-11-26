@@ -88,6 +88,20 @@ class TemporalRegistryTests(unittest.TestCase):
                        stable_id_verified=False, effective_date_verified=True)
         self.assertEqual(security_as_of([row], date(2024, 1, 1))["status"], "unverified_identity")
 
+    def test_primary_cdsc_identity_evidence_can_resolve(self):
+        row = security(evidence_tier="primary_cdsc_record",
+                       stable_id_verified=True, effective_date_verified=True)
+        result = security_as_of([row], date(2024, 1, 1))
+        self.assertEqual(result["status"], "resolved")
+        self.assertTrue(result["stable_id_verified"])
+
+    def test_primary_cdsc_corporate_action_factor_can_be_adjustment_eligible(self):
+        row = action(evidence_tier="cdsc_notice",
+                     verification_status="verified_primary",
+                     adjustment_factor_verified=True)
+        result = corporate_actions_as_of([row], "S1", "2026-11-22T12:00:00Z")
+        self.assertEqual(result["adjustment_eligible_count"], 1)
+
     def test_unknown_instrument_type_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "unsupported instrument_type"):
             security(instrument_type="ticker_guess")

@@ -147,13 +147,36 @@ def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
 
 
 def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bool:
-    """Verify a loaded registry against a digest pinned in trusted deployment config."""
-    expected = _sha256(expected_sha256, "expected_registry_sha256")
-    body = {"schema_version": registry.get("schema_version"),
-            "sources": registry.get("sources")}
-    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
-    actual = hashlib.sha256(canonical.encode()).hexdigest()
-    return registry.get("registry_sha256") == actual == expected
+    """Verify the pinned digest and the complete source-policy schema."""
+    try:
+        expected = _sha256(expected_sha256, "expected_registry_sha256")
+        if not isinstance(registry, dict) or registry.get("schema_version") != 1:
+            return False
+        sources = registry.get("sources")
+        if not isinstance(sources, list):
+            return False
+        seen: set[str] = set()
+        for item in sources:
+            if not isinstance(item, dict):
+                return False
+            for field in ("allowed_record_types", "canonical_record_types", "evidence_refs"):
+                if not isinstance(item.get(field), (list, tuple)):
+                    return False
+            policy = SourcePolicy(**{
+                **item,
+                "allowed_record_types": tuple(item["allowed_record_types"]),
+                "canonical_record_types": tuple(item["canonical_record_types"]),
+                "evidence_refs": tuple(item["evidence_refs"]),
+            })
+            if policy.source_id in seen:
+                return False
+            seen.add(policy.source_id)
+        body = {"schema_version": registry.get("schema_version"), "sources": sources}
+        canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
+        actual = hashlib.sha256(canonical.encode()).hexdigest()
+        return registry.get("registry_sha256") == actual == expected
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
 
 
 def _validation_signature_payload(validation: dict[str, Any]) -> bytes:
@@ -247,6 +270,31 @@ def validate_promotion_evidence(
     return sorted(set(reasons))
 
 
+def validate_revocation_attestation(validation: dict[str, Any], decision_time: str) -> list[str]:
+    """Validate signed revocation metadata and ensure it existed by decision time."""
+    reasons = []
+    if not isinstance(validation, dict):
+        return ["revocation_attestation_missing"]
+    if not isinstance(validation.get("reviewer"), str) or not validation["reviewer"].strip():
+        reasons.append("revocation_reviewer_missing")
+    if not isinstance(validation.get("validation_id"), str) or not validation["validation_id"].strip():
+        reasons.append("revocation_validation_id_missing")
+    refs = validation.get("evidence_refs")
+    if not isinstance(refs, dict) or not refs:
+        reasons.append("revocation_evidence_refs_missing")
+    else:
+        for key, values in refs.items():
+            if not isinstance(key, str) or not key.strip() or not isinstance(values, list) or not values or any(not isinstance(value, str) or not value.strip() for value in values):
+                reasons.append("revocation_evidence_refs_invalid")
+                break
+    try:
+        if _utc(validation.get("validated_at"), "validated_at") > _utc(decision_time, "decision_time"):
+            reasons.append("revocation_validation_after_decision_time")
+    except (TypeError, ValueError):
+        reasons.append("revocation_validation_timestamp_invalid")
+    return sorted(set(reasons))
+
+
 def build_promotion_event(
     *, decision_id: str, action: str, record: dict[str, Any],
     registry: dict[str, Any], raw_payload_sha256: str,
@@ -277,18 +325,22 @@ def build_promotion_event(
     elif action == "revoke":
         if not record.get("record_id"):
             reasons.append("record_id_required_for_revocation")
-        if not validation.get("reviewer") or not validation.get("evidence_refs"):
-            reasons.append("revocation_reviewer_and_evidence_required")
+        reasons.extend(validate_revocation_attestation(validation, decision_time))
+        if not verify_reviewer_signature(validation, reviewer_keys):
+            reasons.append("revocation_reviewer_signature_invalid_or_untrusted")
     body = {
         "schema_version": 1, "decision_id": decision_id, "action": action,
         "record_id": record.get("record_id"), "source_id": record.get("source_id"),
         "record_type": record.get("record_type"),
         "source_payload_sha256": record.get("source_payload_sha256"),
+        "session_date": record.get("session_date"),
+        "available_at": record.get("available_at"),
         "decision_time": _utc(decision_time, "decision_time").isoformat().replace("+00:00", "Z"),
         "validation_id": validation.get("validation_id"),
         "reviewer": validation.get("reviewer"),
         "evidence_refs": validation.get("evidence_refs", {}),
-        "accepted": action == "promote" and not reasons,
+        "validation_attestation": dict(validation),
+        "accepted": action in {"promote", "revoke"} and not reasons,
         "reasons": sorted(set(reasons)),
         "registry_sha256": registry.get("registry_sha256"),
         "validation_signature": validation.get("signature"),
@@ -336,9 +388,14 @@ def verify_promotion_ledger(path: str | Path) -> dict[str, Any]:
     events = []
     errors = []
     previous = None
+    previous_decision_time = None
     for number, line in enumerate(target.read_text(encoding="utf-8").splitlines(), start=1):
         try:
             event = json.loads(line)
+            current_decision_time = _utc(event.get("decision_time"), "decision_time")
+            if previous_decision_time is not None and current_decision_time < previous_decision_time:
+                errors.append(f"line_{number}:decision_time_regression")
+            previous_decision_time = current_decision_time
             if event.get("previous_event_sha256") != previous:
                 errors.append(f"line_{number}:previous_hash_mismatch")
             if event.get("event_sha256") != _event_hash(event):
@@ -361,8 +418,6 @@ def active_promoted_record_ids(path: str | Path) -> set[str]:
     state: dict[str, bool] = {}
     for event in audit["events"]:
         record_id = event.get("record_id")
-        if event.get("action") == "promote" and event.get("accepted") is True:
-            state[record_id] = True
-        elif event.get("action") == "revoke":
-            state[record_id] = False
+        if event.get("action") in {"promote", "revoke"} and event.get("accepted") is True:
+            state[record_id] = event.get("action") == "promote"
     return {record_id for record_id, active in state.items() if active and record_id}

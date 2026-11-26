@@ -266,3 +266,37 @@ def load_evidence_records(
         return [json.loads(row[0]) for row in rows]
     finally:
         con.close()
+
+
+def load_evidence_record_details(*, database_path: str | Path | None = None,
+                                 record_type: str | None = None) -> list[dict[str, Any]]:
+    """Read bronze rows with DB identity and immutable raw-object lineage."""
+    con = _connect(database_path)
+    try:
+        clauses = []
+        params: list[Any] = []
+        if record_type:
+            if record_type not in RECORD_TYPES:
+                raise ValueError("unsupported record_type")
+            clauses.append("r.record_type = ?")
+            params.append(record_type)
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        rows = con.execute(
+            """
+            SELECT r.record_id, r.record_json, o.payload_path
+            FROM normalized_evidence_records AS r
+            JOIN raw_source_objects AS o
+              ON o.source_id = r.source_id AND o.payload_sha256 = r.payload_sha256
+            """ + where + """
+            ORDER BY r.session_date, r.source_id, r.source_row_number
+            """, params,
+        ).fetchall()
+        result = []
+        for record_id, record_json, payload_path in rows:
+            item = json.loads(record_json)
+            item["record_id"] = record_id
+            item["raw_payload_path"] = payload_path
+            result.append(item)
+        return result
+    finally:
+        con.close()

@@ -15,6 +15,7 @@ on:
       - "backend/audit_floorsheet_eod_controls.py"
       - "backend/audit_official_market_summary_reconciliation.py"
       - "backend/audit_official_security_history_vs_floorsheet.py"
+      - "backend/audit_official_bulk_symbol_scope.py"
       - "backend/audit_official_equity_candidate_history.py"
       - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_one_sided_scope.py"
@@ -60,6 +61,10 @@ jobs:
       - name: Test official NEPSE aggregate reconciliation
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_official_market_summary_reconciliation.py' -v
+
+      - name: Test official bulk traded-symbol scope audit
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_official_bulk_symbol_scope.py' -v
 
       - name: Test official per-security history reconciliation
         working-directory: backend
@@ -205,6 +210,49 @@ jobs:
             curl --fail --silent --show-error --location "$base/$day-parsed-response.json" -o "/tmp/official-daily/$day-parsed-response.json"
           done
           sha256sum /tmp/official-daily/*
+
+      - name: Fetch pinned official bulk daily raw captures and manifest
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/official-bulk
+          base="https://raw.githubusercontent.com/jaljala044/nepse-elite-ai-scanner-pro/069395e1153b1f49ed771774995022382d2b1863/data/evidence/raw/nepse/daily-security-prices/2026-11-19_20_24"
+          curl --fail --silent --show-error --location "$base/capture-report.json" -o /tmp/official-bulk/capture-report.json
+          for day in 2026-11-19 2026-11-20 2026-11-24; do
+            curl --fail --silent --show-error --location "$base/$day-response-body.bin" -o "/tmp/official-bulk/$day-response-body.bin"
+          done
+          sha256sum /tmp/official-bulk/*
+
+      - name: Classify official bulk traded symbols against dated instrument snapshot
+        run: |
+          set -euo pipefail
+          python backend/audit_official_bulk_symbol_scope.py \
+            --bulk-report /tmp/official-bulk/capture-report.json \
+            --raw-dir /tmp/official-bulk \
+            --market-summary-body /tmp/official-summary/response-body.bin \
+            --market-summary-report /tmp/official-summary/capture-report.json \
+            --security-snapshot data/reference/nepse_security_id_snapshot_2026-11-25.csv \
+            --equity-crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \
+            --target-candidates data/reference/nepse_target_universe_candidates_2026-11-26.csv \
+            --snapshot-date 2026-11-25 \
+            --output artifacts/p424-official-bulk-symbol-scope.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p424-official-bulk-symbol-scope.json").read_text())
+          summary = {
+              "aggregate_scope_class_counts": report["aggregate_scope_class_counts"],
+              "dates": {day: {"bulk_symbol_count": item["bulk_symbol_count"],
+                              "scope_class_counts": item["scope_class_counts"]}
+                        for day, item in report["dates"].items()},
+              "historical_instrument_identity_verified": False,
+              "coverage_admission_allowed": False,
+          }
+          rendered = json.dumps(summary, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.24 official bulk traded-symbol scope audit\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
 
       - name: Reconcile official per-security rows with both floorsheet archives
         run: |
@@ -443,5 +491,6 @@ jobs:
             artifacts/p419-three-date-floorsheet-audit.json
             artifacts/p420-one-sided-instrument-scope.json
             artifacts/p421-floorsheet-eod-controls.json
+            artifacts/p424-official-bulk-symbol-scope.json
           if-no-files-found: error
           retention-days: 30

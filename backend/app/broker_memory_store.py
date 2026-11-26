@@ -15,6 +15,7 @@ from typing import Any
 
 from .database import connect
 from .footprint_features import broker_footprint_features
+from .broker_early_patterns import evaluate_broker_early_pattern
 
 HORIZONS = {"1D": 1, "1W": 5, "1M": 21, "1Y": 252}
 REQUIRED = (
@@ -246,7 +247,9 @@ def _execution_channel_features(rows: list[dict], session_dates: list[str],
 
 def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
                           decision_time: str, minimum_amount_coverage: float = 0.80,
-                          minimum_sessions: int = 5) -> dict:
+                          minimum_sessions: int = 5,
+                          market_context_by_symbol: dict | None = None,
+                          minimum_daily_flow_multiple: float = 1.5) -> dict:
     """Append eligible observations and rebuild profiles from all prior known evidence.
 
     The caller supplies rows from the canonical evidence-admission pipeline.
@@ -305,6 +308,27 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
         channel_features = _execution_channel_features(
             historical_rows, covered_sessions, minimum_amount_coverage
         )
+        if market_context_by_symbol is not None and not isinstance(market_context_by_symbol, dict):
+            raise ValueError("market_context_by_symbol must be an object keyed by stock symbol")
+        early_patterns = []
+        for symbol, symbol_windows in channel_features["securities"].items():
+            broker_windows = {
+                horizon: symbol_windows.get(horizon, {})
+                for horizon in ("1D", "1W", "1M")
+            }
+            latest_channels = broker_windows["1D"].get("execution_channels", [])
+            context = (market_context_by_symbol or {}).get(symbol, {})
+            for channel in latest_channels:
+                early_patterns.append(evaluate_broker_early_pattern(
+                    broker_code=channel["execution_channel_code"],
+                    symbol=symbol,
+                    execution_channel_windows=broker_windows,
+                    market_context=context,
+                    decision_time=decision_time,
+                    as_of_session=body_as_of_session,
+                    minimum_daily_flow_multiple=minimum_daily_flow_multiple,
+                ))
+        body_as_of_session = covered_sessions[-1]
         body = {
             "schema_version": 1,
             "feature_version": "broker-footprint-v1",
@@ -316,6 +340,13 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             "source_payload_hashes": sorted({row["source_payload_sha256"] for row in historical_rows}),
             "features": features,
             "execution_channel_features": channel_features,
+            "early_patterns": early_patterns,
+            "early_pattern_status": ("research_candidates" if any(item["status"] in {"EARLY_ENTRY_CANDIDATE", "EARLY_EXIT_RISK"} for item in early_patterns) else "insufficient_evidence" if not market_context_by_symbol else "watch_or_insufficient_evidence"),
+            "early_pattern_rule_config": {
+                "rule_version": "nepse-broker-flow-candidate-v1",
+                "minimum_daily_flow_multiple": minimum_daily_flow_multiple,
+                "calibration_status": "uncalibrated_research_rule",
+            },
             "horizon_contract": {
                 "1D": "latest verified session",
                 "1W": "latest 5 verified sessions",

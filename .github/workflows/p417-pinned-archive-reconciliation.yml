@@ -170,6 +170,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: p417-p418-floorsheet-reconciliation-2026-11-24
-          path: |\n            artifacts/p417-floorsheet-pair-audit-2026-11-24.json\n            artifacts/p418-floorsheet-symbol-scope-2026-11-24.json
+          path: |
+            artifacts/p417-floorsheet-pair-audit-2026-11-24.json
+            artifacts/p418-floorsheet-symbol-scope-2026-11-24.json
           if-no-files-found: error
           retention-days: 30

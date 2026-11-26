@@ -4,6 +4,8 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .structure_timeframes import evaluate_timeframes
+from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .storage import DATA, IMPORTS, store_rows, snapshot
@@ -69,6 +71,15 @@ def scan(request: ScanRequest):
             result["market_structure"] = structure
         result["idpat_v3"] = evaluate_idpat_v3(rows, eligible=not errors)
         result["provisional_research"] = evaluate_provisional(rows, eligible=not errors)
+        timeframes = evaluate_timeframes(rows, eligible=not errors)
+        if not errors:
+            # Return the reviewed event objects, rather than unlinked duplicates.
+            recent = {str(row["date"]) for row in sorted(rows,key=lambda row:str(row["date"]))[-5:]}
+            timeframes["t_plus_2"]["recent_events"] = [
+                event for event in result["market_structure"]["events"] if event["date"] in recent
+            ]
+        result["structure_timeframes"] = timeframes
+        result["smc_confluence"] = evaluate_confluence(result["market_structure"], timeframes, eligible=not errors)
         results.append(result)
     return {"mode": "research_only", "results": results,
             "disclaimer": "Rule-based observations only; not investment advice or a guaranteed signal."}

@@ -70,5 +70,5 @@ jobs:
         with:
           name: nepse-market-summary-history-${{ github.run_id }}
           path: evidence/nepse-market-summary-history/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 90

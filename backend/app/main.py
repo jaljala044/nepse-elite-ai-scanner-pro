@@ -858,3 +858,27 @@ def history(symbol: str):
     if rows is None:
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
+
+
+from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
+
+class UnifiedPortfolioEventRequest(BaseModel):
+    initial_cash: float
+    initial_holdings: dict[str, dict]
+    trades: list[dict]
+    corporate_actions: list[dict]
+    price_rows_by_symbol: dict[str, list[dict]]
+    portfolio_sessions: list[str]
+    as_of_date: str
+    evidence_cutoff: str
+    benchmark_rows: list[dict] | None = None
+    benchmark_symbol: str | None = None
+
+
+@app.post("/v1/research/portfolio/event-ledger")
+def research_unified_portfolio_event_ledger(request: UnifiedPortfolioEventRequest):
+    """Replay caller-attested historical events; not an execution endpoint."""
+    try:
+        return run_unified_portfolio_event_ledger(**request.model_dump())
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

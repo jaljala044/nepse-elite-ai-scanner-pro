@@ -321,7 +321,8 @@ def canonical_feature_snapshot(request: CanonicalFeatureRequest):
     return build_canonical_feature_snapshot(
         database_path=None, ledger_path=ledger_path, registry=registry,
         trusted_registry_sha256=trusted_digest, reviewer_keys=reviewer_keys,
-        calendar_path=calendar_value, decision_time=request.decision_time.isoformat(),
+        calendar_path=calendar_value, trusted_calendar_sha256=calendar_digest,
+        decision_time=request.decision_time.isoformat(),
         expected_symbols=request.symbols or sorted(set(DATA.keys()) & set(EQUITY_UNIVERSE["symbols"] if EQUITY_UNIVERSE else [])),
     )
 

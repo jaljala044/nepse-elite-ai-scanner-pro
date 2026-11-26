@@ -148,7 +148,8 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             self.write_csv(path, headers, [])
         with self.assertRaisesRegex(ValueError, "duplicate date/contract"):
             audit_floorsheet_symbol_scope(
-                self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot
+                self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot,
+                "2026-11-24", "2026-11-25",
             )
 
 

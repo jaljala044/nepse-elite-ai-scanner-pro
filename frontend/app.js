@@ -64,6 +64,25 @@ function renderBrokerMemory(data, symbol, code){
     renderChannelTable(card,w?.execution_channels||[]);root.append(card);
   }
 }
+function renderLineage(container, data){
+  const card=node("article",undefined,"memory-card");card.append(node("h3","Source evidence drill-down"));
+  card.append(node("p",data.total_observations+" party observations · showing "+data.observations.length));
+  if(!data.observations.length){card.append(node("p","No source rows available for this filter."));container.append(card);return;}
+  const table=node("table");const head=node("thead");const hr=node("tr");
+  for(const label of ["Session","Side","Code","Quantity","Amount","Source","Row","Rights","Evidence ID"])hr.append(node("th",label));
+  head.append(hr);table.append(head);const body=node("tbody");
+  for(const item of data.observations){const tr=node("tr");for(const value of [
+    item.trade_date,item.side,item.source_broker_code,item.quantity,item.amount,
+    item.source_id,item.source_row_number,item.source_rights_status,item.evidence_id
+  ])tr.append(node("td",value??"—"));body.append(tr);}
+  table.append(body);card.append(table);container.append(card);
+}
+async function loadBrokerLineage(symbol, code){
+  const params=new URLSearchParams({symbol,limit:"50"});
+  if(code)params.set("broker_code",code);
+  const data=await get("/v1/broker-memory/lineage?"+params.toString());
+  renderLineage(byId("broker-memory-results"),data);
+}
 async function refreshBrokerMemoryStatus(){
   try{
     const d=await get("/v1/broker-memory/status");
@@ -93,6 +112,7 @@ async function loadBrokerMemory(){
     }
     set("broker-memory-status","Historical broker memory loaded · read-only research data.");
     renderBrokerMemory(d,symbol,code);
+    if(symbol)loadBrokerLineage(symbol,code).catch(error=>set("broker-memory-status","Profile loaded; evidence drill-down unavailable: "+error.message));
   }catch(error){
     set("broker-memory-status","Unable to load broker memory: "+error.message);
     byId("broker-memory-results").replaceChildren(node("p","No verified result returned."));

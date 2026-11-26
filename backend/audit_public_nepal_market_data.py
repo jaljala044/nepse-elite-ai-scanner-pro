@@ -789,13 +789,28 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "fractional_volume", "negative_turnover", "zero_turnover_with_volume",
         "invalid_per_change",
     )}
-    official_crosscheck = crosscheck_official_history(
-        public_csv_by_symbol,
-        Path("data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/symbols"),
+    from audit_official_security_history_window import load_expected_market_dates
+    market_body_path = Path("data/evidence/raw/nepse/market-summary-history/2026-11-26/response-body.bin")
+    market_report_path = Path("data/evidence/raw/nepse/market-summary-history/2026-11-26/capture-report.json")
+    expected_official_dates, _ = load_expected_market_dates(
+        market_body_path, market_report_path, "2025-11-26", "2026-11-26"
     )
-    socrateai_crosscheck = crosscheck_socrateai_history(
+    official_capture_roots = [
+        Path("data/evidence/raw/nepse/security-history/2025-11-26_to_2026-11-26/symbols"),
         Path("data/evidence/raw/nepse/security-history/2026-10-05_to_2026-11-26/symbols"),
-    )
+    ]
+    with tempfile.TemporaryDirectory(prefix="nepse-official-merged-") as temp_dir:
+        merged_official_root = Path(temp_dir) / "merged" / "symbols"
+        official_capture_merge = build_merged_official_history_root(
+            official_capture_roots,
+            merged_official_root,
+            expected_official_dates,
+            Path("data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv"),
+        )
+        official_crosscheck = crosscheck_official_history(
+            public_csv_by_symbol, merged_official_root
+        )
+        socrateai_crosscheck = crosscheck_socrateai_history(merged_official_root)
     bad_symbols = [item["symbol"] for item in audited if any(
         item.get(key, 0) for key in (
             "duplicate_dates", "invalid_dates", "out_of_order_transitions",
@@ -823,9 +838,11 @@ def audit_public_archive(*, workers: int = 8) -> dict:
         "totals": totals,
         "symbols_with_any_quality_issue": len(set(bad_symbols)),
         "symbol_results": audited,
+        "official_capture_merge": official_capture_merge,
         "official_history_crosscheck": official_crosscheck,
         "socrateai_history_crosscheck": socrateai_crosscheck,
         "gate": "FAIL" if quality_failed
+                or official_capture_merge.get("gate") != "RECONCILED_REVIEW_ONLY"
                 or socrateai_crosscheck.get("gate") != "RECONCILED_WINDOW_ONLY"
                 or official_crosscheck.get("status") != "COMPLETED"
                 or official_crosscheck.get("field_mismatches", 0)
@@ -837,8 +854,10 @@ def audit_public_archive(*, workers: int = 8) -> dict:
             "Publisher describes this as unofficial, best-effort data scraped from public sources; source completeness and correctness are not guaranteed.",
             "Publisher attributes NEPSE OHLCV to ShareSansar and historical backfill to Aabishkar2/nepse-data; upstream data sublicensing rights are not independently established by the repository's MIT code/data notice.",
             "Prices are unadjusted for bonus issues, rights issues and splits.",
-            "This is a structural audit, not reconciliation against the official NEPSE exchange source or a verified trading-session calendar.",
-            "A structural pass cannot authorize canonical promotion, production signals or backtesting.",
+            "The audit cross-checks official NEPSE high, low, close, volume and turnover for the captured review window; opening price is not present in the official per-security history endpoint response.",
+            "Current security-list IDs are not proven historical identities, and the official capture does not establish the complete historical instrument universe.",
+            "The public archive and official source comparisons do not establish upstream data sublicensing rights or corporate-action adjustment methodology.",
+            "A reconciliation result is review-only and cannot authorize canonical promotion, production signals or backtesting.",
             "No source files are imported or modified by this audit.",
         ],
     }

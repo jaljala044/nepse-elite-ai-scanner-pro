@@ -84,9 +84,9 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 | Acceptance gate | Status | Evidence / blocker |
 |---|---|---|
-| Deterministic market-wide orchestration and API | Implemented on PR #153 | Latest-main draft integration includes backend implementation and API regression tests |
-| Dedicated frontend entry point | Implemented on PR #153 | Latest-main draft integration includes UI module and build integration |
-| Backend, contract and frontend build CI for PR #153 | Passed | Exact latest-main port head `8a0ffca690796141975fcb61e7d254652ee2fef2`: unit-tests run 45899542680, backend-unit-tests run 45899542654, build run 45899501585 all successful |
+| Deterministic market-wide orchestration and API | Implemented on PR #155 | Latest-main draft integration includes backend implementation and API regression tests |
+| Dedicated frontend entry point | Implemented on PR #155 | Latest-main draft integration includes UI module and build integration |
+| Frontend build CI for PR #155 | Passed | Exact latest-main port head `070a556ffb89cd933053dabd2b0c1a80b905256a`: build run 45900204383 passed; backend test workflows are blocked by an unrelated missing SEBON module in current main |
 | Candidate universe has stable dated provenance | Partial | 281-row secondary snapshot is pinned; authoritative membership is not established |
 | Current security ID crosswalk | Partial | 281/281 current-snapshot matches; historical effective-dated identity outstanding |
 | Complete all-market instrument scope | Partial | Three official bulk dates reconcile; only those dates and current-snapshot instrument classifications are covered |
@@ -109,7 +109,7 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 ## Engineering integration note
 
-PR #153 (`reconcile/3a01-on-current-main-2026-11-27`) is the current clean latest-main scanner integration candidate. It is open and draft; GitHub reports it mergeable, and its exact head has passing backend unit, contract and frontend build checks. PR #142 is left open as the superseded prior scanner port; PR #131 is an older divergent implementation and is not the integration candidate. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
+PR #155 (`reconcile/3a01-latest-main-sebon-2026-11-27`) is the current scanner integration candidate, based on the main snapshot that includes the SEBON evidence test addition. Its frontend build passed, but both full backend test workflows failed on the unrelated import error `ModuleNotFoundError: app.sebon_pdf_capture` from `backend/tests/test_sebon_pdf_capture.py`. All scanner-specific tests passed within those runs. This missing module must be corrected on main before the full CI gate can pass. PR #142 and PR #153 are left open as superseded scanner ports; PR #131 is an older divergent implementation. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
 
 ## Source reports
 
@@ -141,14 +141,14 @@ The matrix is an evidence index, not a reviewed-row manifest. It does not author
 
 ## Integration status refresh — 2026-11-27
 
-The scanner integration has been re-ported onto the current-main snapshot in PR #153:
-- PR #153: [3A.01 current-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/149).
-- Head: `8a0ffca690796141975fcb61e7d254652ee2fef2`; base snapshot: `b679b0d6bdb309a4cc979ff2f7293d147fd8f753`.
-- The port replays all eight scanner implementation/UI/test changes additively on current main and preserves the newer sector-membership manifest work.
-- The lowercase-symbol regression test is included; the endpoint rejects noncanonical lowercase symbols rather than normalizing them.
-- Exact-head CI passed on PR #153: `unit-tests` run 45899949432, `backend-unit-tests` run 45899949435, and `build` run 45899920249.
-- The scanner branch is based on current main commit `b679b0d6bdb309a4cc979ff2f7293d147fd8f753`; its comparison is 8 commits ahead and 0 behind. GitHub reports PR #153 mergeable.
-- PR #153 remains draft and unmerged. PR #142 is superseded but left open; no merge or deployment is claimed.
+The scanner integration was re-ported onto the latest main snapshot, including the new SEBON evidence test additions, in PR #155:
+- PR #155: [3A.01 latest-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/155).
+- Head: `070a556ffb89cd933053dabd2b0c1a80b905256a`; base snapshot: `33fd3eaad0d4cc23342fff64f9b7e0696c38c4b0`.
+- The port replays all eight scanner implementation/UI/test changes additively. The lowercase-symbol regression test is included and passes.
+- Exact-head frontend build passed (run 45900204383).
+- Exact-head `unit-tests` (run 45900232390) and `backend-unit-tests` (run 45900232414) both failed at the same unrelated test import: `backend/tests/test_sebon_pdf_capture.py` imports missing `app.sebon_pdf_capture`. The test was added to main by commit `33fd3eaad0d4cc23342fff64f9b7e0696c38c4b0`; this scanner PR does not modify SEBON files. Both logs show all scanner orchestration/API tests passing, including lowercase-symbol rejection.
+- GitHub currently reports PR #155 mergeable. The full backend CI gate remains blocked until the missing SEBON module is implemented or the orphaned test is corrected on main.
+- PR #155 remains draft and unmerged. Earlier scanner ports PR #142 and PR #153 remain open but superseded; no merge or deployment is claimed.
 
 The evidence artifacts in this PR were copied onto a branch created from current main. Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
 

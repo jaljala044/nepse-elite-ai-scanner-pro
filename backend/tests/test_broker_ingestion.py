@@ -1,6 +1,6 @@
 from decimal import Decimal
 import unittest
-from backend.app.broker_ingestion import ContractTotal, IngestionError, payload_hash, reconcile_broker_batch
+from app.broker_ingestion import ContractTotal, IngestionError, payload_hash, reconcile_broker_batch
 
 def make_row(**overrides):
     payload = {"trade_file": "source-row-1", "value": 123}

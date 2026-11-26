@@ -85,15 +85,15 @@ class FloorsheetSourceCaptureTests(unittest.TestCase):
         self.assertEqual(opener.calls[0][0].get_method(), "GET")
 
     def test_exact_replay_is_idempotent(self):
-        self.capture(opener=FakeOpener(FakeResponse()))
-        # Use the same manifest times to make the exact fetch receipt identical.
+        # Use identical request/receipt timestamps for an exact manifest replay.
         fixed = datetime(2026, 11, 26, 10, 0, tzinfo=timezone.utc)
-        result = capture_public_floorsheet(
-            "https://example.test/api/floorsheet",
-            policy=self.policy, storage_root=self.tmp.name, fetch_id="fetch-001",
-            opener=FakeOpener(FakeResponse()),
-            clock=lambda: fixed,
-        )
+        for _ in range(2):
+            result = capture_public_floorsheet(
+                "https://example.test/api/floorsheet",
+                policy=self.policy, storage_root=self.tmp.name, fetch_id="fetch-001",
+                opener=FakeOpener(FakeResponse()),
+                clock=lambda: fixed,
+            )
         self.assertTrue(result["capture"]["idempotent"])
 
     def test_non_https_or_unlisted_host_is_rejected_before_network(self):

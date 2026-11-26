@@ -27,6 +27,11 @@ class FloorsheetCrossSourceTests(unittest.TestCase):
         self.assertEqual(result["conflicting_shared_contract_count"], 0)
         self.assertEqual(result["left_only_contract_keys"][0]["contract_id"], "C2")
         self.assertEqual(result["right_only_contract_keys"][0]["contract_id"], "C3")
+        self.assertEqual(result["right_only_contracts"][0]["symbol"], "AAA")
+        self.assertEqual(result["right_only_contracts"][0]["quantity"], "10")
+        self.assertEqual(result["right_only_contracts"][0]["amount"], "100")
+        self.assertEqual(result["right_only_contracts"][0]["source_row_number"], 2)
+        self.assertEqual(result["left_only_contracts"][0]["contract_id"], "C2")
         self.assertFalse(result["source_independence_verified"])
         self.assertFalse(result["coverage_admission_allowed"])
 
@@ -37,6 +42,8 @@ class FloorsheetCrossSourceTests(unittest.TestCase):
         )
         self.assertEqual(result["conflicting_shared_contract_count"], 1)
         self.assertIn("symbol", result["conflicts"][0]["differing_fields"])
+        self.assertEqual(result["conflicts"][0]["left_record"]["symbol"], "AAA")
+        self.assertEqual(result["conflicts"][0]["right_record"]["symbol"], "BBB")
 
     def test_source_totals_use_contract_rows_once(self):
         result = compare_floorsheet_sources(

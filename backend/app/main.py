@@ -100,6 +100,32 @@ def scan(request: ScanRequest):
             })
             continue
         symbol = normalized_symbol
+        if symbol == "UNL":
+            results.append({
+                "symbol": "UNL",
+                "status": "unknown_result",
+                "eligibility": {
+                    "eligible": False,
+                    "reasons": [
+                        "unl_historical_ohlcv_quarantined",
+                        "session_level_trade_vs_no_trade_not_reconciled",
+                        "complete_primary_floorsheet_coverage_not_verified",
+                        "historical_source_lineage_and_ohlcv_integrity_unresolved",
+                    ],
+                },
+                "signals": [],
+                "metrics": {},
+                "data_quality": "LOW_CONFIDENCE",
+                "data_status": "UNKNOWN",
+                "scan_note": (
+                    "UNL is retained in scan output as UNKNOWN, not excluded and not "
+                    "treated as a no-trade security. A session is a verified no-trade "
+                    "only when the exchange session is confirmed open and complete "
+                    "floorsheet coverage contains zero UNL contracts. Do not carry "
+                    "forward OHLCV or score missing evidence as neutral."
+                ),
+            })
+            continue
         rows = DATA.get(symbol.upper(), [])
         if request.as_of:
             rows = [r for r in rows if r["date"] <= request.as_of]

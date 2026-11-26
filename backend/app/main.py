@@ -13,6 +13,9 @@ from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
 from .broker_intelligence_dashboard import build_broker_intelligence_dashboard
 from .early_entry_exit_signals import generate_early_entry_exit_signals
+from .signal_tracking import freeze_signal, HORIZONS as TRACKED_HORIZONS
+from .signal_store import store_signal, store_outcome, get_signal, list_signals, list_signal_outcomes, list_all_outcomes
+from .signal_outcome_validation import evaluate_signal_path
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -41,6 +44,26 @@ class EarlySignalRequest(BaseModel):
     as_of_date: date
     as_of_timestamp: str
     snapshot: dict
+
+class FreezeSignalRequest(BaseModel):
+    symbol: str
+    decision_time: str
+    horizon: str
+    action: str
+    methodology: str
+    evidence: list[dict]
+    details: dict
+
+class EvaluateSignalOutcomeRequest(BaseModel):
+    evaluation_date: date
+    verified_sessions: list[date]
+    calendar_evidence: dict
+
+class StoreSignalOutcomeRequest(BaseModel):
+    horizon: str
+    observed_at: str
+    outcome: dict
+
 
 @app.get("/health")
 def health():
@@ -79,6 +102,119 @@ def early_signals(request: EarlySignalRequest):
         )
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/v1/research/signals")
+def create_research_signal(request: FreezeSignalRequest):
+    """Freeze and persist a content-addressed research signal; never places an order."""
+    try:
+        envelope = freeze_signal(
+            symbol=request.symbol, decision_time=request.decision_time,
+            horizon=request.horizon, action=request.action,
+            methodology=request.methodology, evidence=request.evidence,
+            details=request.details,
+        )
+        stored = store_signal(envelope)
+        return {**envelope, "storage": stored,
+                "classification": "research_only_not_execution"}
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/research/signals")
+def research_signals(symbol: str | None = None, horizon: str | None = None, limit: int = 500):
+    try:
+        return {"classification": "research_only_not_execution",
+                "signals": list_signals(symbol=symbol, horizon=horizon, limit=limit)}
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/v1/research/signals/{signal_id}/evaluate")
+def evaluate_research_signal(signal_id: str, request: EvaluateSignalOutcomeRequest):
+    """Measure price references using server-reviewed OHLCV and a caller-attested calendar."""
+    try:
+        record = get_signal(signal_id)
+        if record is None:
+            raise HTTPException(404, "signal_not_found")
+        if record.get("symbol") not in DATA:
+            raise HTTPException(422, "ohlcv_history_unavailable")
+        calendar = request.calendar_evidence
+        cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+        if (calendar.get("status") != "verified"
+                or not calendar.get("source_id")
+                or float(calendar.get("coverage", 0)) < 0.95):
+            raise HTTPException(422, "verified_calendar_evidence_required")
+        available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+        if available.tzinfo is None or available > cutoff:
+            raise HTTPException(422, "calendar_evidence_late_or_timezone_missing")
+        rows = DATA[record["symbol"]]
+        result = evaluate_signal_path(
+            record, rows, [d.isoformat() for d in request.verified_sessions],
+            evaluation_date=request.evaluation_date.isoformat(), reviewed=REVIEWED_ROWS,
+        )
+        if result.get("status") in {"observed", "partial"}:
+            saved = store_outcome(
+                signal_id=signal_id, horizon=record["horizon"],
+                observed_at=cutoff.isoformat(), outcome=result,
+            )
+            result["storage"] = saved
+        return result
+    except HTTPException:
+        raise
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/research/signals/{signal_id}/outcomes")
+def research_signal_outcomes(signal_id: str):
+    if get_signal(signal_id) is None:
+        raise HTTPException(404, "signal_not_found")
+    return {"classification": "research_reference_not_execution",
+            "outcomes": list_signal_outcomes(signal_id)}
+
+
+@app.get("/v1/research/performance")
+def research_signal_performance(horizon: str | None = None, limit: int = 2000):
+    """Descriptive gross reference outcomes only; no strategy edge is inferred."""
+    try:
+        outcomes = list_all_outcomes(horizon=horizon, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    grouped = {}
+    for item in outcomes:
+        h = item.get("horizon")
+        payload = item.get("outcome", {})
+        bucket = grouped.setdefault(h, {"sample_size": 0, "entry_touched": 0,
+            "positive_reference": 0, "negative_reference": 0,
+            "returns": [], "statuses": {}})
+        bucket["sample_size"] += 1
+        status = payload.get("status", "unknown")
+        bucket["statuses"][status] = bucket["statuses"].get(status, 0) + 1
+        if payload.get("entry_touched") is True and payload.get("reference_return_pct") is not None:
+            value = float(payload["reference_return_pct"])
+            bucket["entry_touched"] += 1
+            bucket["returns"].append(value)
+            if value > 0: bucket["positive_reference"] += 1
+            elif value < 0: bucket["negative_reference"] += 1
+    summaries = {}
+    for h, bucket in grouped.items():
+        vals = bucket.pop("returns")
+        winners = [x for x in vals if x > 0]
+        losers = [x for x in vals if x < 0]
+        bucket["win_rate_pct"] = (100 * len(winners) / len(vals)) if vals else None
+        bucket["average_reference_return_pct"] = (sum(vals) / len(vals)) if vals else None
+        bucket["average_win_pct"] = (sum(winners) / len(winners)) if winners else None
+        bucket["average_loss_pct"] = (sum(losers) / len(losers)) if losers else None
+        bucket["profit_factor"] = (sum(winners) / abs(sum(losers))) if losers and sum(losers) else None
+        bucket["data_quality"] = "LOW_CONFIDENCE" if len(vals) < 30 else "DESCRIPTIVE_ONLY"
+        summaries[h] = bucket
+    return {"classification": "gross_price_reference_statistics_not_backtest",
+            "sample_count": len(outcomes), "by_horizon": summaries,
+            "limitations": ["No execution/fill records, fees, slippage or market impact",
+                            "Repeated evaluations of one signal are separate observations; deduplication is not a trade ledger",
+                            "No calibrated probability or strategy-performance claim is produced"]}
+
 
 @app.get("/v1/research/readiness")
 def research_readiness():

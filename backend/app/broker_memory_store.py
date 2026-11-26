@@ -56,8 +56,13 @@ def _ensure_tables(con) -> None:
             source_row_number BIGINT NOT NULL,
             evidence_id VARCHAR NOT NULL,
             record_json JSON NOT NULL,
-            stored_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
+            stored_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+            UNIQUE (source_id, source_payload_sha256, source_row_number)
         )
+    """)
+    con.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS broker_memory_source_lineage_idx
+        ON broker_memory_observations(source_id, source_payload_sha256, source_row_number)
     """)
     con.execute("""
         CREATE TABLE IF NOT EXISTS broker_memory_snapshots (
@@ -278,12 +283,13 @@ def persist_broker_memory(rows: list[dict], *, session_dates: list[str],
             record_json = _canonical(row)
             observation_id = hashlib.sha256(record_json.encode()).hexdigest()
             existing = con.execute(
-                "SELECT record_json FROM broker_memory_observations WHERE observation_id = ?",
-                [observation_id],
+                """SELECT observation_id, record_json FROM broker_memory_observations
+                   WHERE source_id = ? AND source_payload_sha256 = ? AND source_row_number = ?""",
+                [row["source_id"], row["source_payload_sha256"], row["source_row_number"]],
             ).fetchone()
             if existing is not None:
-                if str(existing[0]) != record_json:
-                    raise ValueError("broker observation immutable-record conflict")
+                if existing[0] != observation_id or str(existing[1]) != record_json:
+                    raise ValueError("broker observation immutable-record conflict for source lineage")
                 continue
             con.execute(
                 """INSERT INTO broker_memory_observations

@@ -558,3 +558,36 @@ ADBL has 405 OHLC-bound violations and 112 positive-volume/zero-turnover rows in
 The audit now retains row-level diagnostic samples by defect type (including the date and relevant OHLC/volume/turnover values) in the full per-symbol artifact, capped at five samples per defect type per symbol. Aggregate counters still count every detected row. The updated artifact is run 45894621663: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45894621663. This allows a reviewer to inspect examples without inflating the artifact with every defective row.
 
 **Why these records remain unreviewed:** (1) the public publisher describes the archive as unofficial and sourced from third parties; (2) the full archive has widespread structural defects; (3) official overlap reveals at least one material close discrepancy; (4) official history does not independently verify open; (5) historical security lifecycle and corporate-action adjustment are not established for the complete archive; and (6) the repository's publication licence does not independently prove rights to sublicense underlying market data. No automatic correction, canonical promotion or trading use is allowed.
+
+#### Second free archive spot-check — SocrateAI NEPSE Open Data
+
+The public `socrateai-official/nepse-open-data` repository contains 4,817
+unadjusted daily stock CSVs dated from 2007 through 2026-11-26 and publishes
+an MIT-style licence that expressly claims to cover the dataset. Its README
+does not identify the upstream source or document the collection, correction,
+corporate-action adjustment or historical security-lifecycle methodology.
+The advertised `meta/symbols.csv` is not present in the current repository
+tree (the `meta/` directory contains only `.gitkeep`). Daily files mix
+ordinary equities with other instruments, so the rows require an independently
+verified instrument crosswalk.
+
+Two spot checks demonstrate why this candidate also needs reconciliation:
+
+- **ADBL, 2010-09-23:** SocrateAI reports open 117, high 120, low 117, close
+  120, volume 8,417. The other public archive reports open 116 with the same
+  high, low, close and volume, making its open impossible because it is below
+  the day's low. There is no pinned official per-security history for 2010 in
+  this project, so the SocrateAI value is a conflicting secondary observation,
+  not a verified correction.
+- **CFCL, 2026-11-18:** SocrateAI reports close 589.9, agreeing with the
+  official NEPSE close and contradicting the other public archive's 636.
+  However, SocrateAI reports volume 307,567 versus 307,576 in the official
+  capture. Its close is corroborated, but its volume is not exact.
+
+The audit now fetches the SocrateAI daily CSV for each date in the pinned
+official review window and compares high, low, close and volume against the
+hash-verified official captures. Open and turnover are unavailable from the
+official historical endpoint and therefore cannot be compared. The automated
+full-window result is retained in the same public archive audit artifact.
+This is a bounded reconciliation exercise only; it does not establish
+upstream data rights or authorize canonical promotion.

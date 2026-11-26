@@ -1696,3 +1696,14 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - Focused CI: [Historical identity regression run 45829193181](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45829193181) — SUCCESS; 14 historical identity tests and 14 instrument-manifest tests passed.
 - Full backend CI: [run 45829193192](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45829193192) — SUCCESS; 641 tests passed.
 - This closes an engineering validation gap only. It does not verify the 281-equity universe, certify primary exchange dates, adjudicate OHLCV/floorsheet exceptions, establish data rights, or authorize canonical/training promotion.
+
+
+## 2026-11-26 — Equity-only universe gate
+
+- Parsed `data/reference/nepse_active_equity_manifest_2026-11-26.csv`: 281 rows, 281 unique symbols and IDs, all explicitly `Equity` / `Active`, observed 2026-11-26, one NepseAlpha source snapshot hash.
+- Confirmed NESDO/8041, ULBSL/8063 and YMHL/9342 are included; NICEF is excluded because it is a mutual fund.
+- Added `backend/app/equity_universe_manifest.py` and `backend/tests/test_equity_universe_manifest.py`. The tests validate the actual checked-in CSV and reject duplicate IDs/symbols, non-equities, inactive records, mixed source hashes and count mismatch.
+- Added `docs/EQUITY_ONLY_UNIVERSE_GATE_2026-11-26.md`.
+- Important qualification: the file is a dated NepseAlpha **secondary-provider snapshot**. Structural validation passes, but official membership/effective-dated lifecycle is not yet authoritative; the validator explicitly keeps `membership_authoritatively_verified=false` and `promotion_allowed=false`.
+- Current 281-equity file may be used as a working candidate universe for equity-only scanner development and coverage reconciliation. Mutual funds, promoter shares, debentures, suspended and delisted instruments remain excluded.
+- CI is pending confirmation from the backend-tests workflow triggered by the new tests. No canonical/training promotion is approved.

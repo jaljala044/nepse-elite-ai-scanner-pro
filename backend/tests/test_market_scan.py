@@ -62,6 +62,24 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         self.assertEqual(result["symbols_without_observations"], 1)
         self.assertEqual(result["status_counts"]["insufficient_data"], 1)
 
+    def test_callback_cannot_enable_ranking_or_buy_eligibility(self):
+        result = run_market_scan(
+            ["AAA"],
+            {"AAA": [{"date": "2026-01-01"}]},
+            as_of=date(2026, 1, 2),
+            scan_symbol=lambda *args: {
+                "status": "screened",
+                "ranking_eligible": True,
+                "buy_list_eligible": True,
+                "signals": [],
+                "metrics": {},
+            },
+        )
+        row = result["results"][0]
+        self.assertFalse(row["ranking_eligible"])
+        self.assertFalse(row["buy_list_eligible"])
+        self.assertFalse(result["ranking_enabled"])
+
     def test_calendar_age_is_reported_without_session_staleness_claim(self):
         result = run_market_scan(
             ["AAA"],

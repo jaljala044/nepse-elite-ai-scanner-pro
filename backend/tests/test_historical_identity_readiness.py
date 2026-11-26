@@ -65,8 +65,8 @@ class HistoricalIdentityReadinessTests(unittest.TestCase):
             },
         }))
         benh_rows=[
-            {"businessDate":"2026-10-14","totalTrades":0,"totalTradedQuantity":0,"totalTradedValue":0},
-            {"businessDate":"2026-10-15","totalTrades":9,"totalTradedQuantity":90,"totalTradedValue":26634},
+            {"businessDate":"2026-10-14","totalTrades":0.0,"totalTradedQuantity":0.0,"totalTradedValue":0.0},
+            {"businessDate":"2026-10-15","totalTrades":9.0,"totalTradedQuantity":90.0,"totalTradedValue":26634.0},
         ]
         benh_path=history/"symbols"/"BENH"/"response-01.bin"
         raw=json.dumps({"content":benh_rows}).encode()

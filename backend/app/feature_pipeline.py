@@ -6,6 +6,7 @@ from app.footprint_features import market_breadth, security_footprint, broker_pa
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
 from app.wyckoff_features import wyckoff_event_features
+from app.smc_features import smc_features
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
@@ -50,6 +51,10 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         symbol: wyckoff_event_features(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
     }
+    smc_features_by_symbol = {
+        symbol: smc_features(items)
+        for symbol, items in sorted(by_symbol.items()) if symbol
+    }
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
@@ -65,6 +70,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "trend_features": trend_features,
         "volume_features": volume_features,
         "wyckoff_features": wyckoff_features,
+        "smc_features": smc_features_by_symbol,
         "broker_participation": broker_participation_summary(broker_rows),
         "interpretation": "descriptive_only_not_a_trading_signal",
     }

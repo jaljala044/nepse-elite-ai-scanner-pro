@@ -2,7 +2,7 @@
   "date": "2026-11-26",
   "base_review_blob": "8bd7ebe58b52c7e45cf312895d78d9d59452be91",
   "provider": "ShareSansar and NepseAlpha",
-  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates; added reported last-recorded-trade dates for JALPA, KLBSL and MKLB from secondary historical company records; not yet NEPSE-primary certified; added direct pinned-repository OHLCV file-boundary observations for JALPA, KLBSL and MKLB and successor files; identical blob SHAs across the two data repositories, no splice authorized",
+  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates; added reported last-recorded-trade dates for JALPA, KLBSL and MKLB from secondary historical company records; not yet NEPSE-primary certified; added direct pinned-repository OHLCV file-boundary observations for JALPA, KLBSL and MKLB and successor files; identical blob SHAs across the two data repositories, no splice authorized; extended OHLCV boundary observations to BPW, MMFDB, NLBBL, SAMAJ, SFCL, SABSL and SDLBSL; repeated forward-filled terminal rows explicitly distinguished from unique OHLCV dates",
   "records": [
     {
       "symbol": "BPW",
@@ -19,7 +19,21 @@
       "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
       "trading_suspension_effective_date": "2024-03-06",
       "trading_suspension_source": "https://www.sharesansar.com/newsdetail/for-the-purpose-of-joint-integrated-transaction-share-trading-of-samudayik-laghubitta-and-bpw-laghubitta-to-be-halted-from-falgun-24-2024-03-06",
-      "trading_suspension_basis": "NEPSE trading suspension reported effective Falgun 24, 2080; source states suspension from that date. Not asserted as last-trade date."
+      "trading_suspension_basis": "NEPSE trading suspension reported effective Falgun 24, 2080; source states suspension from that date. Not asserted as last-trade date.",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "eededa833a1a1d7ab4a252b98d0c22a907f5c1b5",
+        "first_row_date": "2024-03-04",
+        "last_row_date": "2024-03-06",
+        "last_row": [
+          "2024-03-06",
+          "1200.00",
+          "1200.00",
+          "1140.10",
+          "1141.50",
+          "1900"
+        ],
+        "caution": "Last row has nonzero volume on the same date as reported suspension effective date; reconcile exact intraday notice timing before asserting final trade."
+      }
     },
     {
       "symbol": "JALPA",
@@ -168,7 +182,20 @@
       "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
       "trading_suspension_effective_date": "2024-03-13",
       "trading_suspension_source": "https://www.sharesansar.com/newsdetail/nerude-laghubitta-and-mirmire-laghubitta-trading-to-be-halted-from-falgun-30-2024-03-12",
-      "trading_suspension_basis": "NEPSE suspension reported from Falgun 30, 2080; source published Mar 12 and says joint business begins Falgun 30. Not asserted as last-trade date."
+      "trading_suspension_basis": "NEPSE suspension reported from Falgun 30, 2080; source published Mar 12 and says joint business begins Falgun 30. Not asserted as last-trade date.",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "75efac1a3856d55da3535a4e42b9663f329d6c2e",
+        "first_row_date": "2024-03-04",
+        "last_row_date": "2024-03-12",
+        "last_row": [
+          "2024-03-12",
+          "561.00",
+          "590.40",
+          "561.00",
+          "580.00",
+          "25868"
+        ]
+      }
     },
     {
       "symbol": "NLBBL",
@@ -185,7 +212,20 @@
       "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17",
       "trading_suspension_effective_date": "2024-03-13",
       "trading_suspension_source": "https://www.sharesansar.com/newsdetail/nerude-laghubitta-and-mirmire-laghubitta-trading-to-be-halted-from-falgun-30-2024-03-12",
-      "trading_suspension_basis": "NEPSE suspension reported from Falgun 30, 2080; source published Mar 12 and says joint business begins Falgun 30. Not asserted as last-trade date."
+      "trading_suspension_basis": "NEPSE suspension reported from Falgun 30, 2080; source published Mar 12 and says joint business begins Falgun 30. Not asserted as last-trade date.",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "b8cebffae7b493fec2d9e8d506c9326529dd79c4",
+        "first_row_date": "2024-03-04",
+        "last_row_date": "2024-03-12",
+        "last_row": [
+          "2024-03-12",
+          "565.00",
+          "595.00",
+          "555.00",
+          "595.00",
+          "20276"
+        ]
+      }
     },
     {
       "symbol": "SABSL",
@@ -200,7 +240,24 @@
       "joint_transaction_start_date": "2024-07-14",
       "date_basis": "30 Ashadh 2081; joint transaction under Sampada Laghubitta",
       "additional_source": "https://www.sharesansar.com/index.php/newsdetail/after-successful-merger-between-sabsl-and-sdlbsl-shares-of-sampada-laghubitta-listed-in-nepse-2024-08-15",
-      "additional_source_2": "https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08"
+      "additional_source_2": "https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "b5e289c58c3faba3cf23950887b3e4a49dd18a5a",
+        "last_file_row_date": "2024-07-13",
+        "last_distinct_ohlcv_date": "2024-07-11",
+        "last_distinct_row": [
+          "2024-07-11",
+          "1093.00",
+          "1093.00",
+          "1034.00",
+          "1045.00",
+          "10540"
+        ],
+        "forward_filled_rows": [
+          "2024-07-12",
+          "2024-07-13"
+        ]
+      }
     },
     {
       "symbol": "SDLBSL",
@@ -215,7 +272,24 @@
       "joint_transaction_start_date": "2024-07-14",
       "date_basis": "30 Ashadh 2081; joint transaction under Sampada Laghubitta",
       "additional_source": "https://www.sharesansar.com/index.php/newsdetail/after-successful-merger-between-sabsl-and-sdlbsl-shares-of-sampada-laghubitta-listed-in-nepse-2024-08-15",
-      "additional_source_2": "https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08"
+      "additional_source_2": "https://www.sharesansar.com/newsdetail/after-the-successful-merger-of-sabaikolaghubitta-and-sadhana-laghubitta-to-commence-joint-transaction-from-ashadh-30-2024-07-08",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "e99c91f0136cdaf5e7e49eae2080d22ea566b095",
+        "last_file_row_date": "2024-07-13",
+        "last_distinct_ohlcv_date": "2024-07-11",
+        "last_distinct_row": [
+          "2024-07-11",
+          "1118.00",
+          "1125.00",
+          "1060.00",
+          "1067.00",
+          "15863"
+        ],
+        "forward_filled_rows": [
+          "2024-07-12",
+          "2024-07-13"
+        ]
+      }
     },
     {
       "symbol": "SAMAJ",
@@ -232,7 +306,26 @@
       "additional_source": "https://eng.merolagani.com/AnnouncementDetail.aspx?id=61940",
       "trading_suspension_effective_date": "2025-10-19",
       "trading_suspension_source": "https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-gblbs-and-samaj-shares-ahead-of-merger-implementation-2025-10-17",
-      "trading_suspension_basis": "NEPSE suspension explicitly effective Kartik 2, 2082; joint operations start same date. Not asserted as last-trade date."
+      "trading_suspension_basis": "NEPSE suspension explicitly effective Kartik 2, 2082; joint operations start same date. Not asserted as last-trade date.",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "1d2c0754a4e9f31208cc9a7e7e09565488ac47bf",
+        "first_row_date": "2024-03-04",
+        "last_file_row_date": "2025-10-18",
+        "last_distinct_ohlcv_date": "2025-10-16",
+        "last_distinct_row": [
+          "2025-10-16",
+          "2042.60",
+          "2042.60",
+          "1875.80",
+          "1875.80",
+          "2893"
+        ],
+        "forward_filled_rows": [
+          "2025-10-17",
+          "2025-10-18"
+        ],
+        "caution": "Rows on 17 and 18 October repeat 16 October OHLCV exactly; do not treat them as new sessions or trades."
+      }
     },
     {
       "symbol": "SFCL",
@@ -250,7 +343,20 @@
       "additional_source_2": "https://www.sharesansar.com/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09",
       "trading_suspension_effective_date": "2026-07-10",
       "trading_suspension_source": "https://www.sharesansar.com/index.php/newsdetail/nepse-suspends-trading-of-pokhara-finance-and-samriddhi-finance-shares-ahead-of-merger-2026-07-09",
-      "trading_suspension_basis": "NEPSE suspension explicitly effective Ashar 26, 2083; joint operations start same date. Not asserted as last-trade date."
+      "trading_suspension_basis": "NEPSE suspension explicitly effective Ashar 26, 2083; joint operations start same date. Not asserted as last-trade date.",
+      "ohlcv_boundary_observation": {
+        "ohlcv_file_sha": "197513181af3aa76f5dcf607c1c6d99f078d06c9",
+        "first_row_date": "2024-03-04",
+        "last_row_date": "2026-07-09",
+        "last_row": [
+          "2026-07-09",
+          "375.00",
+          "375.00",
+          "368.30",
+          "370.00",
+          "5290"
+        ]
+      }
     },
     {
       "symbol": "CMF1",

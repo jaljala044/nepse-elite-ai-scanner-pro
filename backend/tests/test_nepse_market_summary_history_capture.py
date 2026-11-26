@@ -130,6 +130,19 @@ class NepseMarketSummaryHistoryCaptureTests(unittest.TestCase):
         self.assertIsNone(result["date_comparison"])
         self.assertFalse(result["canonical_calendar_promotion_allowed"])
 
+
+    def test_list_without_date_field_keeps_all_rows_unverified(self):
+        result = analyze_payload(
+            [{"totalTurnover": 100, "totalTradedShares": 10,
+              "totalTransactions": 1, "tradedScrips": 1}],
+            {"2026-11-24"},
+        )
+        self.assertIsNone(result["date_field"])
+        self.assertEqual(result["activity_confirmed_dates"], [])
+        self.assertEqual(result["activity_unverified_rows"][0]["reason"],
+                         "no_recognized_date_field")
+        self.assertFalse(result["canonical_calendar_promotion_allowed"])
+
     def test_missing_or_invalid_dates_are_counted_not_inferred(self):
         payload = [
             {"businessDate": "2024-03-04"},

@@ -2066,3 +2066,15 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - CI on `8a43afaf8269532706934e40ed17f9af53076780`: backend tests **802 passed** (run 45845610879); standard unit tests **802 passed** (run 45845610858); integrated evidence audit passed (run 45845610874); historical data integrity passed (run 45845610982). Backend test logs and all workflow job conclusions inspected.
 - Historical data integrity workflow completed its pinned broker-party derivation, inventory generation and source-separated date-coverage report successfully. These remain candidate archive inventory/coverage artifacts, not primary exchange verification.
 - Next: compose a single reproducible report runner that applies cross-source comparison and identity anomaly checks to two locally acquired pinned CSV byte streams, validates each file SHA-256 against the pinned profile, and emits JSON only. Do not download or promote source data until rights and acquisition provenance are resolved.
+
+
+## 2026-11-26 — reproducible pinned archive-pair audit runner
+
+- Added `backend/app/floorsheet_archive_pair_audit.py`, commit `e50cae794863db455063f57140dd378ad2f8ff1e`.
+- Runner accepts two caller-supplied raw CSV byte payloads, source IDs, explicit source mappings and independently supplied expected SHA-256 digests. It verifies both exact payload hashes before parsing, then runs the cross-source contract comparator and contract-date identity audit.
+- Output includes per-file hash, parsed/rejected row counts, source comparison and identity findings. Rejected rows downgrade the result to `review_only_with_rejected_rows`; hash mismatch aborts before parsing.
+- Hard-coded fail-closed fields: source independence, daily completeness, source rights, coverage admission and canonical promotion all remain false. Runner performs no network fetch and does not imply permission to acquire/redistribute publisher data.
+- Added four tests for hash-checked parsing/comparison, cross-source date findings, rejected-row status and invalid payload/digest.
+- CI on `32efd5857ce2c287c3c0ffef86e5322ef6e3b4b9`: backend tests **806 passed** (run 45845827979); standard unit tests **806 passed** (run 45845828021); integrated evidence audit passed (run 45845828091); historical data integrity passed (run 45845828045). Test logs and completed job conclusions inspected.
+- Historical integrity workflow successfully generated its source-separated date-coverage and pinned inventory artifacts; those are still candidate archive outputs, not primary exchange calendar or daily completeness certification.
+- Next: add a documented CLI wrapper and run the pair audit on reproducibly acquired raw files only after rights/provenance approval; record exact file hashes and outputs. If raw bytes remain unavailable, do not substitute fabricated fixtures or source summaries for a real audit.

@@ -41,6 +41,20 @@ def compare_floorsheet_sources(
     left_index = index(left, "left")
     right_index = index(right, "right")
     left_keys, right_keys = set(left_index), set(right_index)
+    def row_detail(row):
+        return {
+            "source_id": row.source_id,
+            "source_row_number": row.source_row_number,
+            "trade_date": row.trade_date,
+            "contract_id": row.contract_id,
+            "symbol": row.symbol,
+            "buyer_broker_code": row.buyer_broker_code,
+            "seller_broker_code": row.seller_broker_code,
+            "quantity": str(row.quantity),
+            "rate": str(row.rate),
+            "amount": str(row.amount),
+        }
+
     shared = sorted(left_keys & right_keys)
     conflicts = []
     exact = []
@@ -57,20 +71,6 @@ def compare_floorsheet_sources(
             })
         else:
             exact.append({"trade_date": key[0], "contract_id": key[1]})
-
-    def row_detail(row):
-        return {
-            "source_id": row.source_id,
-            "source_row_number": row.source_row_number,
-            "trade_date": row.trade_date,
-            "contract_id": row.contract_id,
-            "symbol": row.symbol,
-            "buyer_broker_code": row.buyer_broker_code,
-            "seller_broker_code": row.seller_broker_code,
-            "quantity": str(row.quantity),
-            "rate": str(row.rate),
-            "amount": str(row.amount),
-        }
 
     def totals(rows):
         return {

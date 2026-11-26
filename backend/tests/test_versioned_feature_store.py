@@ -14,18 +14,24 @@ class VersionedFeatureStoreTests(unittest.TestCase):
                     "available_at":"2026-11-23T16:00:00Z","close":11,
                     "previous_close":10,"volume":100}]
         securities = [SecurityMasterRecord("SEC-A","AAA","equity","active",
-                                           date(2020,1,1),None,"security-registry-v1")]
+                                           date(2020,1,1),None,"security-registry-v1",
+                                           "primary_nepse_notice", True, True)]
         actions = [
             CorporateActionRecord("CA1","SEC-A","bonus",date(2026,11,20),
-                                  "2026-11-18T09:00:00Z","2026-11-18T09:00:00Z",1.1,"action-e1"),
+                                  "2026-11-18T09:00:00Z","2026-11-18T09:00:00Z",1.1,"action-e1",
+                                  "primary_nepse_notice","verified_primary",True),
             CorporateActionRecord("CA2","SEC-A","right",date(2026,11,21),
-                                  "2026-11-25T09:00:00Z","2026-11-25T09:00:00Z",1.2,"action-e2"),
+                                  "2026-11-25T09:00:00Z","2026-11-25T09:00:00Z",1.2,"action-e2",
+                                  "primary_nepse_notice","verified_primary",True),
         ]
         snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
                                                      securities, actions, ["AAA"])
         joined = snapshot["security_and_action_joins"]["AAA"]
         self.assertEqual(joined["security_id"], "SEC-A")
+        self.assertTrue(joined["security_identity_verified"])
         self.assertEqual(joined["corporate_action_count"], 1)
+        self.assertEqual(joined["corporate_action_adjustment_eligible_count"], 1)
+        self.assertEqual(len(joined["corporate_action_adjustment_actions"]), 1)
         self.assertEqual(snapshot["features"]["trend_features"]["AAA"]["status"], "insufficient_evidence")
         self.assertIsNone(snapshot["features"]["trend_features"]["AAA"]["score"])
         self.assertFalse(snapshot["ohlcv_adjustment_applied"])
@@ -72,6 +78,46 @@ class VersionedFeatureStoreTests(unittest.TestCase):
         snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
                                                      securities, [], ["AAA"])
         self.assertEqual(snapshot["security_and_action_joins"]["AAA"]["security_status"], "ambiguous")
+
+    def test_current_snapshot_only_identity_does_not_join_actions(self):
+        records = [{"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",
+                    "available_at":"2026-11-23T16:00:00Z","close":11,
+                    "previous_close":10,"volume":100}]
+        securities = [SecurityMasterRecord("SEC-A","AAA","equity","active",
+                                           date(2020,1,1),None,"current-snapshot",
+                                           "current_snapshot_only",False,False)]
+        actions = [CorporateActionRecord(
+            "CA1","SEC-A","bonus",date(2026,11,20),
+            "2026-11-18T09:00:00Z","2026-11-18T09:00:00Z",1.1,"action-e1",
+            "primary_nepse_notice","verified_primary",True
+        )]
+        snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
+                                                     securities, actions, ["AAA"])
+        joined = snapshot["security_and_action_joins"]["AAA"]
+        self.assertEqual(joined["security_status"], "unverified_identity")
+        self.assertFalse(joined["security_identity_verified"])
+        self.assertEqual(joined["corporate_actions"], [])
+
+    def test_unverified_corporate_action_is_not_joined_as_adjustment(self):
+        records = [{"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",
+                    "available_at":"2026-11-23T16:00:00Z","close":11,
+                    "previous_close":10,"volume":100}]
+        securities = [SecurityMasterRecord("SEC-A","AAA","equity","active",
+                                           date(2020,1,1),None,"security-registry-v1",
+                                           "primary_nepse_notice",True,True)]
+        actions = [CorporateActionRecord(
+            "CA1","SEC-A","bonus",date(2026,11,20),
+            "2026-11-18T09:00:00Z","2026-11-18T09:00:00Z",1.1,"unverified-action",
+            "unverified","unverified",False
+        )]
+        snapshot = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z",
+                                                     securities, actions, ["AAA"])
+        joined = snapshot["security_and_action_joins"]["AAA"]
+        self.assertEqual(joined["corporate_action_count"], 0)
+        self.assertEqual(joined["corporate_action_adjustment_eligible_count"], 0)
+        self.assertEqual(joined["corporate_action_excluded_unverified_count"], 1)
+        self.assertFalse(joined["corporate_action_point_in_time_eligible"])
+        self.assertFalse(snapshot["ohlcv_adjustment_applied"])
 
     def test_hash_tampering_rejected(self):
         with self.assertRaises(ValueError):

@@ -229,7 +229,7 @@ def main() -> None:
         args.security_snapshot, args.expected_snapshot_date,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({
         "audit_status": report["audit_status"],
         "one_sided_contract_count": report["one_sided_contract_count"],

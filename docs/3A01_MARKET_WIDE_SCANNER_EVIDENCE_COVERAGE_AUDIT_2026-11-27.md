@@ -61,7 +61,7 @@ The derived v2 manifest was independently parsed from the pinned branch:
 ### Integrity and contamination evidence
 
 The full v2 integrity audit reports:
-- 1,329 unique invalid OHLCV rows across 13 symbols (1,379 invariant flags); no automatic repair.
+- 1,329 unique invalid OHLCV symbol/date rows across 13 symbols, represented by 1,379 invariant flags (50 overlapping reasons); no automatic repair. Per-symbol values in the companion matrix are flag counts, not unique-row counts.
 - 71,806 adjacent identical OHLCV rows across 256 symbols.
 - 18,910 repeats are candidates on dates explicitly verified closed; 52,891 are outside the calendar evidence window and remain UNKNOWN; five open-session repeat pairs remain UNKNOWN pending symbol/date floorsheet checks.
 - Corporate-action coverage remains partial: three recorded events, 278/281 symbols without an action record, and one NLIC split proposal with unverified effective date.
@@ -127,8 +127,9 @@ PR #131 (`reconcile/3a01-on-current-main`) is still open and draft. At the audit
 A companion CSV matrix is published at [3A01_281_SYMBOL_OHLCV_IMPACT_MATRIX_2026-11-27.csv](3A01_281_SYMBOL_OHLCV_IMPACT_MATRIX_2026-11-27.csv). It contains one row for each of the 281 symbols in the pinned v2 manifest and records:
 
 - Derived row count and raw/derived Git blob hashes.
-- Official EOD rows applied and derived correction count.
-- Per-symbol invalid OHLCV row counts where the P4.30 report publishes an exact breakdown (13 symbols; other symbols are recorded as zero in that published invalid-row breakdown).
+- Official EOD rows applied and the manifest's per-symbol `correction_count` metric (renamed `manifest_correction_count` in this matrix; aggregate 713).
+- Per-symbol OHLCV invariant-flag counts (renamed `invalid_ohlcv_flags`); these are **flags, not unique invalid rows**. P4.30 reports 1,379 flags across 1,329 unique symbol/date rows. The per-symbol figures published in P4.30 sum to 1,379 flags; an exact per-symbol allocation of the 1,329 unique rows is not published, so the matrix does not claim one.
+- Correction-ledger reconciliation: the manifest totals 713 `correction_count`; the P4.30 detail lists 490 date shifts + 109 inserted rows + 112 field corrections = 711 component counts. The two-count difference is unresolved; these metrics are retained separately and must not be presented as an exact additive reconciliation.
 - Known corporate-action records and the four-symbol exception review (LBBL, DORDI, BNHC and the unverified NLIC split proposal).
 - The five open-session repeated-row pairs by symbol/date where explicitly reported.
 - An explicit research-only, non-canonical eligibility disposition for every symbol.

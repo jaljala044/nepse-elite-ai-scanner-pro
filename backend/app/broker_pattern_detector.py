@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 import re
 
 _HASH = re.compile(r"^[0-9a-f]{64}$")
@@ -98,7 +99,7 @@ def detect_broker_patterns(
     sessions = [date.fromisoformat(str(item)).isoformat() for item in expected_sessions]
     if sessions != sorted(set(sessions)):
         raise ValueError("expected_sessions must be unique and ascending")
-    if date.fromisoformat(sessions[-1]) > cutoff.date():
+    if date.fromisoformat(sessions[-1]) > cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date():
         raise ValueError("expected_sessions cannot contain a future session")
     if not isinstance(minimum_identity_coverage, (int, float)) or isinstance(minimum_identity_coverage, bool) or not 0 < minimum_identity_coverage <= 1:
         raise ValueError("minimum_identity_coverage must be in (0, 1]")

@@ -1,0 +1,309 @@
+{
+  "schema_version": 1,
+  "decision_date": "2026-11-26",
+  "original_ledger_git_blob_oid": "ea922eae78a43d3a9c688be90f4598eb40957fbd",
+  "scope": "project OHLCV adjudication only",
+  "records": [
+    {
+      "symbol": "API",
+      "date": "2026-11-19",
+      "ohlcv": [
+        "331.0",
+        "334.2",
+        "330.0",
+        "331.8",
+        "105340"
+      ],
+      "classification": "archived_official_exchange_eod",
+      "source": {
+        "source": "NEPSE official today-price EOD board",
+        "endpoint": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+        "retrieved_at_utc": "2026-11-25T18:45:52.683284Z",
+        "response_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
+        "response_git_blob_oid": "f669d24e6e8d92fc951e1eb0603939f4b6102440",
+        "response_path": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
+        "confirmed_fields": [
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "observed_ohlcv": [
+          "331.0",
+          "334.2",
+          "330.0",
+          "331.8",
+          "105340"
+        ],
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "primary_exchange_eod_evidence"
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2025-07-28",
+      "ohlcv": [
+        "940",
+        "992",
+        "933.4",
+        "957.17",
+        "14028"
+      ],
+      "classification": "user_accepted_sharehub_secondary_arithmetic_reconciled",
+      "source": {
+        "audit_url": "https://github.com/jaljala044/nepse-smc-data/blob/main/SEVEN_STOCK_SHAREHUB_EVIDENCE_AUDIT_2026-11-19_AND_2025-07-28.md",
+        "audit_git_blob_oid": "906abc1da34a303a08938e20b143d851debdef79",
+        "secondary_archive": {
+          "source": "ShareSansar-derived append-only archive",
+          "repository": "srijankarki07/nepse-data",
+          "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+          "path": "data/daily/2025/2025-07-28.csv",
+          "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+          "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+          "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+          "observed_ohlcv": [
+            "940",
+            "992",
+            "933.4",
+            "957.17",
+            "14028"
+          ],
+          "comparison_to_repository_sources": "matches_source_a",
+          "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+        }
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-11-19",
+      "ohlcv": [
+        "483.0",
+        "488.0",
+        "480.0",
+        "483.9",
+        "49184"
+      ],
+      "classification": "archived_official_exchange_eod",
+      "source": {
+        "source": "NEPSE official today-price EOD board",
+        "endpoint": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+        "retrieved_at_utc": "2026-11-25T18:45:52.683284Z",
+        "response_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
+        "response_git_blob_oid": "f669d24e6e8d92fc951e1eb0603939f4b6102440",
+        "response_path": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
+        "confirmed_fields": [
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "observed_ohlcv": [
+          "483.0",
+          "488.0",
+          "480.0",
+          "483.9",
+          "49184"
+        ],
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "primary_exchange_eod_evidence"
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "MEHL",
+      "date": "2025-07-28",
+      "ohlcv": [
+        "471.1",
+        "480.5",
+        "460",
+        "475.63",
+        "29753"
+      ],
+      "classification": "user_accepted_sharehub_secondary_arithmetic_reconciled",
+      "source": {
+        "audit_url": "https://github.com/jaljala044/nepse-smc-data/blob/main/SEVEN_STOCK_SHAREHUB_EVIDENCE_AUDIT_2026-11-19_AND_2025-07-28.md",
+        "audit_git_blob_oid": "906abc1da34a303a08938e20b143d851debdef79",
+        "secondary_archive": {
+          "source": "ShareSansar-derived append-only archive",
+          "repository": "srijankarki07/nepse-data",
+          "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+          "path": "data/daily/2025/2025-07-28.csv",
+          "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+          "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+          "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+          "observed_ohlcv": [
+            "471.1",
+            "480.5",
+            "460",
+            "475.63",
+            "29753"
+          ],
+          "comparison_to_repository_sources": "matches_source_a",
+          "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+        }
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2025-07-28",
+      "ohlcv": [
+        "796",
+        "811",
+        "780.3",
+        "796.9",
+        "3165"
+      ],
+      "classification": "user_accepted_sharehub_secondary_arithmetic_reconciled",
+      "source": {
+        "audit_url": "https://github.com/jaljala044/nepse-smc-data/blob/main/SEVEN_STOCK_SHAREHUB_EVIDENCE_AUDIT_2026-11-19_AND_2025-07-28.md",
+        "audit_git_blob_oid": "906abc1da34a303a08938e20b143d851debdef79",
+        "secondary_archive": {
+          "source": "ShareSansar-derived append-only archive",
+          "repository": "srijankarki07/nepse-data",
+          "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+          "path": "data/daily/2025/2025-07-28.csv",
+          "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+          "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+          "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+          "observed_ohlcv": [
+            "796",
+            "811",
+            "780.3",
+            "796.9",
+            "3165"
+          ],
+          "comparison_to_repository_sources": "matches_source_a",
+          "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+        }
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2025-07-28",
+      "ohlcv": [
+        "346.7",
+        "362",
+        "341.4",
+        "357.05",
+        "296715"
+      ],
+      "classification": "user_accepted_sharehub_secondary_arithmetic_reconciled",
+      "source": {
+        "audit_url": "https://github.com/jaljala044/nepse-smc-data/blob/main/SEVEN_STOCK_SHAREHUB_EVIDENCE_AUDIT_2026-11-19_AND_2025-07-28.md",
+        "audit_git_blob_oid": "906abc1da34a303a08938e20b143d851debdef79",
+        "secondary_archive": {
+          "source": "ShareSansar-derived append-only archive",
+          "repository": "srijankarki07/nepse-data",
+          "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+          "path": "data/daily/2025/2025-07-28.csv",
+          "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+          "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+          "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+          "observed_ohlcv": [
+            "346.7",
+            "362",
+            "341.4",
+            "357.05",
+            "296715"
+          ],
+          "comparison_to_repository_sources": "matches_source_a",
+          "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+        }
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "RHGCL",
+      "date": "2026-11-19",
+      "ohlcv": [
+        "252.1",
+        "259.5",
+        "252.1",
+        "258.0",
+        "9054"
+      ],
+      "classification": "archived_official_exchange_eod",
+      "source": {
+        "source": "NEPSE official today-price EOD board",
+        "endpoint": "https://nepalstock.com.np/api/nots/nepse-data/today-price?size=500&businessDate=2026-11-19",
+        "retrieved_at_utc": "2026-11-25T18:45:52.683284Z",
+        "response_sha256": "0e58623f2db249e4e2e6bef4056ef888afe1bb6a3d611aec662ebece83be6f05",
+        "response_git_blob_oid": "f669d24e6e8d92fc951e1eb0603939f4b6102440",
+        "response_path": "data/evidence/raw/nepse/conflict-ohlcv/2026-11-25/responses/market-price-volume.2026-11-19.response-body.bin",
+        "confirmed_fields": [
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "observed_ohlcv": [
+          "252.1",
+          "259.5",
+          "252.1",
+          "258.0",
+          "9054"
+        ],
+        "comparison_to_repository_sources": "matches_source_b",
+        "classification": "primary_exchange_eod_evidence"
+      },
+      "canonical_promotion_allowed": false
+    },
+    {
+      "symbol": "ULHC",
+      "date": "2025-07-28",
+      "ohlcv": [
+        "509",
+        "515",
+        "495",
+        "510.75",
+        "32288"
+      ],
+      "classification": "user_accepted_sharehub_secondary_arithmetic_reconciled",
+      "source": {
+        "audit_url": "https://github.com/jaljala044/nepse-smc-data/blob/main/SEVEN_STOCK_SHAREHUB_EVIDENCE_AUDIT_2026-11-19_AND_2025-07-28.md",
+        "audit_git_blob_oid": "906abc1da34a303a08938e20b143d851debdef79",
+        "secondary_archive": {
+          "source": "ShareSansar-derived append-only archive",
+          "repository": "srijankarki07/nepse-data",
+          "revision": "c5477a79d4575cbfec77ed6053514018027ddc2b",
+          "path": "data/daily/2025/2025-07-28.csv",
+          "source_file_blob_sha": "329146bbdb0ef66722933f8aba0542c7e4ec78f8",
+          "source_file_sha256": "5e4fcf1e46d8e8269e3cbfe1a1ed9ca19c129e3bad50dc40b4c818c32bf0bcc9",
+          "source_url": "https://github.com/srijankarki07/nepse-data/blob/c5477a79d4575cbfec77ed6053514018027ddc2b/data/daily/2025/2025-07-28.csv",
+          "observed_ohlcv": [
+            "509",
+            "515",
+            "495",
+            "510.75",
+            "32288"
+          ],
+          "comparison_to_repository_sources": "matches_source_a",
+          "classification": "secondary_archive_corroboration_not_primary_exchange_evidence"
+        }
+      },
+      "canonical_promotion_allowed": false
+    }
+  ],
+  "summary": {
+    "record_count": 8,
+    "primary_complete": 3,
+    "user_accepted_secondary": 5,
+    "unresolved_project_values": 0,
+    "all_primary_complete": false,
+    "corporate_action_and_price_basis_review_complete": false,
+    "canonical_promotion_allowed": false,
+    "training_allowed": false
+  },
+  "limitations": [
+    "Archived NEPSE EOD body read directly for three November rows. July evidence is saved user-supplied ShareHub audit; original workbook and PDF were not independently re-opened in this session.",
+    "Chukul returned no readable dated rows; NepseAlpha chart exposed login form; no newly retrieved dated rows claimed from those providers.",
+    "Secondary sources may share upstream data. Preserve strict primary capture workflow and canonical gates."
+  ]
+}

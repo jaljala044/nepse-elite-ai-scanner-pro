@@ -75,6 +75,19 @@ def load_profile_payload(path: Path, profile_name: str):
     except (UnicodeDecodeError, StopIteration, csv.Error) as exc:
         raise ValueError(f"cannot read CSV header from {path}") from exc
     profile = PROFILES[profile_name]
+    if profile["expected_size_bytes"] is not None and len(payload) != profile["expected_size_bytes"]:
+        raise ValueError(
+            f"{profile_name} byte-size mismatch: expected "
+            f"{profile['expected_size_bytes']}, observed {len(payload)}"
+        )
+    if profile["expected_raw_sha256"] is not None:
+        raw_sha256 = hashlib.sha256(payload).hexdigest()
+        if raw_sha256 != profile["expected_raw_sha256"]:
+            raise ValueError(f"{profile_name} raw SHA-256 does not match pinned profile")
+    if profile["expected_blob_sha1"] is not None:
+        git_blob = b"blob " + str(len(payload)).encode("ascii") + b"\\0" + payload
+        if hashlib.sha1(git_blob).hexdigest() != profile["expected_blob_sha1"]:
+            raise ValueError(f"{profile_name} Git blob SHA-1 does not match pinned profile")
     review = profile["review"](header)
     if not review.valid:
         raise ValueError(

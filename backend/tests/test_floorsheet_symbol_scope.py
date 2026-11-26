@@ -39,7 +39,7 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             ])
         self.write_csv(self.crosswalk,
             ["symbol","security_id","security_name","snapshot_date","active_status","crosswalk_status"], [
-                {"symbol":"EQ1","security_id":"1","security_name":"Example Equity","snapshot_date":"2026-11-25","active_status":"A","crosswalk_status":"candidate"},
+                {"symbol":"EQ1","security_id":"1","security_name":"Example Equity","snapshot_date":"2026-11-25","active_status":"A","crosswalk_status":"snapshot_id_match_active_status_A"},
             ])
         self.write_csv(self.candidates,
             ["symbol","instrument_class_from_rendered_list","official_snapshot_id","official_snapshot_status"], [
@@ -47,11 +47,13 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             ])
         self.write_csv(self.snapshot,
             ["symbol","security_id","security_name","active_status","snapshot_date"], [
+                {"symbol":"EQ1","security_id":"1","security_name":"Example Equity","active_status":"A","snapshot_date":"2026-11-25"},
                 {"symbol":"PROM1","security_id":"3","security_name":"Example Company Promoter Share","active_status":"A","snapshot_date":"2026-11-25"},
                 {"symbol":"DEB1","security_id":"4","security_name":"8% Example Debenture 2089","active_status":"A","snapshot_date":"2026-11-25"},
             ])
         report = audit_floorsheet_symbol_scope(
-            self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot
+            self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot,
+            "2026-11-24", "2026-11-25",
         )
         by_symbol = {row["symbol"]: row for row in report["symbols"]}
         self.assertEqual(by_symbol["EQ1"]["scope_class"], "IN_SCOPE_EQUITY_CANDIDATE")
@@ -85,6 +87,47 @@ class FloorsheetSymbolScopeAuditTests(unittest.TestCase):
             self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot
         )
         self.assertEqual(report["symbols"][0]["scope_class"], "EQUITY_CANDIDATE_NOT_IN_CROSSWALK")
+
+
+    def test_wrong_trade_date_is_rejected(self):
+        self.write_csv(self.samir,
+            ["contract_no", "stock_symbol", "quantity", "rate", "amount", "date"], [
+                {"contract_no":"E1","stock_symbol":"EQ1","quantity":"1","rate":"1","amount":"1","date":"2026-11-23"},
+            ])
+        self.write_csv(self.socrateai,
+            ["transaction", "symbol", "quantity", "rate", "amount", "date"], [])
+        for path, headers in (
+            (self.crosswalk,["symbol","security_id","security_name","snapshot_date","active_status","crosswalk_status"]),
+            (self.candidates,["symbol","instrument_class_from_rendered_list","official_snapshot_id","official_snapshot_status"]),
+            (self.snapshot,["symbol","security_id","security_name","active_status","snapshot_date"]),
+        ):
+            self.write_csv(path, headers, [])
+        with self.assertRaisesRegex(ValueError, "differs from expected"):
+            audit_floorsheet_symbol_scope(
+                self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot,
+                "2026-11-24", "2026-11-25",
+            )
+
+    def test_crosswalk_snapshot_identity_conflict_is_rejected(self):
+        self.write_csv(self.samir,
+            ["contract_no", "stock_symbol", "quantity", "rate", "amount", "date"], [])
+        self.write_csv(self.socrateai,
+            ["transaction", "symbol", "quantity", "rate", "amount", "date"], [])
+        self.write_csv(self.crosswalk,
+            ["symbol","security_id","security_name","snapshot_date","active_status","crosswalk_status"], [
+                {"symbol":"EQ1","security_id":"1","security_name":"Example Equity","snapshot_date":"2026-11-25","active_status":"A","crosswalk_status":"snapshot_id_match_active_status_A"},
+            ])
+        self.write_csv(self.candidates,
+            ["symbol","instrument_class_from_rendered_list","official_snapshot_id","official_snapshot_status"], [])
+        self.write_csv(self.snapshot,
+            ["symbol","security_id","security_name","active_status","snapshot_date"], [
+                {"symbol":"EQ1","security_id":"999","security_name":"Example Equity","active_status":"A","snapshot_date":"2026-11-25"},
+            ])
+        with self.assertRaisesRegex(ValueError, "crosswalk/security snapshot conflict"):
+            audit_floorsheet_symbol_scope(
+                self.samir,self.socrateai,self.crosswalk,self.candidates,self.snapshot,
+                "2026-11-24", "2026-11-25",
+            )
 
     def test_duplicate_contract_keys_fail_closed(self):
         self.write_csv(self.samir,

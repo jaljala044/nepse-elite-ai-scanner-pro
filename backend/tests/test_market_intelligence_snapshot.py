@@ -112,6 +112,17 @@ class MarketIntelligenceSnapshotTests(unittest.TestCase):
         self.assertFalse(result["modules"]["index_intelligence"]["admitted"])
         self.assertFalse(result["modules"]["market_structure"]["admitted"])
 
+    def test_zero_coverage_is_not_admitted(self):
+        artifacts = {name: artifact(name) for name in REQUIRED_MODULES}
+        artifacts["broker_profiles"]["coverage_ratio"] = 0
+        result = build_market_intelligence_snapshot(
+            artifacts, decision_date="2026-11-26",
+            decision_time="2026-11-26T15:30:00+05:45",
+        )
+        self.assertFalse(result["modules"]["broker_profiles"]["admitted"])
+        self.assertIn("coverage_ratio_missing_or_invalid",
+                      result["modules"]["broker_profiles"]["reasons"])
+
     def test_required_module_list_must_be_unique(self):
         with self.assertRaisesRegex(ValueError, "required_modules_must_be_unique"):
             build_market_intelligence_snapshot(

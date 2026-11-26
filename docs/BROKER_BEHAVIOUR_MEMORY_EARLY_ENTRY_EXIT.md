@@ -127,9 +127,12 @@ The first backend foundation is now committed on `feat/broker-behaviour-memory-e
 - cumulative rebuild from all previously stored observations that were available at the decision time;
 - daily, weekly, monthly and yearly broker-flow windows, with additional 3M/6M/2Y descriptive windows in the underlying feature primitive;
 - separate execution-channel-code profiles, including unmapped codes, without promoting them to verified broker entities;
+- 20-session buy/sell baselines and daily activity acceleration fields for each execution channel;
+- a fail-closed, explicitly uncalibrated research-rule evaluator for early-entry/early-exit candidates, requiring complete 1D/1W/1M broker windows and verified NEPSE price/index/sector/breadth/liquidity/circuit/corporate-action context;
 - read-only shared API endpoints `GET /v1/broker-memory/status` and `GET /v1/broker-memory`;
-- tests for idempotency, cross-session memory, no-lookahead availability, source/session/floorsheet admission, lineage, short yearly history and execution-code-only behaviour.
+- a responsive web broker-memory explorer consuming the shared API;
+- tests for idempotency, cross-session memory, no-lookahead availability, source/session/floorsheet admission, lineage, short yearly history, execution-code-only behaviour and fail-closed candidate rules.
 
 **Session input contract:** the `session_dates` supplied to the persistence layer must contain only verified NEPSE open sessions for which complete floorsheet coverage has been established and made available by the decision time. Future sessions are excluded. A mere exchange calendar is not enough to claim floorsheet coverage.
 
-A first responsive **web broker-memory explorer** is also now present in the frontend and consumes the shared read-only API. This is not yet a complete web product surface, and no mobile client source tree was present in this repository; mobile implementation remains outstanding. This slice does not connect an automated source collector or scheduler, create early-entry/early-exit detections, or certify production operation. It is not a live broker monitor. Existing P4 durability and P1/P2 evidence/source-rights gates remain mandatory.
+A first responsive **web broker-memory explorer** is also now present in the frontend and consumes the shared read-only API. This is not yet a complete web product surface, and no mobile client source tree was present in this repository; mobile implementation remains outstanding. The candidate evaluator is not yet wired to persisted market-context snapshots, an API watchlist or production scanner output. It is not calibrated against historical NEPSE outcomes. This slice does not connect an automated source collector or scheduler, or certify production operation. It is not a live broker monitor. Existing P4 durability and P1/P2 evidence/source-rights gates remain mandatory.

@@ -84,9 +84,9 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 | Acceptance gate | Status | Evidence / blocker |
 |---|---|---|
-| Deterministic market-wide orchestration and API | Implemented on PR #131 | Backend implementation and regression tests are in the draft integration PR |
-| Dedicated frontend entry point | Implemented on PR #131 | UI module and build integration are in the draft integration PR |
-| Backend and contract CI for PR #131 implementation head | Passed | Runs 45895229307 and 45895305164 are successful on the recorded code/docs commit line; frontend smoke CI passed on the earlier code/UI head |
+| Deterministic market-wide orchestration and API | Implemented on PR #149 | Latest-main draft integration includes backend implementation and API regression tests |
+| Dedicated frontend entry point | Implemented on PR #149 | Latest-main draft integration includes UI module and build integration |
+| Backend, contract and frontend build CI for PR #149 | Passed | Exact latest-main port head `2a98cf085189b619f8c68bab6b5f377a6124735f`: unit-tests run 45899542680, backend-unit-tests run 45899542654, build run 45899501585 all successful |
 | Candidate universe has stable dated provenance | Partial | 281-row secondary snapshot is pinned; authoritative membership is not established |
 | Current security ID crosswalk | Partial | 281/281 current-snapshot matches; historical effective-dated identity outstanding |
 | Complete all-market instrument scope | Partial | Three official bulk dates reconcile; only those dates and current-snapshot instrument classifications are covered |
@@ -109,7 +109,7 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 ## Engineering integration note
 
-PR #131 (`reconcile/3a01-on-current-main`) is still open and draft. At the audit check it was 10 commits ahead and 6 behind `main`, with GitHub reporting it not mergeable. It must be reconciled against the latest main before integration. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
+PR #149 (`reconcile/3a01-on-current-main-2026-11-27`) is the current clean latest-main scanner integration candidate. It is open and draft; GitHub reports it mergeable, and its exact head has passing backend unit, contract and frontend build checks. PR #142 is left open as the superseded prior scanner port; PR #131 is an older divergent implementation and is not the integration candidate. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
 
 ## Source reports
 
@@ -141,14 +141,15 @@ The matrix is an evidence index, not a reviewed-row manifest. It does not author
 
 ## Integration status refresh — 2026-11-27
 
-The scanner integration has been re-ported additively onto the latest main snapshot in PR #142:
-- PR #142: [3A.01 latest-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/142).
-- Latest head: `54ed2f264c54c93331a96c78d264d73d3a2efd7e`; PR base snapshot: `bf5d16cdcaedaa85478526ae415dac791bf380e6`.
-- The branch contains the scanner implementation plus a regression test rejecting noncanonical lowercase symbols. GitHub reports the PR mergeable. The branch is 8 commits ahead and 1 behind current `main`; the only intervening main commit (`77b55e3f456c94131b5ada75033e2dd88abe456d`) is a documentation-only sector-membership register update and does not overlap scanner source or tests.
-- Backend unit tests and backend contract tests passed on the latest head (runs 45898962052 and 45898962063). Frontend syntax/build passed on the preceding implementation head `9d47192c510eb304c93e9c3259501cc01d42d942` (run 45897507478); the latest follow-up changes only a backend test file.
-- The newer `/v1/market-health` route was verified preserved alongside `/v1/scan/market-wide`.
-- PR #142 remains draft and unmerged. No merge or deployment is claimed.
+The scanner integration has been re-ported onto the current-main snapshot in PR #149:
+- PR #149: [3A.01 current-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/149).
+- Head: `2a98cf085189b619f8c68bab6b5f377a6124735f`; base snapshot: `c8b64f59d750846209bbff4a11852665741fbb7e`.
+- The port replays all eight scanner implementation/UI/test changes additively on current main and preserves the newer sector-membership manifest work.
+- The lowercase-symbol regression test is included; the endpoint rejects noncanonical lowercase symbols rather than normalizing them.
+- Exact-head CI passed: `unit-tests` run 45899542680, `backend-unit-tests` run 45899542654, and `build` run 45899501585.
+- A subsequent main commit `907dfd565ed3e0291c31229c97eae75936099278` updates only the Part 2 documentation register; it does not touch scanner source, tests or evidence matrix files. GitHub currently reports PR #149 mergeable.
+- PR #149 remains draft and unmerged. PR #142 is superseded but left open; no merge or deployment is claimed.
 
-The earlier PR #131 branch remains open and divergent; PR #142 is the clean integration candidate. PR #136's prior evidence branch is also divergent from latest main; this refresh republishes the evidence artifacts on a branch based directly on latest main.
+The evidence artifacts in this PR were copied onto a branch created from current main. Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
 
 No pull request was merged. No deployment verification was performed.

@@ -69,7 +69,7 @@ def build_broker_profile_scanner_context(
         return {"status": "insufficient_evidence", "score_eligible": False,
                 "securities": empty, "reason": "rolling_profile_as_of_invalid",
                 "interpretation": "Broker profiles are context only and do not alter weighted scanner scores."}
-    if snapshot_time > decision or snapshot_date > decision.date():
+    if snapshot_time > decision:
         return {"status": "withheld", "score_eligible": False, "securities": empty,
                 "reason": "rolling_profile_is_after_scanner_decision_time",
                 "interpretation": "Future or late-arriving broker evidence is excluded."}

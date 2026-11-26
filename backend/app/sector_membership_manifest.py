@@ -88,7 +88,8 @@ def audit_sector_membership_manifest(
     if len(expected) != len(set(expected)):
         raise ValueError("expected_symbols_must_be_unique_nonempty")
     if (not isinstance(allowed_sector_codes, set) or not allowed_sector_codes
-            or any(not isinstance(code, str) or not code.strip() for code in allowed_sector_codes)):
+            or any(not isinstance(code, str) or not code.strip() or code != code.strip()
+                   for code in allowed_sector_codes)):
         raise ValueError("allowed_sector_codes_required")
 
     normalized = []

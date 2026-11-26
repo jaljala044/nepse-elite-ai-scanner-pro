@@ -43,3 +43,16 @@ Annual record counts: 2015 54; 2016 33; 2017 38; 2018 29; 2019 22; 2020 101; 202
 ## Next execution step
 
 Build a deterministic audit that joins the raw annual API payloads to the source manifest, preserves all records, detects duplicate dates and incomplete year spans, and produces a *review-only* closure-candidate ledger. Then obtain official exchange date-level trading observations to establish open sessions independently. No calendar promotion is authorized by this report.
+
+
+## Independent artifact-byte verification — 2026-11-26
+
+The workflow artifact was downloaded for this review and checked locally:
+- Downloaded ZIP size: 38 KB; SHA-256 exactly matches the manifest: `ce8959b0f185d92c936a0c5e137cb2645b33c5d6d23b1ff38c15e2e1d68b7eec`.
+- The artifact contains immutable `response-body.bin`, `parsed-response.json`, `capture-report.json`, `response-headers.json`, `source-url.txt` and `SHA256SUMS` for each year 2015–2025.
+- For all 11 annual payloads, raw response bytes independently hash-match both the capture report and per-year SHA256SUMS file.
+- Parsing each raw response body independently produces a JSON object exactly equal to the preserved parsed-response.json for all 11 years.
+- Raw payload record counts independently reproduce: 2015 54; 2016 33; 2017 38; 2018 29; 2019 22; 2020 101; 2021 25; 2022 36; 2023 37; 2024 37; 2025 46.
+- Duplicate-date scan independently reproduces the sole duplicate key: 2020-04-13 (two distinct holiday descriptions).
+
+This confirms the downloaded artifact's byte integrity and raw-to-parsed consistency. It does **not** establish the endpoint's annual completeness, the legal/exchange scope of every holiday row, or actual open-session dates. The separate 2026 response remains the 41-row capture already recorded in the current calendar and its source hash.

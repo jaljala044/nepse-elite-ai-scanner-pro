@@ -59,6 +59,8 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         raise ValueError("as_of_session must be YYYY-MM-DD") from exc
     if isinstance(minimum_daily_flow_multiple, bool) or not isinstance(minimum_daily_flow_multiple, (int, float)) or not math.isfinite(minimum_daily_flow_multiple) or minimum_daily_flow_multiple <= 0:
         raise ValueError("minimum_daily_flow_multiple must be finite and positive")
+    if cutoff.astimezone(__import__("zoneinfo").ZoneInfo("Asia/Kathmandu")).date().isoformat() != as_of_session:
+        return _insufficient(broker_code, symbol, "decision_time_session_mismatch")
     if not isinstance(execution_channel_windows, dict) or not isinstance(market_context, dict):
         raise ValueError("broker windows and market_context must be objects")
 
@@ -68,7 +70,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         return _insufficient(broker_code, symbol, "missing_broker_horizons", missing_windows)
 
     context_missing = [
-        key for key in ("status", "as_of_session", "available_at",
+        key for key in ("status", "symbol", "as_of_session", "available_at",
                         "source_id", "source_payload_sha256",
                         "price_extension_status", "component_statuses")
         if key not in market_context
@@ -79,6 +81,8 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         return _insufficient(broker_code, symbol, "nepse_market_context_not_verified")
     if market_context.get("as_of_session") != as_of_session:
         return _insufficient(broker_code, symbol, "market_context_session_mismatch")
+    if str(market_context.get("symbol", "")).strip().upper() != symbol.strip().upper():
+        return _insufficient(broker_code, symbol, "market_context_symbol_mismatch")
     if market_context.get("price_extension_status") not in {"not_extended", "extended"}:
         return _insufficient(broker_code, symbol, "price_extension_context_unavailable")
     components = market_context.get("component_statuses")

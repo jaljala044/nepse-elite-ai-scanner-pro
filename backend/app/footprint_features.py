@@ -198,6 +198,9 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
         symbol = str(row["symbol"]).strip().upper()
         if not symbol:
             raise ValueError(f"broker row {index}: symbol is required")
+        source_code = row["source_broker_code"]
+        if source_code is not None and (not isinstance(source_code, str) or not source_code.strip()):
+            raise ValueError(f"broker row {index}: source_broker_code must be nonblank when supplied")
         normalized.append({**row, "trade_date": day, "symbol": symbol,
                            "_amount": amount, "_quantity": quantity})
 
@@ -206,7 +209,6 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
                 "input_rows": 0, "security_features": {}, "market_windows": {}, "score": None}
 
     all_dates = sorted({row["trade_date"] for row in normalized})
-    date_index = {day: index for index, day in enumerate(all_dates)}
 
     def summarize(group_rows, window_name, session_count):
         gross_all = sum((r["_amount"] for r in group_rows), Decimal("0"))
@@ -261,7 +263,7 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
         enough = (len({r["trade_date"] for r in group_rows}) >= min(session_count, minimum_sessions)
                   and amount_coverage is not None and float(amount_coverage) >= minimum_amount_coverage
                   and gross_verified > 0)
-            # Directional breadth score is deliberately withheld if broker identity
+        # Directional breadth score is deliberately withheld if broker identity
         # coverage is inadequate. Net traded value itself is zero-sum across
         # matched buyer/seller party observations, so score uses broker breadth,
         # not aggregate net amount. It is not calibrated or a probability.
@@ -291,7 +293,6 @@ def broker_footprint_features(rows: list[dict], *, minimum_amount_coverage: floa
         }
 
     def windows_for(group_rows):
-        present_dates = sorted({r["trade_date"] for r in group_rows})
         output = {}
         for name, count in BROKER_WINDOWS.items():
             cutoff_index = max(0, len(all_dates) - count)

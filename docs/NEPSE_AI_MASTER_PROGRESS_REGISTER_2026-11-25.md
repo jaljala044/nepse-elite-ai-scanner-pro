@@ -2099,3 +2099,12 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - Repository inspection found the smaller `02_floorsheet_daily` files use abbreviated amount strings (e.g. K/Lac) and are not accepted as exact canonical transaction inputs. A full-session CSV also exists in the data repository, but the available GitHub content interface did not provide its full raw bytes in this session. The SocrateAI and Samir source profiles pin different raw sizes/objects; similarly named files are not interchangeable.
 - **Real pair execution not yet performed.** No claim is made that the full Samir/SocrateAI archive pair was reconciled. The runner now refuses wrong pinned object hashes/sizes and preserves rejected/duplicate exceptions. Actual execution requires the exact pinned local bytes and acquisition/usage provenance.
 - All source independence, completeness, rights, coverage admission and canonical promotion gates remain false. No data was promoted and UNL remains governed by the generic UNKNOWN policy.
+
+
+### P4.16 follow-up — stricter archive acceptance and row-quality gate
+
+- CLI now validates exact pinned source-object metadata before parsing: expected byte size, Git blob SHA-1 for pinned Samir/SocrateAI objects, and pinned raw SHA-256 where available. Caller-supplied SHA-256 is still independently checked by the pair-audit runner.
+- Cross-source comparison is now withheld when either side has duplicate contract keys or any quantity × rate vs reported amount exception beyond the configured NPR 0.01 tolerance. All duplicate/rejected/amount-exception rows remain in the JSON review ledger.
+- Added CLI tests for source-profile header validation, manifest generation and pinned-object size rejection; added amount-arithmetic exception regression.
+- CI at commit `e92fa561f6217bcf09783ffc26f6676a83a64e83`: backend tests **822 passed** (run 45847792155); standard unit tests **822 passed** (run 45847792069); integrated evidence audit passed (run 45847792074); historical data integrity passed (run 45847792158). Test logs and completed workflow conclusions inspected.
+- Real Samir/SocrateAI pair execution remains pending exact local raw files; no synthetic substitute or summary-derived comparison was run.

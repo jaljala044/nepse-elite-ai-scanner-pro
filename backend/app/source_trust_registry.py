@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -59,6 +60,8 @@ REQUIRED_CHECKS = {
 }
 
 POLICY_STATES = {"review_required", "active", "suspended", "revoked"}
+CANONICAL_TRUST_TIERS = {"exchange_primary", "official_registry"}
+RIGHTS_STATES = {"unknown", "review_required", "research_only", "internal_use", "redistribution_permitted", "prohibited"}
 TRUST_TIERS = {
     "exchange_primary", "official_registry", "licensed_publisher",
     "secondary_publisher", "user_supplied", "derived", "unknown",
@@ -108,6 +111,8 @@ class SourcePolicy:
             raise ValueError("unsupported trust_tier")
         if self.status not in POLICY_STATES:
             raise ValueError("unsupported source policy status")
+        if self.rights_state not in RIGHTS_STATES:
+            raise ValueError("unsupported rights_state")
         if not self.reviewer.strip() or not self.evidence_refs or any(
             not ref.strip() for ref in self.evidence_refs
         ):
@@ -116,6 +121,8 @@ class SourcePolicy:
         canonical = set(self.canonical_record_types)
         if not allowed or not allowed <= RECORD_TYPES or not canonical <= allowed:
             raise ValueError("record types must be supported and canonical types must be allowed")
+        if canonical and self.trust_tier not in CANONICAL_TRUST_TIERS:
+            raise ValueError("only exchange_primary or official_registry sources may supply canonical records")
         start = date.fromisoformat(self.effective_from)
         if self.effective_to:
             end = date.fromisoformat(self.effective_to)
@@ -137,6 +144,28 @@ def build_source_registry(policies: Iterable[SourcePolicy]) -> dict[str, Any]:
     canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
     return {**body, "registry_sha256": hashlib.sha256(canonical.encode()).hexdigest()}
 
+
+
+def verify_source_registry(registry: dict[str, Any], expected_sha256: str) -> bool:
+    expected = _sha256(expected_sha256, "expected_registry_sha256")
+    body = {"schema_version": registry.get("schema_version"), "sources": registry.get("sources")}
+    actual = hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return registry.get("registry_sha256") == actual == expected
+
+
+def _validation_signature_payload(validation: dict[str, Any]) -> bytes:
+    unsigned = {key: value for key, value in validation.items() if key != "signature"}
+    return json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def verify_reviewer_signature(validation: dict[str, Any], reviewer_keys: dict[str, bytes]) -> bool:
+    reviewer = validation.get("reviewer")
+    signature = validation.get("signature")
+    key = reviewer_keys.get(reviewer) if isinstance(reviewer, str) else None
+    if not isinstance(key, bytes) or not key or not isinstance(signature, str):
+        return False
+    expected = hmac.new(key, _validation_signature_payload(validation), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
 
 def resolve_source_policy(
     registry: dict[str, Any], *, source_id: str, record_type: str,
@@ -188,8 +217,8 @@ def validate_promotion_evidence(
         raw_digest = _sha256(raw_payload_sha256, "raw_payload_sha256")
         if digest != raw_digest:
             reasons.append("record_payload_digest_mismatch")
-        _sha256(validation.get("payload_sha256"), "validation.payload_sha256")
-        if validation.get("payload_sha256") != raw_digest:
+        validation_digest = _sha256(validation.get("payload_sha256"), "validation.payload_sha256")
+        if validation_digest != raw_digest:
             reasons.append("validation_payload_digest_mismatch")
         available = _utc(record.get("available_at"), "available_at")
         cutoff = _utc(decision_time, "decision_time")
@@ -217,13 +246,18 @@ def build_promotion_event(
     *, decision_id: str, action: str, record: dict[str, Any],
     registry: dict[str, Any], raw_payload_sha256: str,
     validation: dict[str, Any], decision_time: str,
+    trusted_registry_sha256: str, reviewer_keys: dict[str, bytes],
 ) -> dict[str, Any]:
     if action not in {"promote", "reject", "revoke"}:
         raise ValueError("action must be promote, reject or revoke")
     if not decision_id.strip():
         raise ValueError("decision_id is required")
     reasons = []
+    if not verify_source_registry(registry, trusted_registry_sha256):
+        reasons.append("source_registry_digest_not_trusted")
     if action == "promote":
+        if not verify_reviewer_signature(validation, reviewer_keys):
+            reasons.append("reviewer_signature_invalid_or_untrusted")
         _, policy_reasons = resolve_source_policy(
             registry, source_id=record.get("source_id", ""),
             record_type=record.get("record_type", ""),
@@ -252,6 +286,7 @@ def build_promotion_event(
         "accepted": action == "promote" and not reasons,
         "reasons": sorted(set(reasons)),
         "registry_sha256": registry.get("registry_sha256"),
+        "validation_signature": validation.get("signature"),
     }
     return body
 

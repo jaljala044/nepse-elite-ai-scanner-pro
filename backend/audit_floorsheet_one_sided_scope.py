@@ -130,7 +130,7 @@ def classify_one_sided_contracts(
             scope = "OUT_OF_SCOPE_DEBENTURE"
             security_id = security["security_id"]
             evidence = "dated_security_snapshot_name_identifies_debenture"
-        elif security and "bond" in name:
+        elif security and re.search(r"\\bbond\\b", name):
             scope = "OUT_OF_SCOPE_BOND"
             security_id = security["security_id"]
             evidence = "dated_security_snapshot_name_identifies_bond"

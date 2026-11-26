@@ -81,6 +81,24 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertEqual(result["action"], "NO_TRADE")
         self.assertEqual(result["confidence"], "LOW")
 
+
+    def test_unapproved_corporate_action_gate_suppresses_all_levels(self):
+        stage1 = dict(self.stage1)
+        stage1["corporate_actions_clear"] = False
+        result = evaluate_horizon("TEST", "SWING", stage1, self.stage2,
+                                  self.plan, ["ohlcv:1", "stage2:1"])
+        self.assertEqual(result["action"], "NO_TRADE")
+        self.assertIsNone(result["entry_zone"])
+        self.assertIsNone(result["stop_loss"])
+        self.assertIsNone(result["targets"]["t1"])
+        self.assertIsNone(result["reward_risk"])
+
+    def test_malformed_general_evidence_refs_are_not_split_into_characters(self):
+        result = evaluate_horizon("TEST", "SWING", self.stage1, self.stage2,
+                                  self.plan, "ohlcv:1")
+        self.assertEqual(result["action"], "NO_TRADE")
+        self.assertIn("missing_stage_evidence_references", result["reasons"])
+
     def test_distribution_triggers_sell_for_existing_holder(self):
         stage2 = dict(self.stage2)
         stage2["structure"] = {"distribution_confirmed": True}

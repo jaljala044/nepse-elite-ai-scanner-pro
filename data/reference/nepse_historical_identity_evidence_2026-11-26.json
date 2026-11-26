@@ -2,7 +2,7 @@
   "date": "2026-11-26",
   "base_review_blob": "8bd7ebe58b52c7e45cf312895d78d9d59452be91",
   "provider": "ShareSansar and NepseAlpha",
-  "scope": "historical identity and lifecycle evidence; not stable-ID or effective-date resolution",
+  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates now documented, but exchange trading boundary, stable-ID and effective-date resolution remain unverified",
   "records": [
     {
       "symbol": "BPW",
@@ -13,7 +13,10 @@
       "successor_name": "Samudayik Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-03-06",
+      "date_basis": "24 Falgun 2080; joint transaction under Samudayik Laghubitta",
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
     },
     {
       "symbol": "JALPA",
@@ -24,7 +27,10 @@
       "successor_name": "Matribhumi Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-07-11",
+      "date_basis": "27 Ashad 2081; merger effective and joint transaction under Matribhumi Laghubitta",
+      "additional_source": "https://www.merolagani.com/AnnouncementDetail.aspx?id=54224"
     },
     {
       "symbol": "KLBSL",
@@ -35,7 +41,10 @@
       "successor_name": "Matribhumi Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-07-11",
+      "date_basis": "27 Ashad 2081; merger effective and joint transaction under Matribhumi Laghubitta",
+      "additional_source": "https://www.merolagani.com/AnnouncementDetail.aspx?id=54224"
     },
     {
       "symbol": "MKLB",
@@ -46,7 +55,10 @@
       "successor_name": "Samata Gharelu Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-07-08",
+      "date_basis": "24 Ashad 2081; joint transaction under Samata Gharelu Laghubitta",
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-acquisition-share-of-samata-gharelu-laghubitta-listed-in-nepse-2024-08-02"
     },
     {
       "symbol": "MMFDB",
@@ -57,7 +69,10 @@
       "successor_name": "Nerude Mirmire Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-03-13",
+      "date_basis": "30 Falgun 2080; joint transaction under Nerude Mirmire Laghubitta",
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
     },
     {
       "symbol": "NLBBL",
@@ -68,7 +83,10 @@
       "successor_name": "Nerude Mirmire Laghubitta",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "joint_transaction_start_date": "2024-03-13",
+      "date_basis": "30 Falgun 2080; joint transaction under Nerude Mirmire Laghubitta",
+      "additional_source": "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
     },
     {
       "symbol": "SABSL",
@@ -337,6 +355,7 @@
   "limitations": [
     "Reported dates are publication dates, not verified trading cessation boundaries.",
     "No successor prices spliced or historical filenames overwritten.",
-    "Stable historical security IDs and effective trading intervals still outstanding."
+    "Stable historical security IDs and effective trading intervals still outstanding.",
+    "Joint-transaction start dates are corporate integration dates, not necessarily the last trading date, first trading date under successor ticker, or stable security-ID effective boundary."
   ]
 }

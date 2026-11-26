@@ -169,6 +169,7 @@ def build_merged_official_history_root(
     mismatch_examples = []
     raw_hash_errors = []
     rows_by_capture = []
+    capture_symbol_sets = []
 
     for root in capture_roots:
         evidence_root = root.parent
@@ -191,6 +192,19 @@ def build_merged_official_history_root(
             parts = line.strip().split(None, 1)
             if len(parts) == 2:
                 manifest[parts[1].lstrip("* ").replace("\\", "/")] = parts[0].lower()
+        for event in capture.get("security_list_capture", []):
+            relative = str(event.get("raw_file", "")).replace("\\", "/")
+            raw_path = evidence_root / relative
+            if not relative or not raw_path.is_file():
+                raw_hash_errors.append({"symbol": "__SECURITY_LIST__", "capture_start": start_date,
+                                        "capture_end": end_date, "path": relative})
+                continue
+            raw = raw_path.read_bytes()
+            actual_sha = hashlib.sha256(raw).hexdigest()
+            if (manifest.get(relative) != actual_sha or event.get("sha256") != actual_sha
+                    or event.get("status") != 200 or event.get("origin_verified") is not True):
+                raw_hash_errors.append({"symbol": "__SECURITY_LIST__", "capture_start": start_date,
+                                        "capture_end": end_date, "path": relative})
 
         symbols = capture.get("symbols")
         if not isinstance(symbols, list) or not symbols:
@@ -203,9 +217,11 @@ def build_merged_official_history_root(
             if not symbol or symbol in capture_symbols:
                 raise ValueError(f"blank or duplicate symbol in {report_path}")
             capture_symbols.add(symbol)
-            if item.get("status") != "ROWS_RETURNED_REVIEW_ONLY" or item.get("current_id_match") is not True:
-                raise ValueError(f"{symbol}: capture status or current security ID match is not reviewable")
-            if not security_id:
+            if (item.get("status") != "ROWS_RETURNED_REVIEW_ONLY"
+                    or item.get("current_id_match") is not True
+                    or item.get("historical_security_identity_verified") is not False):
+                raise ValueError(f"{symbol}: capture status or identity flags are not review-only")
+            if not security_id or str(item.get("crosswalk_security_id", "")).strip() != security_id:
                 raise ValueError(f"{symbol}: current security ID missing")
             if symbol in security_ids and security_ids[symbol] != security_id:
                 raise ValueError(f"{symbol}: security ID differs across capture windows")
@@ -268,17 +284,14 @@ def build_merged_official_history_root(
                             })
                 else:
                     per_symbol[day] = row
+        capture_symbol_sets.append(capture_symbols)
         rows_by_capture.append({
             "start_date": start_date, "end_date": end_date,
             "symbols": len(capture_symbols), "rows": capture_row_count,
         })
-        if raw_hash_errors:
-            # Continue so the report can identify all affected symbols, but do not promote the gate.
-            continue
 
-    if len({tuple(sorted(row.items())) for row in []}) > 0:
-        raise AssertionError("unreachable")
-    symbol_sets = [set(merged)]
+    if any(symbol_set != capture_symbol_sets[0] for symbol_set in capture_symbol_sets[1:]):
+        raise ValueError("official capture windows do not contain the same security universe")
     if not merged:
         raise ValueError("no verified official rows could be merged")
     lifecycle = {}

@@ -176,6 +176,7 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertEqual(result["component_feature_bundles"]["AAA"]["trend"]["status"], "input_contract_unverified")
         self.assertIsNone(result["component_candidates"]["AAA"]["trend"])
         self.assertFalse(result["input_contracts"]["broker_floorsheet"]["score_eligible"])
+        self.assertFalse(result["input_contracts"]["sector_membership"]["score_eligible"])
 
 if __name__ == "__main__":
     unittest.main()

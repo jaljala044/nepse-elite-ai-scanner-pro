@@ -11,6 +11,7 @@ from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
+from .broker_memory_store import broker_memory_status, get_latest_broker_memory
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -49,6 +50,7 @@ def research_readiness():
             "zone_lifecycle": "implemented_not_production_certified",
             "multitimeframe": "implemented_not_production_certified",
             "broker_confluence": "implemented_not_production_certified",
+            "broker_behaviour_memory": "durable_research_store_no_live_ingestion",
             "combined_strategy": "research_test_not_approved",
         },
         "missing_evidence_policy": "UNKNOWN",
@@ -80,6 +82,38 @@ def universe():
 @app.get("/v1/imports")
 def imports():
     return {"imports": IMPORTS[-100:]}
+
+@app.get("/v1/broker-memory/status")
+def broker_memory_readiness():
+    """Read-only status for the shared web/mobile broker-memory module."""
+    return broker_memory_status()
+
+
+@app.get("/v1/broker-memory")
+def broker_memory(symbol: str | None = None, broker_entity_id: str | None = None,
+                  as_of: date | None = None):
+    """Return the latest immutable broker profile available by the requested as-of date."""
+    if symbol is not None and (not symbol.strip() or len(symbol) > 20):
+        raise HTTPException(422, "symbol must be a nonblank NEPSE symbol")
+    if broker_entity_id is not None and (not broker_entity_id.strip() or len(broker_entity_id) > 128):
+        raise HTTPException(422, "broker_entity_id must be nonblank and at most 128 characters")
+    result = get_latest_broker_memory(
+        symbol=symbol.strip().upper() if symbol else None,
+        broker_entity_id=broker_entity_id.strip() if broker_entity_id else None,
+        as_of=as_of.isoformat() if as_of else None,
+    )
+    if result is None:
+        return {
+            "status": "insufficient_evidence",
+            "symbol": symbol.strip().upper() if symbol else None,
+            "broker_entity_id": broker_entity_id.strip() if broker_entity_id else None,
+            "as_of": as_of.isoformat() if as_of else None,
+            "message": "No eligible persisted broker-memory snapshot matches this query.",
+            "live_ingestion_connected": False,
+            "production_recommendations_enabled": False,
+        }
+    return result
+
 
 @app.post("/v1/ingest/csv")
 async def ingest_csv(file: UploadFile = File(...), x_source_label: str = Header(default="user_upload")):

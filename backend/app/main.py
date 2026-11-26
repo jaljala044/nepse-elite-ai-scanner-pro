@@ -31,6 +31,53 @@ class ScanRequest(BaseModel):
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
 
+@app.get("/v1/market-health")
+def market_health():
+    """Expose readiness without fabricating a live market regime.
+
+    The integrated calculator is not yet connected to a trusted persistent
+    store for index, market-summary, mature-equity and sector evidence.
+    """
+    return {
+        "status": "insufficient_evidence",
+        "decision_session": None,
+        "market_health_score": None,
+        "regime": "unknown",
+        "trading_posture": "preserve_capital",
+        "confidence": "LOW",
+        "coverage_pct": 0.0,
+        "coverage_status": "insufficient",
+        "component_scores": {
+            "trend": None,
+            "breadth": None,
+            "turnover": None,
+            "sector_participation": None,
+            "volatility": None,
+        },
+        "missing_components": [
+            "trend", "breadth", "turnover", "sector_participation", "volatility"
+        ],
+        "readiness": {
+            "calculator_integrated": True,
+            "production_source_store_connected": False,
+            "canonical_session_calendar": "unavailable_to_market_health",
+            "verified_nepse_index_ohlcv": "not_connected",
+            "verified_market_summary_turnover": "not_connected",
+            "verified_mature_equity_ohlcv": "not_connected",
+            "verified_sector_membership": "not_authoritatively_verified",
+            "verified_sector_price_evidence": "not_connected",
+        },
+        "probability": None,
+        "action": "PRESERVE_CAPITAL",
+        "note": (
+            "No live market-health score is published. Existing CSV imports "
+            "do not retain the complete record-level source, finality, "
+            "availability and payload-hash evidence required by the market "
+            "adapters. The secondary candidate universe is not authoritative "
+            "sector membership evidence."
+        ),
+    }
+
 @app.get("/v1/symbols")
 def symbols():
     candidate_symbols = set(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else set()

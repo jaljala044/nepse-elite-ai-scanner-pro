@@ -47,3 +47,19 @@ def test_paid_rights_carried_until_listing():
     assert curve[3]["rights_paid_at_cost"] == 0
     assert curve[3]["holdings"]["ABC"] == 6
     assert len(result["corporate_action_audit"]) == 2
+
+
+def test_event_ledger_api():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    client = TestClient(app)
+    payload = dict(initial_cash=1000, initial_holdings={}, trades=[],
+                   corporate_actions=[], price_rows_by_symbol={},
+                   portfolio_sessions=DAYS, as_of_date=DAYS[-1],
+                   evidence_cutoff="2025-01-10T00:00:00+00:00")
+    response = client.post("/v1/research/portfolio/event-ledger", json=payload)
+    assert response.status_code == 200
+    assert response.json()["ending_equity"] == 1000
+    assert response.json()["production_eligible"] is False
+    payload["initial_cash"] = -1
+    assert client.post("/v1/research/portfolio/event-ledger", json=payload).status_code == 422

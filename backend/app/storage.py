@@ -4,8 +4,9 @@ from math import isfinite
 from datetime import date
 from collections import defaultdict
 
-DATA: dict[str, list[dict]] = {}
-IMPORTS: list[dict] = []
+from .database import load_state, persist_import
+
+DATA, IMPORTS = load_state()
 REQUIRED = {"symbol", "date", "open", "high", "low", "close", "volume"}
 
 def store_rows(csv_text: str, source: str) -> dict:
@@ -29,7 +30,7 @@ def store_rows(csv_text: str, source: str) -> dict:
             if not volume.is_finite() or volume < 0 or volume != volume.to_integral_value():
                 raise ValueError("invalid volume")
             vol = int(volume)
-            if not all(isfinite(x) for x in (o,h,lo,c)):
+            if not all(isfinite(x) for x in (o, h, lo, c)):
                 raise ValueError("nonfinite price")
             if min(o, h, lo, c) <= 0 or vol < 0 or h < max(o, c, lo) or lo > min(o, c, h):
                 raise ValueError("invalid OHLCV values")
@@ -41,18 +42,20 @@ def store_rows(csv_text: str, source: str) -> dict:
             raise ValueError(f"Conflicting duplicate row for {symbol} on {d}")
         seen[key] = item
     for (symbol, d), item in seen.items():
-        parsed[symbol].append(item)
-    for symbol, rows in parsed.items():
         existing = {r["date"]: r for r in DATA.get(symbol, [])}
-        for row in rows:
-            if row["date"] in existing and existing[row["date"]] != row:
-                raise ValueError(f"Conflicting stored row for {symbol} on {row['date']}")
+        if d in existing and existing[d] != item:
+            raise ValueError(f"Conflicting stored row for {symbol} on {d}")
+        parsed[symbol].append(item)
+
+    persisted = persist_import(source, parsed)
     for symbol, rows in parsed.items():
         merged = {r["date"]: r for r in DATA.get(symbol, [])}
         merged.update({r["date"]: r for r in rows})
         DATA[symbol] = sorted(merged.values(), key=lambda x: x["date"])
     record = {"source": source, "rows_accepted": len(seen),
-              "symbols": sorted(parsed), "latest_session": str(max((d for _, d in seen), default=""))}
+              "symbols": sorted(parsed),
+              "latest_session": str(max((d for _, d in seen), default="")),
+              "batch_id": persisted["batch_id"]}
     IMPORTS.append(record)
     return record
 

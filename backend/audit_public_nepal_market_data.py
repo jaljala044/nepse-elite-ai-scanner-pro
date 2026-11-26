@@ -886,18 +886,6 @@ def compare_srijankarki_daily_csvs(official_rows: list[dict],
                 result["fully_matching_rows"] += 1
         result["per_day"].append(day_result)
 
-    result["field_error_stats"] = {
-        field: {
-            "count": result["mismatches_by_field"][field],
-            "mean_absolute_difference": round(
-                values["absolute_difference_sum"] / result["mismatches_by_field"][field], 6
-            ) if result["mismatches_by_field"][field] else 0,
-            "max_absolute_difference": round(values["max_absolute_difference"], 6),
-            "max_relative_difference_pct": round(values["max_relative_difference_pct"], 6),
-        }
-        for field, values in result["field_error_accumulators"].items()
-    }
-    del result["field_error_accumulators"]
     result["match_rate_pct"] = round(
         result["fully_matching_rows"] / result["official_rows_matched_by_date"] * 100, 4
     ) if result["official_rows_matched_by_date"] else None

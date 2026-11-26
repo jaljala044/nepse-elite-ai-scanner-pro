@@ -9,7 +9,7 @@ This register distinguishes code that exists, work submitted in open pull reques
 
 | Capability | Evidence in repository | Current status | Remaining gate |
 |---|---|---|---|
-| Market-health components | PR #55 adds five evidence-gated components and a readiness endpoint | Open PR; tests passed at last check | Rebase/review; connect trusted canonical index, market-summary, mature-equity and sector evidence |
+| Market-health components | PR #132 ports the former PR #55 work onto current main | **Merged research-only pipeline and readiness endpoint**; five evidence-gated components and weighted regime descriptor; endpoint remains UNKNOWN until trusted primary sources are connected | Connect trusted canonical index, market-summary, mature-equity and sector evidence; validate market-health outputs against independent history |
 | NEPSE index intelligence | `backend/app/index_intelligence.py`; PR #118; API `/v1/research/index-intelligence` added by PR #125 | **Merged research-only calculator and endpoint**; exact verified session calendar, point-in-time availability, returns, moving averages, 52-week high and descriptive regime | Connect verified primary NEPSE index/sub-index records and authoritative calendar; no live source adapter yet |
 | Sector rotation | `backend/app/verified_sector_rotation.py`; PR #119; API `/v1/research/sector-rotation` added by PR #125 | **Merged research-only calculator and endpoint**; dated membership, constituent median returns and NEPSE-relative strength over 1W/1M/3M/6M | Connect verified primary index/stock data and official effective-dated sector membership; constituent medians are not official sector index returns |
 | Relative strength | `relative_strength_features.py` and tests; exact-session benchmark alignment | Implemented as a feature; production evidence availability remains conditional | Connect verified point-in-time security and NEPSE benchmark histories; preserve missing-horizon exclusions |
@@ -58,7 +58,7 @@ This register distinguishes code that exists, work submitted in open pull reques
 ## Next implementation sequence
 
 ### P2.01 — Stabilize upstream module dependency stack
-Broker memory/profile/sector-rotation/candidate/dashboard/early-signal code is now integrated on `main` through PR #121. Remaining dependencies include market-health PR #55 and standalone index/sector intelligence PRs. Do not merge stacked PRs before their base dependency is merged or deliberately retargeted.
+**Completed on main.** Broker memory/profile/sector-rotation/candidate/dashboard/early-signal code is integrated through PR #121. The five-component market-health pipeline and fail-closed readiness endpoint were ported from the old PR #55 and merged through PR #132 (`b917507ac2fd702205a5adfa224800dc04488767`). The older PR #55 is superseded; its original branch is not the canonical integration.
 
 ### P2.02 — Connect primary NEPSE index intelligence data
 The calculator and research endpoint are merged. Remaining work is trusted server-side ingestion of primary NEPSE index/sub-index records, verified calendar coverage and index-vs-market breadth context. Keep unavailable sub-indices explicit.

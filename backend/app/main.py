@@ -350,6 +350,21 @@ def strategy_modes():
             "minimum_reward_risk":2,"short_selling_enabled":False,
             "parameters_status":"research_policy_not_validated"}
 
+
+@app.get("/v1/research/reliability")
+def reliability():
+    return {"status":"research_only","independent_validation":False,
+            "production_recommendations_enabled":False,
+            "experiments":[{"id":"P7.10.9","classification":"exploratory_not_holdout",
+              "period":"2026","cost_percentage_points":1,
+              "strategy":"All four combined structural proxies",
+              "outcomes":[{"sessions":5,"n":93,"mean_net_pct":-1.530,"win_pct":29.03,"profit_factor":0.392},
+                          {"sessions":20,"n":76,"mean_net_pct":-0.835,"win_pct":32.89,"profit_factor":0.746},
+                          {"sessions":40,"n":66,"mean_net_pct":-1.916,"win_pct":33.33,"profit_factor":0.574}],
+              "decision":"not_approved","limitations":["Uncertified session calendar and historical data",
+              "No independent holdout; incomplete broker, sector and corporate-action evidence",
+              "Overlapping research observations, not portfolio performance"]}]}
+
 # Mount only the built public frontend, never the repository or raw data.
 from fastapi.staticfiles import StaticFiles
 import os

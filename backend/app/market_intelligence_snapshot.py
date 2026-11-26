@@ -82,7 +82,7 @@ def _assess_artifact(name: str, artifact: Any, *, decision_date: date,
         return {**base, "reasons": ["artifact_missing_or_not_an_object"]}
 
     status = artifact.get("status")
-    if status not in ALLOWED_STATUSES:
+    if not isinstance(status, str) or status not in ALLOWED_STATUSES:
         return {**base, "reasons": ["unrecognized_artifact_status"]}
 
     reasons = []
@@ -112,8 +112,9 @@ def _assess_artifact(name: str, artifact: Any, *, decision_date: date,
         evidence_ids = []
 
     coverage = _coverage(artifact.get("coverage_ratio"))
-    if coverage is None:
+    if coverage is None or coverage <= 0:
         reasons.append("coverage_ratio_missing_or_invalid")
+        coverage = None
 
     if artifact.get("source_validation_status") != "verified":
         reasons.append("source_not_verified")

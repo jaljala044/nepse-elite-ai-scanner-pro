@@ -12,8 +12,10 @@ on:
       - "backend/audit_floorsheet_symbol_scope.py"
       - "backend/audit_floorsheet_archive_window.py"
       - "backend/audit_floorsheet_one_sided_scope.py"
+      - "backend/audit_floorsheet_eod_controls.py"
       - "backend/tests/test_floorsheet_archive_window.py"
       - "backend/tests/test_floorsheet_one_sided_scope.py"
+      - "backend/tests/test_floorsheet_eod_controls.py"
       - "backend/tests/test_floorsheet_symbol_scope.py"
       - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
       - "data/reference/nepse_target_universe_candidates_2026-11-26.csv"
@@ -48,6 +50,10 @@ jobs:
       - name: Test dated scope classification of one-sided contracts
         working-directory: backend
         run: python -m unittest discover -s tests -p 'test_floorsheet_one_sided_scope.py' -v
+
+      - name: Test floorsheet to EOD control reconciliation
+        working-directory: backend
+        run: python -m unittest discover -s tests -p 'test_floorsheet_eod_controls.py' -v
 
       - name: Fetch exact pinned Samir raw CSV
         run: |
@@ -101,6 +107,20 @@ jobs:
             https://raw.githubusercontent.com/socrateai-official/nepse-open-data/cfa92493e93211c7019a5cd0b2cbe7d400d9c4e3/floorsheet/floorsheet_2026-11-20.csv \
             -o /tmp/pinned-window/socrateai-2026-11-20.csv
 
+      - name: Fetch pinned third-party daily EOD controls
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/eod-controls
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/srijankarki07/nepse-data/688d59c03915dcee73ecad4230d2083a41c61764/data/daily/2026/2026-11-19.csv \
+            -o /tmp/eod-controls/eod-2026-11-19.csv
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/srijankarki07/nepse-data/688d59c03915dcee73ecad4230d2083a41c61764/data/daily/2026/2026-11-20.csv \
+            -o /tmp/eod-controls/eod-2026-11-20.csv
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/srijankarki07/nepse-data/688d59c03915dcee73ecad4230d2083a41c61764/data/daily/2026/2026-11-24.csv \
+            -o /tmp/eod-controls/eod-2026-11-24.csv
+
       - name: Reconcile three overlapping pinned dates
         run: |
           set -euo pipefail
@@ -122,6 +142,36 @@ jobs:
           print(rendered)
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
               stream.write("## P4.19 multi-date archive comparison\\n\\n")
+              stream.write("```json\\n" + rendered + "\\n```\\n")
+          PY
+
+      - name: Reconcile floorsheet per-symbol aggregates with pinned EOD controls
+        run: |
+          set -euo pipefail
+          python backend/audit_floorsheet_eod_controls.py \\
+            --floorsheet-dir /tmp/pinned-window \\
+            --eod-dir /tmp/eod-controls \\
+            --output artifacts/p421-floorsheet-eod-controls.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/p421-floorsheet-eod-controls.json").read_text())
+          rendered = json.dumps({
+              "dates": {
+                  day: {
+                      "status_counts": item["status_counts"],
+                      "total_differences": item["total_differences"],
+                      "floorsheet_symbol_count": item["floorsheet_symbol_count"],
+                      "eod_symbol_count": item["eod_symbol_count"],
+                  }
+                  for day, item in report["date_reports"].items()
+              },
+              "source_independence_verified": False,
+              "coverage_admission_allowed": False,
+          }, indent=2, sort_keys=True)
+          print(rendered)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+              stream.write("## P4.21 third-party EOD aggregate cross-check\\n\\n")
               stream.write("```json\\n" + rendered + "\\n```\\n")
           PY
 
@@ -274,5 +324,6 @@ jobs:
             artifacts/p418-floorsheet-symbol-scope-2026-11-24.json
             artifacts/p419-three-date-floorsheet-audit.json
             artifacts/p420-one-sided-instrument-scope.json
+            artifacts/p421-floorsheet-eod-controls.json
           if-no-files-found: error
           retention-days: 30

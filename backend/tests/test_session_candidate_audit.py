@@ -48,7 +48,7 @@ class SessionCandidateAuditTests(unittest.TestCase):
 
     def test_candidate_is_never_promoted_by_weekday_or_file_presence(self):
         self.write_inputs([self.candidate()])
-        report = audit_session_candidates(self.candidates, self.calendar, self.source_root)
+        report = audit_session_candidates(self.candidates, self.calendar, self.source_root, "example/data", "a" * 40)
         self.assertTrue(report["gate_pass"])
         self.assertFalse(report["promotion_allowed"])
         self.assertEqual(report["canonical_open_dates_promoted"], 0)
@@ -74,6 +74,20 @@ class SessionCandidateAuditTests(unittest.TestCase):
         report = audit_session_candidates(self.candidates, self.calendar)
         self.assertFalse(report["gate_pass"])
         self.assertEqual(report["duplicate_dates"], ["2026-11-23"])
+
+    def test_source_path_cannot_escape_pinned_checkout(self):
+        row = self.candidate(source_path="../outside.csv")
+        self.write_inputs([row])
+        report = audit_session_candidates(self.candidates, self.calendar, self.source_root, "example/data", "a" * 40)
+        self.assertFalse(report["gate_pass"])
+        self.assertEqual(report["source_file_failures"][0]["reason"], "source_path_outside_root")
+
+    def test_unexpected_source_revision_fails_gate(self):
+        row = self.candidate(source_revision="d" * 40)
+        self.write_inputs([row])
+        report = audit_session_candidates(self.candidates, self.calendar, self.source_root, "example/data", "a" * 40)
+        self.assertFalse(report["gate_pass"])
+        self.assertIn("unexpected_source_revision", [x["reason"] for x in report["malformed_rows"]])
 
     def test_missing_source_file_fails_gate(self):
         row = self.candidate()

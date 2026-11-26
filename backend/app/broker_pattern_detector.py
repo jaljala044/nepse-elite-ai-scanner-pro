@@ -193,6 +193,7 @@ def detect_broker_patterns(
     gross_verified = Decimal("0")
     seen_party_rows = set()
     seen_contract_sides = set()
+    contract_parties = {}
     broker_row_count = 0
     for row in brokers_in:
         if str(row.get("symbol", "")).strip().upper() != symbol:
@@ -204,6 +205,11 @@ def detect_broker_patterns(
         if any(row.get(key) in (None, "") for key in required_text):
             return _insufficient(symbol, decision_at, window[-1], methodology_version,
                                  ["broker_lineage"], sorted(evidence_ids))
+        if (row.get("source_validation_status") != "verified"
+                or row.get("session_calendar_status") != "confirmed_open"
+                or row.get("floorsheet_coverage_status") != "verified_complete"):
+            return _insufficient(symbol, decision_at, window[-1], methodology_version,
+                                 ["verified_complete_broker_source_session"], sorted(evidence_ids))
         digest = str(row.get("source_payload_sha256", "")).lower()
         if not _HASH.fullmatch(digest):
             return _insufficient(symbol, decision_at, window[-1], methodology_version,
@@ -211,7 +217,7 @@ def detect_broker_patterns(
         try:
             row_number = int(row["source_row_number"])
             amount = _money(row.get("amount"), "broker.amount")
-            _money(row.get("quantity"), "broker.quantity")
+            quantity = _money(row.get("quantity"), "broker.quantity")
         except (ValueError, TypeError):
             return _insufficient(symbol, decision_at, window[-1], methodology_version,
                                  ["valid_broker_values"], sorted(evidence_ids))
@@ -229,6 +235,11 @@ def detect_broker_patterns(
                                  ["duplicate_or_conflicting_broker_party"], sorted(evidence_ids))
         seen_party_rows.add(lineage)
         seen_contract_sides.add(contract_side)
+        parties = contract_parties.setdefault((day, str(row["contract_id"])), {})
+        if side in parties:
+            return _insufficient(symbol, decision_at, window[-1], methodology_version,
+                                 ["duplicate_or_conflicting_broker_party"], sorted(evidence_ids))
+        parties[side] = (amount, quantity)
         status = row.get("identity_status")
         broker_id = row.get("broker_entity_id")
         gross_all += amount
@@ -246,6 +257,10 @@ def detect_broker_patterns(
     if not broker_row_count or gross_all <= 0:
         return _insufficient(symbol, decision_at, window[-1], methodology_version,
                              ["broker_party_observations"], sorted(evidence_ids))
+    if any(set(parties) != {"buy", "sell"} or parties["buy"] != parties["sell"]
+           for parties in contract_parties.values()):
+        return _insufficient(symbol, decision_at, window[-1], methodology_version,
+                             ["matched_contract_buyer_seller_parties"], sorted(evidence_ids))
     identity_coverage = gross_verified / gross_all
     if identity_coverage < Decimal(str(minimum_identity_coverage)):
         return _insufficient(symbol, decision_at, window[-1], methodology_version,

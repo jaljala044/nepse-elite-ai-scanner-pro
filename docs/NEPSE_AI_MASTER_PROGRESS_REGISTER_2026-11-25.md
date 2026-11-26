@@ -2310,3 +2310,13 @@ Build and validate the effective-dated security identity and corporate-action re
 - Updated PR #112 with the latest validation state and the additional source qualification. PR remains draft and unmerged.
 - No universe symbols, OHLCV rows, or reviewed-row decisions were changed.
 - 3A.01 remains **not accepted**: authoritative point-in-time universe, nonempty reviewed-row evidence, deployment-wide OHLCV coverage, and live deployed API/UI verification remain open. No ranking/BUY output enabled; do not advance to 3A.02.
+
+
+### 3A.01 scanner orchestration safety regression — 2026-11-27
+
+- Hardened `backend/app/market_scan.py`: orchestration now forcibly sets `ranking_eligible=false` and `buy_list_eligible=false` on every callback-produced result. Scanner callbacks cannot override the 3A.01 research-only boundary.
+- Added `test_callback_cannot_enable_ranking_or_buy_eligibility` in `backend/tests/test_market_scan.py`.
+- Application commit: `89acb162f16ac0a399b82777b169647c9b9c408c`; test commit / latest head: `061581beb837601bbc6c47fca0316d8f30df8025`.
+- All three PR-triggered workflows passed on the latest head: backend tests run `45894165903`, backend contract tests run `45894165946`, frontend/deployment image checks run `45894165934`. The frontend job completed its build, deployable image, API/terminal smoke tests, private image and authentication-boundary smoke tests.
+- PR #112 remains open, draft and unmerged. GitHub reports mergeable=true, but the branch has diverged from current `main` (50 commits ahead, 24 behind; current main head observed as `8120e616aa887aaec9cacdbb4ca4b8a3ffc6992e`). This needs a deliberate rebase/merge reconciliation before merge; no force update or merge was performed.
+- Acceptance blockers remain: authoritative point-in-time ordinary-equity universe, nonempty reviewed-row evidence, deployment-wide OHLCV coverage and live deployed API/UI verification. Rankings and BUY output remain disabled; do not advance to 3A.02.

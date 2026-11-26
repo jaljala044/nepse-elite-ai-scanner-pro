@@ -2078,3 +2078,13 @@ CI on test commit `551d31046782cb13fa1834c560322e4ef4971f44`:
 - CI on `32efd5857ce2c287c3c0ffef86e5322ef6e3b4b9`: backend tests **806 passed** (run 45845827979); standard unit tests **806 passed** (run 45845828021); integrated evidence audit passed (run 45845828091); historical data integrity passed (run 45845828045). Test logs and completed job conclusions inspected.
 - Historical integrity workflow successfully generated its source-separated date-coverage and pinned inventory artifacts; those are still candidate archive outputs, not primary exchange calendar or daily completeness certification.
 - Next: add a documented CLI wrapper and run the pair audit on reproducibly acquired raw files only after rights/provenance approval; record exact file hashes and outputs. If raw bytes remain unavailable, do not substitute fabricated fixtures or source summaries for a real audit.
+
+
+## 2026-11-26 — pinned archive-pair CLI
+
+- Added `backend/audit_floorsheet_archive_pair.py`, commit `0448731fdfdd9df84df01914048c56da6e679cd6`.
+- CLI supports the explicit Samir, SocrateAI and Urek source profiles; validates the exact observed header schema, requires source IDs and caller-supplied expected SHA-256 digests, reads local raw bytes only, and writes a JSON report.
+- It performs no network fetch and has no option to promote data. The underlying audit hard-codes rights, source independence, daily completeness, coverage admission and canonical promotion to false.
+- CI on `0448731fdfdd9df84df01914048c56da6e679cd6`: backend tests **806 passed** (run 45846005770); standard unit tests **806 passed** (run 45846005736); integrated evidence audit passed (run 45846005989). Test logs and job conclusions inspected.
+- No actual source files were run through the CLI in this session because the raw pinned CSV byte payloads and their acquisition/right-to-use evidence have not been made available in the scanner repository. The CLI's correctness is covered by the underlying hash/parse/comparison unit tests; source-data findings remain ungenerated.
+- Next: obtain approved reproducible local source bytes and expected SHA-256 values, execute the CLI on the pinned pair, inspect its JSON and exception ledger, and then add verified date/session/instrument evidence only where independently supported. If access/rights remain unresolved, keep this integration at review-only status.

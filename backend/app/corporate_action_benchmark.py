@@ -59,7 +59,7 @@ def adjust_ohlcv_for_corporate_actions(*, rows, actions, as_of_date, evidence_cu
         raise ValueError("evidence_cutoff_timezone_required")
     if not isinstance(rows, list) or not rows:
         raise ValueError("ohlcv_rows_required")
-    ordered = sorted((deepcopy(row) for row in rows), key=lambda x: str(x.get("date", "")))
+    ordered = [deepcopy(row) for row in rows]
     dates = [_day(row.get("date"), "ohlcv_date") for row in ordered]
     if len(set(dates)) != len(dates) or dates != sorted(dates):
         raise ValueError("ohlcv_dates_must_be_unique_and_ordered")

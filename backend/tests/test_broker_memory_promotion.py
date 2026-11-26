@@ -56,6 +56,17 @@ class BrokerMemoryPromotionTests(unittest.TestCase):
         self.assertEqual(set(snap["evidence_ids"]),{"E1","E2"})
         self.assertEqual(snap["source_batch_ids"],["batch-2026-11-24"])
 
+
+    def test_conflicting_replay_rolls_back_entire_multi_window_append(self):
+        from app.broker_memory_store import IdempotencyConflict
+        first_rows=[row("2026-11-24","E1")]
+        promote_validated_batch(report(first_rows),self.store,as_of_date="2026-11-25")
+        self.assertEqual(self.store.count(),1)
+        changed_rows=[row("2026-11-23","E0"),row("2026-11-24","E1","BUY","999")]
+        with self.assertRaises(IdempotencyConflict):
+            promote_validated_batch(report(changed_rows),self.store,as_of_date="2026-11-25")
+        self.assertEqual(self.store.count(),1)
+
     def test_no_observation_window_is_fabricated(self):
         result=promote_validated_batch(report([row("2026-11-24","E1")]),self.store,as_of_date="2026-11-25")
         self.assertEqual(result["promoted_snapshots"],1)

@@ -21,7 +21,7 @@ This register distinguishes code that exists, work submitted in open pull reques
 | Broker intelligence dashboard | `/v1/research/broker-dashboard`; PR #121 | **Merged read-only endpoint**; broker codes remain execution-channel identifiers, not beneficial owners | Connect authenticated trusted inputs; no ownership/intent inference |
 | Wyckoff | `wyckoff_features.py` and tests | Existing deterministic candidate-event feature | Confirm validated OHLCV/corporate-action inputs; event labels remain hypotheses, not proof of operator activity |
 | Market structure / SMC | `market_structure.py`, `smc_features.py`; PR #18 also open | Feature work exists; some SMC outputs explicitly experimental | Preserve causal timing, zone lifecycle and calibration boundaries; do not score uncalibrated heuristics |
-| Unified Part 2 snapshot | PR #115 | **Merged** as `683e281e393b20d92fb595c945a3fa5f34892dee` | Wire only trusted server-side artifact envelopes; contract intentionally emits no score, probability or trade action |
+| Unified Part 2 snapshot | PR #115 and PR #128 | **Merged**; PR #128 adds deployment-pinned artifact loading, hash checks, point-in-time admission and module-specific quality gates | Provision protected deployment registry and immutable artifacts from verified source operations; no live source feed is connected |
 
 ## Completed in this task
 
@@ -67,10 +67,10 @@ The calculator and research endpoint are merged. Remaining work is trusted serve
 The calculator, API endpoint and broker confluence layer are merged. Remaining work is trusted ingestion of verified stock/index rows and effective-dated official sector membership. Publish leadership only when membership and price coverage pass.
 
 ### P2.04 — Wire trusted artifacts into the snapshot
-Create trusted server-side adapters for the eight required modules. All calculators and research endpoints currently accept caller-supplied artifacts; they do not independently attest source manifests or fetch verified live floorsheets. Validate source manifest, finality, unique lineage, coverage and availability before passing the artifact to `build_market_intelligence_snapshot`.
+**Merged in PR #128** (`00a92fd23e924b1a3b28858e33baa578bf87ccfb`). The server-side artifact store loads only deployment-pinned payload paths and SHA-256 hashes, checks source validation/finality, freshness and point-in-time availability, and fails closed on missing evidence. It additionally requires an exchange calendar identity, corporate-action status for price-derived modules, effective-dated sector-membership versioning for sector modules, and verified broker-code mapping plus coverage for broker modules. This is an adapter foundation only: no deployment registry or live NEPSE source feed has yet been provisioned.
 
 ### P2.05 — Integration and regression acceptance
-Add cross-module tests for stale/future artifacts, missing modules, partial coverage, duplicate IDs, wrong sector membership version, broker identity gaps and market-calendar mismatch. Verify no score/action is emitted when any required evidence gate fails.
+In progress in the current branch: require a common as-of date and consistent exchange-calendar identity across admitted modules; reject incoherent snapshots; test missing/stale/future evidence, hash mismatch, corporate-action status, sector membership, broker-code coverage and Nepal-local cutoff handling. Production scores and trade actions remain disabled.
 
 ## Acceptance criteria for Part 2
 
@@ -83,4 +83,4 @@ Part 2 is complete only when:
 - integration tests demonstrate fail-closed behaviour under missing, stale, late, conflicting and incomplete evidence; and
 - production scoring/trading remains disabled until separate strategy validation and backtesting gates are passed.
 
-**Current overall status:** Partially implemented. The composition contract is merged, but upstream data connections and several module/dependency integrations remain incomplete.
+**Current overall status:** Partially implemented. The trusted artifact-store foundation is merged and cross-module alignment gates are being added. Protected deployment storage, verified live source ingestion, market-health integration and independent strategy/backtest validation remain incomplete.

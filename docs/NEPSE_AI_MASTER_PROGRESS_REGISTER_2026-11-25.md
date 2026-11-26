@@ -1873,3 +1873,16 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 
 
 - Final hardening pass: floorsheet input now requires recognized date/symbol/quantity/rate/contract headers; duplicate OHLCV rows for the same symbol/date are ambiguous and cannot support `NO_TRADE`. Added regression tests for invalid schema and duplicate OHLCV dates. Data repo commits: [schema/duplicate-bar guard 724d694](https://github.com/jaljala044/nepse-smc-data/commit/724d694a5367c96e7af7105608068c6d8456d3d9); [regression tests 37c8ba8](https://github.com/jaljala044/nepse-smc-data/commit/37c8ba86e379ad7c401f6881b026e2c9403c93d2).
+
+
+## 2026-11-26 — V3 feature-bundle scoring adapter (research-only)
+
+- Added `build_component_scores()` and `score_feature_bundle()` in `backend/app/scoring_engine.py`.
+- The adapter maps only upstream feature objects with `status="observed"` and a valid 0–100 score into the eight weighted components: Wyckoff 25, trend 25, relative strength 15, broker 10, volume 10, liquidity 5, sector 5 and SMC 5.
+- Missing features, missing scores, partial broker identity coverage, insufficient evidence and experimental SMC outputs remain unavailable; they are not imputed as neutral.
+- Added seven adapter regression tests in `backend/tests/test_scoring_feature_bundle.py`, including explicit rejection of experimental SMC as production evidence.
+- Backend unit workflow passed: 772 tests, run [#45839064611](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45839064611), commit `7b8ae438cbdd4f80b9948d94c5ab93078b6d7473`.
+- Backend contract workflow passed: [#45839064532](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45839064532).
+- Integrated evidence audit and historical integrity workflows were still running at the time of this register update.
+- This is an adapter milestone, **not live scanner integration**. `/v1/scan` remains research-only; no production feature bundle is currently assembled from canonical point-in-time inputs. No Top 20, Top 10, BUY, probabilities or live ranking are enabled by this change.
+- Next: construct and test a per-symbol, point-in-time feature bundle from canonical reviewed inputs; wire it into scan only after market regime, corporate-action, broker identity, liquidity execution and reward/risk gates are themselves evidence-backed. Until then keep ranked and BUY arrays empty.

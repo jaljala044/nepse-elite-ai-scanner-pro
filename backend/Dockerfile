@@ -11,6 +11,8 @@ WORKDIR /app
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
+# main.py resolves the dated candidate-universe manifest from /data/reference.
+COPY data/reference/nepse_active_equity_manifest_2026-11-26.csv /data/reference/nepse_active_equity_manifest_2026-11-26.csv
 COPY --from=frontend-build /frontend/public-build ./frontend/public-build
 ENV NEPSE_PUBLIC_FRONTEND=/app/frontend/public-build
 EXPOSE 8000

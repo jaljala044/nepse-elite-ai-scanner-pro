@@ -7,6 +7,7 @@ on:
       - "backend/app/floorsheet_archive_pair_audit.py"
       - "backend/audit_floorsheet_archive_pair.py"
       - "backend/app/floorsheet_source_profiles.py"
+      - "backend/app/floorsheet_contract.py"
       - ".github/workflows/p417-pinned-archive-reconciliation.yml"
   workflow_dispatch:
 

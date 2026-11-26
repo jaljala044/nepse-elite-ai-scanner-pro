@@ -1666,3 +1666,13 @@ Added 13 unittest cases in `backend/tests/test_historical_identity_regression.py
 - UNL archive begins 2024-03-05 although the issuer is long-established; this is a dedicated historical source-coverage issue, not a listing date. A 2018 suspension/resumption notice does not explain the 2024 archive start.
 - Added [mid-2026 boundary review](https://github.com/jaljala044/nepse-smc-data/blob/main/reference/mid_2026_low_overlap_equity_archive_boundary_review_2026-11-26.md), commit `386cd8bc15ca2633005d7d2e2f3216e9b4110e50`.
 - No raw OHLCV edited, synthesized or normalized. No canonical/training promotion. Next: obtain dated trade evidence for six boundary exceptions; conduct dedicated UNL alternate-source/history audit; continue row-level OHLCV validation across both repositories.
+
+
+### First-trade boundary reconciliation — APHL, KHPL and six mid-2026 equities — 2026-11-26
+
+- APHL scheduled commencement was 2026-06-09, but Merolagani's dated first-trade report says no matching occurred that day and the first transaction matched on 2026-06-10; project archive first positive-volume row is 2026-06-10 (110 shares). This is a reconciled scheduled-vs-actual debut, not an archive omission.
+- KHPL scheduled commencement was 2026-05-25, but Merolagani reports the first special pre-open transaction on 2026-05-26; project archive first positive-volume row is 2026-05-26 (40 shares). Scheduled date is not proof of execution.
+- SKHL (2026-03-25), BJHL (2026-03-22), SOHL (2026-03-15), HFIN (2026-03-12), SABBL (2026-02-16), RSML (2026-02-16): project archive first positive-volume rows align with dated secondary debut/commencement evidence.
+- Evidence report: https://github.com/jaljala044/nepse-smc-data/blob/main/reference/first_trade_boundary_reconciliation_2026-11-26.md (commit `7011860a405d2f047ff6c69af1053cd2e3ae094b`). Triage update `fb1384021a336d55e2faeb5b8b4e50994d3e6b42`; boundary review update `d8bca6a0b43135618ffe61587a48b1ad208e8712`.
+- All eight reviewed boundaries now match actual first-trade/debut observations on available secondary evidence. This does not establish full daily archive completeness or exchange-authenticated contract-level provenance. No raw OHLCV changed, no synthetic rows, no canonical/training promotion.
+- Next priority: dedicated UNL historical source-coverage audit, then reconcile remaining low-overlap symbols against symbol-specific executed-trade evidence and execute row-level OHLCV validation.

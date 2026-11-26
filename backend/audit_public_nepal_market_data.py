@@ -14,11 +14,12 @@ import json
 from decimal import Decimal, InvalidOperation
 import os
 import re
+import tempfile
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timezone
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 
 import httpx
 
@@ -148,6 +149,213 @@ def audit_symbol_csv(content: bytes, symbol: str, path: str) -> dict:
     if valid_dates:
         result["first_date"], result["last_date"] = min(valid_dates), max(valid_dates)
     return result
+
+
+
+def build_merged_official_history_root(
+    capture_roots: list[Path],
+    output_root: Path,
+    expected_dates: list[str],
+    lifecycle_path: Path,
+) -> dict:
+    """Verify and merge overlapping official capture windows for read-only cross-checks."""
+    if len(capture_roots) < 2:
+        raise ValueError("at least two independent capture windows are required")
+    merged: dict[str, dict[str, dict]] = {}
+    security_ids: dict[str, str] = {}
+    capture_windows = []
+    overlap_rows = 0
+    overlap_mismatch_rows = 0
+    mismatch_examples = []
+    raw_hash_errors = []
+    rows_by_capture = []
+
+    for root in capture_roots:
+        evidence_root = root.parent
+        report_path = evidence_root / "capture-report.json"
+        manifest_path = evidence_root / "SHA256SUMS"
+        if not report_path.is_file() or not manifest_path.is_file():
+            raise ValueError(f"capture report or SHA256SUMS missing under {evidence_root}")
+        capture = json.loads(report_path.read_text(encoding="utf-8"))
+        if capture.get("source_id") != "NEPSE_OFFICIAL_PER_SECURITY_PRICE_VOLUME_HISTORY":
+            raise ValueError(f"unexpected official history source in {report_path}")
+        if capture.get("endpoint_path") != "/api/nots/market/history/security/{security_id}":
+            raise ValueError(f"unexpected official history endpoint in {report_path}")
+        start_date = capture.get("requested_start_date")
+        end_date = capture.get("requested_end_date")
+        date.fromisoformat(start_date)
+        date.fromisoformat(end_date)
+        capture_windows.append({"start_date": start_date, "end_date": end_date})
+        manifest = {}
+        for line in manifest_path.read_text(encoding="utf-8").splitlines():
+            parts = line.strip().split(None, 1)
+            if len(parts) == 2:
+                manifest[parts[1].lstrip("* ").replace("\\", "/")] = parts[0].lower()
+
+        symbols = capture.get("symbols")
+        if not isinstance(symbols, list) or not symbols:
+            raise ValueError(f"official symbol rows missing in {report_path}")
+        capture_row_count = 0
+        capture_symbols = set()
+        for item in symbols:
+            symbol = str(item.get("symbol", "")).strip().upper()
+            security_id = str(item.get("current_security_list_id", "")).strip()
+            if not symbol or symbol in capture_symbols:
+                raise ValueError(f"blank or duplicate symbol in {report_path}")
+            capture_symbols.add(symbol)
+            if item.get("status") != "ROWS_RETURNED_REVIEW_ONLY" or item.get("current_id_match") is not True:
+                raise ValueError(f"{symbol}: capture status or current security ID match is not reviewable")
+            if not security_id:
+                raise ValueError(f"{symbol}: current security ID missing")
+            if symbol in security_ids and security_ids[symbol] != security_id:
+                raise ValueError(f"{symbol}: security ID differs across capture windows")
+            security_ids[symbol] = security_id
+            events = item.get("responses")
+            if not isinstance(events, list) or len(events) != 1:
+                raise ValueError(f"{symbol}: expected exactly one official history response")
+            event = events[0]
+            parsed_url = urlparse(str(event.get("url", "")))
+            query = parse_qs(parsed_url.query)
+            if (event.get("status") != 200 or event.get("origin_verified") is not True
+                    or parsed_url.scheme != "https"
+                    or parsed_url.hostname not in {"nepalstock.com.np", "www.nepalstock.com.np", "newweb.nepalstock.com"}
+                    or parsed_url.path != f"/api/nots/market/history/security/{security_id}"
+                    or query.get("startDate") != [start_date]
+                    or query.get("endDate") != [end_date]):
+                raise ValueError(f"{symbol}: response origin, ID path or requested date window is invalid")
+            relative = str(event.get("raw_file", "")).replace("\\", "/")
+            raw_path = evidence_root / relative
+            if not relative or not raw_path.is_file():
+                raise ValueError(f"{symbol}: official raw response file is missing")
+            raw = raw_path.read_bytes()
+            actual_sha = hashlib.sha256(raw).hexdigest()
+            if (manifest.get(relative) != actual_sha
+                    or event.get("sha256") != actual_sha
+                    or item.get("response_sha256") != actual_sha):
+                raw_hash_errors.append({"symbol": symbol, "capture_start": start_date,
+                                        "capture_end": end_date, "path": relative})
+                continue
+            payload = json.loads(raw.decode("utf-8"))
+            raw_rows = payload.get("content") if isinstance(payload, dict) else None
+            if not isinstance(raw_rows, list):
+                raise ValueError(f"{symbol}: official raw response has no content array")
+            report_rows = item.get("rows")
+            if not isinstance(report_rows, list) or len(report_rows) != len(raw_rows):
+                raise ValueError(f"{symbol}: normalized capture report row count differs from raw response")
+            report_raw_by_date = {
+                str(row.get("business_date", "")): row.get("raw")
+                for row in report_rows
+            }
+            per_symbol = merged.setdefault(symbol, {})
+            seen_capture_dates = set()
+            for row in raw_rows:
+                day = str(row.get("businessDate", ""))[:10]
+                date.fromisoformat(day)
+                if not start_date <= day <= end_date or day in seen_capture_dates:
+                    raise ValueError(f"{symbol}: duplicate or out-of-range raw history date {day}")
+                seen_capture_dates.add(day)
+                if report_raw_by_date.get(day) != row:
+                    raise ValueError(f"{symbol} {day}: report row does not match hash-verified raw response")
+                capture_row_count += 1
+                if day in per_symbol:
+                    overlap_rows += 1
+                    if per_symbol[day] != row:
+                        overlap_mismatch_rows += 1
+                        if len(mismatch_examples) < 100:
+                            mismatch_examples.append({
+                                "symbol": symbol, "date": day,
+                                "existing": per_symbol[day], "new": row,
+                            })
+                else:
+                    per_symbol[day] = row
+        rows_by_capture.append({
+            "start_date": start_date, "end_date": end_date,
+            "symbols": len(capture_symbols), "rows": capture_row_count,
+        })
+        if raw_hash_errors:
+            # Continue so the report can identify all affected symbols, but do not promote the gate.
+            continue
+
+    if len({tuple(sorted(row.items())) for row in []}) > 0:
+        raise AssertionError("unreachable")
+    symbol_sets = [set(merged)]
+    if not merged:
+        raise ValueError("no verified official rows could be merged")
+    lifecycle = {}
+    with lifecycle_path.open(encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            symbol = (row.get("symbol") or "").strip().upper()
+            if symbol:
+                lifecycle[symbol] = {
+                    "valid_from": (row.get("valid_from") or "").strip(),
+                    "valid_from_evidence_status": (row.get("valid_from_evidence_status") or "unverified").strip(),
+                }
+    if set(lifecycle) != set(merged):
+        raise ValueError("lifecycle symbol universe does not match merged official capture universe")
+
+    expected_dates = sorted(set(expected_dates))
+    missing_pre_valid = 0
+    missing_unexplained = 0
+    for symbol, by_date in merged.items():
+        context = lifecycle[symbol]
+        valid_from = context["valid_from"]
+        evidence_status = context["valid_from_evidence_status"]
+        if valid_from:
+            date.fromisoformat(valid_from)
+        for day in expected_dates:
+            if day not in by_date:
+                if valid_from and evidence_status != "unverified" and day < valid_from:
+                    missing_pre_valid += 1
+                else:
+                    missing_unexplained += 1
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    manifest_lines = []
+    total_rows = 0
+    all_dates = set()
+    for symbol, by_date in sorted(merged.items()):
+        rows = [by_date[day] for day in sorted(by_date)]
+        all_dates.update(by_date)
+        total_rows += len(rows)
+        raw = json.dumps({"content": rows}, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        folder = output_root / symbol
+        folder.mkdir(parents=True, exist_ok=True)
+        filename = folder / "response-01.bin"
+        filename.write_bytes(raw)
+        relative = str(filename.relative_to(output_root.parent)).replace("\\", "/")
+        manifest_lines.append(f"{hashlib.sha256(raw).hexdigest()}  {relative}\n")
+    (output_root.parent / "SHA256SUMS").write_text("".join(manifest_lines), encoding="utf-8")
+
+    expected_pairs = len(expected_dates) * len(merged)
+    missing_pairs = expected_pairs - total_rows
+    return {
+        "status": "REVIEW_ONLY",
+        "capture_windows": capture_windows,
+        "rows_by_capture": rows_by_capture,
+        "official_symbols": len(merged),
+        "official_dates_expected": len(expected_dates),
+        "official_dates_present": len(all_dates),
+        "official_first_date": min(all_dates) if all_dates else None,
+        "official_last_date": max(all_dates) if all_dates else None,
+        "official_rows_after_merge": total_rows,
+        "expected_symbol_date_pairs": expected_pairs,
+        "missing_symbol_date_pairs": missing_pairs,
+        "missing_pre_valid_from_rows": missing_pre_valid,
+        "unexplained_missing_rows": missing_unexplained,
+        "overlap_rows_compared": overlap_rows,
+        "overlap_mismatch_rows": overlap_mismatch_rows,
+        "overlap_mismatch_examples": mismatch_examples,
+        "raw_hash_errors": raw_hash_errors,
+        "open_price_available": False,
+        "historical_security_identity_verified": False,
+        "source_rights_verified": False,
+        "canonical_promotion_allowed": False,
+        "gate": "FAIL" if (
+            raw_hash_errors or overlap_mismatch_rows or missing_unexplained
+            or missing_pairs != missing_pre_valid
+            or len(all_dates) != len(expected_dates)
+        ) else "RECONCILED_REVIEW_ONLY",
+    }
 
 
 def crosscheck_official_history(public_csv_by_symbol: dict[str, bytes], official_root: Path) -> dict:

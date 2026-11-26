@@ -2,7 +2,7 @@
   "date": "2026-11-26",
   "base_review_blob": "8bd7ebe58b52c7e45cf312895d78d9d59452be91",
   "provider": "ShareSansar and NepseAlpha",
-  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates; added reported last-recorded-trade dates for JALPA, KLBSL and MKLB from secondary historical company records; not yet NEPSE-primary certified; added direct pinned-repository OHLCV file-boundary observations for JALPA, KLBSL and MKLB and successor files; identical blob SHAs across the two data repositories, no splice authorized; extended OHLCV boundary observations to BPW, MMFDB, NLBBL, SAMAJ, SFCL, SABSL and SDLBSL; repeated forward-filled terminal rows explicitly distinguished from unique OHLCV dates; added dated 2026-11-25 successor security-ID snapshot observations for SLBSL, NMLBBL, MATRI, SMATA, SMPDA, GBLBS and PFL; predecessor historical IDs remain unresolved",
+  "scope": "historical identity and lifecycle evidence; selected joint-transaction start dates documented for nine merger predecessor symbols, but exchange trading boundary, stable-ID and effective-date resolution remain unverified; added explicit trading-suspension effective dates for five predecessor records where secondary notices state the effective date; these are not last-trade dates; added reported last-recorded-trade dates for JALPA, KLBSL and MKLB from secondary historical company records; not yet NEPSE-primary certified; added direct pinned-repository OHLCV file-boundary observations for JALPA, KLBSL and MKLB and successor files; identical blob SHAs across the two data repositories, no splice authorized; extended OHLCV boundary observations to BPW, MMFDB, NLBBL, SAMAJ, SFCL, SABSL and SDLBSL; repeated forward-filled terminal rows explicitly distinguished from unique OHLCV dates; added dated 2026-11-25 successor security-ID snapshot observations for SLBSL, NMLBBL, MATRI, SMATA, SMPDA, GBLBS and PFL; predecessor historical IDs remain unresolved; added secondary-reported last-recorded-trade dates for BPW, MMFDB and NLBBL with corroborating dated Merolagani/ShareSansar company history; no predecessor stable IDs resolved",
   "records": [
     {
       "symbol": "BPW",
@@ -33,7 +33,10 @@
           "1900"
         ],
         "caution": "Last row has nonzero volume on the same date as reported suspension effective date; reconcile exact intraday notice timing before asserting final trade."
-      }
+      },
+      "last_recorded_trade_date": "2024-03-06",
+      "last_recorded_trade_source": "https://laganilab.com/nepse-company/BPW/",
+      "last_recorded_trade_basis": "Laganilab historical company page explicitly reports last recorded trade March 6, 2024; secondary-source evidence. OHLCV archive contains a nonzero-volume row on this date."
     },
     {
       "symbol": "JALPA",
@@ -195,7 +198,10 @@
           "580.00",
           "25868"
         ]
-      }
+      },
+      "last_recorded_trade_date": "2024-03-12",
+      "last_recorded_trade_source": "https://merolagani.com/CompanyDetail.aspx?symbol=MMFDB",
+      "last_recorded_trade_basis": "Merolagani reports Last Traded On 2024/03/12 02:58:52; ShareSansar historical company page independently shows the 2024-03-12 close and volume. Secondary-source evidence."
     },
     {
       "symbol": "NLBBL",
@@ -225,7 +231,10 @@
           "595.00",
           "20276"
         ]
-      }
+      },
+      "last_recorded_trade_date": "2024-03-12",
+      "last_recorded_trade_source": "https://merolagani.com/CompanyDetail.aspx?symbol=NLBBL",
+      "last_recorded_trade_basis": "Merolagani reports Last Traded On 2024/03/12 02:59:57; ShareSansar historical company page independently shows the 2024-03-12 close and volume. Secondary-source evidence."
     },
     {
       "symbol": "SABSL",

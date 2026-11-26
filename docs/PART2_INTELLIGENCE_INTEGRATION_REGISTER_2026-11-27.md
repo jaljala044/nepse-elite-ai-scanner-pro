@@ -63,16 +63,13 @@ This register distinguishes code that exists, work submitted in open pull reques
 ### P2.02 — Connect primary NEPSE index intelligence data
 The calculator and research endpoint are merged. The official NEPSE market-summary capture is independently hash/origin validated by PR #133, but its rows remain review-only because finality and exact session coverage are not yet attested.
 
-**Endpoint discovery update — 2026-11-27:** a community-maintained reverse-engineered client documents candidate POST routes on the `https://www.nepalstock.com` host:
-- `/api/nots/graph/index/58` — NEPSE index graph;
-- `/api/nots/graph/index/57` — Sensitive;
-- `/api/nots/graph/index/62` — Float;
-- `/api/nots/graph/index/63` — Sensitive Float;
-- IDs 51–67 are mapped by that client to sector/sub-index graph methods.
+**Endpoint discovery update — 2026-11-27:** community-maintained reverse-engineered references document two candidate route families:
+- Graph POST routes: `/api/nots/graph/index/58` (NEPSE), `/api/nots/graph/index/57` (Sensitive), `/api/nots/graph/index/62` (Float), `/api/nots/graph/index/63` (Sensitive Float), and IDs 51–67 for sector/sub-index graphs. The client describes Salter authorization and a generated JSON `id` request body.
+- Index-history GET route: `/index/history/58` (NEPSE); a separate community reference lists this route family but does not establish query parameters, schema, coverage, date limits or pagination.
 
-The same client describes Salter authorization and a generated JSON `id` body. This is **third-party reverse-engineered evidence only**; it is not an official NEPSE API specification and no first-party response has yet been captured or validated. The route map is discovery evidence, not a production data source. Tracking issue: #134.
+These are **third-party reverse-engineered references only**, not an official NEPSE API specification. First-party page retrieval was attempted for the NEPSE homepage and candidate paths, but the homepage exposed no readable source and direct candidate-route retrieval was inaccessible in this research environment. No first-party response bytes, TLS capture report or payload hash were obtained. An inaccessible route is not evidence that the route does not exist. Tracking issue: #134.
 
-**Next gate:** inspect the first-party NEPSE frontend/network contract or capture a direct official response with TLS verification enabled; preserve request metadata and raw bytes/hash; validate schema, index identity, dates, duplicates, ordering and session coverage against an independently verified calendar. Keep all sub-indices unavailable until each one independently passes. Do not build or enable a collector around undocumented assumptions.
+**Next gate:** obtain a first-party browser/network capture or a direct TLS-verified official response for each candidate route; preserve method, exact path, query/body, redacted headers, raw bytes/hash, HTTP status, content type and retrieval timestamp. Validate schema, index identity, dates, duplicates, ordering, history depth and session coverage against an independently verified calendar. Keep all sub-indices unavailable until each one independently passes. Do not build or enable a data collector around undocumented assumptions.
 
 ### P2.03 — Connect primary sector rotation data
 The calculator, API endpoint and broker confluence layer are merged. Remaining work is trusted ingestion of verified stock/index rows and effective-dated official sector membership. Publish leadership only when membership and price coverage pass.

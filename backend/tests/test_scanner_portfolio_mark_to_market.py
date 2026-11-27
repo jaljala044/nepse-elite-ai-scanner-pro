@@ -14,7 +14,7 @@ class MarkToMarketTests(unittest.TestCase):
             {"symbol":"ABC","session_date":"2025-01-03","close":"80",
             "decision_cutoff":"2025-01-03T16:00:00+05:45",**ev("eod","m2","2025-01-03T16:00:00+05:45")}]
         result=build_mark_to_market_curve(initial_cash="5000",executions=executions,daily_marks=marks)
-        self.assertEqual(result["max_mark_to_market_drawdown_pct"],"4.0")
+        self.assertEqual(result["max_mark_to_market_drawdown_pct"],"4.00")
         self.assertEqual(result["ending_equity"],"4800")
 
     def test_missing_open_position_mark_fails_closed(self):

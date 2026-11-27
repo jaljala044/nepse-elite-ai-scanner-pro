@@ -45,3 +45,25 @@ def test_feature_builder_rejects_future_available_bar():
     result=build_point_in_time_feature_snapshots(panel_rows=[row],decision_cutoffs={"2025-01-01":"2025-01-01T18:00:00+05:45"})
     assert result["status"]=="partial_or_blocked"
     assert any("bar_not_available_at_decision" in x for x in result["errors"])
+
+
+def test_feature_fingerprint_binds_cutoff_and_full_source_lineage():
+    row={"security_id":"X","symbol":"XYZ","session_date":"2025-01-01",
+        "open":"10","high":"11","low":"9","close":"10","volume":"100","turnover":"1000",
+        "source_id":"source-a","evidence_id":"evidence-a",
+        "available_at":"2025-01-01T16:00:00+05:45"}
+    def build(candidate, cutoff="2025-01-01T18:00:00+05:45"):
+        return build_point_in_time_feature_snapshots(
+            panel_rows=[candidate],decision_cutoffs={"2025-01-01":cutoff}
+        )["snapshots"][0]["feature_snapshot_sha256"]
+
+    original=build(row)
+    changed_source=build({**row,"source_id":"source-b"})
+    changed_evidence=build({**row,"evidence_id":"evidence-b"})
+    changed_availability=build({**row,"available_at":"2025-01-01T16:30:00+05:45"})
+    changed_cutoff=build(row,"2025-01-01T19:00:00+05:45")
+    changed_ohlcv=build({**row,"turnover":"1001"})
+
+    assert len(original)==64
+    assert len({original,changed_source,changed_evidence,changed_availability,
+                changed_cutoff,changed_ohlcv})==6

@@ -1,12 +1,19 @@
 # NEPSE historical session calendar and integrity gate
 
-Status: implementation baseline; the full historical calendar is **not yet verified**.
-This module intentionally refuses to infer a verified session from a weekday or an
-OHLCV row. It provides the evidence-backed mechanism and a fail-closed row audit.
+Status: **project-accepted historical baseline applied** (2026-11-27).
+The 3,630 date keys from srijankarki07/nepse-data are loaded as
+`project_accepted_open` dates for project-level research and session joins.
+They are ShareSansar-derived and not NEPSE-certified. Explicit NEPSE closure
+records retain precedence; `verified_open` remains the first-party evidence tier.
 
 ## Calendar contract
 
-CSV columns: `date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes`. Raw evidence SHA-256, retrieval/verification UTC timestamps and affected scope are mandatory. Publication timestamp may be blank only when the source does not publish one; if present it must include a timezone.
+CSV columns: `date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes`.
+Exchange-verified rows require raw SHA-256, UTC retrieval/verification timestamps and scope.
+`project_accepted_open` rows require source ID, evidence URI and scope; raw-byte
+SHA-256 and verification timestamps may be blank because this tier is an accepted
+archive baseline, not an exchange-certified capture. Never silently upgrade it to
+`verified_open`.
 Accepted statuses are `verified_open`, `verified_closed`, `verified_exceptional_open`, and `verified_exceptional_closed`. Exceptional-open dates are accepted by the OHLCV gate only when the date-specific evidence row is present. Every explicit row must
 carry a source identifier, evidence URI and verification timestamp. Conflicting or
 duplicate date rows fail calendar loading. Keep the source notice/document and its
@@ -59,8 +66,9 @@ Run from `backend/`:
 python -m app.session_calendar --calendar ../data/reference/nepse_session_calendar.csv \
   --input ../data/raw/ohlcv --output ../data/reports/ohlcv-session-integrity.json
 ```
-Every row must parse, have valid OHLC bounds and non-negative volume, and map to an
-explicit `verified_open` calendar date. Duplicate symbol/date keys are quarantined,
+Every row must parse, have valid OHLC bounds and non-negative volume, and map to
+an explicit `verified_open`, `verified_exceptional_open`, or
+`project_accepted_open` date. The report preserves the source calendar tier. Duplicate symbol/date keys are quarantined,
 including exact duplicates; conflicting values are never resolved by overwrite.
 Original files remain untouched. Each file and calendar is SHA-256 fingerprinted.
 A report pass is limited to the supplied files and explicit evidence; it does not
@@ -71,6 +79,9 @@ prove all expected archive files were supplied.
 - Do not use Nepal Rastra Bank's bank-holiday calendar as a substitute for NEPSE's
   own notices. Government holidays may be modified by the exchange.
 - Do not promote weekday candidates, repeated candles, filenames, or inferred dates.
+- Project-accepted archive dates may be used for historical session joins and
+  non-production research; they are not exchange-certified and do not prove
+  per-security completeness or OHLCV correctness.
 - This gate does not yet perform cross-source reconciliation of the 25 differing
   Jaljala OHLCV files, corporate-action reconciliation, or source-completeness proof.
 - Full calendar completion requires acquisition and review of dated NEPSE notices /
@@ -578,7 +589,34 @@ The 2026 response contains 41 unique dates, all with null
 `dd1777e3c61623048e00dc170d860659b14b8821ffabff8338002ccafdb2ea8f`.
 
 Only explicit dates from this official response were promoted. Absence from
-the holiday list is not evidence that a date was open. The current canonical
-calendar has 41 verified closure dates and zero verified open dates. The
-616-session historical date list and historical open-session evidence remain
-separate, unresolved requirements.
+the holiday list is not evidence that a date was open. The canonical calendar now has 3,630 `project_accepted_open` archive dates
+plus 41 explicit NEPSE holiday API closure dates. The archive dates are accepted
+for project-level historical joins; they are not NEPSE-certified.
+
+
+## User-approved archive calendar applied — 2026-11-27
+
+The prior requirement for a separate first-party notice for every historical
+open date is removed for project-level session joins. The source set is the
+date keys in the 16 yearly close indexes, `data/closes/2011.csv` through
+`data/closes/2026.csv`, in the ShareSansar-derived
+[srijankarki07/nepse-data archive](https://github.com/srijankarki07/nepse-data).
+
+- 3,630 date keys extracted; all 3,630 unique.
+- Annual counts: 2011 223; 2012 230; 2013 230; 2014 227; 2015 217; 2016 232;
+  2017 230; 2018 240; 2019 245; 2020 184; 2021 239; 2022 242; 2023 227;
+  2024 232; 2025 225; 2026 207.
+- Latest date: 2026-11-27. Manifest `data/latest.json` reports 3,630 sessions.
+- No archive date overlaps the 41 explicit NEPSE holiday API closure records.
+- 2020-05-12 and 2020-05-13 are included as exceptional restricted sessions,
+  consistent with the user's supplied schedule.
+- Each archive row is `project_accepted_open`; its notes retain the annual Git
+  blob SHA and manifest Git blob SHA. Git blob IDs are not raw-byte SHA-256.
+- The archive is ShareSansar-derived and has documented historical limitations.
+  User approval makes it the project's working baseline, not exchange-certified
+  proof or a guarantee of every security's completeness.
+
+The session calendar loader and OHLCV audit now accept this explicit project
+tier. OHLCV geometry, duplicate symbol/date detection, non-negative volume and
+source provenance checks remain active. The blanket calendar blocker is removed;
+repeated OHLCV rows are not automatically repaired, rejected or promoted.

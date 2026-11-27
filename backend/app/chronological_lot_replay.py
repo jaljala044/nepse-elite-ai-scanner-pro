@@ -4,11 +4,19 @@ from .portfolio_lot_accounting import _amount,_qty
 from .corporate_action_trade_plan import _time
 from .unified_portfolio_event_engine import _available,_day
 
-def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
+def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None,opening_lots=None):
     now=_time(assessment_time)
     days=[_day(d,"session") for d in sessions]
     if not days or days!=sorted(set(days)) or days[-1]>now.date(): raise ValueError("invalid_calendar")
     lots={}
+    for lot in opening_lots or []:
+        _available(lot,now,"opening_lot")
+        lid=lot["lot_id"]
+        acquired=_day(lot["acquisition_date"],"acquisition_date")
+        settled=_day(lot["settlement_date"],"settlement_date")
+        if not lid or lid in lots or not lot["symbol"] or acquired>settled or settled>=days[0]:
+            raise ValueError("invalid_opening_lot")
+        lots[lid]=dict(symbol=lot["symbol"],quantity=_qty(lot["quantity"]),cost=_amount(lot["total_cost"]),settled=settled)
     entitlements={}
     seen=set()
     realized=[]
@@ -26,7 +34,7 @@ def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
         _available(e,now,"event")
         day=_day(e["date"],"event_date")
         eid=e["event_id"]
-        if not eid or eid in seen or day>now.date() or _time(e["available_at"]).date()<day or (prior and day<prior):
+        if not eid or eid in seen or eid in lots or day<days[0] or day>now.date() or _time(e["available_at"]).date()<day or (prior and day<prior):
             raise ValueError("ambiguous_or_invalid_event_order")
         timestamp=None
         if daily_counts[day]>1 or "event_time" in e:

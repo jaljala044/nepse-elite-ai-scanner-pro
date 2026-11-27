@@ -33,6 +33,9 @@ def clean_report(batch_id):
             "coverage_ratio": "1", "batch_id": batch_id,
             "available_at": "2026-11-26T09:01:00+05:45",
             "status": "descriptive_only",
+            "raw_capture_sha256": "RAW_CAPTURE_PLACEHOLDER",
+            "raw_record_sha256": "b" * 64,
+            "raw_record_locator": "csv:row:2",
         }],
     )
 
@@ -134,6 +137,7 @@ class BrokerRawCaptureTests(unittest.TestCase):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]
         report = clean_report(batch)
+        report.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
         report.quarantined.append({"row_index": 0, "reasons": ["invalid"]})
         with self.assertRaises(CaptureRejected):
             self.registry.record_dry_run(batch, report)
@@ -144,6 +148,7 @@ class BrokerRawCaptureTests(unittest.TestCase):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]
         report = clean_report(batch)
+        report.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
         digest = self.registry.record_dry_run(batch, report)
         self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
         history = BrokerDailyHistoryStore(self.root / "daily.duckdb")
@@ -156,6 +161,8 @@ class BrokerRawCaptureTests(unittest.TestCase):
             as_of_date="2026-11-25",
             as_of_timestamp="2026-11-27T00:00:00+05:45")
         self.assertEqual(stored_rows[0]["raw_capture_sha256"], manifest.raw_sha256)
+        self.assertEqual(stored_rows[0]["raw_record_sha256"], "b" * 64)
+        self.assertEqual(stored_rows[0]["raw_record_locator"], "csv:row:2")
         self.assertEqual(stored_rows[0]["raw_capture_batch_id"], manifest.capture_id)
         self.assertEqual(stored_rows[0]["raw_capture_captured_at"], "2026-11-26 03:15:00+00")
         self.assertEqual(stored_rows[0]["raw_capture_available_at"], "2026-11-26 03:16:00+00")
@@ -171,9 +178,11 @@ class BrokerRawCaptureTests(unittest.TestCase):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]
         report = clean_report(batch)
+        report.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
         digest = self.registry.record_dry_run(batch, report)
         self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
         changed = clean_report(batch)
+        changed.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
         changed.accepted[0]["amount"] = "999"
         history = BrokerDailyHistoryStore(self.root / "daily.duckdb")
         with self.assertRaises(CaptureRejected):
@@ -185,6 +194,7 @@ class BrokerRawCaptureTests(unittest.TestCase):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]
         report = clean_report(batch)
+        report.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
         digest = self.registry.record_dry_run(batch, report)
         self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
         late_coverage = coverage_manifest()

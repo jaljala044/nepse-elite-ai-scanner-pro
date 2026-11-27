@@ -36,3 +36,29 @@ class ReceiptBalanceLedger:
     def balances(self,portfolio_id):
         with closing(sqlite3.connect(self.path)) as db:
             return dict(db.execute("SELECT asset,amount FROM receipt_balance_totals WHERE portfolio=?",(portfolio_id,)).fetchall())
+
+    def reconcile(self,portfolio_id,assessment_time):
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("BEGIN")
+            rows=db.execute("SELECT action,digest,payload FROM receipt_balance_events WHERE portfolio=?",(portfolio_id,)).fetchall()
+            actual=dict(db.execute("SELECT asset,amount FROM receipt_balance_totals WHERE portfolio=?",(portfolio_id,)).fetchall())
+        expected={}
+        for action,digest,payload in rows:
+            if hashlib.sha256(payload.encode()).hexdigest()!=digest:
+                raise ValueError("receipt_payload_hash_mismatch")
+            data=json.loads(payload)
+            if data["entitlement"]["action_id"]!=action:
+                raise ValueError("receipt_action_key_mismatch")
+            result=review_pending_assets(entitlements=[data["entitlement"]],confirmations=[data["confirmation"]],assessment_time=assessment_time)
+            changes={"cash:NPR":result["confirmed_cash_receipt_delta"]}
+            changes.update({"shares:"+s:q for s,q in result["confirmed_share_credit_delta"].items()})
+            for asset,delta in changes.items():
+                expected[asset]=expected.get(asset,Decimal(0))+Decimal(str(delta))
+        differences={}
+        for asset in sorted(set(expected)|set(actual)):
+            want=expected.get(asset,Decimal(0))
+            have=Decimal(actual.get(asset,"0"))
+            if asset not in expected or asset not in actual or want!=have:
+                differences[asset]={"expected":str(want),"actual":str(have)}
+        return dict(reconciled=not differences,event_count=len(rows),differences=differences,
+            production_eligible=False)

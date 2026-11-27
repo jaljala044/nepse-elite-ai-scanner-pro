@@ -124,7 +124,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
             return _insufficient(broker_code, symbol, "broker_horizon_incomplete", [horizon])
         coverage = window.get("coded_amount_coverage_pct")
         if not _finite_numeric(coverage) or coverage < 80 or coverage > 100:
-            return _insufficient(broker_code, symbol, "broker_execution_code_coverage_below_80_pct", [horizon])
+            return _insufficient(broker_code, symbol, "broker_execution_code_coverage_out_of_range", [horizon])
         profile = _find_channel(window, broker_code)
         if profile is None:
             return _insufficient(broker_code, symbol, "execution_channel_not_observed", [horizon])

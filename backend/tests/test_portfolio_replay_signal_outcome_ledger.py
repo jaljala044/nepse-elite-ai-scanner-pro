@@ -35,7 +35,9 @@ class SignalLedgerTests(unittest.TestCase):
             {"signal_id":"B","symbol":"BBB","strategy_id":"trend_momentum","horizon":"swing","decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"b"*64,"action":"NO_TRADE"},
             {"signal_id":"C","symbol":"CCC","strategy_id":"idpat_smart_money","horizon":"t_plus_2","decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"c"*64,"action":"RESEARCH_BUY_FOR_HUMAN_REVIEW"}]
         replay=[{"trades":[{"source_signal_id":"A","exit_reason":"target","entry_date":"2026-01-02","exit_date":"2026-01-04",
-            "net_return_pct":"4.5","max_favorable_excursion_pct":"7","max_adverse_excursion_pct":"-1.2","holding_sessions":3,\n            "symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing","decision_time":"2026-01-02T00:00:00+00:00",\n            "feature_snapshot_sha256":"a"*64,"replay_policy_sha256":"d"*64}],
+            "net_return_pct":"4.5","max_favorable_excursion_pct":"7","max_adverse_excursion_pct":"-1.2","holding_sessions":3,
+            "symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing","decision_time":"2026-01-02T00:00:00+00:00",
+            "feature_snapshot_sha256":"a"*64,"replay_policy_sha256":"d"*64}],
             "pending_exits":[{"source_signal_id":"C"}]}]
         out=build_signal_outcome_ledger(signals=signals,replay_results=replay)
         self.assertEqual(out["signal_event_count"],3)

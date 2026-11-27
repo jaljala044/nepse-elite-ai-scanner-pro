@@ -295,7 +295,7 @@ class BrokerRawCaptureRegistry:
                 [batch_id]).fetchone()
         if not row:
             raise CaptureRejected("unknown_batch")
-        if row[0] != "approved" or not row[2]:
+        if row[0] not in {"approved", "admitted"} or not row[2]:
             raise CaptureRejected("explicit_operator_approval_required")
         if report.batch_id != batch_id or row[1] != report_hash:
             raise CaptureRejected("approved_reconciliation_report_mismatch")

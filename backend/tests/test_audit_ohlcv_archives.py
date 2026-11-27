@@ -15,7 +15,8 @@ class AuditOhlcvCsvTests(unittest.TestCase):
         self.assertEqual(result["unique_dates"], 2)
         self.assertEqual(result["invalid_rows"], [])
         self.assertEqual(result["repeated_adjacent_calendar_rows"], 1)
-        self.assertEqual(result["observations"]["2024-01-02"][0]["volume"], "100")\n        self.assertEqual(result["observations"]["2024-01-02"][0]["source_csv_line"], 2)
+        self.assertEqual(result["observations"]["2024-01-02"][0]["volume"], "100")
+        self.assertEqual(result["observations"]["2024-01-02"][0]["source_csv_line"], 2)
 
     def test_duplicate_date_and_out_of_order_are_detected(self):
         content = (

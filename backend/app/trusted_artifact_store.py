@@ -8,7 +8,10 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
+import errno
 import json
+import os
+import stat
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
@@ -40,28 +43,74 @@ def _timestamp(value: Any, field: str) -> datetime:
         raise TrustedArtifactError(f"{field}_must_be_timezone_aware") from None
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise TrustedArtifactError(f"{field}_must_be_timezone_aware")
-    return parsed.astimezone(timezone.utc)
+    returndef _read_payload_bytes(root: Path, relative: Any) -> bytes:
+    """Open a payload beneath root without following replaceable path symlinks.
 
-
-def _safe_payload_path(root: Path, relative: Any) -> Path:
+    Each component is opened relative to an already-open directory descriptor.
+    The final digest is therefore computed from the same file descriptor that
+    was checked as a regular file, not by reopening a previously checked path.
+    """
     if not isinstance(relative, str) or not relative.strip():
         raise TrustedArtifactError("payload_path_missing")
-    posix = PurePosixPath(relative)
-    if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+    if "\x00" in relative:
         raise TrustedArtifactError("payload_path_unsafe")
-    root_resolved = root.resolve()
-    candidate = root_resolved / posix.as_posix()
-    # Reject symlinks in every path component, including a final payload
-    # symlink that resolves back inside the store. A hash-pinned registry
-    # should name immutable regular files, not aliases that can be retargeted.
-    current = root_resolved
-    for part in posix.parts:
-        current = current / part
-        if current.is_symlink():
-            raise TrustedArtifactError("payload_path_symlink_not_allowed")
-    path = candidate.resolve()
-    if path != root_resolved and root_resolved not in path.parents:
-        raise TrustedArtifactError("payload_path_escapes_store")
+    posix = PurePosixPath(relative)
+    if posix.is_absolute() or ".." in posix.parts or "\\" in relative or not posix.parts:
+        raise TrustedArtifactError("payload_path_unsafe")
+
+    # Fail closed on platforms that cannot perform descriptor-relative,
+    # no-follow opens. The deployment target is Linux; silently falling back
+    # to Path.read_bytes() would reintroduce the TOCTOU vulnerability.
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    directory = getattr(os, "O_DIRECTORY", None)
+    if nofollow is None or directory is None or os.open not in getattr(os, "supports_dir_fd", set()):
+        raise TrustedArtifactError("secure_payload_open_unsupported")
+
+    cloexec = getattr(os, "O_CLOEXEC", 0)
+    directory_flags = os.O_RDONLY | directory | nofollow | cloexec
+    file_flags = os.O_RDONLY | nofollow | cloexec | getattr(os, "O_NONBLOCK", 0)
+
+    try:
+        root_path = root.resolve(strict=True)
+        root_fd = os.open(root_path, directory_flags)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise TrustedArtifactError("payload_root_unavailable") from exc
+
+    directory_fds = [root_fd]
+    file_fd = None
+    try:
+        current_fd = root_fd
+        for part in posix.parts[:-1]:
+            try:
+                current_fd = os.open(part, directory_flags, dir_fd=current_fd)
+            except OSError as exc:
+                if exc.errno == errno.ELOOP:
+                    raise TrustedArtifactError("payload_path_symlink_not_allowed") from exc
+                if exc.errno == errno.ENOTDIR:
+                    raise TrustedArtifactError("payload_path_component_not_directory") from exc
+                raise TrustedArtifactError("payload_path_unavailable") from exc
+            directory_fds.append(current_fd)
+
+        try:
+            file_fd = os.open(posix.parts[-1], file_flags, dir_fd=current_fd)
+        except OSError as exc:
+            if exc.errno == errno.ELOOP:
+                raise TrustedArtifactError("payload_path_symlink_not_allowed") from exc
+            if exc.errno == errno.ENOTDIR:
+                raise TrustedArtifactError("payload_not_regular_file") from exc
+            raise TrustedArtifactError("payload_path_unavailable") from exc
+
+        if not stat.S_ISREG(os.fstat(file_fd).st_mode):
+            raise TrustedArtifactError("payload_not_regular_file")
+        with os.fdopen(file_fd, "rb") as stream:
+            file_fd = None
+            return stream.read()
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+        for descriptor in reversed(directory_fds):
+            os.close(descriptor)
+th_escapes_store")
     return path
 
 
@@ -130,8 +179,7 @@ class TrustedArtifactStore:
                 available_at = _timestamp(entry.get("available_at"), "available_at")
                 if available_at > cutoff:
                     raise TrustedArtifactError("artifact_available_after_decision_time")
-                payload_path = _safe_payload_path(self.root, entry.get("payload_path"))
-                raw = payload_path.read_bytes()
+                raw = _read_payload_bytes(self.root, entry.get("payload_path"))
                 expected_hash = entry.get("payload_sha256")
                 actual_hash = sha256(raw).hexdigest()
                 if (not isinstance(expected_hash, str) or len(expected_hash) != 64

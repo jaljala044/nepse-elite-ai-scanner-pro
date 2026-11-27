@@ -11,3 +11,6 @@ Context keys use canonical UTC decision timestamps and contain gates, verified l
 
 ## Limitations
 No real NEPSE historical panel is bundled. No validated backtest performance is claimed. Portfolio concurrency, partial fills, circuit queues, market impact and settlement-aware portfolio replay remain future work. A research BUY is not production-enabled.
+
+## Integration sequence contract
+The feature snapshot stores IDPAT output under `idpat_features` for each symbol. Historical signal contexts must use canonical UTC decision-time keys of the form `timestamp|SYMBOL|strategy_id|horizon`. Gate evidence and level provenance are independently checked against that decision cutoff. Signal logs preserve NO_TRADE outcomes as well as research BUY candidates so later replay can measure false positives and missed moves without survivorship filtering.

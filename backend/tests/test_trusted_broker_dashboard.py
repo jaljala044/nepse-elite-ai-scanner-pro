@@ -128,6 +128,59 @@ class TrustedBrokerDashboardTests(unittest.TestCase):
         self.assertEqual(result["status"], "descriptive_only")
         self.assertEqual(len(result["trusted_inputs"]), 5)
 
+    def test_deployment_registry_must_resolve_inside_private_artifact_root(self):
+        import os
+        from unittest.mock import patch
+        from app.trusted_artifact_store import TrustedArtifactError
+        from app.trusted_broker_dashboard import load_deployment_broker_dashboard
+
+        with tempfile.TemporaryDirectory() as outside:
+            outside_registry = Path(outside) / "registry.json"
+            outside_registry.write_text(json.dumps(self.registry), encoding="utf-8")
+            settings = {
+                "NEPSE_TRUSTED_ARTIFACT_ROOT": str(self.root),
+                "NEPSE_TRUSTED_ARTIFACT_REGISTRY_PATH": str(outside_registry),
+                "NEPSE_TRUSTED_ARTIFACT_MAX_AGE_DAYS": "7",
+            }
+            with patch.dict(os.environ, settings, clear=True):
+                with self.assertRaisesRegex(
+                    TrustedArtifactError,
+                    "trusted_broker_registry_path_escapes_store",
+                ):
+                    load_deployment_broker_dashboard(
+                        decision_date="2026-11-26",
+                        decision_time="2026-11-26T12:00:00+05:45",
+                    )
+
+    def test_registry_symlink_cannot_escape_private_artifact_root(self):
+        import os
+        from unittest.mock import patch
+        from app.trusted_artifact_store import TrustedArtifactError
+        from app.trusted_broker_dashboard import load_deployment_broker_dashboard
+
+        with tempfile.TemporaryDirectory() as outside:
+            outside_registry = Path(outside) / "registry.json"
+            outside_registry.write_text(json.dumps(self.registry), encoding="utf-8")
+            link = self.root / "registry-link.json"
+            try:
+                link.symlink_to(outside_registry)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlink creation is unavailable")
+            settings = {
+                "NEPSE_TRUSTED_ARTIFACT_ROOT": str(self.root),
+                "NEPSE_TRUSTED_ARTIFACT_REGISTRY_PATH": str(link),
+                "NEPSE_TRUSTED_ARTIFACT_MAX_AGE_DAYS": "7",
+            }
+            with patch.dict(os.environ, settings, clear=True):
+                with self.assertRaisesRegex(
+                    TrustedArtifactError,
+                    "trusted_broker_registry_path_escapes_store",
+                ):
+                    load_deployment_broker_dashboard(
+                        decision_date="2026-11-26",
+                        decision_time="2026-11-26T12:00:00+05:45",
+                    )
+
     def test_payload_hash_mismatch_withholds_dashboard(self):
         entry = dict(self.registry["broker_profiles"], payload_sha256="0" * 64)
         registry = dict(self.registry, broker_profiles=entry)

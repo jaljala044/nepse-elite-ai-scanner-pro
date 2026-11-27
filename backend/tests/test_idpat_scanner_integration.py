@@ -37,7 +37,7 @@ def gates():
 
 def risk_inputs():
     return {"symbol": "TEST", "entry": "100", "stop": "95",
-            "targets": {"T1": "110", "T2": "115"},
+            "targets": {"T1": "112", "T2": "115"},
             "capital": "100000", "risk_pct": "1"}
 
 

@@ -4,15 +4,24 @@ from .chronological_lot_replay import replay_lot_events
 from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
 from .corporate_action_trade_plan import _time
 
-def reconcile_chronological_ledger(*,ledger_inputs,events):
-    if ledger_inputs.get("initial_holdings"):
+def reconcile_chronological_ledger(*,ledger_inputs,events,opening_lots=None):
+    opening={}
+    for lot in opening_lots or []:
+        q,c=opening.get(lot["symbol"],(Decimal(0),Decimal(0)))
+        opening[lot["symbol"]]=(q+Decimal(str(lot["quantity"])),c+Decimal(str(lot["total_cost"])))
+    holdings=ledger_inputs.get("initial_holdings") or {}
+    if set(opening)!=set(holdings):
         raise ValueError("opening_lot_reconciliation_required")
+    for symbol,(q,c) in opening.items():
+        h=holdings[symbol]
+        if q!=Decimal(str(h["quantity"])) or abs(c-q*Decimal(str(h["average_cost"])))>Decimal("0.0000001"):
+            raise ValueError("opening_lot_balance_mismatch:"+symbol)
     now=ledger_inputs["evidence_cutoff"]
     if _time(now).date().isoformat()!=ledger_inputs["as_of_date"]:
         raise ValueError("assessment_date_mismatch")
     unified=run_unified_portfolio_event_ledger(**ledger_inputs)
     chronological=replay_lot_events(events=events,sessions=ledger_inputs["portfolio_sessions"],
-        assessment_time=now,initial_cash=ledger_inputs["initial_cash"])
+        assessment_time=now,initial_cash=ledger_inputs["initial_cash"],opening_lots=opening_lots)
     differences={}
     def compare(key,left,right):
         if abs(Decimal(str(left))-Decimal(str(right)))>Decimal("0.0000001"):

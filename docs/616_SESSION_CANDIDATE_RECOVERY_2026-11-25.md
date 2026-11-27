@@ -134,3 +134,29 @@ A fresh Actions run for the latest workflow commit has not yet been returned
 by the GitHub workflow-run query. The implementation is committed, but the
 616-file byte/hash reconciliation is **not yet verified**. No candidate has
 been promoted and the canonical calendar remains unchanged.
+
+
+
+## Official-source cross-check refresh — 2026-11-27
+
+A deterministic, date-by-date cross-check was generated for all 616 candidate rows against the captured official NEPSE holiday API records (2024–2026) and the captured official NEPSE market-summary-history response (2025-11-27 through 2026-11-27).
+
+Machine-readable outputs:
+- `data/evidence/candidates/nepse-616-official-source-crosscheck-2026-11-27.csv` — one row for each of the 616 candidate dates, preserving the candidate status and recording official holiday API match, official market-summary match, endpoint coverage window, and secondary index-file status.
+- `data/reports/nepse-616-official-source-crosscheck-2026-11-27.json` — source blob references, counts, decision and limitations.
+
+Results:
+- 616 candidate rows; 616 unique dates; same 2024-03-04 to 2026-11-20 range.
+- By year: 2024 = 189, 2025 = 225, 2026 = 202.
+- Official holiday API: 124 records / 124 unique dates across the captured 2024–2026 annual responses; zero candidate-date overlaps.
+- Official market-summary-history: 229 records spanning 2025-11-27 to 2026-11-27. All **224** candidate dates falling inside that endpoint coverage window have a corresponding official market-summary record; zero missing candidate dates within that window.
+- The other **392** candidates precede the endpoint's captured coverage start and therefore remain untested by this endpoint response. Five endpoint response dates (2026-11-23 through 2026-11-27) fall after the candidate cutoff and are correctly outside the candidate list.
+- Secondary index-file cross-check: 614/616 candidate dates have a file; the two missing files remain 2025-04-03 and 2026-11-20.
+
+Interpretation:
+- This is a strong positive reconciliation for the 224 overlapping dates: the official NEPSE endpoint contains aggregate activity records for each. It does not prove complete all-security session scope, instrument-level completeness, or exact identity with the original 616-date preprocessing calendar.
+- Zero overlap with the holiday API is a useful contradiction check, not proof of open sessions. The API's null scope/status fields and absence semantics prevent treating an unlisted date as open.
+- The 392 candidates before 2025-11-27 remain outside the market-summary endpoint's captured coverage. The two missing secondary index files remain unresolved by that cross-check.
+- **No candidate was promoted.** All 616 dates remain `candidate_unverified`; canonical verified-open count remains unchanged. The 196,784 repeated-OHLCV candidates remain quarantined/review-only.
+
+Next execution step: acquire earlier official NEPSE market-summary/index observations or another exchange-origin date-level source for 2024-03-04 through 2025-11-26, and recover the original 616-date extraction input identity. Continue primary notice acquisition for the April 2026 weekday transition and the 2022 schedule PDF's raw bytes/hash.

@@ -8,7 +8,7 @@ class EvidenceAlignmentTests(unittest.TestCase):
         return dict(sessions=days,assessment_time="2025-01-05T20:00:00+00:00",as_of_date=days[-1],
             calendar_evidence=dict(evidence,sessions=days),
             decisions=[dict(decision_id="D",decision_time="2025-01-05T11:00:00+05:45",
-                evidence=[dict(evidence,observed_at="2025-01-05T08:00:00+05:45")])])
+                evidence=[dict(evidence,category=c,observed_at="2025-01-05T08:00:00+05:45") for c in ("broker","corporate_action")])])
     def test_nepal_local_date(self):
         self.assertTrue(review_evidence_alignment(**self.inputs())["all_decisions_passed"])
     def test_future_evidence(self):
@@ -27,4 +27,13 @@ class EvidenceAlignmentTests(unittest.TestCase):
     def test_empty_evidence(self):
         x=self.inputs()
         x["decisions"][0]["evidence"]=[]
+        self.assertFalse(review_evidence_alignment(**x)["all_decisions_passed"])
+
+    def test_late_corporate_action(self):
+        x=self.inputs()
+        x["decisions"][0]["evidence"][1]["available_at"]="2025-01-05T12:00:00+05:45"
+        self.assertFalse(review_evidence_alignment(**x)["all_decisions_passed"])
+    def test_missing_broker_timestamp(self):
+        x=self.inputs()
+        del x["decisions"][0]["evidence"][0]["available_at"]
         self.assertFalse(review_evidence_alignment(**x)["all_decisions_passed"])

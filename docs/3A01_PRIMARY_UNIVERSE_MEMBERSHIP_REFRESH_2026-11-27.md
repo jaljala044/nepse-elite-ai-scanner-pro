@@ -54,6 +54,20 @@ Relevant repository evidence:
 
 Lifecycle coverage is still materially incomplete: the P4.25 audit records 44/281 lifecycle start dates, all secondary, 237 undated and zero primary dated starts. The later crosswalk report documents nine secondary first-trade/archive matches and 272 unknown starts. Neither count establishes exchange-authenticated effective dates.
 
+
+### 4. Additional current secondary catalogue cross-checks
+
+Two further public secondary pages were indexed on 2026-11-27:
+
+- HamroShare's NEPSE listings page describes **955 securities across 15 sectors**, with **560 marked Active**. It presents a broader all-securities count than NepseAlpha's 652-entry listed-company table, but the retrieved preview does not establish a complete raw export, exact instrument taxonomy, exchange authentication, or effective-dated lifecycle. Treat 955/560 as a provider-specific discrepancy signal only.
+- NEPSEDATA's listed-companies page carries a **2026-11-26** snapshot label and displays market snapshot fields (close, point/percentage change, market cap, turnover and volume). This is useful for current quote cross-checking, not proof of the complete listed-security registry or inactive/suspended lifecycle.
+
+The 652 (NepseAlpha), 955/560 (HamroShare) and 573-row project security snapshot are not directly comparable without each provider's full raw rows, instrument taxonomy, inclusion rules and as-of semantics. Their count differences must not be converted into inferred additions, removals or active-equity totals.
+
+Sources:
+- https://hamroshare.com.np/nepse/stocks
+- https://nepsedata.com/stock/companies/
+
 ## Evidence comparison
 
 | Source | Latest explicit observation | Scope stated by source | Membership authority for 2026-11-27 |
@@ -61,7 +75,7 @@ Lifecycle coverage is still materially incomplete: the P4.25 audit records 44/28
 | NEPSE `/stocklist` | 2026-10-15 15:00 | Official public stocklist / quote display | Official but stale; insufficient for current certification |
 | NEPSE `/en/catalogue` | 2026-09-24 15:00 | Official public catalogue / quote display | Older; insufficient |
 | NepseAlpha `/traded-stocks` | Indexed 2026-11-27 | Only actively traded stocks | Secondary and narrower than complete listed-equity universe |
-| Project 2026-11-25 security snapshot | 2026-11-25 | 573-row mixed-instrument current catalogue snapshot | Secondary current-snapshot crosswalk; not an authenticated primary registry |
+| Project 2026-11-25 security snapshot | 2026-11-25 | 573-row mixed-instrument current catalogue snapshot | Secondary current-snapshot crosswalk; not an authenticated primary registry |\n| HamroShare listings | Indexed 2026-11-27 | 955 securities; 560 marked Active | Secondary provider-specific count; raw taxonomy/lifecycle not verified |\n| NEPSEDATA listed companies | 2026-11-26 snapshot label | Current market snapshot fields | Quote cross-check only; not a complete lifecycle registry |
 | Project 2026-11-26 equity candidate manifest | 2026-11-26 | 281 equity candidates from NepseAlpha | Working candidate universe only |
 
 ## Decision and scanner impact
@@ -81,4 +95,4 @@ Acquire a fresh primary-source security master from NEPSE (or an authenticated N
 
 - NEPSE stocklist: https://www.nepalstock.com.np/stocklist
 - NEPSE catalogue: https://www.nepalstock.com.np/en/catalogue
-- NepseAlpha actively traded list: https://www.nepsealpha.com/traded-stocks
+- NepseAlpha actively traded/listed securities: https://www.nepsealpha.com/traded-stocks\n- HamroShare listings: https://hamroshare.com.np/nepse/stocks\n- NEPSEDATA listed companies: https://nepsedata.com/stock/companies/

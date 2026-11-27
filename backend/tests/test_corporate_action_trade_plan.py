@@ -33,3 +33,36 @@ class CorporateActionTradePlanTests(unittest.TestCase):
     def test_fractional_entitlement(self):
         with self.assertRaisesRegex(ValueError,"fractional_entitlement"):
             self.run_plan(quantity=101)
+
+    def cash_plan(self, **overrides):
+        from app.corporate_action_trade_plan import rebase_cash_action_plan
+        args = dict(signal=self.signal, action=dict(self.action,action_type="rights",
+                    ratio="0.5",subscription_price="100"), quantity=100,
+                    cost_basis=40000, available_cash=5000, subscribed_quantity=50,
+                    reference=dict(symbol="AAA",status="verified",source_id="synthetic-close",
+                        close=400, observed_at="2025-01-02T15:00:00+05:45",
+                        available_at="2025-01-02T16:00:00+05:45"),
+                    adjustment_time="2025-01-03T15:00:00+05:45")
+        args.update(overrides)
+        return rebase_cash_action_plan(**args)
+    def test_rights_terp(self):
+        result = self.cash_plan()
+        self.assertEqual(float(result["theoretical_ex_price"]),300)
+        self.assertEqual(result["theoretical_quantity"],150)
+        self.assertEqual(float(result["subscription_cash"]),5000)
+        self.assertEqual(float(result["theoretical_cost_basis"]),45000)
+        self.assertEqual(float(result["cash_after_subscription"]),0)
+        self.assertEqual(result["reward_risk"],["2","3","4"])
+    def test_insufficient_funding(self):
+        with self.assertRaisesRegex(ValueError,"insufficient_subscription_cash"):
+            self.cash_plan(available_cash=4999)
+    def test_excess_entitlement(self):
+        with self.assertRaisesRegex(ValueError,"subscription_exceeds"):
+            self.cash_plan(subscribed_quantity=51)
+    def test_dividend_receivable_not_cash(self):
+        result = self.cash_plan(action=dict(self.action,action_type="cash_dividend",
+                                cash_per_share=10),subscribed_quantity=0)
+        self.assertEqual(float(result["theoretical_ex_price"]),390)
+        self.assertEqual(float(result["gross_dividend_receivable"]),1000)
+        self.assertEqual(float(result["cash_after_subscription"]),5000)
+        self.assertEqual(result["theoretical_quantity"],100)

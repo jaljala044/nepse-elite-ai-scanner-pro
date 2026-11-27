@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 from app.broker_behavior_memory import build_broker_behavior_memory
 from app.broker_ingestion import IngestionReport
+from app.quarantine_guard import is_quarantined
 from app.broker_memory_store import BrokerMemoryStore
 
 class PromotionRejected(ValueError):
@@ -17,7 +18,11 @@ def promote_validated_batch(report: IngestionReport, store: BrokerMemoryStore, *
     if not isinstance(as_of_date, str) or len(as_of_date) != 10:
         raise PromotionRejected("as_of_date must be ISO YYYY-MM-DD")
     observations, availabilities, batch_ids = [], [], set()
+    if report.conflicts:
+        raise PromotionRejected("batch contains conflicts")
     for row in report.accepted:
+        if is_quarantined(row):
+            raise PromotionRejected("quarantined accepted row")
         if row.get("status") != "descriptive_only":
             raise PromotionRejected("non-descriptive row in accepted batch")
         available_at = row.get("available_at")

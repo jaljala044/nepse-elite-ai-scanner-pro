@@ -147,16 +147,17 @@ def run_unified_portfolio_risk(*, execution_runs, daily_marks, market_controls,
                 known_values[held]=Decimal(position["quantity"])*mark_price
             if known_values is None:
                 rejected.append({"execution_id":item["execution_id"],"reason":"held_position_mark_unavailable_at_execution"}); continue
+            equity=cash+sum(known_values.values(),Decimal("0"))
             new_value=known_values.get(symbol,Decimal("0"))+notional
-            gross=sum(known_values.values(),Decimal("0"))+(notional if symbol not in known_values else Decimal("0"))
+            gross=sum(known_values.values(),Decimal("0"))+notional
             if symbol not in positions and len(positions)>=max_open_symbols:
                 rejected.append({"execution_id":item["execution_id"],"reason":"max_open_symbols_exceeded"}); continue
-            if gross/cash*100>gross_cap:
+            if equity<=0 or gross/equity*100>gross_cap:
                 rejected.append({"execution_id":item["execution_id"],"reason":"gross_exposure_limit_exceeded"}); continue
-            if new_value/cash*100>symbol_cap:
+            if new_value/equity*100>symbol_cap:
                 rejected.append({"execution_id":item["execution_id"],"reason":"symbol_exposure_limit_exceeded"}); continue
             sector_value=sum((value for held,value in known_values.items() if positions[held]["sector"]==sector),Decimal("0"))+notional
-            if sector_value/cash*100>sector_cap:
+            if sector_value/equity*100>sector_cap:
                 rejected.append({"execution_id":item["execution_id"],"reason":"sector_exposure_limit_exceeded"}); continue
             cash-=notional+fee
             current["quantity"]+=qty; current["sector"]=sector

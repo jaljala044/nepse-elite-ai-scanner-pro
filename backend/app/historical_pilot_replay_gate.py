@@ -48,7 +48,7 @@ def build_pilot_replay_preflight(
         capture_reports=capture_reports if isinstance(capture_reports, Mapping) else {},
         first_trade_report=first_trade if isinstance(first_trade, Mapping) else {},
         panel_readiness_report=panel.get("readiness_report", {}),
-        required_capture_ids=list(required_capture_keys),
+        required_capture_keys=list(required_capture_keys),
     )
     canonical_rows = sorted(panel.get("panel_rows", []), key=lambda x: (x["symbol"], x["session_date"]))
     panel_output_payload = {"panel_rows": canonical_rows}

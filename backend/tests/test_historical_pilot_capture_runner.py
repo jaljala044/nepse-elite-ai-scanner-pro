@@ -1,5 +1,7 @@
 import unittest
 from app.historical_pilot_capture_runner import capture_registered_source_pages
+from app.historical_pilot_capture import validate_official_capture_manifest
+from app.historical_pilot_ingest import ingest_captured_ohlcv_csv
 
 
 class CaptureRunnerTests(unittest.TestCase):
@@ -23,6 +25,18 @@ class CaptureRunnerTests(unittest.TestCase):
             r=self.response(b"data",False,1); r["available_at"]="2025-02-03T00:00:00+05:45"; return r
         out=capture_registered_source_pages(source_spec=self.spec(),fetch_page=fetch,captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
         self.assertEqual(out["status"],"CAPTURE_INCOMPLETE")
+    def test_capture_manifest_passes_validator_and_ingestion(self):
+        raw=b"ticker,date,o,h,l,c,qty\\nAAA,2025-01-02,10,12,9,11,100\\n"
+        def fetch(url):
+            return {"status_code":200,"final_url":url,"content_type":"text/csv","body":raw,"has_more":False,"available_at":"2025-02-01T10:00:00+05:45"}
+        spec=self.spec()
+        out=capture_registered_source_pages(source_spec=spec,fetch_page=fetch,captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
+        registry=[{"source_id":"SRC","publisher_id":"PUB","review_status":"approved","allowed_hosts":["data.example.test"]}]
+        report=validate_official_capture_manifest(out["manifest"],out["payloads"],approved_registry=registry,decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(report["status"],"CAPTURE_VALIDATED")
+        ingested=ingest_captured_ohlcv_csv(capture_report=report,manifest=out["manifest"],payloads=out["payloads"],column_map={"symbol":"ticker","session_date":"date","open":"o","high":"h","low":"l","close":"c","volume":"qty"},decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(ingested["status"],"INGESTED")
+        self.assertEqual(ingested["row_count"],1)
     def test_unapproved_source_never_calls_transport(self):
         called=[]; spec=self.spec(); spec["review_status"]="pending"
         out=capture_registered_source_pages(source_spec=spec,fetch_page=lambda url:called.append(url),captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")

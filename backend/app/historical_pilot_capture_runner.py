@@ -35,7 +35,18 @@ def capture_registered_source_pages(*, source_spec: Mapping[str, object], fetch_
     content_types = set(source_spec.get("allowed_content_types",[]))
     if not content_types: raise ValueError("allowed_content_types must be explicitly registered")
     page_parameter, first_page = str(source_spec.get("page_parameter","page")), source_spec.get("first_page",1)
-    if not isinstance(first_page,int) or first_page < 1: raise ValueError("first_page must be a positive integer")
+    if first_page != 1:
+        raise ValueError("first_page must be 1 to satisfy the canonical contiguous capture manifest")
+    try:
+        window_start = _aware(source_spec.get("window_start"), "window_start")
+        window_end = _aware(source_spec.get("window_end"), "window_end")
+    except ValueError as exc:
+        raise ValueError("source_spec must include timezone-aware window_start and window_end") from exc
+    if window_end < window_start:
+        raise ValueError("capture window is inverted")
+    capture_id = str(source_spec.get("capture_id", "")).strip()
+    if not capture_id:
+        raise ValueError("capture_id must be explicitly supplied")
     payloads, pages, errors, available_values = {}, [], [], []
     terminal = False
     for offset in range(max_pages):
@@ -59,6 +70,8 @@ def capture_registered_source_pages(*, source_spec: Mapping[str, object], fetch_
             errors.append({"page_number":page_number,"reason":"page_not_available_by_decision_cutoff"}); break
         payload_id = f"{source_id}:{page_number}"
         payloads[payload_id] = body
+        if pages and content_type != pages[0]["content_type"]:
+            errors.append({"page_number":page_number,"reason":"content_type_changed_between_pages"}); payloads.pop(payload_id, None); break
         pages.append({"page_number":page_number,"payload_id":payload_id,"raw_sha256":hashlib.sha256(body).hexdigest(),"http_status":200,"content_type":content_type,"final_page":response.get("has_more") is False})
         available_values.append(available)
         if response.get("has_more") is False:
@@ -68,5 +81,5 @@ def capture_registered_source_pages(*, source_spec: Mapping[str, object], fetch_
     if not terminal and not errors: errors.append({"reason":"maximum_pages_reached_without_terminal_page"})
     manifest = None
     if pages:
-        manifest = {"source_id":source_id,"publisher_id":publisher_id,"request_url":endpoint,"captured_at":captured.isoformat(),"available_at":max(available_values).isoformat(),"window_start":str(source_spec.get("window_start","")),"window_end":str(source_spec.get("window_end","")),"capture_id":str(source_spec.get("capture_id","")),"expected_page_count":len(pages),"pages":pages,"capture_complete":terminal and not errors,"response_content_type":pages[0]["content_type"]}
+        manifest = {"source_id":source_id,"publisher_id":publisher_id,"request_url":endpoint,"captured_at":captured.isoformat(),"available_at":max(available_values).isoformat(),"window_start":window_start.isoformat(),"window_end":window_end.isoformat(),"capture_id":capture_id,"expected_page_count":len(pages),"pages":pages,"capture_complete":terminal and not errors,"response_content_type":pages[0]["content_type"]}
     return {"status":"CAPTURED_PENDING_MANIFEST_VALIDATION" if manifest and terminal and not errors else "CAPTURE_INCOMPLETE","manifest":manifest,"payloads":payloads,"errors":errors,"raw_payload_count":len(payloads),"all_pages_hashed":len(pages)==len(payloads),"capture_complete":terminal and not errors,"publisher_authenticity_proven":False,"exchange_completeness_proven":False,"backtest_admission_allowed":False,"production_enabled":False,"limitations":["Injected transport must enforce TLS validation, publisher authentication, licensing, rate limits and safe timeouts.","Manifest must still pass the approved capture validator; publisher authenticity is not cryptographically proven.","Terminal pagination is publisher-declared completeness, not independent proof of exchange-wide completeness.","Raw bytes are returned to the caller; durable immutable storage and access controls remain the caller's responsibility."]}

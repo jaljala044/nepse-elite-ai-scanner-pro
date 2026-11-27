@@ -62,7 +62,7 @@ def build_point_in_time_feature_snapshots(*, panel_rows, decision_cutoffs, bench
         available=_time(row.get("available_at"))
         if value is None or value<=0 or available is None or not row.get("source_id") or not row.get("evidence_id"):
             raise ValueError("benchmark_provenance_or_close_invalid")
-        benchmark[d]=(value,available)
+        benchmark[d]=(value,available,row)
     output=[]; errors=[]
     for sid,rows in sorted(grouped.items()):
         rows.sort(key=lambda x:x["_day"])

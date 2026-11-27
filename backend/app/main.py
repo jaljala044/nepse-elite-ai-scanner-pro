@@ -19,6 +19,7 @@ from .signal_outcome_validation import evaluate_signal_path
 from .backtest import run_walk_forward_backtest
 from .execution_backtest import simulate_execution_scenario, aggregate_execution_scenarios
 from .portfolio_backtest import run_portfolio_backtest
+from .corporate_action_benchmark import adjust_ohlcv_for_corporate_actions, compare_portfolio_to_benchmark
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -111,6 +112,15 @@ class PortfolioBacktestRequest(BaseModel):
     execution_config_by_symbol: dict[str, dict]
 
 
+class CorporateActionBenchmarkRequest(BaseModel):
+    symbol: str = Field(min_length=1, max_length=32)
+    as_of_date: date
+    evidence_cutoff: str
+    ohlcv_rows: list[dict] = Field(min_length=1)
+    corporate_actions: list[dict] = Field(default_factory=list)
+    portfolio_equity_curve: list[dict] = Field(min_length=2)
+    benchmark_symbol: str = Field(min_length=1, max_length=32)
+    benchmark_rows: list[dict] = Field(min_length=2)
 @app.get("/health")
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
@@ -529,6 +539,39 @@ def research_portfolio_backtest(request: PortfolioBacktestRequest):
         raise HTTPException(422, str(exc)) from exc
 
 
+@app.post("/v1/research/backtest/corporate-action-benchmark")
+def research_corporate_action_benchmark(request: CorporateActionBenchmarkRequest):
+    """Return point-in-time adjusted OHLCV plus exact-date benchmark comparison.
+
+    The portfolio curve must already include corporate-action share/cash effects;
+    this endpoint does not silently rewrite portfolio holdings or dividends.
+    """
+    try:
+        adjusted = adjust_ohlcv_for_corporate_actions(
+            rows=request.ohlcv_rows, actions=request.corporate_actions,
+            as_of_date=request.as_of_date.isoformat(),
+            evidence_cutoff=request.evidence_cutoff,
+        )
+        comparison = compare_portfolio_to_benchmark(
+            portfolio_curve=request.portfolio_equity_curve,
+            benchmark_rows=request.benchmark_rows,
+            as_of_date=request.as_of_date.isoformat(),
+        )
+        return {
+            "symbol": request.symbol,
+            "benchmark_symbol": request.benchmark_symbol,
+            "corporate_action_adjustment": adjusted,
+            "benchmark_comparison": {**comparison, "benchmark_symbol": request.benchmark_symbol},
+            "production_eligible": False,
+            "limitations": [
+                "Corporate-action terms and source attestations are caller supplied, not independently verified against NEPSE/CDSC.",
+                "Adjusted OHLCV is a research price-history transform, not a verified executable price series.",
+                "The supplied portfolio equity curve must already include actual modeled share and cash effects.",
+                "Benchmark comparison uses exact common dates only and does not establish alpha or strategy validity."
+            ]
+        }
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 @app.get("/v1/research/readiness")
 def research_readiness():
     """Read-only UI contract. Never exposes uploaded data or authorizes recommendations."""

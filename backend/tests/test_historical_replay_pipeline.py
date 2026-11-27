@@ -1,4 +1,4 @@
-from app.scanner_historical_replay_pipeline import build_historical_research_candidates, _valid_trade_plan
+from app.scanner_historical_replay_pipeline import build_historical_research_candidates
 
 def test_strategy_score_alone_never_becomes_a_trade():
     snapshot={"security_id":"X","symbol":"XYZ","session_date":"2025-01-01",
@@ -22,39 +22,6 @@ def test_unverified_or_missing_trade_plan_is_withheld():
     assert result["qualified_signal_count"]==0
     assert all(not batch for batch in result["signals_by_strategy_horizon"].values())
 
-
-def test_verified_trade_plan_requires_complete_provenance_and_valid_long_geometry():
-    snapshot={"session_date":"2025-01-01",
-        "decision_cutoff":"2025-01-01T18:00:00+05:45",
-        "feature_snapshot_sha256":"a"*64}
-    plan={"signal_id":"signal-1","decision_date":"2025-01-01",
-        "decision_time":"2025-01-01T18:00:00+05:45","sample_partition":"train",
-        "entry_price":"100","liquidity_quantity_cap":"100",
-        "net_reward_risk":"2.2","feature_snapshot_sha256":"a"*64,
-        "evidence_status":"verified","source_id":"plan-source",
-        "evidence_id":"plan-evidence","available_at":"2025-01-01T17:00:00+05:45",
-        "stop":{"price":"90","evidence_status":"verified","source_id":"stop-source",
-            "evidence_id":"stop-evidence","available_at":"2025-01-01T17:01:00+05:45"},
-        "target":{"price":"125","evidence_status":"verified","source_id":"target-source",
-            "evidence_id":"target-evidence","available_at":"2025-01-01T17:02:00+05:45"}}
-
-    assert _valid_trade_plan(plan,snapshot,"2025-01-01","train") is True
-
-    invalid=[]
-    invalid.append({**plan,"source_id":""})
-    invalid.append({**plan,"available_at":"2025-01-01T18:01:00+05:45"})
-    invalid.append({**plan,"entry_price":"NaN"})
-    invalid.append({**plan,"liquidity_quantity_cap":"0"})
-    invalid.append({**plan,"liquidity_quantity_cap":"10.5"})
-    invalid.append({**plan,"net_reward_risk":"Infinity"})
-    invalid.append({**plan,"stop":{**plan["stop"],"price":"100"}})
-    invalid.append({**plan,"target":{**plan["target"],"price":"100"}})
-    invalid.append({**plan,"stop":{**plan["stop"],"available_at":"2025-01-01T18:01:00+05:45"}})
-    invalid.append({**plan,"target":{**plan["target"],"evidence_id":""}})
-    invalid.append({**plan,"sample_partition":"test"})
-
-    assert all(not _valid_trade_plan(candidate,snapshot,"2025-01-01","train")
-               for candidate in invalid)
 
 def _snapshot():
     return {"security_id":"X","symbol":"XYZ","session_date":"2025-01-01",
@@ -101,6 +68,24 @@ def test_verified_plan_requires_whole_share_cap_and_consistent_reward_risk():
 
     fractional_cap=_build(_plan(liquidity_quantity_cap="1000.5"))
     assert fractional_cap["qualified_signal_count"]==0
+
+    invalid_entry=_build(_plan(entry_price="NaN"))
+    assert invalid_entry["qualified_signal_count"]==0
+
+    infinite_rr=_build(_plan(net_reward_risk="Infinity"))
+    assert infinite_rr["qualified_signal_count"]==0
+
+    late_plan=_build(_plan(available_at="2025-01-01T18:01:00+05:45"))
+    assert late_plan["qualified_signal_count"]==0
+
+    invalid_stop=_build(_plan(stop={**_plan()["stop"],"price":"100"}))
+    assert invalid_stop["qualified_signal_count"]==0
+
+    invalid_target=_build(_plan(target={**_plan()["target"],"price":"100"}))
+    assert invalid_target["qualified_signal_count"]==0
+
+    invalid_partition=_build(_plan(sample_partition="test"))
+    assert invalid_partition["qualified_signal_count"]==0
 
 
 def test_trade_plan_requires_source_bound_available_stop_and_target():

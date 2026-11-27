@@ -62,6 +62,15 @@ def replay_strategy_horizon(*, strategy_id, horizon, signals, bars_by_symbol, pa
     if isinstance(sellable_after_sessions, bool) or not isinstance(sellable_after_sessions, int) or sellable_after_sessions < 0:
         raise ValueError("sellable_after_sessions_invalid")
     if not isinstance(signals, list) or not isinstance(bars_by_symbol, dict): raise ValueError("signals_and_bars_required")
+    policy_payload = {
+        "strategy_id": strategy_id, "horizon": horizon, "partition": partition,
+        "round_trip_cost_pct": str(costs), "round_trip_slippage_pct": str(slip),
+        "sellable_after_sessions": sellable_after_sessions,
+    }
+    import hashlib, json
+    replay_policy_sha256 = hashlib.sha256(
+        json.dumps(policy_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
     trades, rejected, pending, seen = [], [], [], set()
     for signal in signals:
         if not isinstance(signal, dict) or signal.get("strategy_id") != strategy_id or signal.get("horizon") != horizon or signal.get("sample_partition") != partition: continue
@@ -123,7 +132,10 @@ def replay_strategy_horizon(*, strategy_id, horizon, signals, bars_by_symbol, pa
             "max_favorable_excursion_pct": str(max_favorable*100),
             "max_adverse_excursion_pct": str(max_adverse*100),
             "holding_sessions": exit_i-entry_i+1, "settlement_lock_sessions": sellable_after_sessions,
-            "stop_triggered_during_lock": stop_pending, "source_signal_id": signal.get("signal_id")})
+            "stop_triggered_during_lock": stop_pending, "source_signal_id": signal.get("signal_id"),
+            "decision_time": signal.get("decision_time"), "strategy_id": strategy_id, "horizon": horizon,
+            "feature_snapshot_sha256": signal.get("feature_snapshot_sha256"),
+            "replay_policy_sha256": replay_policy_sha256})
     wins = [_d(t["net_return_pct"]) for t in trades if _d(t["net_return_pct"]) > 0]
     losses = [_d(t["net_return_pct"]) for t in trades if _d(t["net_return_pct"]) < 0]
     returns = [_d(t["net_return_pct"]) for t in trades]
@@ -147,7 +159,7 @@ def replay_strategy_horizon(*, strategy_id, horizon, signals, bars_by_symbol, pa
         "stop_exit_count":sum(t["exit_reason"].startswith("stop") for t in trades),
         "time_exit_count":sum(t["exit_reason"]=="time_exit_close" for t in trades)}
     return {"schema_version":"nepse-replay-1.0.0","strategy_id":strategy_id,"horizon":horizon,
-        "partition":partition,"metrics":metrics,"trades":trades,"rejected_signals":rejected,
+        "partition":partition,"replay_policy_sha256":replay_policy_sha256,"metrics":metrics,"trades":trades,"rejected_signals":rejected,
         "pending_exits":pending,
         "assumptions":{"entry":"next available session open after signal date",
             "holding_sessions":HOLDING_SESSIONS[horizon],"round_trip_cost_pct":str(costs),

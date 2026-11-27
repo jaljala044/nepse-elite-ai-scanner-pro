@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
+from app.historical_quarantine import window_errors
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
@@ -123,19 +124,30 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         if sector_membership_contract_ok:
             sector_membership_contract_reason = None
 
+    # Entire affected symbol windows are excluded; no gap bridging.
+    for symbol, contract in price_contract_by_symbol.items():
+        group = [dict(r, date=r.get("session_date")) for r in raw_prices
+                 if str(r.get("symbol", "")).strip().upper() == symbol]
+        issues = window_errors(symbol, group, normalized_calendar if valid_calendar else None)
+        if issues or contract["exclusions"]:
+            failure = {"symbol": symbol, "reason": "whole_window_quarantined",
+                       "details": issues, "session_date": None}
+            price_contract_failures.append(failure)
+            contract["exclusions"].append(failure)
+            contract["admitted_rows"] = 0
+    prices = [r for r in prices if price_contract_by_symbol[
+        str(r.get("symbol", "")).strip().upper()]["admitted_rows"] > 0]
+
     for contract in price_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
     for contract in broker_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
 
-    # Keep raw point-in-time prices for descriptive diagnostics; the contract
-    # gate below independently controls whether each symbol's component score is admitted.
-    prices = raw_prices
 
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
-        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(raw_prices) - len(price_contract_failures),
-                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and not price_contract_failures,
+        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(prices),
+                  "excluded_rows": len(raw_prices) - len(prices), "score_eligible": bool(raw_prices) and not price_contract_failures,
                   "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
                   "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),

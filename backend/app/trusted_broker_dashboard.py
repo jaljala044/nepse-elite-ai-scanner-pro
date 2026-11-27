@@ -52,6 +52,20 @@ def build_trusted_broker_dashboard(
             "trade_actions_enabled": False,
         }
 
+    # A multi-source broker/market join is meaningful only when every
+    # admitted input describes the same exchange session and calendar.
+    as_of_dates = {artifacts[name]["as_of_date"] for name in REQUIRED_BROKER_MODULES}
+    if as_of_dates != {decision_date}:
+        raise TrustedArtifactError("trusted_artifacts_as_of_date_mismatch")
+    calendar_ids = {
+        artifacts[name]["quality_context"].get("session_calendar_id")
+        for name in REQUIRED_BROKER_MODULES
+    }
+    if len(calendar_ids) != 1 or not all(
+        isinstance(value, str) and value.strip() for value in calendar_ids
+    ):
+        raise TrustedArtifactError("trusted_artifacts_session_calendar_mismatch")
+
     broker = artifacts["broker_profiles"]
     broker_data = broker["data"]
     rolling_profiles = broker_data.get("rolling_profiles")

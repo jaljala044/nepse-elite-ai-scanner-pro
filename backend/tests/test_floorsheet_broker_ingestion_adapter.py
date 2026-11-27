@@ -51,6 +51,15 @@ class FloorsheetBrokerIngestionAdapterTests(unittest.TestCase):
         self.assertEqual({r["broker_id"] for r in result["report"].accepted},
                          {"ENTITY-BUY","ENTITY-SELL"})
 
+    def test_capture_batch_identity_and_physical_row_lineage_are_preserved(self):
+        result=setup(party_rows(2),capture_batch_id="capture-batch-123")
+        self.assertEqual(result["report"].batch_id,"capture-batch-123")
+        for row in result["report"].accepted:
+            self.assertTrue(row["raw_record_lineage"])
+            self.assertTrue(all(item["raw_record_sha256"] for item in row["raw_record_lineage"]))
+            self.assertTrue(all(item["raw_record_locator"].startswith("csv:row:")
+                                for item in row["raw_record_lineage"]))
+
     def test_unmapped_identity_stays_in_denominator_and_blocks_when_below_threshold(self):
         result=setup(party_rows(unresolved=(0,"sell")))
         self.assertFalse(result["memory_eligible"])

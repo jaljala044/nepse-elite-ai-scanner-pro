@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ConfigDict
 from .broker_context_server import server_context
+from .broker_context_metrics import concentration, sector_rotation
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
 from .structure_timeframes import evaluate_timeframes
@@ -62,6 +63,35 @@ def broker_context_research(request: BrokerContextRequest):
         raise HTTPException(503,"Server evidence unavailable") from exc
     except (ValueError,TypeError,KeyError,AttributeError) as exc:
         raise HTTPException(422,"Invalid broker context evidence") from exc
+
+class BrokerConcentrationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    rows: list[dict] = Field(max_length=1000)
+    matched_turnover: str
+
+class BrokerRotationContextRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    prior: BrokerContextRequest
+    current: BrokerContextRequest
+
+@app.post("/v1/research/broker-concentration")
+def broker_concentration_research(request: BrokerConcentrationRequest):
+    try:
+        return {**concentration(request.rows,matched_turnover=request.matched_turnover),
+                "source_authentication_performed":False,"signals_enabled":False}
+    except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
+        raise HTTPException(422,"Invalid concentration evidence") from exc
+
+@app.post("/v1/research/broker-context-rotation")
+def broker_context_rotation_research(request: BrokerRotationContextRequest):
+    try:
+        prior=broker_context_research(request.prior)
+        current=broker_context_research(request.current)
+        if not prior.get("profiles") or not current.get("profiles"):
+            return {"status":"insufficient_evidence","reason":"context_unavailable","production_eligible":False,"signals_enabled":False}
+        return sector_rotation(prior,current)
+    except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
+        raise HTTPException(422,"Invalid rotation evidence") from exc
 
 class EarlySignalRequest(BaseModel):
     as_of_date: date

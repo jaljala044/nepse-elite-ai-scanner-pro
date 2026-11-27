@@ -988,6 +988,7 @@ class AutomaticPortfolioDashboardRequest(BaseModel):
     broker_numbers: list[int]
     cost_assumptions: dict | None = None
     trailing_config: dict | None = None
+    corporate_assets: dict | None = None
 
 @app.post("/v1/research/portfolio/automatic-dashboard")
 def research_automatic_portfolio_dashboard(request: AutomaticPortfolioDashboardRequest):

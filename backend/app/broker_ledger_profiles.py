@@ -6,6 +6,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import os,json,csv,duckdb
 from .broker_context_integration import stamp
+from .broker_lifecycle_gate import load_lifecycle,lifecycle_reason
 from .session_calendar import load_calendar
 from .broker_rolling_profiles import build_rolling_broker_profiles,DEFAULT_WINDOWS
 
@@ -84,17 +85,22 @@ def ledger_profiles(*,as_of_date,decision_time,window):
     if registry["schema_version"]!=1 or len(q)!=1329 or len(registry["records"])!=1329:
         return unavailable("invalid_quarantine_registry")
     blocked=unknown=clear=0
+    lifecycle=load_lifecycle()
+    lifecycle_counts={}
     for p in result["profiles"]:
         category=quarantine_category(p["security_id"],mapping,q,expected[0],expected[-1])
         if category=="identity_unmapped": unknown+=1
         elif category=="quarantine_blocked": blocked+=1
-        else: clear+=1
+        else:
+            clear+=1
+            reason=lifecycle_reason(p['security_id'],next(iter(mapping[p['security_id']])),expected[0],expected[-1],lifecycle)
+            lifecycle_counts[reason]=lifecycle_counts.get(reason,0)+1
     # Snapshot identity is only a conservative exclusion aid, not historical certification.
     # No stock-price or historical identity clearance here: do not expose
     # per-security profiles until the P4.43 registry and identity joins are applied.
     return {"status":"descriptive_only","window":window,"expected_sessions":expected,
         "complete_sessions":len(expected),"observation_count":len(rows),
-        "profile_count":len(result["profiles"]),
+        "profile_count":len(result["profiles"]),"lifecycle_exclusion_counts":lifecycle_counts,
         "quarantine_blocked_profiles":blocked,"identity_unmapped_profiles":unknown,"snapshot_crosswalk_clear_profiles":clear,"profiles":[],"production_eligible":False,"signals_enabled":False,
         "reason":"security_profiles_withheld_pending_identity_quarantine_join",
         "manifest_hashes":{d:h for d,raw,h in manifests},

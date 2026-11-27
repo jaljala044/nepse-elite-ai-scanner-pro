@@ -128,6 +128,28 @@ class TrustedBrokerDashboardTests(unittest.TestCase):
         self.assertEqual(result["status"], "descriptive_only")
         self.assertEqual(len(result["trusted_inputs"]), 5)
 
+    def test_negative_deployment_max_age_is_rejected_as_configuration_error(self):
+        import os
+        from unittest.mock import patch
+        from app.trusted_artifact_store import TrustedArtifactError
+        from app.trusted_broker_dashboard import load_deployment_broker_dashboard
+
+        registry_path = self.root / "registry.json"
+        registry_path.write_text(json.dumps(self.registry), encoding="utf-8")
+        settings = {
+            "NEPSE_TRUSTED_ARTIFACT_ROOT": str(self.root),
+            "NEPSE_TRUSTED_ARTIFACT_REGISTRY_PATH": str(registry_path),
+            "NEPSE_TRUSTED_ARTIFACT_MAX_AGE_DAYS": "-1",
+        }
+        with patch.dict(os.environ, settings, clear=True):
+            with self.assertRaisesRegex(
+                TrustedArtifactError, "trusted_artifact_max_age_days_invalid"
+            ):
+                load_deployment_broker_dashboard(
+                    decision_date="2026-11-26",
+                    decision_time="2026-11-26T12:00:00+05:45",
+                )
+
     def test_deployment_registry_must_resolve_inside_private_artifact_root(self):
         import os
         from unittest.mock import patch

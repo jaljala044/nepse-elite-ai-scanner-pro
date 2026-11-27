@@ -5,6 +5,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .signal_confirmation import confirm_signal
 from .structure_timeframes import evaluate_timeframes
 from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
@@ -159,6 +160,7 @@ def scan(request: ScanRequest):
         if request.as_of:
             cutoff = min(cutoff, datetime.combine(request.as_of, time.max, ZoneInfo("Asia/Kathmandu")))
         errors = assess(symbol.upper(), rows, cutoff.isoformat(), REVIEWED_ROWS)
+        result["signal_confirmation"] = confirm_signal(rows, eligible=not errors)
         result["eligibility"] = {"eligible": not errors, "reasons": errors}
         if errors:
             structure_status = (

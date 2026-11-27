@@ -193,5 +193,35 @@ class TrustedArtifactStoreTests(unittest.TestCase):
                               result["index_intelligence"]["rejection_reason"])
 
 
+
+    def test_opened_payload_fd_is_not_redirected_by_post_open_symlink_swap(self):
+        import os
+        from unittest.mock import patch
+
+        outside = self.root / "outside.json"
+        outside.write_text('{"metric": 999}', encoding="utf-8")
+        real_open = os.open
+        swapped = False
+
+        def open_then_swap(path, flags, *args, **kwargs):
+            nonlocal swapped
+            descriptor = real_open(path, flags, *args, **kwargs)
+            if path == "index.json" and kwargs.get("dir_fd") is not None and not swapped:
+                os.replace(self.root / "index.json", self.root / "opened-index.json")
+                (self.root / "index.json").symlink_to(outside)
+                swapped = True
+            return descriptor
+
+        with patch("app.trusted_artifact_store.os.open", side_effect=open_then_swap):
+            result = self.store().load(
+                decision_date="2026-11-27",
+                decision_time="2026-11-27T16:00:00+05:45",
+                required_modules=("index_intelligence",),
+            )
+
+        self.assertTrue(swapped)
+        self.assertEqual(result["index_intelligence"]["data"]["metric"], 12)
+        self.assertNotIn("rejection_reason", result["index_intelligence"])
+
 if __name__ == "__main__":
     unittest.main()

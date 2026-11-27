@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "raw_register_blob": "24c67bff0a12bf388cb94a2a0dd9e3ce1db99e9b",
+  "raw": [
+    "AHPC,2010-07-27,479.0,470.0,461.0,465.0,876.0,OPEN_OUTSIDE_RANGE,false,8adf41de96954d38e42f6353cb24a105d3e51082,0d662db6310d65116dc0e84ad5ed424ff1f7d26b,reference/AHPC_ohlc_exception_register_2026-11-26.csv,,,pending_independent_evidence,false",
+    "AHPC,2011-01-03,454.0,445.0,440.0,440.0,162.0,OPEN_OUTSIDE_RANGE,false,8adf41de96954d38e42f6353cb24a105d3e51082,0d662db6310d65116dc0e84ad5ed424ff1f7d26b,reference/AHPC_ohlc_exception_register_2026-11-26.csv,,,pending_independent_evidence,false",
+    "AHPC,2014-12-28,353.0,374.0,355.0,374.0,5716.0,OPEN_OUTSIDE_RANGE,true,8adf41de96954d38e42f6353cb24a105d3e51082,0d662db6310d65116dc0e84ad5ed424ff1f7d26b,reference/AHPC_ohlc_exception_register_2026-11-26.csv,,,pending_independent_evidence,false"
+  ],
+  "sources": [
+    {
+      "source": "Aabishkar2/nepse-data",
+      "path": "data/company-wise/AHPC.csv",
+      "blob": "bcd9918312d3bf08462c1bf5cd794e177c3dc210",
+      "rows": [
+        "2010-07-27,462.0,479.0,458.0,479.0,3.68,672.0,0.0,0",
+        "2010-07-27,479.0,470.0,461.0,465.0,-2.92,876.0,0.0,0",
+        "2011-01-03,439.0,454.0,450.0,454.0,3.42,990.0,0.0,0",
+        "2011-01-03,454.0,445.0,440.0,440.0,-3.08,162.0,0.0,0",
+        "2014-12-28,353.0,374.0,355.0,374.0,5.95,5716.0,2087010.0,0",
+        "2014-12-28,353.0,374.0,355.0,374.0,0.0,5716.0,2087010.0,0"
+      ]
+    },
+    {
+      "source": "binayabaral/nepal-market-data",
+      "path": "data/nepse/AHPC.csv",
+      "blob": "08ff9a35c32c08c96a296666246d709d97e0cfbc",
+      "rows": [
+        "2010-07-27,462.0,479.0,458.0,479.0,3.68,672.0,0.0,A",
+        "2011-01-03,439.0,454.0,450.0,454.0,3.42,990.0,0.0,A",
+        "2014-12-28,353.0,374.0,355.0,374.0,5.95,5716.0,2087010.0,A"
+      ]
+    }
+  ],
+  "admission_allowed": false,
+  "reason": "conflicting duplicate dates, zero turnover, common lineage not excluded"
+}

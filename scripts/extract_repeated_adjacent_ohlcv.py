@@ -159,7 +159,7 @@ def main() -> int:
         "source_counts": per_source,
         "total_candidates": len(all_rows),
         "baseline_metric_eligible_total": sum(r["baseline_metric_eligible"] for r in all_rows),
-        "calendar_status": "not_verified_primary_exchange_evidence_missing",
+        "calendar_status": "project_accepted_calendar_join_applied_not_exchange_certified",
         "classification": "review_only_not_invalid",
         "source_files_read_only": True,
     }

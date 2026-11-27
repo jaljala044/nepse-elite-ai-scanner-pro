@@ -39,11 +39,21 @@ def reconcile_chronological_ledger(*,ledger_inputs,events):
         else:
             compare("sale_price:"+tid,t["price"],e["price"])
             compare("sale_fees:"+tid,t["fees"],e["fees"])
+    costs={}
+    for lot in chronological["lots"].values():
+        costs[lot["symbol"]]=costs.get(lot["symbol"],Decimal(0))+Decimal(lot["cost"])
+    for symbol in set(costs)|set(unified["ending_cost_basis"]):
+        compare("remaining_cost:"+symbol,unified["ending_cost_basis"].get(symbol,0),costs.get(symbol,0))
+    for sale in chronological["realized"]:
+        t=expected.get(sale["event_id"])
+        if t and t["side"].lower()=="sell":
+            compare("allocated_cost:"+sale["event_id"],t["allocated_cost"],sale["cost"])
+            compare("realized_pnl:"+sale["event_id"],t["realized_pnl"],sale["pnl"])
     action_ids={a["action_id"] for a in ledger_inputs.get("corporate_actions") or []}
     record_ids={e["action_id"] for e in events if e["type"]=="record"}
     if action_ids!=record_ids:
         differences["action_ids"]={"unified":sorted(action_ids),"chronological":sorted(record_ids)}
     return dict(balance_checks_passed=not differences,differences=differences,
         unified=unified,chronological=chronological,full_accounting_reconciled=False,
-        production_eligible=False,limitations=["Ending balances and trade identities only; cost basis, realized P&L, individual entitlement terms and settlement evidence not fully reconciled.",
+        production_eligible=False,limitations=["Aggregate average-cost versus explicit lot allocation differences are reported, not treated as proof of error. Individual entitlement terms and settlement evidence not fully reconciled.",
         "Different intraday settlement assumptions may reject otherwise comparable histories."])

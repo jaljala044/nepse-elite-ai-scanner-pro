@@ -44,7 +44,7 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "session_date": day, "symbol": "NABIL", "security_id": "123",
             "open": "100", "high": "105", "low": "95", "close": "102", "volume": "1000",
             "adjustment_basis": "raw", "rights_status": "approved",
-            "evidence_sha256": "a" * 64, "available_at": "2025-12-31T15:00:00+05:45",
+            "evidence_sha256": "c" * 64, "available_at": "2025-12-31T15:00:00+05:45",
             "source_evidence": self.source_evidence("ohlcv:NABIL:123:" + day),
         }
 
@@ -105,6 +105,13 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(records=records)
         self.assertIn("source_rights_not_approved:" + self.sessions[0], result["reasons"])
         self.assertIn("evidence_hash_missing_or_invalid:" + self.sessions[0], result["reasons"])
+
+    def test_bar_evidence_hash_must_bind_to_retained_source_payload(self):
+        records = list(self.records)
+        records[0] = dict(records[0], evidence_sha256="d" * 64)
+        result = self.evaluate(records=records)
+        self.assertIn("evidence_hash_binding_mismatch:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
 
     def test_duplicate_bars_fail_closed(self):
         result = self.evaluate(records=self.records + [self.records[0]])

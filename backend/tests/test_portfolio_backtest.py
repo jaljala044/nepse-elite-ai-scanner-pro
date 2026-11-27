@@ -186,7 +186,7 @@ class PortfolioBacktestTests(unittest.TestCase):
         action = dict(symbol="AAA", status="verified", source_id="synthetic",
                       available_at="2025-01-02T00:00:00+00:00")
         result = reconcile_signal_portfolio(portfolio_inputs=inputs,
-            evidence_cutoff="2025-01-11T00:00:00+00:00", corporate_actions=[action])
+            evidence_cutoff="2025-01-11T00:00:00+00:00", corporate_actions=[action], action_policy="retrospective_exclusion")
         self.assertEqual(result["portfolio"]["trade_count"], 1)
         self.assertEqual(result["portfolio"]["trades"][0]["symbol"], "BBB")
         self.assertEqual(result["corporate_action_excluded_signals"], [self.signal])
@@ -199,7 +199,7 @@ class PortfolioBacktestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "future_action_requires_event_aware_replay"):
             reconcile_signal_portfolio(portfolio_inputs={"signals":[self.signal]},
                 evidence_cutoff="2025-01-11T00:00:00+00:00",
-                corporate_actions=[action], action_policy="point_in_time_guard")
+                corporate_actions=[action])
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,8 @@ from pathlib import Path
 from app.broker_batch_manifest import (
     BrokerRawCaptureRegistry, CaptureConflict, CaptureRejected, RawCaptureManifest,
 )
+from app.broker_daily_history import BrokerDailyHistoryStore
+from app.broker_ingestion import IngestionReport
 
 
 def fixture(raw=b"official source extract"):
@@ -20,10 +22,36 @@ def fixture(raw=b"official source extract"):
     return manifest, raw
 
 
+def clean_report(batch_id):
+    return IngestionReport(
+        batch_id=batch_id, coverage_status="complete", coverage_ratio="1",
+        accepted=[{
+            "security_id": "SEC-CFCL", "broker_id": "BROKER-17",
+            "session_date": "2026-11-25", "side": "BUY", "quantity": "2",
+            "amount": "100", "source_id": "SRC-A", "evidence_id": "E-1",
+            "source_payload_sha256": "a" * 64, "source_row_count": 1,
+            "coverage_ratio": "1", "batch_id": batch_id,
+            "available_at": "2026-11-26T09:01:00+05:45",
+            "status": "descriptive_only",
+        }],
+    )
+
+
+def coverage_manifest():
+    return {
+        "session_date": "2026-11-25", "source_coverage_status": "complete",
+        "source_coverage_ratio": "1", "source_control_reconciled": True,
+        "identity_coverage_status": "complete", "identity_coverage_rows": 1,
+        "identity_coverage_min": "1", "verified_session": True,
+        "available_at": "2026-11-26T09:01:00+05:45",
+    }
+
+
 class BrokerRawCaptureTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.registry = BrokerRawCaptureRegistry(Path(self.tmp.name))
+        self.root = Path(self.tmp.name)
+        self.registry = BrokerRawCaptureRegistry(self.root)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -39,7 +67,7 @@ class BrokerRawCaptureTests(unittest.TestCase):
     def test_identical_capture_is_idempotent_across_restart(self):
         manifest, raw = fixture()
         first = self.registry.stage(manifest, raw)
-        restarted = BrokerRawCaptureRegistry(Path(self.tmp.name))
+        restarted = BrokerRawCaptureRegistry(self.root)
         second = restarted.stage(manifest, raw)
         self.assertEqual(first["batch_id"], second["batch_id"])
         self.assertTrue(second["idempotent_replay"])
@@ -66,33 +94,68 @@ class BrokerRawCaptureTests(unittest.TestCase):
         self.assertEqual(self.registry.stage(denied, raw)["state"], "rejected")
         self.assertEqual(self.registry.stage(incomplete, raw)["state"], "rejected")
 
-    def test_approval_requires_clean_dry_run_and_exact_report_hash(self):
+    def test_approval_requires_typed_clean_reconciliation_and_exact_hash(self):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]
         with self.assertRaises(CaptureRejected):
-            self.registry.approve(batch, operator_id="operator-1", dry_run_sha256="x")
-        report_hash = self.registry.record_dry_run(batch, {"passed": True, "quarantined_count": 0})
+            self.registry.record_dry_run(batch, {"passed": True, "quarantined_count": 0})
+        report = clean_report(batch)
+        report_hash = self.registry.record_dry_run(batch, report)
         with self.assertRaises(CaptureRejected):
             self.registry.approve(batch, operator_id="operator-1", dry_run_sha256="wrong")
         self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=report_hash)
-        self.registry.mark_admitted(batch, reconciler_memory_eligible=True)
-        self.assertEqual(self.registry.get(batch)["state"], "admitted")
-        self.assertEqual([e["event_type"] for e in self.registry.events(batch)],
-                         ["staged", "dry_run_passed", "approved", "admitted"])
+        self.assertEqual(self.registry.get(batch)["state"], "approved")
 
-    def test_quarantined_dry_run_and_ineligible_reconciler_cannot_admit(self):
+    def test_quarantined_reconciliation_cannot_pass_dry_run_or_be_approved(self):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]
-        self.registry.record_dry_run(batch, {"passed": False, "quarantined_count": 1})
+        report = clean_report(batch)
+        report.quarantined.append({"row_index": 0, "reasons": ["invalid"]})
+        with self.assertRaises(CaptureRejected):
+            self.registry.record_dry_run(batch, report)
         with self.assertRaises(CaptureRejected):
             self.registry.approve(batch, operator_id="operator-1", dry_run_sha256="irrelevant")
-        manifest2, raw2 = fixture(b"another extract")
-        manifest2 = RawCaptureManifest(**{**manifest2.__dict__, "capture_id": "CAP-2"})
-        batch2 = self.registry.stage(manifest2, raw2)["batch_id"]
-        digest = self.registry.record_dry_run(batch2, {"passed": True, "quarantined_count": 0})
-        self.registry.approve(batch2, operator_id="operator-1", dry_run_sha256=digest)
+
+    def test_approved_capture_appends_to_daily_history_and_records_receipt(self):
+        manifest, raw = fixture()
+        batch = self.registry.stage(manifest, raw)["batch_id"]
+        report = clean_report(batch)
+        digest = self.registry.record_dry_run(batch, report)
+        self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
+        history = BrokerDailyHistoryStore(self.root / "daily.duckdb")
+        receipt = self.registry.admit_to_daily_history(
+            batch, report, coverage_manifest=coverage_manifest(), history_store=history)
+        self.assertEqual(receipt["inserted"], 1)
+        self.assertEqual(self.registry.get(batch)["state"], "admitted")
+        self.assertEqual(history.count(), 1)
+        events = self.registry.events(batch)
+        self.assertEqual([e["event_type"] for e in events],
+                         ["staged", "dry_run_passed", "approved", "admitted"])
+        self.assertIn("daily_history_receipt", events[-1]["detail"])
+
+    def test_changed_reconciliation_after_approval_is_rejected(self):
+        manifest, raw = fixture()
+        batch = self.registry.stage(manifest, raw)["batch_id"]
+        report = clean_report(batch)
+        digest = self.registry.record_dry_run(batch, report)
+        self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
+        changed = clean_report(batch)
+        changed.accepted[0]["amount"] = "999"
+        history = BrokerDailyHistoryStore(self.root / "daily.duckdb")
         with self.assertRaises(CaptureRejected):
-            self.registry.mark_admitted(batch2, reconciler_memory_eligible=False)
+            self.registry.admit_to_daily_history(
+                batch, changed, coverage_manifest=coverage_manifest(), history_store=history)
+        self.assertEqual(history.count(), 0)
+
+    def test_unapproved_or_ineligible_batches_cannot_reach_daily_history(self):
+        manifest, raw = fixture()
+        batch = self.registry.stage(manifest, raw)["batch_id"]
+        history = BrokerDailyHistoryStore(self.root / "daily.duckdb")
+        with self.assertRaises(CaptureRejected):
+            self.registry.admit_to_daily_history(
+                batch, clean_report(batch), coverage_manifest=coverage_manifest(),
+                history_store=history)
+        self.assertEqual(history.count(), 0)
 
 
 if __name__ == "__main__":

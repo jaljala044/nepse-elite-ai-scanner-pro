@@ -137,6 +137,17 @@ class BrokerMemoryStore:
             if any(not re.fullmatch(r"[0-9a-f]{64}", r["payload_sha256"]) for r in lineage):
                 raise ValueError("invalid constituent payload digest")
             validate_security_master_snapshot(self.security_records)
+            # Resolve every blocked date inside the constituent span, including
+            # omitted dates and historical aliases of this stable security ID.
+            identity_records = [r for r in self.security_records if r.security_id == snapshot["security_id"]]
+            for blocked_symbol, blocked_day in keys:
+                blocked_date = date.fromisoformat(blocked_day)
+                if parsed[0] <= blocked_date <= parsed[-1]:
+                    resolved_gap = security_as_of(identity_records, blocked_date)
+                    if resolved_gap["status"] != "resolved":
+                        raise ValueError("constituent security identity unverified inside window")
+                    if resolved_gap["record"].symbol == blocked_symbol:
+                        raise ValueError("quarantined constituent session inside window")
             for day in parsed:
                 resolved = security_as_of([r for r in self.security_records if r.security_id == snapshot["security_id"]], day)
                 if resolved["status"] != "resolved":

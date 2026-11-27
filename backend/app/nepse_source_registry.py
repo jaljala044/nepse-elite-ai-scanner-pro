@@ -45,11 +45,11 @@ def validate_source_registry(records):
         if not host: why.append("canonical_uri_must_be_https")
         if authority not in AUTHORITY: why.append("authority_type_invalid")
         if state not in STATES: why.append("status_invalid")
-        if not isinstance(datasets,list) or not datasets or any(x not in SCHEMAS for x in datasets):
+        if not isinstance(datasets,list) or not datasets or any(not isinstance(x,str) or x not in SCHEMAS for x in datasets):
             why.append("dataset_kinds_invalid")
         reviewed=_time(record.get("reviewed_at"))
         if reviewed is None: why.append("reviewed_at_must_be_timezone_aware")
-        if sid in seen or publisher in seen: why.append("duplicate_source_or_publisher_id")
+        if (isinstance(sid,str) and sid in seen) or (isinstance(publisher,str) and publisher in seen): why.append("duplicate_source_or_publisher_id")
         if sid: seen.add(sid)
         if publisher: seen.add(publisher)
         if why: errors.append({"index":index,"reason":why}); continue
@@ -73,7 +73,7 @@ def build_source_capture_run(*, registry, captures, decision_cutoff):
     for index,item in enumerate(captures):
         if not isinstance(item,dict):
             rejected.append({"index":index,"reason":"capture_not_object"}); continue
-        source=by_id.get(item.get("source_id"))
+        source_key=item.get("source_id")\n        source=by_id.get(source_key) if isinstance(source_key,str) else None
         if source is None or source["status"]!="approved":
             rejected.append({"index":index,"reason":"source_not_approved"}); continue
         dataset=item.get("dataset_kind")

@@ -44,17 +44,24 @@ The new `OHLCV exception ledger` workflow downloads the original immutable artif
 
 Implementation and CI validation are pending in draft PR. This report does not authorize canonical OHLCV promotion, price repair, training, or predictive-signal promotion.
 
-## CI result — 2026-11-27
+## CI result — exact PR head `f8b1e7c7e4ac7bc1f0e32f3b48fa1c9d4290529a`
 
-The ledger workflow passed on PR #179 head `979f37c10bbe00e9a0da6a661b3fb34271bf42b8` (run `45932511623`). It downloaded the original audit artifact and matched its SHA-256, generated the JSON/CSV outputs, passed the strict validator and passed all three ledger regression tests.
+All three exact-head workflows passed:
 
-- Output artifact: `ohlcv-row-level-exception-ledger` (artifact ID `15169085846`)
-- ZIP SHA-256: `0db218d52d2777df0fb6f2f1dbe4eea7b7f1c9d65a7ef52913aba6faed221fc7`
-- JSON: 1,339 records; SHA-256 `1d7277067a6c839eb897b9d2d79fd3171840b8983d063c2fe34808c60b87ea46`
-- CSV: 1,339 records; SHA-256 `05e8b607d5501f7abbb070fa07bd0d23c2f5b141ed1617ff01fa7762c738c859`
-- Dispositions: 1,334 unresolved, five user-authority-resolved.
+- OHLCV exception ledger run [45933644818](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933644818): **passed**. It reran the pinned source archive audit at the exact source commits, ran the SocrateAI unadjusted-EOD cross-check, generated the canonical ledger, validated JSON/CSV, passed ledger regression tests and uploaded the artifact.
+- Backend unit tests run [45933645045](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933645045): **passed**.
+- Backend contract tests run [45933644854](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933644854): **passed**.
 
-The separate repository-wide backend test workflow failed because the Issue #20 implementation module `app.historical_segment_eligibility` exists only on PR #177 and has not been merged to `main`. This is a cross-PR dependency, not a ledger-validator failure. PR #179 remains draft and Issue #4 remains open until this dependency is resolved and the pinned full audit is rerun/reconciled.
+The pinned audit rerun scanned 525 files in each source repository (314,712 rows in SMC and 301,632 rows in History Starter), retaining 1,331 invalid OHLC rows and eight cross-source conflict keys. SocrateAI cross-check downloaded 994 daily files; one date/file was not published. The audit's integrity gate remains **not clean by design** while these exceptions exist; the ledger workflow passes because it preserves and classifies exceptions rather than suppressing them.
+
+- Generated artifact: [15170005920](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933644818/artifacts/15170005920), retained through 2027-02-25.
+- Artifact ZIP SHA-256: `f249f7ba21be5fd9b6dd1659eef35ba6414600e88e2ad13e65cbb3a64ba2a883`
+- Ledger JSON SHA-256: `f1bac744dd6dc546e64b774f30c9375884c131f3f15bea14e316b162f04cbde9`
+- Ledger CSV SHA-256: `9e2b12f681ab65daf3415ac6a5f71a3db3bcebf56fe6b7eed88dbb339faefe3c`
+- Counts: 1,339 unique exceptions; 1,331 invalid OHLC; eight conflicts; 1,332 unresolved; seven user-authoritatively resolved.
+- Independent downloaded-artifact inspection confirmed 1,339 JSON and CSV rows, identical ID sets, zero per-field JSON/CSV mismatches, all 1,331 invalid rows carrying their violated rule, and seven resolution payloads with canonical promotion disabled.
+
+PR #179 remains draft/open/unmerged pending independent review. No raw source edits or canonical OHLCV promotion are authorized.
 
 ## Canonical pipeline integration
 

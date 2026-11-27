@@ -131,3 +131,45 @@ Current evidence state:
 - 2026-04-06 schedule transition: secondary corroboration only; original NEPSE notice/raw hash outstanding.
 - Daily open/closed calendar: not acquired.
 - Priority 1: **in progress; acceptance not met**.
+
+
+
+## Official NEPSE market-summary-history endpoint acquired — 2026-11-27
+
+**Disposition: endpoint discovery and first live primary-source capture completed. The full session-calendar gate remains blocked.**
+
+### Confirmed request route
+
+- Official endpoint: `https://nepalstock.com.np/api/nots/market-summary-history`
+- API path: `GET /api/nots/market-summary-history` through the pinned `nepse-client==0.1.4` public website client flow (the capture implementation invokes its GET API method).
+- The repository capture implementation is `backend/capture_nepse_market_summary_history.py`; the scheduled/manual workflow is `.github/workflows/capture-nepse-market-summary-history.yml`.
+- The capture code allows only HTTPS responses from the approved NEPSE hostnames, the expected endpoint path and the expected port; it preserves response bytes before parsing.
+
+### Immutable primary-source capture
+
+Capture dated 2026-11-27:
+- HTTP 200; `application/json`; server header `nepse-website`.
+- Retrieved: `2026-11-27T10:45:17.238648Z`.
+- Raw body: 31,150 bytes.
+- SHA-256: `7165788ee78b0bfcb5cbcbc5f204120c258e67a5081fa61c9b4d78058c14a546`.
+- TLS/origin policy: passed; response origin verified; raw response preserved.
+- Archive: `data/evidence/raw/nepse/market-summary-history/2026-11-27/` (raw body, parsed JSON, headers, source URL, checksum files, payload analysis and capture report).
+- Previous capture for 2026-11-26 is also archived, with SHA-256 `74165b75b936a920f83ee1d3dc21955a50ef1afaac43e569c719d79d665fb95f`.
+
+### Schema and coverage observed
+
+The 2026-11-27 response is a JSON list with:
+- 229 records and 229 unique `businessDate` values.
+- Zero duplicate dates and zero invalid/missing date rows.
+- Four positive activity metrics validated on all 229 records: total turnover, total traded shares, total transactions and traded scrips.
+- Date span: 2025-11-27 through 2026-11-27.
+- Against the 616-date candidate set: 224 candidate dates overlap the endpoint response; 392 candidate dates are absent; five response dates are outside that candidate set.
+
+These are observed endpoint coverage and payload-validation facts. A returned aggregate row with positive activity is evidence of reported market activity on that date; it is not, by itself, a complete all-instrument session attestation. The endpoint's one-year response window is not a full historical calendar. In particular, dates absent from this response are **unknown**, not closed. The endpoint does not expose an explicit pagination or date-range parameter in the captured request, and no such contract is claimed.
+
+### Gate decision and next work
+
+- **Completed:** identify the official endpoint, execute the live request, verify the official HTTPS origin/HTTP response, preserve raw bytes and headers, compute SHA-256, parse the date field, and compare observed dates with the candidate set.
+- **Not completed:** recover the original 616-date input/generator; establish full historical endpoint coverage; prove session semantics and all-security scope; collect official date-specific opening/suspension/closure evidence across historical regimes; retrieve and hash the original April 2026 schedule notice; hash/archive the 2022 schedule PDF; resolve conflicts and review every candidate date.
+- No `verified_open` dates are promoted by this capture. No missing date is promoted to `verified_closed`. The 616 candidates and 196,784 repeated-OHLCV candidates remain quarantined/review-only.
+- **Priority 1 remains active and acceptance is not met.** The narrower next-task statement (“retrieve the official NEPSE historical market-summary data and identify its underlying API endpoint”) is now complete; the next P1 task is date-by-date evidence reconciliation and historical notice acquisition.

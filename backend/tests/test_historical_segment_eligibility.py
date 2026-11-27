@@ -266,5 +266,28 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertFalse(result["exploratory_replay_eligible"])
 
 
+    def test_explicit_suspension_overlap_blocks_segment(self):
+        segment = dict(self.segment, suspension_overlap=True)
+        result = self.evaluate(segment=segment)
+        self.assertIn("suspension_overlap_or_unknown", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_invalid_effective_to_fails_closed(self):
+        segment = dict(self.segment, effective_to="not-a-date")
+        result = self.evaluate(segment=segment)
+        self.assertIn("effective_to_invalid", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_reversed_effective_interval_fails_closed(self):
+        segment = dict(
+            self.segment,
+            effective_from=self.sessions[-1],
+            effective_to=self.sessions[0],
+        )
+        result = self.evaluate(segment=segment)
+        self.assertIn("invalid_effective_interval", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import duckdb
+from app.quarantine_guard import is_quarantined
 
 DEFAULT_DB = Path(__file__).resolve().parents[1] / "data" / "nepse-api.duckdb"
 
@@ -78,6 +79,8 @@ def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
 
 
 def persist_import(source: str, parsed: dict[str, list[dict]]) -> dict:
+    if any(is_quarantined(row) for values in parsed.values() for row in values):
+        raise ValueError("Quarantined OHLCV input")
     rows = [(symbol, row["date"], row["open"], row["high"], row["low"],
              row["close"], row["volume"])
             for symbol, values in parsed.items() for row in values]

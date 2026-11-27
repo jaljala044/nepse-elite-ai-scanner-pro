@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ConfigDict
 from .broker_context_server import server_context
+from .broker_research_leaderboards import research_leaderboards
 from .broker_ledger_profiles import ledger_profiles
 from .broker_research_security import BrokerResearchSecurity
 from .broker_context_metrics import concentration, sector_rotation
@@ -67,6 +68,13 @@ def broker_context_research(request: BrokerContextRequest):
         raise HTTPException(503,"Server evidence unavailable") from exc
     except (ValueError,TypeError,KeyError,AttributeError) as exc:
         raise HTTPException(422,"Invalid broker context evidence") from exc
+
+@app.post("/v1/research/broker-leaderboards")
+def broker_leaderboards(request: BrokerContextRequest):
+    try:
+        return research_leaderboards(broker_context_research(request))
+    except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
+        raise HTTPException(422,"Invalid leaderboard evidence") from exc
 
 class BrokerConcentrationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")

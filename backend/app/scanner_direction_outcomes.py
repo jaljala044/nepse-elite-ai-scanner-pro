@@ -8,8 +8,11 @@ def evaluate_directions(cohort,paths,assessment_time):
     cutoff=_time(assessment_time)
     counts={m:dict(correct=0,incorrect=0,withheld=0) for m in METHODS}
     last_end={}
+    seen=set()
     for row in sorted(cohort["rows"],key=lambda r:r["key"][2]):
         symbol,horizon,decision=row["key"]; key=tuple(row["key"])
+        if key in seen or _time(decision)>cutoff or set(row["reviews"])!=set(METHODS): raise ValueError("invalid_decision_cohort")
+        seen.add(key)
         path=paths.get(key)
         valid=False
         if path:
@@ -24,6 +27,7 @@ def evaluate_directions(cohort,paths,assessment_time):
                 last_end[group]=end; valid=True
         for m in METHODS:
             d=row["reviews"][m]["direction"]
+            if d not in ("BULLISH","BEARISH","NEUTRAL","UNKNOWN"): raise ValueError("invalid_direction")
             bucket="withheld" if not valid or d=="UNKNOWN" else "correct" if d==actual else "incorrect"
             counts[m][bucket]+=1
     for c in counts.values():

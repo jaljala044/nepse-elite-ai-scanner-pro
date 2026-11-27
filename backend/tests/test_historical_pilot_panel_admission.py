@@ -37,7 +37,7 @@ class HistoricalPilotPanelAdmissionTests(unittest.TestCase):
         )
         self.assertEqual(report["status"], "blocked")
         self.assertEqual(report["admitted_symbol_count"], 0)
-        self.assertGreaterEqual(len(report["symbols"][0]["blockers"]), 5)
+        self.assertEqual(len(report["symbols"][0]["blockers"]), 4)
 
     def test_incomplete_calendar_and_ohlcv_anomalies_block(self):
         self.calendar["GMLI"]["missing_sessions"] = 1

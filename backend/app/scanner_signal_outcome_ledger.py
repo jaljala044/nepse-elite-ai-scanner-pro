@@ -44,7 +44,7 @@ def build_signal_outcome_ledger(*,signals,replay_results):
             policy_digest = trade.get("replay_policy_sha256")
             if (
                 any(not expected[key] or trade.get(key) != expected[key] for key in expected)
-                or not isinstance(policy_digest, str) or len(policy_digest) != 64
+                or not isinstance(expected["feature_snapshot_sha256"], str) or len(expected["feature_snapshot_sha256"]) != 64\n                or any(char not in "0123456789abcdef" for char in expected["feature_snapshot_sha256"].lower())\n                or not isinstance(policy_digest, str) or len(policy_digest) != 64
                 or any(char not in "0123456789abcdef" for char in policy_digest.lower())
             ):
                 rejected.append({"signal_id": sid, "reason": "replay_trade_signal_metadata_mismatch"})
@@ -97,7 +97,7 @@ def build_signal_outcome_ledger(*,signals,replay_results):
             "average_mfe_pct":str(avg([x for x in (_d(i.get("max_favorable_excursion_pct")) for i in items) if x is not None])) if any(_d(i.get("max_favorable_excursion_pct")) is not None for i in items) else None,
             "average_mae_pct":str(avg([x for x in (_d(i.get("max_adverse_excursion_pct")) for i in items) if x is not None])) if any(_d(i.get("max_adverse_excursion_pct")) is not None for i in items) else None})
     return {"schema_version":"nepse-signal-outcome-ledger-1.0.0","status":"appended",
-        "signal_event_count":len(signals)-len(rejected),"outcome_event_count":len(outcomes),
+        "signal_event_count":sum(event["event_type"] == "SIGNAL_RECORDED" for event in events),"outcome_event_count":len(outcomes),
         "resolved_trade_count":sum(x["outcome"] in {"target_hit","stop_hit","time_exit","other_exit"} for x in outcomes),
         "unresolved_count":sum(x["outcome"] in {"settlement_or_horizon_pending","unmatched_or_rejected"} for x in outcomes),
         "not_executed_count":sum(x["outcome"]=="not_executed" for x in outcomes),

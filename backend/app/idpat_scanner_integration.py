@@ -45,6 +45,8 @@ def _gate_report(gates, cutoff):
             reason = "gate_not_verified"
         elif not isinstance(item.get("evidence_id"), str) or not item["evidence_id"].strip():
             reason = "gate_evidence_id_missing"
+        elif not isinstance(item.get("source_id"), str) or not item["source_id"].strip():
+            reason = "gate_source_id_missing"
         else:
             try:
                 available = _aware(item.get("available_at"), f"{name}_available_at")
@@ -54,7 +56,9 @@ def _gate_report(gates, cutoff):
                 reason = "gate_evidence_timestamp_invalid"
         report[name] = {"status": "blocked" if reason else "verified",
                         "reason": reason,
-                        "evidence_id": item.get("evidence_id") if isinstance(item, dict) else None}
+                        "evidence_id": item.get("evidence_id") if isinstance(item, dict) else None,
+                        "source_id": item.get("source_id") if isinstance(item, dict) else None,
+                        "available_at": item.get("available_at") if isinstance(item, dict) else None}
         if reason:
             blocked.append(f"{name}:{reason}")
     return report, blocked

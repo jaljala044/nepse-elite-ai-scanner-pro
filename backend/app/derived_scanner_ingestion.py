@@ -31,3 +31,14 @@ def horizon_eligibility(*,horizon,expected_sessions,verified_bars,benchmark_date
     if len(window)<5 or set(window[-5:])-set(broker_dates): reasons.append("missing_recent_broker")
     if action_basis_verified is not True: reasons.append("unverified_action_basis")
     return dict(horizon=horizon,missing=reasons,candidate_ready=not reasons,production_eligible=False)
+
+MANIFEST_BLOB="b164ef4096b8de9166b44864d0fdec13902bbf48"
+
+def load_pinned(symbol,read_bytes):
+    """Reader must retrieve exact bytes at the supplied immutable commit."""
+    manifest=read_bytes(RELEASE,"derived/ohlcv_v2/manifest.csv")
+    digest=hashlib.sha1(b"blob "+str(len(manifest)).encode()+b"\0"+manifest).hexdigest()
+    if digest!=MANIFEST_BLOB: raise ValueError("manifest_blob_mismatch")
+    matches=[r for r in csv.DictReader(io.StringIO(manifest.decode())) if r["symbol"]==symbol]
+    if len(matches)!=1: raise ValueError("manifest_identity")
+    return load_candidate(symbol,manifest,read_bytes(RELEASE,matches[0]["derived_path"]),RELEASE)

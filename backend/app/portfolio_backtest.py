@@ -231,7 +231,8 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 "signal_id": candidate["signal_id"], "symbol": symbol, "sector": sector,
                 "entry_date": scenario["entry_session"], "exit_date": scenario["exit_session"],
                 "quantity": int(scenario["scenario_quantity"]), "buy_cash": buy_cash,
-                "entry_price": entry_price, "exit_price": float(scenario["exit_price"]),
+                "entry_price": float(scenario.get("buy_scenario_price", entry_price)),
+                "exit_price": float(scenario["sell_scenario_price"]) if "sell_scenario_price" in scenario else None,
                 "sell_cash": sell_cash, "settlement_date": cash_settlement,
                 "net_pnl": float(scenario["net_pnl"]),
                 "net_return_pct": float(scenario["net_return_pct"]),
@@ -294,3 +295,48 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
             "Risk sizing uses entry-to-stop price distance and does not guarantee the realized loss is capped."
         ]
     }
+
+
+def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_actions=None,
+                               benchmark_rows=None, benchmark_symbol=None):
+    """Replay frozen signal scenarios; fail closed on action-affected symbols.
+
+    This is a reconciliation adapter, not corporate-action-aware signal sizing.
+    """
+    from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
+    if corporate_actions:
+        raise ValueError("corporate_action_aware_signal_sizing_not_available")
+    result = run_portfolio_backtest(**portfolio_inputs)
+    days = [x["date"] for x in result["equity_curve"]]
+    trades = []
+    for t in result["trades"]:
+        symbol, sid, qty = t["symbol"], t["signal_id"], t["quantity"]
+        if t["exit_price"] is None:
+            raise ValueError("execution_scenario_price_missing")
+        sessions = portfolio_inputs["verified_sessions_by_symbol"][symbol]
+        buy_settle = settlement_date(t["entry_date"], sessions)
+        if buy_settle is None:
+            raise ValueError("entry_settlement_not_proven")
+        for side, day, settle, price, fees in (
+            ("BUY", t["entry_date"], buy_settle.isoformat(), t["entry_price"], t["buy_cash"]-qty*t["entry_price"]),
+            ("SELL", t["exit_date"], t["settlement_date"], t["exit_price"], qty*t["exit_price"]-t["sell_cash"])):
+            if fees < -1e-7:
+                raise ValueError("execution_cost_reconciliation_failed")
+            trades.append(dict(trade_id=sid+":"+side, signal_id=sid, symbol=symbol,
+                               side=side, quantity=qty, price=price, fees=max(0,fees),
+                               trade_date=day, settlement_date=settle, status="verified",
+                               source_id="hypothetical_execution_scenario:"+sid,
+                               available_at=evidence_cutoff))
+    trades.sort(key=lambda t: (t["trade_date"], t["side"] != "SELL", t["trade_id"]))
+    ledger = run_unified_portfolio_event_ledger(
+        initial_cash=portfolio_inputs["initial_capital"], initial_holdings={},
+        trades=trades, corporate_actions=[], price_rows_by_symbol=portfolio_inputs["rows_by_symbol"],
+        portfolio_sessions=days, as_of_date=days[-1], evidence_cutoff=evidence_cutoff,
+        benchmark_rows=benchmark_rows, benchmark_symbol=benchmark_symbol)
+    for original, replay in zip(result["equity_curve"], ledger["equity_curve"]):
+        if abs(original["equity"]-replay["equity"]) > 1e-5 or abs(original["cash"]-replay["cash"]) > 1e-5:
+            raise ValueError("signal_portfolio_ledger_mismatch:"+original["date"])
+    return {"classification":"hypothetical_signal_replay_reconciliation",
+            "portfolio":result, "ledger":ledger, "production_eligible":False,
+            "limitations":["No corporate-action-aware sizing; action inputs rejected.",
+                           "Scenario evidence is not actual exchange trade evidence."]}

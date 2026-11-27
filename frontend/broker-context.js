@@ -27,9 +27,9 @@ async function run(){
  if(mode==="context"){
  if(!Array.isArray(d.profiles))throw Error("Invalid response");
  const symbol=el("broker-context-symbol").value.trim();
- const rows=d.profiles.filter(r=>!symbol||String(r.security_id)===symbol);
- table(["Security ID","Broker","Status","Research label","Net NPR","Positive sessions","Relative return","Volume ratio","Missing evidence"],
- rows.map(r=>[r.security_id,r.broker_id,r.status,r.classification,r.net_amount,percent(r.positive_session_ratio),percent(r.sector_relative_return),r.latest_volume_ratio,r.reason]));
+ const rows=d.profiles.filter(r=>!symbol||String(r.security_id)===symbol||String(r.symbol||"").toUpperCase()===symbol.toUpperCase());
+ table(["Symbol","Security ID","Broker","Status","Research label","Net NPR","Positive sessions","Relative return","Volume ratio","Missing evidence"],
+ rows.map(r=>[r.symbol,r.security_id,r.broker_id,r.status,r.classification,r.net_amount,percent(r.positive_session_ratio),percent(r.sector_relative_return),r.latest_volume_ratio,r.reason]));
  }else if(mode==="concentration"){
  table(["Broker count","Matched NPR","HHI (0–1)","Top 3","Top 5"],[[d.broker_count,d.matched_turnover,d.hhi,percent(d.top3_share),percent(d.top5_share)]]);
  }else{
@@ -39,5 +39,6 @@ async function run(){
  }catch(e){if(id===generation){host.replaceChildren();status.textContent="UNKNOWN — "+e.message;}}
 }
 el("broker-context-run").addEventListener("click",run);
+el("chart-broker-context").addEventListener("click",()=>{const s=el("chart-symbol").value.trim().toUpperCase();if(!/^[A-Z0-9]{1,20}$/.test(s))return;el("broker-context-symbol").value=s;el("broker-context-symbol").dispatchEvent(new Event("change"));el("broker-context").scrollIntoView();});
 for(const key of ["broker-context-file","broker-context-mode","broker-context-symbol"]){el(key).addEventListener("change",()=>{generation++;host.replaceChildren();status.textContent="Evidence changed; run again.";});}
 })();

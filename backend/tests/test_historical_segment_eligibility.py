@@ -205,6 +205,38 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(session_evidence=evidence)
         self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
 
+    def test_official_nepse_com_np_hosts_are_accepted_for_all_evidence(self):
+        for host in ("nepalstock.com.np", "www.nepalstock.com.np"):
+            with self.subTest(host=host):
+                url = f"https://{host}/api/evidence"
+                segment = dict(
+                    self.segment,
+                    identity_evidence=dict(self.segment["identity_evidence"], source_url=url),
+                    lifecycle_evidence=dict(self.segment["lifecycle_evidence"], source_url=url),
+                )
+                session_evidence = {
+                    day: dict(item, source_url=url)
+                    for day, item in self.session_evidence.items()
+                }
+                records = [
+                    dict(row, source_evidence=dict(row["source_evidence"], source_url=url))
+                    for row in self.records
+                ]
+                result = self.evaluate(
+                    segment=segment, session_evidence=session_evidence, records=records
+                )
+                self.assertTrue(result["exploratory_replay_eligible"], result["reasons"])
+
+    def test_nepse_com_np_lookalike_host_is_rejected(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(
+            evidence[self.sessions[0]],
+            source_url="https://nepalstock.com.np.attacker.example/calendar",
+        )
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_bar_requires_full_primary_source_evidence(self):
         records = list(self.records)
         records[0] = dict(records[0], source_evidence={"source_url": "https://www.nepalstock.com"})

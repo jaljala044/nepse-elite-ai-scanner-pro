@@ -77,8 +77,23 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
             errors.append(f"CSV record {i} has unsupported disposition {row.get('disposition')!r}")
     if Counter(r.get("disposition") for r in rows) != Counter(EXPECTED_DISPOSITIONS):
         errors.append("CSV disposition counts differ from expected resolved/quarantined totals")
-    if {r.get("exception_id") for r in rows} != set(ids):
+    csv_by_id = {r.get("exception_id"): r for r in rows}
+    json_by_id = {r.get("exception_id"): r for r in records}
+    if set(csv_by_id) != set(json_by_id):
         errors.append("JSON and CSV exception_id sets differ")
+    else:
+        # Counts and ID sets alone can hide per-row swaps. Verify the key
+        # identity and disposition fields remain attached to the same ID.
+        parity_fields = ("exception_type", "symbol", "trade_date",
+                         "source_repository", "disposition")
+        for exception_id, json_row in json_by_id.items():
+            csv_row = csv_by_id[exception_id]
+            for field in parity_fields:
+                if str(json_row.get(field, "")) != str(csv_row.get(field, "")):
+                    errors.append(
+                        f"JSON/CSV {field} mismatch for {exception_id}: "
+                        f"{json_row.get(field)!r} != {csv_row.get(field)!r}"
+                    )
     return errors
 
 def main() -> int:

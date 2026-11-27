@@ -84,16 +84,19 @@ def _broker_rate(records, trade_day, amount, side):
     return rate, record
 
 
-def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule):
+def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, sell_date=None):
     """Return scenario rates only when every dated schedule component is covered."""
     day = _day(trade_date, "trade_date")
+    exit_day = day if sell_date is None else _day(sell_date, "sell_date")
+    if exit_day < day:
+        raise ValueError("sell_date_before_buy_date")
     buy = _decimal(buy_amount, "buy_amount")
     sell = _decimal(sell_amount, "sell_amount")
     if buy <= 0 or sell <= 0 or not isinstance(schedule, dict):
         raise ValueError("invalid_cost_schedule_input")
     buy_rate, buy_record = _broker_rate(schedule.get("brokerage_slabs", []), day, buy, "buy")
-    sell_rate, sell_record = _broker_rate(schedule.get("brokerage_slabs", []), day, sell, "sell")
-    tax_record = _effective(schedule.get("tax_schedules", []), day, "tax")
+    sell_rate, sell_record = _broker_rate(schedule.get("brokerage_slabs", []), exit_day, sell, "sell")
+    tax_record = _effective(schedule.get("tax_schedules", []), exit_day, "tax")
     tax_rate = _decimal(tax_record.get("rate"), "capital_gain_tax_rate")
     regulatory = _decimal(schedule.get("regulatory_rate"), "regulatory_rate")
     dp = _decimal(schedule.get("sell_dp_charge"), "sell_dp_charge")
@@ -110,6 +113,7 @@ def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule):
             "sell_brokerage": {k: sell_record[k] for k in ("schedule_id", "source_id", "source_sha256")},
             "tax": {k: tax_record[k] for k in ("schedule_id", "source_id", "source_sha256")},
         },
+        "buy_date": day.isoformat(), "sell_date": exit_day.isoformat(),
         "classification": "caller_supplied_dated_cost_scenario",
         "production_eligible": False,
     }

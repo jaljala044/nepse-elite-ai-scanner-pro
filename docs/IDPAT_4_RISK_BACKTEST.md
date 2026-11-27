@@ -26,3 +26,5 @@ Branch: idpat-4-risk-backtest
 - No queue position, partial fills, circuit limits, suspensions, settlement, market impact, actual NEPSE brokerage/tax schedule or corporate-action adjustment in this first replay layer.
 - No verified historical signal archive, live feed, production calibration or actual performance claim is included.
 - No probability or forward performance estimate is produced.
+## Integration dependency
+- This branch is based on the tested historical-segment eligibility implementation in PR #177. Keep that dependency in the base branch when validating or integrating IDPAT-4; its matching evidence-aware test contract is required by the full backend suite.

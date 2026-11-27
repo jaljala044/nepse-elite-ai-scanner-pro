@@ -62,6 +62,26 @@ class IDPATPriceVolumeTests(unittest.TestCase):
         with self.assertRaises(IDPATError):
             self.run_engine(data)
 
+    def test_cutoff_and_bar_dates_must_be_canonical_iso(self):
+        data = snapshot()
+        with self.assertRaisesRegex(IDPATError, "noncanonical_as_of_date"):
+            analyze_idpat_price_volume(
+                data, as_of_date="20261126",
+                as_of_timestamp="2026-11-26T16:00:00+05:45",
+            )
+        data["price_volume"]["bars"][-1]["date"] = "20261021"
+        with self.assertRaisesRegex(IDPATError, "noncanonical_bar_date"):
+            self.run_engine(data)
+
+    def test_zero_or_fractional_share_volume_is_rejected(self):
+        for volume in ("0", "1.5"):
+            data = snapshot()
+            data["price_volume"]["bars"][-1]["volume"] = volume
+            with self.subTest(volume=volume), self.assertRaisesRegex(
+                IDPATError, "bar_volume_must_be_positive_whole_shares"
+            ):
+                self.run_engine(data)
+
     def test_late_evidence_is_withheld(self):
         data = snapshot()
         data["price_volume"]["available_at"] = "2026-11-27T10:00:00+05:45"

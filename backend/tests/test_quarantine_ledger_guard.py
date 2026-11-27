@@ -109,5 +109,44 @@ class LedgerGuardTests(unittest.TestCase):
                         runtime_quarantine_keys()
 
 
+    def test_missing_blocked_candle_inside_window(self):
+        from app.quarantine_guard import filter_quarantined_feature_rows
+        keys = frozenset({("AAA", "2025-07-28")})
+        rows = [{"symbol":"AAA","date":day,"record_type":"ohlcv"}
+                for day in ("2025-07-27","2025-07-29")]
+        with self.assertRaisesRegex(ValueError,"quarantined"):
+            reject_quarantined_history(rows,"AAA",keys)
+        self.assertEqual(filter_quarantined_feature_rows(rows,keys),[])
+        unaffected = {"symbol":"BBB","date":"2025-07-29","record_type":"ohlcv"}
+        self.assertEqual(filter_quarantined_feature_rows(rows+[unaffected],keys),[unaffected])
+        reject_quarantined_history(rows[1:],"AAA",keys)
+        self.assertEqual(filter_quarantined_feature_rows(rows[1:],keys),rows[1:])
+
+    def test_database_withholds_missing_blocked_candle_without_deletion(self):
+        import os
+        from unittest.mock import patch
+        from app.database import persist_import, load_state, connect
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"ledger.json"
+            raw = self._ledger("2025-07-28")
+            path.write_bytes(raw)
+            env = {"NEPSE_API_DATABASE":str(Path(tmp)/"test.duckdb"),
+                   "NEPSE_QUARANTINE_LEDGER":str(path),
+                   "NEPSE_QUARANTINE_LEDGER_SHA256":hashlib.sha256(raw).hexdigest()}
+            def bar(day):
+                return {"date":day,"open":10,"high":11,"low":9,"close":10,"volume":100}
+            with patch.dict(os.environ,env,clear=True):
+                persist_import("fixture",{"AAA":[bar("2025-07-27"),bar("2025-07-29")],
+                                          "BBB":[bar("2025-07-29")]})
+                data, _ = load_state()
+                self.assertNotIn("AAA",data)
+                self.assertIn("BBB",data)
+                con = connect()
+                try:
+                    self.assertEqual(con.execute("SELECT COUNT(*) FROM daily_ohlcv").fetchone()[0],3)
+                finally:
+                    con.close()
+
+
 if __name__ == "__main__":
     unittest.main()

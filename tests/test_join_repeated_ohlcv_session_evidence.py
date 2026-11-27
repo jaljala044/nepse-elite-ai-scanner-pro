@@ -132,11 +132,11 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
                     writer.writeheader()
                     writer.writerow(values)
                 calendar.write_text(
-                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\\n"
+                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\n"
                     "2026-11-05,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
-                    ",2026-11-05T10:00:00+05:45,2026-11-05T11:00:00Z,2026-11-05T12:00:00Z,all_market,open\\n"
+                    ",2026-11-05T10:00:00+05:45,2026-11-05T11:00:00Z,2026-11-05T12:00:00Z,all_market,open\n"
                     "2026-11-06,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
-                    ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,all_market,open\\n",
+                    ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,all_market,open\n",
                     encoding="utf-8",
                 )
                 with self.assertRaisesRegex(ValueError, expected_error):

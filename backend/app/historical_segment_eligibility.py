@@ -9,6 +9,7 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ALLOWED_SESSION_STATES = {
@@ -133,6 +134,10 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     if len(expected) != len(set(expected)):
         reasons.append("duplicate_expected_session")
     expected = sorted(set(expected))
+    market_cutoff_date = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
+    for session_day in expected:
+        if session_day > market_cutoff_date:
+            reasons.append(f"future_expected_session:{session_day.isoformat()}")
     if not expected:
         reasons.append("verified_expected_sessions_required")
 

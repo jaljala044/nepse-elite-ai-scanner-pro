@@ -44,22 +44,22 @@ The new `OHLCV exception ledger` workflow downloads the original immutable artif
 
 Implementation and CI validation are pending in draft PR. This report does not authorize canonical OHLCV promotion, price repair, training, or predictive-signal promotion.
 
-## CI result — exact PR head `f8b1e7c7e4ac7bc1f0e32f3b48fa1c9d4290529a`
+## CI result — latest exact PR head `58f0ed0828ca393fff839fd1a4ac17abbc0a114d`
 
 All three exact-head workflows passed:
 
-- OHLCV exception ledger run [45933644818](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933644818): **passed**. It reran the pinned source archive audit at the exact source commits, ran the SocrateAI unadjusted-EOD cross-check, generated the canonical ledger, validated JSON/CSV, passed ledger regression tests and uploaded the artifact.
-- Backend unit tests run [45933645045](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933645045): **passed**.
-- Backend contract tests run [45933644854](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933644854): **passed**.
+- OHLCV exception ledger run [45933953438](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953438): **passed**. It reran the pinned source archive audit, cross-checked SocrateAI unadjusted EOD, generated the canonical ledger, validated JSON/CSV, passed ledger regression tests and uploaded the artifact.
+- Backend unit tests run [45933953436](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953436): **passed**.
+- Backend contract tests run [45933953451](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953451): **passed**.
 
-The pinned audit rerun scanned 525 files in each source repository (314,712 rows in SMC and 301,632 rows in History Starter), retaining 1,331 invalid OHLC rows and eight cross-source conflict keys. SocrateAI cross-check downloaded 994 daily files; one date/file was not published. The audit's integrity gate remains **not clean by design** while these exceptions exist; the ledger workflow passes because it preserves and classifies exceptions rather than suppressing them.
+The pinned audit rerun scanned all 525 files in each source repository (314,712 SMC rows and 301,632 History Starter rows), and retained 1,331 invalid OHLC rows and eight cross-source conflict keys. The audit report now records original CSV line numbers for both sides of all eight conflicts (16 source-line references); they are no longer null or inferred. SocrateAI cross-check downloaded 994 daily files; one was not published. The audit integrity gate remains **not clean by design** while exceptions exist; the ledger workflow passes because it preserves and classifies exceptions rather than suppressing them.
 
-- Generated artifact: [15170005920](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933644818/artifacts/15170005920), retained through 2027-02-25.
-- Artifact ZIP SHA-256: `f249f7ba21be5fd9b6dd1659eef35ba6414600e88e2ad13e65cbb3a64ba2a883`
-- Ledger JSON SHA-256: `f1bac744dd6dc546e64b774f30c9375884c131f3f15bea14e316b162f04cbde9`
-- Ledger CSV SHA-256: `9e2b12f681ab65daf3415ac6a5f71a3db3bcebf56fe6b7eed88dbb339faefe3c`
+- Generated artifact: [15169872483](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953438/artifacts/15169872483), retained through 2027-02-25.
+- Artifact ZIP SHA-256: `7b0327ab21da3ef175f878be349146920cde7e94b3f9e612900f71c03c8a044a`
+- Ledger JSON SHA-256: `d8ef3f15ab38def0a8f2e71212fcb6b8eaf1636d07de118f4b860398f5ed21be`
+- Ledger CSV SHA-256: `43b19ba98703b32274064eedf55daf675d9c5cd31039315f97bb45aa0aff5afe`
 - Counts: 1,339 unique exceptions; 1,331 invalid OHLC; eight conflicts; 1,332 unresolved; seven user-authoritatively resolved.
-- Independent downloaded-artifact inspection confirmed 1,339 JSON and CSV rows, identical ID sets, zero per-field JSON/CSV mismatches, all 1,331 invalid rows carrying their violated rule, and seven resolution payloads with canonical promotion disabled.
+- Independent downloaded-artifact inspection confirmed 1,339 JSON/CSV rows, identical unique ID sets, zero per-field JSON/CSV mismatches, all 1,331 invalid rows carrying their violated rule, 16 valid conflict source-line references, and seven resolution payloads with canonical promotion disabled.
 
 PR #179 remains draft/open/unmerged pending independent review. No raw source edits or canonical OHLCV promotion are authorized.
 

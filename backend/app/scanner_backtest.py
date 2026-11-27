@@ -104,17 +104,22 @@ def replay_strategy_horizon(*, strategy_id, horizon, signals, bars_by_symbol, pa
                 exit_i, exit_price, reason = i, target, "target"; break
         if exit_i is None:
             if last_i < sellable_i:
-                pending.append({"symbol": symbol, "decision_date": decision_day.isoformat(),
+                pending.append({"symbol": symbol, "decision_date": decision_day.isoformat(), "source_signal_id": signal.get("signal_id"),
                     "reason": "holding_window_ended_before_sellable_session",
                     "last_observed_date": bars[last_i]["_date"].isoformat(),
                     "stop_triggered_while_locked": stop_pending}); continue
             exit_i, exit_price, reason = last_i, bars[last_i]["_prices"]["close"], "time_exit_close"
         gross = exit_price / entry - 1
         net = _net_return(entry, exit_price, costs, slip)
+        observed_window = bars[entry_i:exit_i+1]
+        max_favorable = max(b["_prices"]["high"] for b in observed_window) / entry - 1
+        max_adverse = min(b["_prices"]["low"] for b in observed_window) / entry - 1
         trades.append({"symbol": symbol, "decision_date": decision_day.isoformat(),
             "entry_date": bars[entry_i]["_date"].isoformat(), "entry_price": str(entry),
             "exit_date": bars[exit_i]["_date"].isoformat(), "exit_price": str(exit_price),
             "exit_reason": reason, "stop_price": str(stop), "target_price": str(target),\n            "liquidity_quantity_cap": signal.get("liquidity_quantity_cap"),\n            "gross_return_pct": str(gross*100), "net_return_pct": str(net*100),
+            "max_favorable_excursion_pct": str(max_favorable*100),
+            "max_adverse_excursion_pct": str(max_adverse*100),
             "holding_sessions": exit_i-entry_i+1, "settlement_lock_sessions": sellable_after_sessions,
             "stop_triggered_during_lock": stop_pending, "source_signal_id": signal.get("signal_id")})
     wins = [_d(t["net_return_pct"]) for t in trades if _d(t["net_return_pct"]) > 0]

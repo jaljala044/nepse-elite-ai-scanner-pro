@@ -1,6 +1,6 @@
 """Daily mark-to-market portfolio curve from verified fills, marks and opening inventory."""
 from __future__ import annotations
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
@@ -81,7 +81,7 @@ def build_mark_to_market_curve(*, initial_cash, executions, daily_marks,
             raise ValueError("initial_position_fields_or_point_in_time_evidence_invalid")
         seen_open.add(symbol); positions[symbol]=Decimal(qty); opening_cost+=Decimal(qty)*basis
     initial_equity=cash+opening_cost
-    fills.sort(key=lambda x:(x["_day"],x.get("sequence",0),x["execution_id"]))
+    fills.sort(key=lambda x:(x["_day"],_time(x["execution_at"]).astimezone(timezone.utc),x.get("sequence",0),x["execution_id"]))
     fill_index=0; peak=initial_equity; max_dd=Decimal("0"); curve=[]; total_cost=Decimal("0")
     for day in dates:
         while fill_index<len(fills) and fills[fill_index]["_day"]<=day:

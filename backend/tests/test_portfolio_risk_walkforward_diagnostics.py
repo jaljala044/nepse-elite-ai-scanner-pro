@@ -9,14 +9,17 @@ class PortfolioRiskDashboardTests(unittest.TestCase):
                 {"source_signal_id":"A","symbol":"AAA","sector":"Hydro","entry_date":"2026-01-01",
                  "scheduled_exit_date":"2026-01-04","allocated_notional":"30000","risk_budget":"1000"},
                 {"source_signal_id":"B","symbol":"BBB","sector":"Hydro","entry_date":"2026-01-02",
-                 "scheduled_exit_date":"2026-01-05","allocated_notional":"20000","risk_budget":"1000"}],
+                 "scheduled_exit_date":"2026-01-05","allocated_notional":"20000","risk_budget":"1000"},
+                {"source_signal_id":"C","symbol":"CCC","entry_date":"2026-01-02",
+                 "scheduled_exit_date":"2026-01-05","allocated_notional":"10000","risk_budget":"500"}],
                 "closed_positions":[],"open_position_count":2}}]}
         out=build_portfolio_risk_dashboard(comparison=comparison)
         row=out["reports"][0]
         self.assertEqual(row["status"],"CONCENTRATION_WARNING")
         self.assertEqual(row["peak_sector"],"Hydro")
-        self.assertEqual(row["peak_sector_exposure_pct_equity"],"50")
-        self.assertEqual(row["sector_coverage"],"COMPLETE")
+        self.assertEqual(row["peak_sector_exposure_pct_equity"],"50.0")
+        self.assertEqual(row["sector_coverage"],"INCOMPLETE")
+        self.assertEqual(row["missing_sector_position_count"],1)
     def test_strategy_portfolios_are_not_pooled(self):
         out=build_portfolio_risk_dashboard(comparison={"portfolios":[
             {"portfolio":{"initial_equity":"100","accepted_positions":[],"closed_positions":[]}},

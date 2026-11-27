@@ -53,7 +53,8 @@ class LedgerBuilderTests(unittest.TestCase):
             "ULHC": ("509.00", "515.00", "495.00", "510.75", "32288", "16273342.10"),
         }
         self.assertEqual(set(USER_AUTHORITATIVE_RESOLUTIONS),
-                         {(symbol, "2025-07-28") for symbol in expected})
+                         {(symbol, "2025-07-28") for symbol in expected} |
+                         {("API", "2026-11-19"), ("HRL", "2026-11-19")})
         for symbol, values in expected.items():
             row = USER_AUTHORITATIVE_RESOLUTIONS[(symbol, "2025-07-28")]
             self.assertEqual((row["open"], row["high"], row["low"], row["close"],

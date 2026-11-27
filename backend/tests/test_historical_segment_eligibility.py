@@ -224,5 +224,24 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertFalse(result["exploratory_replay_eligible"])
 
 
+    def test_each_required_session_provenance_field_is_mandatory(self):
+        day = self.sessions[0]
+        invalid_fields = {
+            "source_id": "",
+            "source_record_ref": "",
+            "evidence_sha256": "not-a-sha256",
+            "rights_status": "pending",
+            "retrieved_at": "not-a-timestamp",
+            "available_at": "not-a-timestamp",
+        }
+        for field, invalid_value in invalid_fields.items():
+            with self.subTest(field=field):
+                evidence = dict(self.session_evidence)
+                evidence[day] = dict(evidence[day], **{field: invalid_value})
+                result = self.evaluate(session_evidence=evidence)
+                self.assertIn("session_evidence_unverified:" + day, result["reasons"])
+                self.assertEqual(result["unknown_session_count"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

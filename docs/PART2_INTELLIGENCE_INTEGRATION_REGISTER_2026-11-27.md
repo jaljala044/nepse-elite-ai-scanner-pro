@@ -146,7 +146,7 @@ PR #154 (`cab084e1e2d64b8dba4e4f48a8c7bbd13e24be36`) adds `backend/app/sebon_par
 
 ### P2.03 SEBON raw PDF capture — PR #156 merged
 
-PR #156 adds `backend/app/sebon_pdf_capture.py` and nine tests. It restricts requests to official SEBON HTTPS PDF hosts, constructs its own httpx client with TLS verification enabled and redirects disabled, validates HTTP status/content type/PDF magic/size, records peer certificate fingerprint and capture timestamps, and persists exact bytes with the existing immutable content-addressed raw capture store. It does not yet acquire the two identified documents in this environment, parse PDF content, or establish sector membership. Membership admission and production sector signals remain disabled. CI must pass before merge.
+PR #156 adds `backend/app/sebon_pdf_capture.py` and nine tests. It restricts requests to official SEBON HTTPS PDF hosts, constructs its own httpx client with TLS verification enabled and redirects disabled, validates HTTP status/content type/PDF magic/size, records peer certificate fingerprint and capture timestamps, and persists exact bytes with the existing immutable content-addressed raw capture store. It does not yet acquire the two identified documents in this environment, parse PDF content, or establish sector membership. Membership admission and production sector signals remain disabled.
 
 
 ### P2.03 SEBON raw PDF capture — PR #156 merged 2026-11-27
@@ -162,14 +162,6 @@ PR #159 adds `backend/app/sebon_pdf_extraction.py`, a bounded `pypdf` dependency
 
 PR #159 validation note (2026-11-27): the first CI attempt exposed a detector/test mismatch because extracted PDF whitespace was normalized before a two-space column delimiter was matched. The parser was corrected to match the normalized line representation. Both required workflows passed on exact head `b663bea851c4e88ca6d82743c2b809a353228ae5`; squash merge commit: `0148eb46ce2dec9bcdd601da157fd519cab0c217`. The failed first attempt remains in workflow history.
 
-
-### P2.03 SEBON company-to-security reconciliation — PR #162 merged 2026-11-27
-
-PR #162 adds `backend/app/sebon_security_reconciliation.py` and standard-library `unittest` coverage. It reconciles page-referenced SEBON company candidates against a separately supplied official NEPSE security snapshot using Unicode-normalized exact-name matching only. A unique match remains `exact_name_match_review_required`; duplicate normalized official names are ambiguous and require manual review; unmatched rows remain unmatched. Both SEBON row references and official security source references are preserved. It does not fuzzy-match, infer aliases or symbols, verify identity, admit sector membership, or infer classification effective dates. All admission and production-sector flags remain false.
-
-The initial PR test run failed because the test file imported `pytest`, which is not installed in the repository's standard-library unittest runner. The test suite was converted to `unittest`. On corrected exact head `80ccd06d18ee530e7679133c2889b422367350fd`, all four reported GitHub Actions checks completed successfully (backend-unit-tests x2, unit-tests, tests-and-inventory). Squash merge commit: `09a26040953a4fb3728c9e306f1fc512cf94edd0`.
-
-**Next P2.03 gate:** obtain and pin an independently validated official NEPSE security-list snapshot (raw response bytes, URL, retrieval timestamp, TLS/hostname evidence, content type, byte count, SHA-256 and snapshot semantics), then run this reconciliation against it. Do not promote candidate identities or sector membership without human review and primary evidence for classification effective dates.
 
 ### P2.03 SEBON company-to-security reconciliation — PR #162 merged 2026-11-27
 

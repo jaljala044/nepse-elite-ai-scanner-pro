@@ -1,0 +1,346 @@
+{
+  "schema_version": 1,
+  "workflow_run": 46002866042,
+  "workflow_commit": "9dc9343ade1b8bde0fb9f5f5fc947a44c065b44e",
+  "artifact_id": 15198199162,
+  "original_register_blob": "24c67bff0a12bf388cb94a2a0dd9e3ce1db99e9b",
+  "records": [
+    {
+      "symbol": "MERO",
+      "date": "2026-04-24",
+      "source_sha256": "83b3f29234e1a42fdc210d66fa2cfe58cd65966f5a294bfea3af40679e847db2",
+      "contracts": 34,
+      "target_errors": 0,
+      "session_errors": 0,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "730.0",
+      "high": "730.0",
+      "low": "720.0",
+      "close": "726.0",
+      "volume": "1671.0",
+      "turnover": "1212289.6",
+      "first_contract": "2026042403000499",
+      "last_contract": "2026042403006307",
+      "original": {
+        "open": "731.1",
+        "high": "730.0",
+        "low": "720.0",
+        "close": "726.0",
+        "volume": "1671.0"
+      },
+      "changed_fields": [
+        "open"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-24",
+      "source_sha256": "83b3f29234e1a42fdc210d66fa2cfe58cd65966f5a294bfea3af40679e847db2",
+      "contracts": 52,
+      "target_errors": 0,
+      "session_errors": 0,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "445.0",
+      "high": "449.8",
+      "low": "440.5",
+      "close": "445.1",
+      "volume": "4553.0",
+      "turnover": "2022210.3",
+      "first_contract": "2026042404001156",
+      "last_contract": "2026042404012886",
+      "original": {
+        "open": "449.9",
+        "high": "449.8",
+        "low": "440.5",
+        "close": "445.1",
+        "volume": "4553.0"
+      },
+      "changed_fields": [
+        "open"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "API",
+      "date": "2026-04-27",
+      "source_sha256": "002245dbc9caa2f9726c4997689ac2da93fbdaafb4a3875752490e079fbcd5e5",
+      "contracts": 543,
+      "target_errors": 0,
+      "session_errors": 0,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "345.0",
+      "high": "345.0",
+      "low": "331.8",
+      "close": "341.0",
+      "volume": "206969.0",
+      "turnover": "70901168.8",
+      "first_contract": "2026042704000057",
+      "last_contract": "2026042704012455",
+      "original": {
+        "open": "339.9",
+        "high": "345.0",
+        "low": "340.0",
+        "close": "341.0",
+        "volume": "206969.0"
+      },
+      "changed_fields": [
+        "open",
+        "low"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-27",
+      "source_sha256": "002245dbc9caa2f9726c4997689ac2da93fbdaafb4a3875752490e079fbcd5e5",
+      "contracts": 42,
+      "target_errors": 0,
+      "session_errors": 0,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "640.0",
+      "high": "645.0",
+      "low": "625.0",
+      "close": "630.0",
+      "volume": "3747.0",
+      "turnover": "2357007.0",
+      "first_contract": "2026042705002025",
+      "last_contract": "2026042705016427",
+      "original": {
+        "open": "648.7",
+        "high": "645.0",
+        "low": "625.0",
+        "close": "630.0",
+        "volume": "3747.0"
+      },
+      "changed_fields": [
+        "open"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "SPDL",
+      "date": "2026-04-28",
+      "source_sha256": "1daa9dce4732f61b4946269e7a93f96971c1f6e89dfa4996adef8c3a9bf75923",
+      "contracts": 212,
+      "target_errors": 0,
+      "session_errors": 0,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "404.0",
+      "high": "406.3",
+      "low": "389.0",
+      "close": "399.0",
+      "volume": "64356.0",
+      "turnover": "25724896.5",
+      "first_contract": "2026042804001530",
+      "last_contract": "2026042804014973",
+      "original": {
+        "open": "408.0",
+        "high": "406.3",
+        "low": "396.0",
+        "close": "399.0",
+        "volume": "64356.0"
+      },
+      "changed_fields": [
+        "open",
+        "low"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2026-04-29",
+      "source_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "contracts": 32,
+      "target_errors": 0,
+      "session_errors": 1,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "720.0",
+      "high": "731.0",
+      "low": "700.4",
+      "close": "730.0",
+      "volume": "1573.0",
+      "turnover": "1133907.4",
+      "first_contract": "2026042905001005",
+      "last_contract": "2026042905014105",
+      "original": {
+        "open": "740.0",
+        "high": "731.0",
+        "low": "718.0",
+        "close": "730.0",
+        "volume": "1573.0"
+      },
+      "changed_fields": [
+        "open",
+        "low"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-04-29",
+      "source_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "contracts": 900,
+      "target_errors": 0,
+      "session_errors": 1,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "685.0",
+      "high": "685.0",
+      "low": "659.4",
+      "close": "679.2",
+      "volume": "74867.0",
+      "turnover": "50842816.6",
+      "first_contract": "2026042905000025",
+      "last_contract": "2026042905014268",
+      "original": {
+        "open": "685.5",
+        "high": "685.0",
+        "low": "676.1",
+        "close": "679.2",
+        "volume": "74867.0"
+      },
+      "changed_fields": [
+        "open",
+        "low"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "RADHI",
+      "date": "2026-04-29",
+      "source_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "contracts": 276,
+      "target_errors": 0,
+      "session_errors": 1,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "775.0",
+      "high": "775.0",
+      "low": "749.9",
+      "close": "764.8",
+      "volume": "57510.0",
+      "turnover": "43931577.6",
+      "first_contract": "2026042904000225",
+      "last_contract": "2026042904013930",
+      "original": {
+        "open": "780.0",
+        "high": "775.0",
+        "low": "755.0",
+        "close": "764.8",
+        "volume": "57510.0"
+      },
+      "changed_fields": [
+        "open",
+        "low"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29",
+      "source_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "contracts": 58,
+      "target_errors": 0,
+      "session_errors": 1,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "610.0",
+      "high": "610.0",
+      "low": "587.0",
+      "close": "610.0",
+      "volume": "2840.0",
+      "turnover": "1694525.4",
+      "first_contract": "2026042905000407",
+      "last_contract": "2026042905014115",
+      "original": {
+        "open": "615.0",
+        "high": "610.0",
+        "low": "587.0",
+        "close": "610.0",
+        "volume": "2840.0"
+      },
+      "changed_fields": [
+        "open"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-29",
+      "source_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "contracts": 102,
+      "target_errors": 0,
+      "session_errors": 1,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "442.6",
+      "high": "444.9",
+      "low": "424.9",
+      "close": "438.0",
+      "volume": "9360.0",
+      "turnover": "4124579.2",
+      "first_contract": "2026042904000760",
+      "last_contract": "2026042904013274",
+      "original": {
+        "open": "446.0",
+        "high": "444.9",
+        "low": "438.0",
+        "close": "438.0",
+        "volume": "9360.0"
+      },
+      "changed_fields": [
+        "open",
+        "low"
+      ],
+      "independent_provider_confirmed": false
+    },
+    {
+      "symbol": "UNHPL",
+      "date": "2026-04-29",
+      "source_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "contracts": 150,
+      "target_errors": 0,
+      "session_errors": 1,
+      "ordering": "contract_number_unverified",
+      "admission_allowed": false,
+      "status": "review_only",
+      "open": "480.2",
+      "high": "487.0",
+      "low": "475.0",
+      "close": "475.4",
+      "volume": "46481.0",
+      "turnover": "22184529.2",
+      "first_contract": "2026042904000127",
+      "last_contract": "2026042904014035",
+      "original": {
+        "open": "487.9",
+        "high": "487.0",
+        "low": "475.0",
+        "close": "475.4",
+        "volume": "46481.0"
+      },
+      "changed_fields": [
+        "open"
+      ],
+      "independent_provider_confirmed": false
+    }
+  ],
+  "approved_corrections": []
+}

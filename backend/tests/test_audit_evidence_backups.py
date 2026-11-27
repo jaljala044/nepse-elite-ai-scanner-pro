@@ -12,8 +12,10 @@ from scripts.audit_evidence_backups import audit
 class BackupReadinessSymlinkTests(unittest.TestCase):
     def test_symlink_backup_directory_is_counted_as_invalid(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            target = root / "outside"
+            base = Path(tmp)
+            root = base / "backup-root"
+            root.mkdir()
+            target = base / "outside"
             target.mkdir()
             (target / "backup-manifest.json").write_text("{}", encoding="utf-8")
             (root / "linked-backup").symlink_to(target, target_is_directory=True)

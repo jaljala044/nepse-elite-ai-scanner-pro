@@ -49,16 +49,17 @@ class BrokerEarlyPatternTests(unittest.TestCase):
         }
 
     def evaluate(self, **overrides):
-        return evaluate_broker_early_pattern(
-            broker_code="11",
-            symbol="NABIL",
-            execution_channel_windows=self.windows,
-            market_context=self.context,
-            decision_time="2026-11-26T16:00:00+05:45",
-            as_of_session="2026-11-26",
-            minimum_daily_flow_multiple=1.5,
-            **overrides,
-        )
+        arguments = {
+            "broker_code": "11",
+            "symbol": "NABIL",
+            "execution_channel_windows": self.windows,
+            "market_context": self.context,
+            "decision_time": "2026-11-26T16:00:00+05:45",
+            "as_of_session": "2026-11-26",
+            "minimum_daily_flow_multiple": 1.5,
+        }
+        arguments.update(overrides)
+        return evaluate_broker_early_pattern(**arguments)
 
     def test_detects_early_entry_candidate_only_with_multi_horizon_flow_and_context(self):
         result = self.evaluate()

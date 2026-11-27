@@ -122,3 +122,21 @@ No win rate, profit factor, expectancy, accuracy, calibrated probability or live
 6. Only then run six-strategy OOS replay and compare execution-adjusted outcomes.
 
 **Safety boundary:** research only; production remains disabled. No data-quality audit or passing CI run authorizes live trading.
+
+
+---
+
+## Recheck addendum — 2026-11-27 19:24 UTC
+
+A later repository refresh supersedes the original comparison snapshot above:
+
+- Current `main` head: `4840fc0b16926bd53c6c3cc9321a4baa5aadec39`.
+- The dependency branch `historical-acquisition-unified-portfolio-risk` remains **262 commits ahead / 80 behind**, with **156 changed files**. The behind count increased from 56; bulk integration remains unsafe.
+- PR #239's documentation-only audit head had backend-tests run `46052188530` pass, but no second contract workflow was observed. PR #239 remains open/draft and is not merged.
+- PR #233 remains open/draft and currently reports `mergeable=false`; PR #235 and #236 remain open/draft and report `mergeable=true`. All three were created against the earlier mainline baseline and require a fresh review against current `main`.
+- The 616-session cross-check report records 616 candidate dates, 224 with official market-summary observations inside its one-year coverage window, 392 before that coverage window, and a decision of `review_only_no_calendar_promotion`. This does not authorize promotion of candidate dates into the canonical session calendar.
+- The official 2026 holiday evidence records 40 verified closed dates plus one exceptional closure, but zero verified open dates. Absence from the holiday API is not evidence of an open session.
+
+The 18-symbol 2025 lifecycle cohort has since been added in PR #242 with a structural validator. It remains secondary-source/archive evidence only; 17 matching boundaries are candidates for further review and SAIL remains quarantined. PR #242's final observed backend suite passed 1,398 tests, and its historical-integrity workflow passed. It is open/draft, not merged.
+
+This addendum is the current audit snapshot. It does not change the original research-only, non-promotable disposition.

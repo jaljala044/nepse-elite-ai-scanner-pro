@@ -46,8 +46,10 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         day = self.sessions[-1]
         statuses = dict(self.statuses, **{day: "no_trade_verified"})
         result = self.evaluate(session_statuses=statuses, records=self.records[:-1])
-        self.assertTrue(result["exploratory_replay_eligible"])
+        self.assertFalse(result["exploratory_replay_eligible"])
         self.assertEqual(result["verified_no_trade_count"], 1)
+        self.assertEqual(result["verified_traded_session_count"], 119)
+        self.assertIn("insufficient_traded_sessions", result["reasons"])
 
     def test_unverified_session_status_fails_closed(self):
         statuses = dict(self.statuses)

@@ -12,11 +12,16 @@ def run_integrated_research(*, snapshot, as_of_date, as_of_timestamp,
                                                 as_of_timestamp=as_of_timestamp)
     fields=("wyckoff","smc","volume","relative_strength","sector")
     aligned=False
+    confluence_status="UNKNOWN"
     if confirmation is not None:
         _available(confirmation,cutoff,"confirmation")
         if confirmation["symbol"]!=snapshot["symbol"]:
             raise ValueError("confirmation_symbol_mismatch")
-        aligned=all(confirmation.get(f)=="BULLISH" for f in fields)
+        labels=[confirmation.get(f,"UNKNOWN") for f in fields]
+        if any(v not in ("BULLISH","BEARISH","NEUTRAL","UNKNOWN") for v in labels):
+            raise ValueError("invalid_confirmation_label")
+        aligned=all(v=="BULLISH" for v in labels)
+        confluence_status="ALIGNED" if aligned else "UNKNOWN" if "UNKNOWN" in labels else "CONFLICTING"
     records,scenarios=[],[]
     actions={}
     for horizon in ("t_plus_2","swing","positional","investment"):
@@ -26,7 +31,7 @@ def run_integrated_research(*, snapshot, as_of_date, as_of_timestamp,
             actions[horizon]="EXIT_REVIEW"
             continue
         if plan.get("action")!="BUY" or not aligned:
-            actions[horizon]="UNKNOWN" if not aligned or decision.get("status")=="withheld" or horizon=="investment" else "WAIT"
+            actions[horizon]="UNKNOWN" if confluence_status=="UNKNOWN" or decision.get("status")=="withheld" or horizon=="investment" else "WAIT"
             continue
         evidence=[]
         for name in ("market","sector","liquidity","broker","price_volume","candidate"):
@@ -44,7 +49,7 @@ def run_integrated_research(*, snapshot, as_of_date, as_of_timestamp,
         if config is not None:
             scenarios.append(simulate_execution_scenario(signal=frozen["record"],**config))
     return dict(classification="integrated_research_only",actions=actions,
-                upstream_decision=decision,confluence_aligned=aligned,
+                upstream_decision=decision,confluence_aligned=aligned,confluence_status=confluence_status,
                 frozen_signals=records,execution_scenarios=scenarios,
                 execution_summary=aggregate_execution_scenarios(scenarios),
                 production_eligible=False,

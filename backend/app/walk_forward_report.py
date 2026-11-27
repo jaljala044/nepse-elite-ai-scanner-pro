@@ -4,6 +4,7 @@ from __future__ import annotations
 from math import isfinite, log
 from datetime import date
 from app.scenario_validation import walk_forward_splits
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
 
 
 def _scores(actual: list[int], probability: list[float], baseline_probability: float) -> dict:
@@ -23,16 +24,29 @@ def _scores(actual: list[int], probability: list[float], baseline_probability: f
 
 
 def build_walk_forward_report(rows: list[dict], min_train_dates: int,
-                              test_dates: int, step_dates: int | None = None) -> dict:
+                              test_dates: int, step_dates: int | None = None, *, require_ledger: bool = False) -> dict:
     """Rows require one binary outcome and probability per dated forecast.
 
     Each fold's benchmark prevalence is calculated only from outcomes strictly
     before that fold's test start. No shuffled splits or test-derived baseline.
     """
+    keys = runtime_quarantine_keys(required=require_ledger)
     normalized_rows = []
     for index, row in enumerate(rows):
         try:
             observation_date = date.fromisoformat(str(row["observation_date"])).isoformat()
+            if is_quarantined(row):
+                raise ValueError("quarantined forecast input")
+            if keys is not None:
+                symbol = row.get("symbol")
+                sessions = row.get("constituent_sessions")
+                if not isinstance(symbol, str) or not symbol.strip() or not isinstance(sessions, list) or not sessions:
+                    raise ValueError("missing forecast symbol or constituent-session lineage")
+                dates_used = [date.fromisoformat(day).isoformat() for day in sessions]
+                if dates_used != sessions or len(set(dates_used)) != len(dates_used) or observation_date not in dates_used:
+                    raise ValueError("invalid forecast constituent-session lineage")
+                if any((symbol.strip().upper(), day) in keys for day in dates_used):
+                    raise ValueError("quarantined forecast constituent session")
             actual_value = row["actual"]
             if isinstance(actual_value, bool) or actual_value not in (0, 1, "0", "1"):
                 raise ValueError("actual must be exactly binary 0 or 1")
@@ -63,4 +77,6 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
                         "test_rows": len(test), **_scores(labels, probabilities, prevalence)})
     return {"status": "evaluated" if reports else "insufficient_sample",
             "fold_count": len(reports), "folds": reports,
+            "quarantine_ledger_checked": keys is not None,
+            "approved_backtest_eligible": False, "production_promotion_allowed": False,
             "warning": "synthetic or unverified records do not establish predictive value; report source and point-in-time gates separately"}

@@ -52,13 +52,19 @@ async function run(){
  }else{
  const f=el("broker-context-file").files[0];if(!f||f.size>5*1024*1024)throw Error("Choose a JSON evidence file under 5 MiB");
  body=JSON.parse(await f.text());
+ if(mode==="swing"||mode==="positional")body={...body,mode};
  }
- const path={context:"broker-context",concentration:"broker-concentration",rotation:"broker-context-rotation",ledger:"broker-ledger-profiles","stock-leaders":"broker-leaderboards","broker-leaders":"broker-leaderboards"}[mode];
+ const path={context:"broker-context",concentration:"broker-concentration",rotation:"broker-context-rotation",ledger:"broker-ledger-profiles",swing:"broker-mode",positional:"broker-mode","stock-leaders":"broker-leaderboards","broker-leaders":"broker-leaderboards"}[mode];
  const response=await fetch("/v1/research/"+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+el("broker-context-token").value},body:JSON.stringify(body),cache:"no-store",signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error(response.status===401?"Research credential rejected":response.status===503?"Research access not configured":response.status===429?"Request budget exceeded":"Evidence rejected or API unavailable");
  const d=await response.json();if(id!==generation)return;
  if(d.production_eligible!==false||d.signals_enabled!==false)throw Error("Unexpected research safety contract");
- if(d.status==="insufficient_evidence"){status.textContent="UNKNOWN — "+(d.reason||"Incomplete evidence");return;}
+ if(d.status==="insufficient_evidence"){status.textContent="UNKNOWN — "+(d.reason||"Incomplete evidence");
+ if(mode==="swing"||mode==="positional"){
+ table(["Strategy","Required sessions","Evaluated profiles","Confirmation"],[[mode,d.policy?.required_sessions,d.evaluated_profiles,"WITHHELD"]]);
+ if(d.exclusions&&typeof d.exclusions==="object")table(["Exclusion reason","Count"],Object.entries(d.exclusions));
+ }
+ return;}
  status.textContent="Research only — supplied sources not independently authenticated";
  if(mode==="stock-leaders"||mode==="broker-leaders"){
  leaderboards(d,mode);

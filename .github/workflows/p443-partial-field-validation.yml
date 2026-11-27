@@ -48,10 +48,29 @@ jobs:
           Path("recovery-output/partial-field-summary.json").write_text(json.dumps(summary,indent=2))
           print(json.dumps(summary,indent=2))
           PY
+      - name: Independently recompute evidence hashes and deterministic output
+        run: |
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          output=Path("recovery-output/partial-field-research.json")
+          original=output.read_bytes()
+          report=json.loads(original)
+          expected=["data/reference/p443_equity_quarantine.json","data/reports/p443_reconstructed_candle_comparison_v1.json","data/reports/p443_timestamp_chronology_comparison_v1.json"]
+          assert set(report["input_sha256"])==set(expected)
+          actual={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in expected}
+          assert actual==report["input_sha256"]
+          subprocess.run(["python","backend/app/partial_field_recovery.py"],check=True)
+          assert output.read_bytes()==original
+          evidence={"inputs":actual,"dataset_sha256":hashlib.sha256(original).hexdigest(),"deterministic_rebuild":True}
+          Path("recovery-output/partial-field-hashes.json").write_text(json.dumps(evidence,indent=2))
+          print(json.dumps(evidence,indent=2))
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: p443-partial-field-research
           path: |
             recovery-output/partial-field-research.json
             recovery-output/partial-field-summary.json
+            recovery-output/partial-field-hashes.json
           if-no-files-found: error

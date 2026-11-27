@@ -90,6 +90,56 @@ class PortfolioServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "different transaction"):
             self.tx("BUY", "3", "100", "0", "2026-01-01", "capture-1")
 
+
+    def test_holding_preferences_are_owner_scoped_and_require_positive_position(self):
+        self.tx("BUY", "2500", "593", "0", "2026-01-01")
+        saved = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "cfcl",
+            investment_horizon="one_to_three_months",
+            risk_preference="aggressive_growth",
+        )
+        self.assertEqual(saved["symbol"], "CFCL")
+        self.assertEqual(saved["investment_horizon"], "one_to_three_months")
+        self.assertEqual(saved["risk_preference"], "aggressive_growth")
+        self.assertEqual(
+            service.list_holding_preferences(self.owner, self.portfolio["id"]),
+            [saved],
+        )
+        self.assertEqual(service.list_holding_preferences("user-b", self.portfolio["id"]), None)
+
+    def test_holding_preferences_reject_invalid_choices_and_missing_position(self):
+        with self.assertRaisesRegex(LookupError, "positive holding not found"):
+            service.set_holding_preferences(
+                self.owner, self.portfolio["id"], "CFCL",
+                investment_horizon="long_term", risk_preference="balanced",
+            )
+        self.tx("BUY", "1", "100", "0", "2026-01-01")
+        with self.assertRaisesRegex(ValueError, "investment_horizon is not supported"):
+            service.set_holding_preferences(
+                self.owner, self.portfolio["id"], "CFCL",
+                investment_horizon="forever", risk_preference="balanced",
+            )
+        with self.assertRaisesRegex(ValueError, "risk_preference is not supported"):
+            service.set_holding_preferences(
+                self.owner, self.portfolio["id"], "CFCL",
+                investment_horizon="long_term", risk_preference="YOLO",
+            )
+
+    def test_holding_preferences_update_existing_record_without_duplicates(self):
+        self.tx("BUY", "10", "100", "0", "2026-01-01")
+        first = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "CFCL",
+            investment_horizon="short_term", risk_preference="capital_protection",
+        )
+        second = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "CFCL",
+            investment_horizon="long_term", risk_preference="balanced",
+        )
+        self.assertEqual(first["symbol"], second["symbol"])
+        self.assertEqual(second["investment_horizon"], "long_term")
+        self.assertEqual(second["risk_preference"], "balanced")
+        self.assertEqual(len(service.list_holding_preferences(self.owner, self.portfolio["id"])), 1)
+
     def test_database_and_parent_directory_permissions_are_private(self):
         db_path = Path(self.tmp.name) / "portfolio.sqlite3"
         self.assertEqual(db_path.stat().st_mode & 0o777, 0o600)

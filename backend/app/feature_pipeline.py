@@ -14,6 +14,13 @@ from app.relative_strength_features import relative_strength_universe
 from app.idpat_price_volume_engine import idpat_price_volume_features
 
 
+def _explicitly_quarantined(row):
+    for key in ("row_status", "status", "disposition", "quarantine_status"):
+        if str(row.get(key, "")).strip().lower().startswith("quarantin"):
+            return True
+    return bool(row.get("quarantined") or row.get("quarantine_reasons"))
+
+
 def build_feature_snapshot(records: list[dict], decision_time: str,
                            expected_symbols: list[str] | None = None,
                            sector_membership: dict | None = None,
@@ -53,12 +60,17 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             and valid_digest(row.get("source_payload_sha256"))
             and row.get("price_basis_status") in {"verified_unadjusted_no_actions", "verified_adjusted"}
             and row.get("corporate_action_status") in {"clear", "adjusted_verified"}
+            and not _explicitly_quarantined(row)
         )
         symbol = str(row.get("symbol", "")).strip().upper()
-        contract = price_contract_by_symbol.setdefault(symbol, {"input_rows": 0, "admitted_rows": 0, "exclusions": []})
+        contract = price_contract_by_symbol.setdefault(symbol, {"input_rows": 0, "admitted_rows": 0, "exclusions": [], "observed_sessions": [], "duplicate_sessions": []})
         contract["input_rows"] += 1
         if admitted:
             prices.append(row)
+            if day in contract["observed_sessions"]:
+                contract["duplicate_sessions"].append(day)
+            else:
+                contract["observed_sessions"].append(day)
             contract["admitted_rows"] += 1
         else:
             failure = {"row_index": index, "symbol": row.get("symbol"),
@@ -125,7 +137,15 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             sector_membership_contract_reason = None
 
     for contract in price_contract_by_symbol.values():
-        contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
+        observed = set(contract["observed_sessions"])
+        contract["missing_expected_sessions"] = sorted(canonical_sessions - observed) if valid_calendar else []
+        contract["score_eligible"] = (
+            contract["input_rows"] > 0
+            and contract["admitted_rows"] == contract["input_rows"]
+            and valid_calendar
+            and not contract["duplicate_sessions"]
+            and observed == canonical_sessions
+        )
     for contract in broker_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
 
@@ -196,10 +216,25 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             }
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
-    idpat_features_by_symbol = {
-        symbol: idpat_price_volume_features(items)
-        for symbol, items in sorted(by_symbol.items()) if symbol
-    }
+    idpat_features_by_symbol = {}
+    idpat_symbols = set(by_symbol)
+    if expected_symbols:
+        idpat_symbols.update(str(symbol).strip().upper() for symbol in expected_symbols if str(symbol).strip())
+    for symbol in sorted(idpat_symbols):
+        if not symbol:
+            continue
+        contract = price_contract_by_symbol.get(symbol, {})
+        items = by_symbol.get(symbol, [])
+        if not contract.get("score_eligible"):
+            idpat_features_by_symbol[symbol] = {
+                "status": "input_contract_unverified",
+                "reason": ("no_point_in_time_eligible_prices" if not items else
+                           "quarantine_source_or_complete_session_contract_failed"),
+                "score": None, "events": [], "history_sessions": len(items),
+                "missing_expected_sessions": contract.get("missing_expected_sessions", sorted(canonical_sessions)),
+            }
+        else:
+            idpat_features_by_symbol[symbol] = idpat_price_volume_features(items)
     broker_footprint = broker_footprint_features(broker_rows)
     if expected_symbols:
         expected_rs_symbols = [str(symbol).strip().upper() for symbol in expected_symbols]

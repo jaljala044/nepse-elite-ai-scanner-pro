@@ -10,6 +10,7 @@ from datetime import date, datetime, timezone
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -128,9 +129,11 @@ class RawCaptureManifest:
     def validate(self, raw_bytes: bytes) -> dict[str, Any]:
         if self.manifest_version != 1:
             raise CaptureRejected("unsupported_manifest_version")
+        if not isinstance(self.trade_date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", self.trade_date):
+            raise CaptureRejected("invalid_trade_date")
         try:
             date.fromisoformat(self.trade_date)
-        except (TypeError, ValueError):
+        except ValueError:
             raise CaptureRejected("invalid_trade_date") from None
         for field in ("source_id", "capture_id", "source_rights_evidence_id",
                       "parser_name", "parser_version"):

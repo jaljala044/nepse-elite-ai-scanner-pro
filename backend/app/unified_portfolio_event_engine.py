@@ -361,6 +361,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 average_cost = pos["cost_basis"] / old_qty if old_qty else 0.0
                 pos["quantity"] -= qty
                 pos["cost_basis"] -= average_cost * qty
+                realized_cost = average_cost * qty
                 proceeds = gross - trade["_fees"]
                 if proceeds < 0:
                     raise ValueError("negative_sale_proceeds")
@@ -370,7 +371,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                                                           "trade_id": trade["trade_id"],
                                                           "symbol": symbol, "cash_delta": proceeds, "quantity": qty,
                                                           "source_id": trade["source_id"]})
-            executed_trades.append({"trade_id": trade["trade_id"], "signal_id": trade.get("signal_id"), "side": trade["side"], "symbol": symbol, "quantity": qty, "price": trade["_price"], "fees": trade["_fees"], "date": day.isoformat()})
+            executed_trades.append({"allocated_cost": realized_cost if trade["side"] == "SELL" else None, "realized_pnl": proceeds-realized_cost if trade["side"] == "SELL" else None, "trade_id": trade["trade_id"], "signal_id": trade.get("signal_id"), "side": trade["side"], "symbol": symbol, "quantity": qty, "price": trade["_price"], "fees": trade["_fees"], "date": day.isoformat()})
             pending_events[trade["_settle"]].append({"type": "trade_settlement_audit",
                                                       "trade_id": trade["trade_id"], "symbol": symbol,
                                                       "side": trade["side"], "source_id": trade["source_id"]})
@@ -438,6 +439,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         "as_of_date": as_of.isoformat(), "initial_cash": starting_cash,
         "ending_equity": curve[-1]["equity"], "equity_curve": curve,
         "benchmark_comparison": benchmark,
+        "ending_cost_basis": {s: v["cost_basis"] for s,v in positions.items() if v["quantity"] > 1e-8},
         "sized_trades": sized_trades,
         "executed_trade_scenarios": executed_trades,
         "risk_limits": limits, "circuit_breaker_triggered": circuit_breaker,

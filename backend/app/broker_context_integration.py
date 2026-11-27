@@ -87,7 +87,7 @@ def build_context(snapshot, prices, memberships, sector_prices, *, decision_time
             label="mixed_flow"
             if sum(net)>0 and up>=Decimal(".6") and ret>0 and relative>0 and vol>=1: label="accumulation_research_candidate"
             elif sum(net)<0 and down>=Decimal(".6") and ret<0 and relative<0 and vol>=1: label="distribution_research_candidate"
-            base.update(status="descriptive_only",classification=label,sector_code=sectors[0][0],
+            base.update(status="descriptive_only",classification=label,symbol=symbols[0],sector_code=sectors[0][0],
                 net_amount=str(sum(net)),gross_broker_side_amount=str(gross),positive_session_ratio=str(up),
                 negative_session_ratio=str(down),mean_participation=str(sum(shares)/len(shares)),
                 peak_participation=str(max(shares)),price_return=str(ret),sector_relative_return=str(relative),
@@ -96,6 +96,8 @@ def build_context(snapshot, prices, memberships, sector_prices, *, decision_time
             base["reason"]=str(exc)
         result.append(base)
     return {"methodology_version":VERSION,"decision_time":decision_time,"profiles":result,
+        "status":"descriptive_only" if any(r["status"]=="descriptive_only" for r in result) else "insufficient_evidence",
+        "reason":None if any(r["status"]=="descriptive_only" for r in result) else "no_eligible_profiles",
         "production_eligible":False,"signals_enabled":False,"source_authentication_performed":False,
         "input_sha256":sha256(json.dumps([snapshot,prices,memberships,sector_prices,sessions,sorted(q)],sort_keys=True,separators=(",",":")).encode()).hexdigest(),
         "limitations":"Caller-supplied evidence and calendar are not independently authenticated; broker codes are execution channels, not ownership; thresholds are uncalibrated research heuristics."}

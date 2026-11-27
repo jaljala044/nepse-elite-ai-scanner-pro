@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from .corporate_action_trade_plan import _time
 from .unified_portfolio_event_engine import _available
 
-def review_evidence_alignment(*,sessions,assessment_time,as_of_date,calendar_evidence,decisions=()):
+def review_evidence_alignment(*,sessions,assessment_time,as_of_date,calendar_evidence,decisions=(),required_categories=("broker","corporate_action")):
     tz=ZoneInfo("Asia/Kathmandu")
     cutoff=_time(assessment_time)
     days=[date.fromisoformat(d) for d in sessions]
@@ -24,6 +24,7 @@ def review_evidence_alignment(*,sessions,assessment_time,as_of_date,calendar_evi
         blockers=[]
         evidence=decision.get("evidence",[])
         if not evidence: blockers.append("missing_decision_evidence")
+        valid_categories=set()
         for record in evidence:
             try:
                 _available(record,when,"decision_evidence")
@@ -31,8 +32,10 @@ def review_evidence_alignment(*,sessions,assessment_time,as_of_date,calendar_evi
                     raise ValueError("future_observation")
                 if _time(record["observed_at"])>_time(record["available_at"]):
                     raise ValueError("observation_after_availability")
+                valid_categories.add(record.get("category"))
             except (ValueError,KeyError,TypeError):
                 blockers.append("invalid_or_future_evidence")
+        blockers.extend("missing_valid_category:"+c for c in required_categories if c not in valid_categories)
         results.append(dict(decision_id=did,point_in_time_evidence_passed=not blockers,blockers=blockers))
     return dict(calendar_alignment_passed=True,decisions=results,
         all_decisions_passed=bool(results) and all(r["point_in_time_evidence_passed"] for r in results),

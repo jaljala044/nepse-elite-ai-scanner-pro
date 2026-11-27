@@ -94,5 +94,11 @@ class CorporateActionPortfolioLedgerTests(unittest.TestCase):
             self.run_ledger([action, action])
 
 
+    def test_malformed_calendar_date_is_rejected(self):
+        action = self.action("bad-date", "bonus", entitlement_quantity=100,
+                             ratio=0.1, listing_date="2025-01-10T00:00:00")
+        with self.assertRaisesRegex(ValueError, "invalid_listing_date"):
+            self.run_ledger([action])
+
 if __name__ == "__main__":
     unittest.main()

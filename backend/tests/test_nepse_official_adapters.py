@@ -12,6 +12,12 @@ class OfficialAdapterTests(unittest.TestCase):
   r=validate_nepse_dataset(dataset_kind="ohlcv",rows=[row],source_envelope=ENV,decision_cutoff=CUTOFF)
   self.assertEqual(r["status"],"validated_for_research")
   self.assertFalse(r["production_promotion_allowed"])
+ def test_future_session_date_is_quarantined(self):
+  row={"security_id":"SEC1","session_date":"2026-11-28","open":"100","high":"110","low":"95","close":"105","volume":"1000","turnover":"105000"}
+  r=validate_nepse_dataset(dataset_kind="ohlcv",rows=[row],source_envelope=ENV,decision_cutoff=CUTOFF)
+  self.assertEqual(r["accepted_count"],0)
+  self.assertEqual(r["quarantined_count"],1)
+  self.assertIn("row_effective_after_decision_cutoff",r["quarantined_rows"][0]["reasons"])
  def test_bad_ohlcv_is_quarantined(self):
   row={"security_id":"SEC1","session_date":"2026-11-27","open":"100","high":"90","low":"95","close":"105","volume":"1000","turnover":"105000"}
   r=validate_nepse_dataset(dataset_kind="ohlcv",rows=[row],source_envelope=ENV,decision_cutoff=CUTOFF)

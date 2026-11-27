@@ -148,5 +148,22 @@ class LedgerGuardTests(unittest.TestCase):
                     con.close()
 
 
+    def test_forecast_engines_reject_omitted_blocked_session(self):
+        from unittest.mock import patch
+        from app.scenario_validation import validate_binary_forecasts
+        from app.walk_forward_report import build_walk_forward_report
+        keys = frozenset({("AAA", "2025-07-28")})
+        row = {"symbol":"AAA","constituent_sessions":["2025-07-27","2025-07-29"],
+               "observation_date":"2025-07-29","actual":1,"probability":0.8}
+        with patch("app.scenario_validation.runtime_quarantine_keys",return_value=keys), patch("app.walk_forward_report.runtime_quarantine_keys",return_value=keys):
+            with self.assertRaisesRegex(ValueError,"quarantined forecast constituent"):
+                validate_binary_forecasts([1],[0.8],lineage=[row])
+            with self.assertRaisesRegex(ValueError,"quarantined forecast constituent"):
+                build_walk_forward_report([row],1,1)
+            clean = dict(row,symbol="BBB")
+            self.assertEqual(validate_binary_forecasts([1],[0.8],lineage=[clean])["sample_count"],1)
+            self.assertEqual(build_walk_forward_report([clean],1,1)["status"],"insufficient_sample")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,7 +9,7 @@ The ledger generator consumes the immutable Actions artifact from workflow run `
 
 ## Ledger population
 
-The deterministic generator emits one record per exception:
+The canonical backend generator emits one record per exception:
 
 | Type | Count |
 |---|---:|
@@ -36,7 +36,7 @@ This produces 1,334 unresolved and five user-authority-resolved records. The fiv
 
 ## Reproducibility
 
-`scripts/build_ohlcv_exception_ledger.py` builds JSON and CSV from the pinned audit artifact inputs. `scripts/validate_ohlcv_exception_ledger.py` checks exact counts, unique IDs, allowed dispositions, required source evidence, SHA-256 shape, both sides of every conflict and JSON/CSV parity.
+`backend/build_ohlcv_exception_ledger.py` builds JSON and CSV from the pinned audit artifact inputs. `scripts/validate_ohlcv_exception_ledger.py` checks exact counts, unique IDs, allowed dispositions, required source evidence, SHA-256 shape, both sides of every conflict and JSON/CSV parity.
 
 The new `OHLCV exception ledger` workflow downloads the original immutable artifact by run ID, generates the ledger, validates it and publishes JSON/CSV as a workflow artifact. A passing CI run is required before the generated artifact is considered validated.
 
@@ -55,3 +55,9 @@ The ledger workflow passed on PR #179 head `979f37c10bbe00e9a0da6a661b3fb34271bf
 - Dispositions: 1,334 unresolved, five user-authority-resolved.
 
 The separate repository-wide backend test workflow failed because the Issue #20 implementation module `app.historical_segment_eligibility` exists only on PR #177 and has not been merged to `main`. This is a cross-PR dependency, not a ledger-validator failure. PR #179 remains draft and Issue #4 remains open until this dependency is resolved and the pinned full audit is rerun/reconciled.
+
+## Canonical pipeline integration
+
+The first draft introduced a second, parallel builder. This was removed after review. PR #179 now extends the repository's existing `backend/build_ohlcv_exception_ledger.py` and its backend unit tests, so the normal `ohlcv-archive-row-audit` workflow produces the same canonical ledger. The builder accepts the SocrateAI cross-check JSON and attaches per-record corroboration status, external row, source comparisons and daily-file SHA-256 without selecting an external value.
+
+The canonical audit workflow now runs the external cross-check before building the ledger. The dedicated PR workflow downloads the pinned original audit artifact and runs this same backend builder plus the strict JSON/CSV validator. The five user-authoritative 2025-07-28 source-conflict keys are dispositioned separately; all invalid OHLC rows and the other three source conflicts remain unresolved.

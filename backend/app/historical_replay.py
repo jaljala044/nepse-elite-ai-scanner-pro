@@ -9,6 +9,8 @@ from .market_structure import detect_structure, add_event_evidence
 from .point_in_time import eligible_as_of
 from .smc_multitimeframe import evaluate_multitimeframe
 
+from .strategy_research import observe
+
 METHOD = "point_in_time_replay_v2"
 
 def calendar_as_of(records, day, cutoff, first_input=None):
@@ -67,6 +69,7 @@ def replay(symbol, rows, *, reviewed=None, decision_dates=None, calendar_records
             "decision_time":cutoff.isoformat(),"input_count":len(prefix),
             "max_input_date":str(prefix[-1]["date"]),
             "provisional":evaluate_provisional(prefix,eligible=True),
-            "structure":structure,"multitimeframe":frames,"action":"NO TRADE"})
+            "structure":structure,"multitimeframe":frames,
+            "strategy_research":observe(prefix,frames,eligible=True),"action":"NO TRADE"})
     result["status"] = "research_only" if result["observations"] else "no_eligible_observations"
     return result

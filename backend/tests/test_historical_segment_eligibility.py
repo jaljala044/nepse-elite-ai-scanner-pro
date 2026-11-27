@@ -136,6 +136,12 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(records=records)
         self.assertIn("available_at_unverified:" + self.sessions[0], result["reasons"])
 
+    def test_zero_volume_bar_is_invalid_for_traded_session(self):
+        records = list(self.records)
+        records[0] = dict(records[0], volume="0")
+        result = self.evaluate(records=records)
+        self.assertIn("invalid_ohlcv:" + self.sessions[0], result["reasons"])
+
     def test_expected_session_outside_lifecycle_fails_even_without_bar(self):
         segment = dict(self.segment, effective_to=self.sessions[-2])
         result = self.evaluate(segment=segment, records=self.records[:-1])

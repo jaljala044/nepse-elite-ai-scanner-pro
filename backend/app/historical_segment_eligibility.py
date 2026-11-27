@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
+from urllib.parse import urlsplit
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ALLOWED_SESSION_STATES = {
@@ -79,6 +80,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         raise ValueError("session_statuses must be a date-to-status mapping")
     if not isinstance(session_evidence, dict):
         raise ValueError("session_evidence must be a date-to-provenance mapping")
+    if not isinstance(expected_sessions, (list, tuple)):
+        raise ValueError("expected_sessions must be a verified date list")
     if not isinstance(records, list):
         raise ValueError("records must be a list")
     if not isinstance(required_sessions, int) or isinstance(required_sessions, bool) or required_sessions < 1:
@@ -207,7 +210,13 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                 evidence_valid = False
             if not isinstance(evidence.get("source_record_ref"), str) or not evidence["source_record_ref"].strip():
                 evidence_valid = False
-            if not isinstance(evidence.get("source_url"), str) or not evidence["source_url"].startswith("https://"):
+            source_url = evidence.get("source_url")
+            try:
+                parsed_source_url = urlsplit(source_url) if isinstance(source_url, str) else None
+                if (parsed_source_url is None or parsed_source_url.scheme != "https"
+                        or not parsed_source_url.hostname):
+                    evidence_valid = False
+            except ValueError:
                 evidence_valid = False
             if not _SHA256.fullmatch(str(evidence.get("evidence_sha256") or "").lower()):
                 evidence_valid = False

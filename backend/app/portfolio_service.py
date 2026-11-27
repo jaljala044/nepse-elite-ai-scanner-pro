@@ -77,8 +77,7 @@ def _connect():
             risk_preference TEXT NOT NULL CHECK(risk_preference IN
                 ('capital_protection','balanced','aggressive_growth')),
             updated_at TEXT NOT NULL,
-            PRIMARY KEY(owner, portfolio_id, symbol),
-            FOREIGN KEY(owner, portfolio_id) REFERENCES portfolios(owner, id) ON DELETE CASCADE
+            PRIMARY KEY(owner, portfolio_id, symbol)
         );
     """)
     return con

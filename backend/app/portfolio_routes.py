@@ -1,5 +1,4 @@
 """Authenticated HTTP routes for private portfolio accounting."""
-from datetime import date
 from decimal import Decimal
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -24,7 +23,7 @@ class PortfolioTransactionCreate(BaseModel):
     quantity: Decimal = Field(gt=0)
     price: Decimal = Field(gt=0)
     fees: Decimal = Field(default=Decimal("0"), ge=0)
-    trade_date: date
+    trade_date: str = Field(pattern=r"^\\d{4}-\\d{2}-\\d{2}$")
     idempotency_key: str | None = Field(default=None, max_length=200)
 
 
@@ -97,7 +96,7 @@ def add_transaction(portfolio_id: str, payload: PortfolioTransactionCreate, requ
         return service.add_transaction(
             _owner(request), portfolio_id, symbol=payload.symbol, side=payload.side,
             quantity=payload.quantity, price=payload.price, fees=payload.fees,
-            trade_date=payload.trade_date.isoformat(),
+            trade_date=payload.trade_date,
             idempotency_key=payload.idempotency_key,
         )
     except LookupError as exc:

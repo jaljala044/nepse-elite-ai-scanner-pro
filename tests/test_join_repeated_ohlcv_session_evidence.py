@@ -48,7 +48,7 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
             self.assertEqual(rows[0]["session_pair_classification"], "both_dates_verified_open")
             self.assertEqual(rows[1]["session_pair_classification"], "session_evidence_incomplete")
             self.assertEqual(rows[1]["current_session_classification"],
-                             "unverified_session_candidate")
+                             "unverified_non_session_candidate")
             self.assertEqual(result["candidate_rows"], 2)
             saved = json.loads(summary.read_text(encoding="utf-8"))
             self.assertEqual(saved["output_csv_sha256"], result["output_csv_sha256"])

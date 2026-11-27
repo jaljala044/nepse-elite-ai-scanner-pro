@@ -56,3 +56,53 @@ class HistoricalTradeSimulationTests(unittest.TestCase):
         self.assertEqual(self.run_case()["trades"][0]["status"],"open_unresolved")
     def test_missing_cost_assumptions(self):
         self.assertEqual(self.run_case(costs=None)["status"],"missing_execution_evidence")
+
+    def dated_fixture(self):
+        self.days=["2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08"]
+        for row,day in zip(self.rows,self.days): row["date"]=day
+        self.controls={d:dict(verified=True,evidence_id="synthetic",ordinary_session=True,preopen_reference=100) for d in self.days}
+        self.obs[0]["decision_date"]=self.days[0]
+        self.obs[0]["strategy_research"]["as_of"]=self.days[0]
+        self.obs[0]["strategy_research"]["breakouts"][0]["retest_date"]=self.days[0]
+    def test_dated_exact_pnl(self):
+        self.dated_fixture()
+        r=self.run_case(cost_mode="dated_reference")
+        t=r["trades"][0]
+        self.assertEqual(t["status"],"closed_scenario")
+        self.assertAlmostEqual(t["net_pnl"],(80-3.6-3.888)*.95)
+        self.assertEqual(r["cost_mode"],"dated_reference")
+    def test_dated_missing_tax(self):
+        r=self.run_case(cost_mode="dated_reference")
+        t=r["trades"][0]
+        self.assertEqual(t["status"],"open_unresolved")
+        self.assertEqual(t["unresolved_reason"],"historical_exit_cost_missing")
+        self.assertIsNone(r["statistics"]["net_pnl"])
+    def test_dated_entry_capital(self):
+        r=self.run_case(cost_mode="dated_reference",initial_capital=1002)
+        self.assertEqual(r["excluded"][0]["reason"],"costs_or_capital_unavailable")
+    def test_dated_missing_dp(self):
+        del self.costs["sell_dp_charge"]
+        r=self.run_case(cost_mode="dated_reference")
+        self.assertEqual(r["excluded"][0]["reason"],"historical_entry_cost_missing")
+    def test_dated_ignores_flat_rates(self):
+        self.dated_fixture()
+        self.costs.update(buy_broker_rate=.1,sell_broker_rate=.1,capital_gain_tax_rate=.9)
+        t=self.run_case(cost_mode="dated_reference")["trades"][0]
+        self.assertAlmostEqual(t["costs"]["buy_cash"],1003.6)
+        self.assertEqual(t["costs"]["tax_reference"]["rate"],"0.05")
+    def test_dated_t2_no_exit(self):
+        self.dated_fixture()
+        r=self.run_case(cost_mode="dated_reference",horizon="t_plus_2",holding_sessions=2)
+        self.assertEqual(r["trades"][0]["status"],"open_unresolved")
+    def test_dated_missing_exit_control(self):
+        self.dated_fixture()
+        del self.controls[self.days[-1]]
+        self.assertEqual(self.run_case(cost_mode="dated_reference")["trades"][0]["status"],"open_unresolved")
+    def test_dated_no_future_tax_for_sizing(self):
+        with patch("app.historical_trade_simulation.dated_round_trip") as exit_cost:
+            self.run_case(cost_mode="dated_reference",horizon="t_plus_2",holding_sessions=2)
+            exit_cost.assert_not_called()
+    def test_flat_mode_default(self):
+        self.assertEqual(self.run_case()["cost_mode"],"flat_scenario")
+    def test_invalid_cost_mode(self):
+        with self.assertRaises(ValueError): self.run_case(cost_mode="unknown")

@@ -113,8 +113,6 @@ def _read_payload_bytes(root: Path, relative: Any) -> bytes:
             os.close(file_fd)
         for descriptor in reversed(directory_fds):
             os.close(descriptor)
-th_escapes_store")
-    return path
 
 
 class TrustedArtifactStore:

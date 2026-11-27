@@ -130,7 +130,7 @@ class BrokerEarlyPatternTests(unittest.TestCase):
         self.windows["1D"]["coded_amount_coverage_pct"] = 100.01
         result = self.evaluate()
         self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
-        self.assertEqual(result["reason"], "broker_execution_code_coverage_below_80_pct")
+        self.assertEqual(result["reason"], "broker_execution_code_coverage_out_of_range")
 
     def test_negative_daily_ratio_fails_closed(self):
         self.windows["1D"]["execution_channels"][0]["latest_buy_vs_prior_20_avg_ratio"] = -0.1

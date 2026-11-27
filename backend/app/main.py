@@ -18,6 +18,7 @@ from .signal_store import store_signal, store_outcome, get_signal, list_signals,
 from .signal_outcome_validation import evaluate_signal_path
 from .backtest import run_walk_forward_backtest
 from .execution_backtest import simulate_execution_scenario, aggregate_execution_scenarios
+from .portfolio_backtest import run_portfolio_backtest
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -89,6 +90,23 @@ class ExecutionBatchRequest(BaseModel):
     quantity_by_signal: dict[str, int]
     verified_sessions_by_symbol: dict[str, list[date]]
     calendar_evidence_by_symbol: dict[str, dict]
+    cost_assumptions_by_symbol: dict[str, dict]
+    execution_config_by_symbol: dict[str, dict]
+
+class PortfolioBacktestRequest(BaseModel):
+    signal_ids: list[str] = Field(min_length=1, max_length=5000)
+    evaluation_date: date
+    portfolio_sessions: list[date]
+    portfolio_calendar_evidence: dict
+    verified_sessions_by_symbol: dict[str, list[date]]
+    calendar_evidence_by_symbol: dict[str, dict]
+    sector_by_symbol: dict[str, str]
+    initial_capital: float = Field(gt=0)
+    max_positions: int = Field(default=5, ge=1, le=100)
+    max_position_pct: float = Field(default=0.20, gt=0, le=1)
+    max_sector_pct: float = Field(default=0.40, gt=0, le=1)
+    risk_per_trade_pct: float = Field(default=0.01, gt=0, le=1)
+    max_drawdown_pct: float = Field(default=0.15, gt=0, le=1)
     cost_assumptions_by_symbol: dict[str, dict]
     execution_config_by_symbol: dict[str, dict]
 
@@ -453,6 +471,62 @@ def research_execution_batch(request: ExecutionBatchRequest):
                 "Scenario prices and quantities are not verified fills.",
                 "All fee, tax, tick, price-band, turnover and participation inputs remain caller-supplied assumptions."
             ]}
+
+
+
+@app.post("/v1/research/backtest/portfolio")
+def research_portfolio_backtest(request: PortfolioBacktestRequest):
+    """Run a chronological cash/exposure-constrained portfolio scenario."""
+    if len(request.signal_ids) != len(set(request.signal_ids)):
+        raise HTTPException(422, "duplicate_signal_ids")
+    records = []
+    for signal_id in request.signal_ids:
+        record = get_signal(signal_id)
+        if record is None:
+            raise HTTPException(404, "signal_not_found:" + signal_id)
+        records.append(record)
+    symbols = sorted({record.get("symbol") for record in records if record.get("action") == "BUY"})
+    cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+    calendar_items = [("PORTFOLIO", request.portfolio_calendar_evidence)] + [
+        (symbol, request.calendar_evidence_by_symbol.get(symbol) or {}) for symbol in symbols]
+    for label, calendar in calendar_items:
+        try:
+            coverage = float(calendar.get("coverage"))
+            available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            raise HTTPException(422, "calendar_evidence_malformed:" + label)
+        if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+                or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0
+                or available.tzinfo is None or available.utcoffset() is None or available > cutoff):
+            raise HTTPException(422, "verified_point_in_time_calendar_required:" + label)
+    for symbol in symbols:
+        if (symbol not in DATA or symbol not in request.verified_sessions_by_symbol
+                or symbol not in request.sector_by_symbol
+                or symbol not in request.cost_assumptions_by_symbol
+                or symbol not in request.execution_config_by_symbol):
+            raise HTTPException(422, "portfolio_symbol_inputs_missing:" + symbol)
+    rows_by_symbol = {
+        symbol: [row for row in DATA[symbol] if row["date"] <= request.evaluation_date]
+        for symbol in symbols
+    }
+    try:
+        return run_portfolio_backtest(
+            signals=records, rows_by_symbol=rows_by_symbol,
+            verified_sessions_by_symbol={
+                symbol: [day.isoformat() for day in request.verified_sessions_by_symbol[symbol]]
+                for symbol in symbols},
+            evaluation_date=request.evaluation_date.isoformat(),
+            portfolio_sessions=[day.isoformat() for day in request.portfolio_sessions],
+            sector_by_symbol=request.sector_by_symbol,
+            initial_capital=request.initial_capital, max_positions=request.max_positions,
+            max_position_pct=request.max_position_pct, max_sector_pct=request.max_sector_pct,
+            risk_per_trade_pct=request.risk_per_trade_pct,
+            max_drawdown_pct=request.max_drawdown_pct,
+            cost_assumptions_by_symbol=request.cost_assumptions_by_symbol,
+            execution_config_by_symbol=request.execution_config_by_symbol,
+            reviewed=REVIEWED_ROWS)
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @app.get("/v1/research/readiness")

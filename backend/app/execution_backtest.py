@@ -169,6 +169,7 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
         "exit_participation_pct": float(filled_qty / exit_volume * 100),
         "gross_pnl": float((sell_price - buy_price) * filled_qty),
         "net_pnl": costs["net_pnl"], "net_return_pct": costs["net_return_pct"],
+        "buy_cash": costs["buy_cash"], "sell_cash": costs["sell_cash"],
         "buy_fees": costs["buy_fees"], "sell_fees": costs["sell_fees"], "tax": costs["tax"],
         "cost_assumptions": costs["assumptions"],
         "execution_config": {"tick_size": str(tick), "max_participation_pct": str(participation),

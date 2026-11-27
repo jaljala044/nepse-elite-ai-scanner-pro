@@ -46,13 +46,12 @@ def derive_idpat_gates_from_trusted_store(
     reports, artifact_rejections, lineage = {}, {}, {}
     for gate, names in GATE_ARTIFACTS.items():
         loaded = [artifacts.get(name) for name in names]
-        rejected = {
-            name: item.get("rejection_reason", "artifact_missing")
-            for name, item in zip(names, loaded)
-            if not isinstance(item, dict) or item.get("status") not in {
-                "observed", "research_only", "descriptive_only"
-            }
-        }
+        rejected = {}
+        for name, item in zip(names, loaded):
+            if not isinstance(item, dict):
+                rejected[name] = "artifact_missing"
+            elif item.get("status") not in {"observed", "research_only", "descriptive_only"}:
+                rejected[name] = item.get("rejection_reason", "artifact_not_admitted")
         if rejected:
             artifact_rejections[gate] = rejected
             reports[gate] = {"report_status": "blocked"}

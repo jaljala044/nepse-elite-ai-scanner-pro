@@ -147,6 +147,17 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(segment=segment)
         self.assertIn("session_outside_instrument_effective_interval:" + self.sessions[-1], result["reasons"])
 
+    def test_prelisting_and_postdelisting_no_trade_sessions_do_not_count(self):
+        first, last = self.sessions[0], self.sessions[-1]
+        segment = dict(self.segment, effective_from=self.sessions[1], effective_to=self.sessions[-2])
+        statuses = dict(self.statuses, **{first:"no_trade_verified", last:"no_trade_verified"})
+        records = self.records[1:-1]
+        result = self.evaluate(segment=segment, session_statuses=statuses, records=records)
+        self.assertIn("expected_session_outside_instrument_effective_interval:" + first, result["reasons"])
+        self.assertIn("expected_session_outside_instrument_effective_interval:" + last, result["reasons"])
+        self.assertEqual(result["verified_no_trade_count"], 2)
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_no_trade_session_with_bar_is_conflict(self):
         day = self.sessions[-1]
         statuses = dict(self.statuses, **{day: "no_trade_verified"})

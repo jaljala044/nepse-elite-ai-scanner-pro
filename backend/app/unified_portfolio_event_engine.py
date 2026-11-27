@@ -13,7 +13,10 @@ from math import floor
 
 def _day(value, name):
     try:
-        return date.fromisoformat(str(value)[:10])
+        parsed = value if isinstance(value, date) and not isinstance(value, datetime) else date.fromisoformat(value)
+        if parsed.isoformat() != str(value):
+            raise ValueError
+        return parsed
     except (TypeError, ValueError):
         raise ValueError("invalid_" + name) from None
 

@@ -11,6 +11,7 @@ from app.sector_strength_features import sector_strength_features
 from app.liquidity_features import liquidity_tradability_features
 from app.scoring_engine import score_feature_bundle
 from app.relative_strength_features import relative_strength_universe
+from app.idpat_price_volume_engine import idpat_price_volume_features
 
 
 def build_feature_snapshot(records: list[dict], decision_time: str,
@@ -195,7 +196,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             }
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
-    broker_footprint = broker_footprint_features(broker_rows)
+    idpat_features_by_symbol = {\n        symbol: idpat_price_volume_features(items)\n        for symbol, items in sorted(by_symbol.items()) if symbol\n    }\n    broker_footprint = broker_footprint_features(broker_rows)
     if expected_symbols:
         expected_rs_symbols = [str(symbol).strip().upper() for symbol in expected_symbols]
         benchmark_rows = [
@@ -334,7 +335,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "security_features": security_features,
         "trend_features": trend_features,
         "volume_features": volume_features,
-        "wyckoff_features": wyckoff_features,
+        "wyckoff_features": wyckoff_features,\n        "idpat_features": idpat_features_by_symbol,
         "smc_features": smc_features_by_symbol,
         "component_candidates": component_candidates,
         "component_feature_bundles": component_feature_bundles,

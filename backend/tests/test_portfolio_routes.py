@@ -53,6 +53,14 @@ class PortfolioRouteTests(unittest.TestCase):
 
         deleted = self.client.delete(f"/v1/portfolios/{portfolio_id}", headers=self.headers)
         self.assertEqual(deleted.status_code, 204)
+        self.assertEqual(
+            self.client.get(f"/v1/portfolios/{portfolio_id}", headers=self.headers).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get(f"/v1/portfolios/{portfolio_id}/transactions", headers=self.headers).status_code,
+            404,
+        )
 
     def test_compact_transaction_date_is_rejected_at_api_boundary(self):
         created = self.client.post("/v1/portfolios", headers=self.headers,

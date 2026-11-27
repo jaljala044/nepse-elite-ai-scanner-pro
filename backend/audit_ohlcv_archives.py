@@ -79,7 +79,7 @@ def audit_ohlcv_csv(content: bytes, path: str) -> dict[str, Any]:
             if values["low"] > min(values["open"], values["high"], values["close"]):
                 raise ValueError("low is above open, high or close")
             normalized = {name: _canonical(value) for name, value in values.items()}
-            record = {"symbol": symbol, "date": trade_date.isoformat(), **normalized}
+            record = {"symbol": symbol, "date": trade_date.isoformat(), **normalized, "source_csv_line": line_no}
             observations[trade_date.isoformat()].append(record)
             ordered_dates.append(trade_date)
             signature = tuple(normalized[name] for name in ("open", "high", "low", "close", "volume"))

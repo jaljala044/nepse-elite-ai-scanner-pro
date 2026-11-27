@@ -1,0 +1,245 @@
+"""Fail-closed eligibility evaluation for a single historical instrument segment.
+
+This evaluator is a gate/reporting primitive only. It never repairs, fills,
+adjusts, or joins OHLCV across security identities or lifecycle boundaries.
+"""
+from __future__ import annotations
+
+import re
+from datetime import date, datetime, timezone
+from decimal import Decimal, InvalidOperation
+
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_ALLOWED_SESSION_STATES = {
+    "traded", "no_trade_verified", "closed_verified",
+    "suspended_verified", "unknown",
+}
+_ALLOWED_RIGHTS = {"approved"}
+_ALLOWED_ADJUSTMENT_BASES = {"raw", "verified_adjusted"}
+
+
+def _iso_date(value, field):
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be an ISO-8601 date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be an ISO-8601 date") from exc
+    if parsed.isoformat() != value:
+        raise ValueError(f"{field} must use canonical YYYY-MM-DD")
+    return parsed
+
+
+def _aware_datetime(value, field):
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a timezone-aware ISO-8601 timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"{field} must be a timezone-aware ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field} must be timezone-aware")
+    return parsed.astimezone(timezone.utc)
+
+
+def _decimal(value):
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+    return parsed if parsed.is_finite() else None
+
+
+def _valid_ohlcv(row):
+    values = {key: _decimal(row.get(key)) for key in ("open", "high", "low", "close", "volume")}
+    if any(value is None for value in values.values()):
+        return False
+    if any(values[key] <= 0 for key in ("open", "high", "low", "close")) or values["volume"] < 0:
+        return False
+    return (values["high"] >= max(values["open"], values["close"], values["low"])
+            and values["low"] <= min(values["open"], values["close"], values["high"]))
+
+
+def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
+                                records, required_sessions=120,
+                                available_warmup_sessions=0, decision_cutoff):
+    """Evaluate a point-in-time segment without imputing missing or inactive dates.
+
+    expected_sessions must be a verified exchange-session list, not weekdays
+    generated from a schedule. session_statuses must explicitly classify each
+    date. A verified no-trade session is distinct from a missing bar, a closed
+    exchange date, suspension, and unknown status.
+    """
+    if not isinstance(segment, dict):
+        raise ValueError("segment must be a mapping")
+    if not isinstance(session_statuses, dict):
+        raise ValueError("session_statuses must be a date-to-status mapping")
+    if not isinstance(records, list):
+        raise ValueError("records must be a list")
+    if not isinstance(required_sessions, int) or isinstance(required_sessions, bool) or required_sessions < 1:
+        raise ValueError("required_sessions must be a positive integer")
+    if not isinstance(available_warmup_sessions, int) or isinstance(available_warmup_sessions, bool) or available_warmup_sessions < 0:
+        raise ValueError("available_warmup_sessions must be a non-negative integer")
+
+    cutoff = _aware_datetime(decision_cutoff, "decision_cutoff")
+    reasons = []
+    expected = []
+    for raw_day in expected_sessions:
+        expected.append(_iso_date(raw_day, "expected session"))
+    if len(expected) != len(set(expected)):
+        reasons.append("duplicate_expected_session")
+    expected = sorted(set(expected))
+    if not expected:
+        reasons.append("verified_expected_sessions_required")
+
+    symbol = segment.get("symbol")
+    security_id = segment.get("security_id")
+    if not isinstance(symbol, str) or not symbol or symbol != symbol.strip().upper():
+        reasons.append("segment_symbol_invalid")
+    if not isinstance(security_id, str) or not security_id.strip():
+        reasons.append("segment_security_id_missing")
+    if segment.get("identity_verified") is not True:
+        reasons.append("instrument_identity_not_verified")
+    if segment.get("boundary_reviewed") is not True:
+        reasons.append("lifecycle_boundary_not_reviewed")
+    if segment.get("suspension_overlap") is not False:
+        reasons.append("suspension_overlap_or_unknown")
+    if segment.get("merger_or_successor_boundary") is not False:
+        reasons.append("merger_or_successor_boundary_unknown_or_crossed")
+
+    try:
+        effective_from = _iso_date(segment.get("effective_from"), "effective_from")
+    except ValueError:
+        effective_from = None
+        reasons.append("effective_from_unverified")
+    effective_to = None
+    if segment.get("effective_to") is not None:
+        try:
+            effective_to = _iso_date(segment.get("effective_to"), "effective_to")
+        except ValueError:
+            reasons.append("effective_to_invalid")
+    if effective_from and effective_to and effective_to < effective_from:
+        reasons.append("invalid_effective_interval")
+
+    adjustment_basis = segment.get("adjustment_basis")
+    if adjustment_basis not in _ALLOWED_ADJUSTMENT_BASES:
+        reasons.append("adjustment_basis_unverified")
+    minimum_warmup = segment.get("minimum_warmup_sessions", 0)
+    if not isinstance(minimum_warmup, int) or isinstance(minimum_warmup, bool) or minimum_warmup < 0:
+        reasons.append("minimum_warmup_sessions_invalid")
+        minimum_warmup = 0
+    if available_warmup_sessions < minimum_warmup:
+        reasons.append("insufficient_causal_warmup")
+
+    normalized_statuses = {}
+    for raw_day, state in session_statuses.items():
+        try:
+            day = _iso_date(raw_day, "session status date")
+        except ValueError:
+            reasons.append("invalid_session_status_date")
+            continue
+        normalized_statuses[day] = state
+
+    by_day = {}
+    for index, row in enumerate(records):
+        if not isinstance(row, dict):
+            reasons.append(f"invalid_record:{index}")
+            continue
+        try:
+            day = _iso_date(row.get("session_date"), "record session_date")
+        except ValueError:
+            reasons.append(f"invalid_record_session_date:{index}")
+            continue
+        if day not in expected:
+            reasons.append(f"unexpected_bar:{day.isoformat()}")
+        by_day.setdefault(day, []).append(row)
+
+    verified_traded = 0
+    verified_no_trade = 0
+    verified_closed = 0
+    verified_suspended = 0
+    unknown = 0
+
+    for day in expected:
+        day_text = day.isoformat()
+        state = normalized_statuses.get(day)
+        if state not in _ALLOWED_SESSION_STATES:
+            reasons.append(f"session_status_unverified:{day_text}")
+            unknown += 1
+            continue
+        rows = by_day.get(day, [])
+        if state == "unknown":
+            reasons.append(f"session_status_unverified:{day_text}")
+            unknown += 1
+            if rows:
+                reasons.append(f"bar_on_unknown_session:{day_text}")
+            continue
+        if state == "closed_verified":
+            verified_closed += 1
+            reasons.append(f"closed_session_in_expected_sessions:{day_text}")
+            if rows:
+                reasons.append(f"bar_on_closed_session:{day_text}")
+            continue
+        if state == "suspended_verified":
+            verified_suspended += 1
+            reasons.append(f"suspended_session_in_segment:{day_text}")
+            if rows:
+                reasons.append(f"bar_on_suspended_session:{day_text}")
+            continue
+        if state == "no_trade_verified":
+            verified_no_trade += 1
+            if rows:
+                reasons.append(f"bar_present_on_verified_no_trade_session:{day_text}")
+            continue
+
+        verified_traded += 1
+        if not rows:
+            reasons.append(f"missing_bar:{day_text}")
+            continue
+        if len(rows) > 1:
+            reasons.append(f"duplicate_bar:{day_text}")
+            continue
+        row = rows[0]
+        if row.get("symbol") != symbol or row.get("security_id") != security_id:
+            reasons.append(f"bar_identity_mismatch:{day_text}")
+        if effective_from and day < effective_from or effective_to and day > effective_to:
+            reasons.append(f"session_outside_instrument_effective_interval:{day_text}")
+        if not _valid_ohlcv(row):
+            reasons.append(f"invalid_ohlcv:{day_text}")
+        if row.get("adjustment_basis") != adjustment_basis:
+            reasons.append(f"adjustment_basis_mismatch:{day_text}")
+        if row.get("rights_status") not in _ALLOWED_RIGHTS:
+            reasons.append(f"source_rights_not_approved:{day_text}")
+        digest = str(row.get("evidence_sha256") or "").lower()
+        if not _SHA256.fullmatch(digest):
+            reasons.append(f"evidence_hash_missing_or_invalid:{day_text}")
+        try:
+            available_at = _aware_datetime(row.get("available_at"), "available_at")
+            if available_at > cutoff:
+                reasons.append(f"lookahead_available_after_cutoff:{day_text}")
+        except ValueError:
+            reasons.append(f"available_at_unverified:{day_text}")
+
+    if verified_traded < required_sessions:
+        reasons.append("insufficient_traded_sessions")
+
+    reasons = sorted(set(reasons))
+    eligible = not reasons
+    return {
+        "symbol": symbol,
+        "security_id": security_id,
+        "expected_session_count": len(expected),
+        "verified_traded_session_count": verified_traded,
+        "verified_no_trade_count": verified_no_trade,
+        "verified_closed_session_count": verified_closed,
+        "verified_suspended_session_count": verified_suspended,
+        "unknown_session_count": unknown,
+        "required_traded_sessions": required_sessions,
+        "available_warmup_sessions": available_warmup_sessions,
+        "minimum_warmup_sessions": minimum_warmup,
+        "exploratory_replay_eligible": eligible,
+        "approved_backtest_eligible": False,
+        "production_promotion_allowed": False,
+        "reasons": reasons,
+        "policy": "verified_sessions_only_no_imputation_no_cross_identity_splice_no_ohlcv_adjustment",
+    }

@@ -44,7 +44,8 @@ def evaluate_strategy(*,strategy_id,symbol,horizon,decision_time,history_session
   score=_decimal(item.get("score")); available=_timestamp(item.get("available_at"))
   if item.get("status")!="verified" or score is None or score<0 or score>100 or not item.get("source_id") or not item.get("evidence_id") or available is None or available>cutoff:
    rejected.append(feature); continue
-  raw_covered+=Decimal(weight)\n  clusters.setdefault(spec["clusters"][feature],[]).append((feature,weight,score,item))
+  raw_covered+=Decimal(weight)
+  clusters.setdefault(spec["clusters"][feature],[]).append((feature,weight,score,item))
  covered=Decimal("0"); points=Decimal("0"); accepted={}
  for cluster,members in clusters.items():
   cap=max(Decimal(m[1]) for m in members); selected=max(members,key=lambda m:(m[2],m[1])); feature,_,score,item=selected

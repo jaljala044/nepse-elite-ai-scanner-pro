@@ -12,6 +12,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import duckdb
+from .historical_quarantine import configured_holds, reject_held
 
 DEFAULT_DB = Path(__file__).resolve().parents[1] / "data" / "nepse-api.duckdb"
 
@@ -81,6 +82,9 @@ def persist_import(source: str, parsed: dict[str, list[dict]]) -> dict:
     rows = [(symbol, row["date"], row["open"], row["high"], row["low"],
              row["close"], row["volume"])
             for symbol, values in parsed.items() for row in values]
+    holds = configured_holds()
+    for symbol, day, *_ in rows:
+        reject_held(symbol, day.isoformat(), holds)
     batch_id = str(uuid4())
     captured = datetime.now(timezone.utc)
     symbols = sorted(parsed)

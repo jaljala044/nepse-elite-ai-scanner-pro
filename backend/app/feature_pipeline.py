@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
-from app.historical_quarantine import window_errors
+from app.historical_quarantine import QUARANTINE, window_errors
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
@@ -138,6 +138,20 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
     prices = [r for r in prices if price_contract_by_symbol[
         str(r.get("symbol", "")).strip().upper()]["admitted_rows"] > 0]
 
+    for symbol, contract in broker_contract_by_symbol.items():
+        days = [str(r.get("trade_date", "")) for r in raw_broker_rows
+                if str(r.get("symbol", "")).strip().upper() == symbol]
+        blocked = sorted(d for ticker, d in QUARANTINE
+                         if ticker == symbol and days and min(days) <= d <= max(days))
+        if not symbol or blocked or contract["exclusions"]:
+            failure = {"symbol": symbol, "reason": "whole_broker_window_unverified",
+                       "details": ["historical_quarantine:" + d for d in blocked]}
+            broker_contract_failures.append(failure)
+            contract["exclusions"].append(failure)
+            contract["admitted_rows"] = 0
+    broker_rows = [r for r in broker_rows if broker_contract_by_symbol[
+        str(r.get("symbol", "")).strip().upper()]["admitted_rows"] > 0]
+
     for contract in price_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
     for contract in broker_contract_by_symbol.values():
@@ -150,7 +164,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                   "excluded_rows": len(raw_prices) - len(prices), "score_eligible": bool(raw_prices) and not price_contract_failures,
                   "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
-                  "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
+                  "excluded_rows": len(raw_broker_rows) - len(broker_rows), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
                   "exclusions": broker_contract_failures, "symbols": broker_contract_by_symbol},
         "sector_membership": {"score_eligible": sector_membership_contract_ok,
                               "reason": sector_membership_contract_reason},
@@ -371,7 +385,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "component_feature_bundles": component_feature_bundles,
         "aggregate_scores": aggregate_scores,
         "relative_strength": relative_strength,
-        "broker_participation": broker_participation_summary(raw_broker_rows),
+        "broker_participation": broker_participation_summary(broker_rows),
         "broker_footprint": broker_footprint,
         "sector_strength": sector_features,
         "liquidity_tradability": liquidity_snapshot,

@@ -1,0 +1,57 @@
+name: P443 partial field research validation
+on:
+  push:
+    branches: [p443-runtime-quarantine]
+    paths:
+      - '.github/workflows/p443-partial-field-validation.yml'
+      - 'backend/app/partial_field_recovery.py'
+      - 'backend/tests/test_partial_field_recovery.py'
+      - 'data/reports/p443_timestamp_chronology_comparison_v1.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Execute partial field builder
+        run: python backend/app/partial_field_recovery.py
+      - name: Verify exact scope and candidate integrity
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from decimal import Decimal
+          from collections import Counter
+          report=json.loads(Path("recovery-output/partial-field-research.json").read_text())
+          registry=json.loads(Path("data/reference/p443_equity_quarantine.json").read_text())
+          records=report["records"]
+          keys={(x["symbol"],x["date"]) for x in registry["records"]}
+          assert len(records)==len(keys)==1329
+          assert {(x["symbol"],x["date"]) for x in records}==keys
+          assert report["approved_corrections"]==[]
+          fields=Counter()
+          for row in records:
+              assert not row["scanner_eligible"] and not row["admission_allowed"] and not row["complete"]
+              assert not row["independent_evidence_authenticated"]
+              assert all(x is None for x in row["canonical_fields"].values())
+              for f,v in row["research_candidates"].items():
+                  if v is not None:
+                      assert Decimal(v).is_finite() and Decimal(v)>0
+                      fields[f]+=1
+          summary={"records":len(records),"records_with_candidates":sum(any(v is not None for v in r["research_candidates"].values()) for r in records),"candidate_fields":dict(fields),"canonical_admissions":0,"unique_keys":len(keys)}
+          Path("recovery-output/partial-field-summary.json").write_text(json.dumps(summary,indent=2))
+          print(json.dumps(summary,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p443-partial-field-research
+          path: |
+            recovery-output/partial-field-research.json
+            recovery-output/partial-field-summary.json
+          if-no-files-found: error

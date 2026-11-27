@@ -79,6 +79,30 @@ class BrokerRawCaptureTests(unittest.TestCase):
         with self.assertRaises(CaptureConflict):
             self.registry.stage(changed, raw)
 
+    def test_changed_raw_bytes_under_same_capture_identity_are_conflicts(self):
+        manifest, raw = fixture()
+        self.registry.stage(manifest, raw)
+        changed_raw = b"corrected source extract"
+        changed_manifest = RawCaptureManifest(**{
+            **manifest.__dict__,
+            "raw_sha256": hashlib.sha256(changed_raw).hexdigest(),
+            "raw_byte_count": len(changed_raw),
+        })
+        with self.assertRaises(CaptureConflict):
+            self.registry.stage(changed_manifest, changed_raw)
+
+    def test_late_available_capture_is_retained_with_both_timestamps(self):
+        manifest, raw = fixture()
+        late = RawCaptureManifest(**{
+            **manifest.__dict__,
+            "captured_at": "2026-11-25T16:00:00+05:45",
+            "available_at": "2026-11-27T09:00:00+05:45",
+        })
+        result = self.registry.stage(late, raw)
+        stored = self.registry.get(result["batch_id"])["manifest"]
+        self.assertEqual(stored["captured_at"], "2026-11-25T10:15:00+00:00")
+        self.assertEqual(stored["available_at"], "2026-11-27T03:15:00+00:00")
+
     def test_raw_hash_and_byte_count_are_verified(self):
         manifest, raw = fixture()
         with self.assertRaises(CaptureRejected):

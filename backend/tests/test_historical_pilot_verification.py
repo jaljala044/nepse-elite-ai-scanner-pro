@@ -41,8 +41,24 @@ class OfficialFirstTradeVerificationTests(unittest.TestCase):
         self.assertEqual(report["rejected_evidence"][0]["reason"], "evidence_available_after_decision_cutoff")
 
     def test_official_date_conflict_remains_unresolved(self):
-        report = self.run_check(dict(self.record, trade_date="2025-11-24"))
+        # A conflicting date must itself be covered by the validated capture.
+        self.captures["capture"]["window_end"] = "2025-11-24T23:59:59+05:45"
+        record = dict(self.record, trade_date="2025-11-24",
+                      available_at="2025-11-24T15:00:00+05:45",
+                      captured_at="2025-11-24T15:10:00+05:45")
+        report = validate_official_first_trade_evidence(
+            self.cohort, [record], decision_cutoff="2025-11-25T00:00:00+05:45",
+            validated_capture_reports=self.captures,
+        )
+        self.assertEqual(report["rejected_evidence"], [])
+        self.assertEqual(report["verified_count"], 0)
         self.assertEqual(report["unresolved"][0]["status"], "official_boundary_conflicts_with_reported_date")
+
+    def test_trade_outside_validated_capture_window_rejected(self):
+        report = self.run_check(dict(self.record, trade_date="2025-11-24"))
+        self.assertEqual(report["rejected_evidence"][0]["reason"], "trade_date_outside_validated_capture_window")
+        self.assertEqual(report["verified_count"], 0)
+        self.assertEqual(report["unresolved"][0]["status"], "unverified_no_capture_bound_official_contract_evidence")
 
     def test_page_hash_mismatch_rejected(self):
         report = self.run_check(dict(self.record, raw_sha256="b"*64))

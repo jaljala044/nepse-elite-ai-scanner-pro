@@ -10,8 +10,9 @@ class AtomicPortfolioReceipts:
             db.execute("CREATE TABLE IF NOT EXISTS research_portfolios (id TEXT PRIMARY KEY, cash TEXT NOT NULL, shares TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS research_postings (portfolio_id TEXT, action_id TEXT, digest TEXT NOT NULL, PRIMARY KEY(portfolio_id,action_id))")
             db.execute("CREATE TABLE IF NOT EXISTS research_costs (portfolio_id TEXT PRIMARY KEY, costs TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS research_lots (portfolio_id TEXT PRIMARY KEY, lots TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS research_rights (portfolio_id TEXT, action_id TEXT, digest TEXT, amount TEXT, PRIMARY KEY(portfolio_id,action_id))")
-    def initialize(self,portfolio_id,cash,shares,costs=None):
+    def initialize(self,portfolio_id,cash,shares,costs=None,lots=None):
         cash=Decimal(str(cash))
         if not portfolio_id or not cash.is_finite() or cash<0 or any(type(q) is not int or q<0 for q in shares.values()):
             raise ValueError("invalid_opening_snapshot")
@@ -21,6 +22,15 @@ class AtomicPortfolioReceipts:
                 if set(costs)!=set(shares) or any(not Decimal(str(c)).is_finite() or Decimal(str(c))<0 for c in costs.values()):
                     raise ValueError("invalid_opening_costs")
                 db.execute("INSERT INTO research_costs VALUES (?,?)",(portfolio_id,json.dumps({s:str(Decimal(str(c))) for s,c in costs.items()})))
+            if lots is not None:
+                if costs is None: raise ValueError("opening_costs_required")
+                qsum={}; csum={}; ids=set()
+                for lot in lots:
+                    lid=lot["lot_id"]; s=lot["symbol"]; q=lot["quantity"]; c=Decimal(str(lot["total_cost"]))
+                    if not lid or lid in ids or type(q) is not int or q<=0 or not c.is_finite() or c<0: raise ValueError("invalid_opening_lot")
+                    ids.add(lid); qsum[s]=qsum.get(s,0)+q; csum[s]=csum.get(s,Decimal(0))+c
+                if qsum!=shares or csum!={s:Decimal(str(c)) for s,c in costs.items()}: raise ValueError("opening_lot_mismatch")
+                db.execute("INSERT INTO research_lots VALUES (?,?)",(portfolio_id,json.dumps(lots,sort_keys=True)))
     def pay_rights(self,*,portfolio_id,entitlement,assessment_time):
         result=review_pending_assets(entitlements=[entitlement],confirmations=[],assessment_time=assessment_time)
         amount=Decimal(result["pending_paid_rights_at_cost"])
@@ -70,6 +80,21 @@ class AtomicPortfolioReceipts:
                 symbol=entitlement["symbol"]
                 costs[symbol]=str(Decimal(costs.get(symbol,"0"))+Decimal(payment[1]))
                 db.execute("UPDATE research_costs SET costs=? WHERE portfolio_id=?",(json.dumps(costs,sort_keys=True),portfolio_id))
+            lotrow=db.execute("SELECT lots FROM research_lots WHERE portfolio_id=?",(portfolio_id,)).fetchone()
+            if lotrow and shares:
+                lots=json.loads(lotrow[0])
+                symbol=entitlement["symbol"]
+                if entitlement["action_type"]=="bonus":
+                    allocation=entitlement.get("lot_allocations",{})
+                    eligible={l["lot_id"]:l for l in lots if l["symbol"]==symbol}
+                    if set(allocation)-set(eligible) or any(type(q) is not int or q<=0 for q in allocation.values()) or sum(allocation.values())!=shares[symbol]:
+                        raise ValueError("invalid_bonus_lot_allocation")
+                    for lid,q in allocation.items(): eligible[lid]["quantity"]+=q
+                else:
+                    lid="rights:"+aid
+                    if any(l["lot_id"]==lid for l in lots): raise ValueError("duplicate_rights_lot")
+                    lots.append(dict(lot_id=lid,symbol=symbol,quantity=shares[symbol],total_cost=payment[1]))
+                db.execute("UPDATE research_lots SET lots=? WHERE portfolio_id=?",(json.dumps(lots,sort_keys=True),portfolio_id))
             for symbol,q in shares.items(): holdings[symbol]=holdings.get(symbol,0)+q
             db.execute("INSERT INTO research_postings VALUES (?,?,?)",(portfolio_id,aid,digest))
             db.execute("UPDATE research_portfolios SET cash=?,shares=? WHERE id=?",(str(Decimal(row[0])+cash),json.dumps(holdings,sort_keys=True),portfolio_id))

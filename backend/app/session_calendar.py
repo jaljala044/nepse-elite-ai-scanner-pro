@@ -50,7 +50,7 @@ def load_calendar(path: str | Path) -> dict[date, dict[str, str]]:
                 "project_accepted_open",
             }
             if status not in allowed_statuses:
-                raise ValueError(f"line {line}: unsupported calendar status {status!r}")
+                raise ValueError(f"line {line}: unsupported evidence-backed calendar status {status!r}")
             if status == "project_accepted_open":
                 # User-approved archive baseline; keep it distinct from exchange-certified evidence.
                 if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "scope")):

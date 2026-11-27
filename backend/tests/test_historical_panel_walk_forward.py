@@ -15,11 +15,16 @@ def datasets():
     return {"ohlcv":report(bars,"ohlcv"),"session_calendar":report(cal,"calendar"),
         "instrument_universe":report(universe,"universe"),"corporate_actions":report(actions,"actions")}
 
+def readiness():
+    return {"status":"READY","data_quality":"HIGH","strategy_eligibility":{
+        name:{"eligible":True,"missing_datasets":[]} for name in
+        ("trend_momentum","idpat_smart_money","broker_footprint","smc_ict_liquidity","hybrid_consensus","fundamental_investment")}}
+
 class PanelTests(unittest.TestCase):
     def test_complete_common_panel_admitted_without_in_sample_actions(self):
         ds=datasets()
         # Dividend effective before sample; no adjustment event occurs inside sample.
-        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45")
+        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45",readiness_report=readiness())
         self.assertEqual(out["status"],"validated_for_research")
         self.assertEqual(out["eligible_symbols"],["AAA"])
         self.assertEqual(out["panel_rows"],3)

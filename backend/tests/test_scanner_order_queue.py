@@ -32,9 +32,18 @@ class QueueReplayTests(unittest.TestCase):
         self.assertEqual(result["filled_quantity"],0)
         self.assertFalse(result["queue_position_valid"])
 
+    def test_better_price_orders_block_fill_until_better_level_trades(self):
+        result=replay_passive_order_queue(order=order(),initial_queue_ahead={"quantity":"0",**ev("book","b1","2025-01-01T10:00:00+05:45")},
+            events=[event(1,"ADD","5",price="101",order_side="buy"),
+                event(2,"TRADE","10",price="100"),
+                event(3,"TRADE","5",price="101"),
+                event(4,"TRADE","10",price="100")])
+        self.assertEqual(result["filled_quantity"],10)
+        self.assertEqual(result["better_price_ahead_remaining"],"0")
+
     def test_new_orders_are_behind_and_aggressor_side_must_match(self):
         result=replay_passive_order_queue(order=order(),initial_queue_ahead={"quantity":"0",**ev("book","b1","2025-01-01T10:00:00+05:45")},
-            events=[event(1,"ADD","100"),event(2,"TRADE","5",side="BUY")])
+            events=[event(1,"ADD","100",order_side="buy"),event(2,"TRADE","5",side="BUY")])
         self.assertEqual(result["filled_quantity"],0)
 
 if __name__=="__main__": unittest.main()

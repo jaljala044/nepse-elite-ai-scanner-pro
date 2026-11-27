@@ -107,6 +107,21 @@ class ExecutionBacktestTests(unittest.TestCase):
         result = self.run_scenario(quantity=1.5)
         self.assertEqual(result["reason"], "whole_share_quantity_required")
 
+    def test_noncanonical_calendar_and_evaluation_dates_are_rejected(self):
+        for day in ("20250101", "2025-1-01", "2025-01-01T00:00:00"):
+            with self.subTest(day=day):
+                sessions = list(self.sessions)
+                sessions[0] = day
+                result = self.run_scenario(verified_sessions=sessions)
+                self.assertEqual(result["reason"], "verified_session_must_be_canonical_iso_date")
+        result = self.run_scenario(evaluation_date="20250112")
+        self.assertEqual(result["reason"], "evaluation_date_must_be_canonical_iso_date")
+
+    def test_unsorted_verified_sessions_are_rejected(self):
+        sessions = list(reversed(self.sessions))
+        result = self.run_scenario(verified_sessions=sessions)
+        self.assertEqual(result["reason"], "verified_sessions_must_be_sorted_unique")
+
     def test_aggregate_is_trade_level_and_excludes_withheld(self):
         summary = aggregate_execution_scenarios([
             {"status": "scenario_completed", "net_pnl": 100, "net_return_pct": 5},

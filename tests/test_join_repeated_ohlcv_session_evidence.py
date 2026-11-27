@@ -80,6 +80,34 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
             self.assertEqual(row["session_pair_classification"], "contains_verified_closure")
 
 
+    def test_project_accepted_open_dates_are_joined_without_exchange_certification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidates = root / "candidates.csv"
+            calendar = root / "calendar.csv"
+            output = root / "joined.csv"
+            summary = root / "summary.json"
+            candidates.write_text(
+                "repository,commit_sha,path,file_sha256,symbol,previous_date,current_date,previous_csv_line,current_csv_line\\n"
+                "source/a," + "a" * 40 + ",ABC.csv," + "b" * 64 +
+                ",ABC,2026-11-05,2026-11-06,2,3\\n", encoding="utf-8"
+            )
+            calendar.write_text(
+                "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\\n"
+                "2026-11-05,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified\\n"
+                "2026-11-06,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified\\n",
+                encoding="utf-8",
+            )
+            result = join_candidates(candidates, calendar, output, summary)
+            with output.open(newline="", encoding="utf-8") as handle:
+                row = next(csv.DictReader(handle))
+            self.assertEqual(row["previous_session_classification"], "project_accepted_open")
+            self.assertEqual(row["current_session_classification"], "project_accepted_open")
+            self.assertEqual(row["session_pair_classification"], "both_dates_project_accepted_or_verified_open")
+            saved = json.loads(summary.read_text(encoding="utf-8"))
+            self.assertIn("never exchange certification", saved["policy"])
+
+
     def test_rejects_noncanonical_dates_and_timestamp_suffixes(self):
         invalid_dates = ("20261105", "2026-11-05T00:00:00", "2026-1-05")
         for invalid in invalid_dates:

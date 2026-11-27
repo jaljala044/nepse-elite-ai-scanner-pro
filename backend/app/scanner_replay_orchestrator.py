@@ -22,7 +22,16 @@ def run_six_strategy_replay(*, historical_panel, signals_by_strategy_horizon,
     if not isinstance(partitions, (tuple, list)) or not partitions or any(p not in {"train","validation","out_of_sample"} for p in partitions):
         raise ValueError("invalid_partitions")
     runs, blocked = [], []
+    strategy_eligibility = historical_panel.get("strategy_eligibility", {})
     for strategy_id in STRATEGIES:
+        gate = strategy_eligibility.get(strategy_id)
+        if not isinstance(gate, dict) or gate.get("eligible") is not True:
+            missing = gate.get("missing_datasets", []) if isinstance(gate, dict) else ["readiness_strategy_eligibility_missing"]
+            for horizon in HOLDING_SESSIONS:
+                for partition in partitions:
+                    blocked.append({"strategy_id":strategy_id,"horizon":horizon,"partition":partition,
+                        "reason":"strategy_dataset_readiness_gate_failed","missing_datasets":missing})
+            continue
         for horizon in HOLDING_SESSIONS:
             key = strategy_id + ":" + horizon
             supplied = signals_by_strategy_horizon.get(key, [])
@@ -59,7 +68,7 @@ def run_six_strategy_replay(*, historical_panel, signals_by_strategy_horizon,
         "performance_claimed":False,"production_enabled":False,
         "limitations":[
             "This orchestrates replay of externally generated signals; it does not calculate scanner features or create signals.",
-            "The historical panel must already have passed point-in-time, universe and corporate-action controls.",
+            "The historical panel must carry a passing core readiness report, effective-dated universe controls, corporate-action clearance and strategy-specific optional-feed eligibility.",
             "Empty samples are reported as no_eligible_trades, not as zero-risk or successful strategies.",
             "Replay limitations include simplified fills, no circuit queues, market impact, portfolio overlap or partial fills."
         ]

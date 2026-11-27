@@ -26,7 +26,7 @@ class DatasetReadinessTests(unittest.TestCase):
         out=self.assess(self.data())
         self.assertEqual(out["status"],"PARTIAL")
         self.assertEqual(out["ohlcv_session_coverage_pct"],"100")
-        self.assertFalse(out["research_panel_assembly_allowed"])
+        self.assertTrue(out["research_panel_assembly_allowed"])
         self.assertEqual(out["inventory"]["floorsheet"]["availability"],"missing_optional")
     def test_missing_bar_blocks_with_symbol_gap(self):
         data=self.data();data["ohlcv"]["validation"]["accepted_rows"].pop()

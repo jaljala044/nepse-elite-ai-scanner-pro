@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
+from app.nepse_historical_universe import build_effective_universe
 
 REQUIRED = ("ohlcv", "session_calendar", "instrument_universe", "corporate_actions")
 OPTIONAL = ("floorsheet", "broker_summary", "sector_membership", "sector_index", "fundamentals")
@@ -94,27 +95,24 @@ def assess_historical_dataset_readiness(*, intake_reports, start_date, end_date,
     if duplicate_bars: errors.append("duplicate_ohlcv_security_sessions")
 
     universe_rows=[r for _,rows in normalized["instrument_universe"] for r in rows]
-    active_at_start={}
-    for row in universe_rows:
-        symbol=str(row.get("symbol","")).strip().upper()
-        sid=str(row.get("security_id","")).strip().upper()
-        effective=_date(row.get("effective_from"))
-        status=str(row.get("listing_status","")).upper()
-        if symbol and sid and effective and effective<=start and status in ACTIVE:
-            active_at_start.setdefault(sid,symbol)
-    expected=len(sessions)*len(active_at_start)
-    observed=len({(sid,d) for (sid,d),n in bar_counts.items() if sid in active_at_start and d in set(sessions) and n==1})
+    universe_result=build_effective_universe(universe_rows=universe_rows,session_dates=sessions)
+    errors.extend(universe_result["errors"])
+    expected_pairs={(sid,d) for d,members in universe_result["active_by_session"].items() for sid in members}
+    observed_pairs={(sid,d) for (sid,d),n in bar_counts.items() if n==1 and (sid,d) in expected_pairs}
+    expected=len(expected_pairs)
+    observed=len(observed_pairs)
     coverage=(Decimal(observed)/expected*100) if expected else Decimal("0")
     per_security=[]
-    session_set=set(sessions)
-    for sid,symbol in sorted(active_at_start.items()):
+    for sid in universe_result["security_ids"]:
+        symbol=(universe_result["symbols_by_security"].get(sid) or [sid])[-1]
+        expected_dates=sorted(d for d,members in universe_result["active_by_session"].items() if sid in members)
         actual={d for (security,d),n in bar_counts.items() if security==sid and n==1}
-        missing=sorted(session_set-actual)
-        per_security.append({"security_id":sid,"symbol":symbol,"expected_sessions":len(sessions),
-            "observed_sessions":len(actual & session_set),"missing_sessions":missing,
-            "coverage_pct":str(Decimal(len(actual & session_set))/len(sessions)*100) if sessions else "0",
+        missing=sorted(set(expected_dates)-actual)
+        per_security.append({"security_id":sid,"symbol":symbol,"expected_sessions":len(expected_dates),
+            "observed_sessions":len(set(expected_dates)&actual),"missing_sessions":missing,
+            "coverage_pct":str(Decimal(len(set(expected_dates)&actual))/len(expected_dates)*100) if expected_dates else "0",
             "status":"complete" if not missing else "incomplete"})
-    if not active_at_start: errors.append("no_historical_universe_members_at_sample_start")
+    if not universe_result["security_ids"]: errors.append("no_historical_universe_members_in_range")
     if expected and coverage<minimum: errors.append("ohlcv_session_coverage_below_threshold")
     if any(x["status"]!="complete" for x in per_security): errors.append("incomplete_security_history")
     # Validate OHLCV sanity independently, even if source adapter already checked it.
@@ -132,15 +130,27 @@ def assess_historical_dataset_readiness(*, intake_reports, start_date, end_date,
     ca_rows=[r for _,rows in normalized["corporate_actions"] for r in rows]
     ca_report_count=len(normalized["corporate_actions"])
     if not ca_report_count: errors.append("corporate_action_source_missing")
-    quality="LOW" if errors else ("MEDIUM" if any(inventory[k]["availability"]=="missing_optional" for k in OPTIONAL) else "HIGH")
-    status="BLOCKED" if errors else ("PARTIAL" if quality=="MEDIUM" else "READY")
+    core_errors=list(errors)
+    quality="LOW" if core_errors else ("MEDIUM" if any(inventory[k]["availability"]=="missing_optional" for k in OPTIONAL) else "HIGH")
+    status="BLOCKED" if core_errors else ("PARTIAL" if quality=="MEDIUM" else "READY")
+    strategy_requirements={
+        "trend_momentum":[],
+        "idpat_smart_money":["floorsheet","broker_summary"],
+        "broker_footprint":["broker_summary"],
+        "smc_ict_liquidity":[],
+        "hybrid_consensus":["broker_summary","sector_index"],
+        "fundamental_investment":["fundamentals","sector_index"],
+    }
+    strategy_eligibility={name:{"eligible":all(inventory[k]["availability"]=="available" for k in req),
+        "missing_datasets":[k for k in req if inventory[k]["availability"]!="available"]}
+        for name,req in strategy_requirements.items()}
     return {"schema_version":"nepse-historical-readiness-1.0.0","status":status,
-        "data_quality":quality,"research_panel_assembly_allowed":status=="READY",
+        "data_quality":quality,"research_panel_assembly_allowed":status in {"READY","PARTIAL"},
         "start_date":start.isoformat(),"end_date":end.isoformat(),"decision_cutoff":cutoff.isoformat(),
         "open_session_count":len(sessions),"open_session_dates":sessions,
-        "historical_universe_symbol_count":len(active_at_start),"expected_ohlcv_rows":expected,
+        "historical_universe_symbol_count":len(universe_result["security_ids"]),"inactive_security_count":universe_result["inactive_security_count"],"expected_ohlcv_rows":expected,
         "observed_unique_ohlcv_rows":observed,"ohlcv_session_coverage_pct":str(coverage),
-        "minimum_session_coverage_pct":str(minimum),"per_security_coverage":per_security,
+        "minimum_session_coverage_pct":str(minimum),"per_security_coverage":per_security,"strategy_eligibility":strategy_eligibility,
         "duplicate_calendar_sessions":duplicate_sessions,"duplicate_ohlcv_records":duplicate_bars,
         "invalid_ohlcv_records":invalid_bars,"inventory":inventory,"errors":sorted(set(errors)),
         "corporate_action_rows_for_reconciliation":len(ca_rows),
@@ -148,5 +158,5 @@ def assess_historical_dataset_readiness(*, intake_reports, start_date, end_date,
             "A single dataset report can contain many rows but is not independent corroboration.",
             "Corporate actions must pass the separate cross-source reconciliation and adjustment gate.",
             "No publisher authenticity, source licensing, live retrieval or production readiness is certified.",
-            "A READY result means only that configured research-panel admission checks passed."],
+            "A READY or PARTIAL result means core configured research-panel checks passed; missing optional feeds remain unavailable to dependent strategies."],
         "live_data_acquired":False,"performance_claimed":False,"production_enabled":False}

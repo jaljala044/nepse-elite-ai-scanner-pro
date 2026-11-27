@@ -47,7 +47,7 @@ class ReplayOrchestratorTests(unittest.TestCase):
         self.assertEqual(out["status"],"blocked")
         self.assertFalse(out["performance_claimed"])
     def test_empty_batches_are_explicit_not_fabricated(self):
-        panel={"status":"validated_for_research","eligible_symbols":["ABC"]}
+        panel={"status":"validated_for_research","eligible_symbols":["ABC"],"strategy_eligibility":{name:{"eligible":True,"missing_datasets":[]} for name in ("trend_momentum","idpat_smart_money","broker_footprint","smc_ict_liquidity","hybrid_consensus","fundamental_investment")}}
         out=run_six_strategy_replay(historical_panel=panel,signals_by_strategy_horizon={},
             bars_by_symbol={},round_trip_cost_pct="1",round_trip_slippage_pct="1")
         self.assertEqual(out["expected_run_count"],72)

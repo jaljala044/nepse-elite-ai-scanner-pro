@@ -118,7 +118,7 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
             values = {field: Decimal(str(row[field])) for field in _BAR_FIELDS}
             if any(not value.is_finite() for value in values.values()):
                 raise ValueError
-            if values["volume"] < 0 or min(values[k] for k in ("open", "high", "low", "close")) <= 0:
+            if values["volume"] <= 0 or min(values[k] for k in ("open", "high", "low", "close")) <= 0:
                 raise ValueError
             if values["high"] < max(values["open"], values["close"], values["low"]):
                 raise ValueError

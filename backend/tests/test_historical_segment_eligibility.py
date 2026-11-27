@@ -32,6 +32,15 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         args.update(overrides)
         return evaluate_historical_segment(**args)
 
+    def test_compact_basic_dates_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "canonical YYYY-MM-DD"):
+            self.evaluate(expected_sessions=[self.sessions[0].replace("-", "")] + self.sessions[1:])
+
+        records = list(self.records)
+        records[0] = dict(records[0], session_date=self.sessions[0].replace("-", ""))
+        with self.assertRaisesRegex(ValueError, "canonical YYYY-MM-DD"):
+            self.evaluate(records=records)
+
     def test_complete_verified_segment_is_exploratory_only(self):
         result = self.evaluate()
         self.assertTrue(result["exploratory_replay_eligible"])

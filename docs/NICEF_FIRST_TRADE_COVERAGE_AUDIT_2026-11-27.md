@@ -52,3 +52,8 @@ The archive's README: https://github.com/OmitNomis/ShareSansarScraper/blob/maste
 - No raw repository data was changed.
 - NICEF remains a mutual-fund candidate; its historical OHLCV coverage remains zero/unknown until a real dated record is acquired from an approved provider.
 - This audit does not certify the complete 47-fund universe or the 281-equity manifest.
+
+
+## CI dependency alignment — 2026-11-27
+
+The documentation PR is now based on `research/issue-20-historical-segment-eligibility` at `86ad9200aa1a427bab3d03b2e25ddb8381ee81ea`, so the existing historical-segment test and its evaluator module are present together. The earlier backend run `45930820570` tested the old `main` base and failed with `ModuleNotFoundError` for that module; it is not a result for this retargeted PR composition. No NICEF evidence disposition or raw market data was changed by this dependency alignment. A new exact-head run is required after this documentation update.

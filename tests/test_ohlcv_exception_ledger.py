@@ -88,7 +88,7 @@ class LedgerValidationTests(unittest.TestCase):
                            "cross_source_conflict_keys": 8},
                 "exceptions": records,
             }), encoding="utf-8")
-            fields = list(records[0])
+            fields = sorted({key for row in records for key in row})
             with cp.open("w", encoding="utf-8", newline="") as stream:
                 writer = csv.DictWriter(stream, fieldnames=fields)
                 writer.writeheader()

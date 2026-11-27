@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "scripts/build_ohlcv_exception_ledger.py"
+      - "scripts/validate_ohlcv_exception_ledger.py"
+      - "tests/test_ohlcv_exception_ledger.py"
       - "tests/test_ohlcv_exception_ledger_builder.py"
       - ".github/workflows/ohlcv-exception-ledger.yml"
       - "docs/OHLCV_EXCEPTION_LEDGER.md"
@@ -51,11 +53,20 @@ jobs:
           csv_ids = [row["exception_id"] for row in rows]
           assert len(json_ids) == len(set(json_ids)) == 1339
           assert len(csv_ids) == 1339 and set(csv_ids) == set(json_ids)
-          assert all(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"])
-          print("PASS: 1,339 unique JSON/CSV IDs; all unresolved and quarantined")
+          resolved = {row["symbol"] for row in ledger["exceptions"] if row["disposition"] == "resolved_with_user_authoritative_evidence"}
+          assert resolved == {"BGWT", "MEHL", "RAWA", "RHGCL", "ULHC"}
+          assert all(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"] if row["exception_type"] == "invalid_ohlc")
+          assert sum(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"]) == 1334
+          assert sum(row["disposition"] == "resolved_with_user_authoritative_evidence" for row in ledger["exceptions"]) == 5
+          assert all(row.get("resolution_evidence", {}).get("canonical_promotion_allowed") is False for row in ledger["exceptions"] if row["disposition"] == "resolved_with_user_authoritative_evidence")
+          print("PASS: 1,339 unique JSON/CSV IDs; 1,334 quarantined, 5 user-authoritatively resolved")
           PY
       - name: Run ledger builder regression tests
         run: python -m unittest discover -s tests -p "test_ohlcv_exception_ledger_builder.py" -v
+      - name: Run ledger validation regression tests
+        run: python -m unittest discover -s tests -p "test_ohlcv_exception_ledger.py" -v
+      - name: Validate generated JSON and CSV
+        run: python scripts/validate_ohlcv_exception_ledger.py --json data/audits/ohlcv-exception-ledger/ohlcv_exception_ledger.json --csv data/audits/ohlcv-exception-ledger/ohlcv_exception_ledger.csv
       - name: Package retained ledger artifact
         run: |
           cd data/audits

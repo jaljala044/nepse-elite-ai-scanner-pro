@@ -145,5 +145,31 @@ class PortfolioBacktestTests(unittest.TestCase):
             self.run_portfolio(risk_per_trade_pct=0.5)
 
 
+    def test_nonempty_signal_ledger_reconciliation(self):
+        from app.portfolio_backtest import reconcile_signal_portfolio
+        def fee_runner(**kwargs):
+            result = self.runner(**kwargs)
+            result["buy_cash"] += 2
+            result["sell_cash"] -= 3
+            result["net_pnl"] -= 5
+            return result
+        inputs = dict(signals=[self.signal, dict(self.signal, symbol="BBB")],
+                      rows_by_symbol=dict(self.rows, BBB=self.rows["AAA"]),
+                      verified_sessions_by_symbol={"AAA":self.days,"BBB":self.days},
+                      evaluation_date=self.days[-1], portfolio_sessions=self.days,
+                      sector_by_symbol={"AAA":"Hydropower","BBB":"Banking"},
+                      initial_capital=10000, max_positions=3, max_position_pct=0.2,
+                      max_sector_pct=0.4, risk_per_trade_pct=0.01,
+                      cost_assumptions_by_symbol={"AAA":{},"BBB":{}},
+                      execution_config_by_symbol={"AAA":{},"BBB":{}},
+                      scenario_runner=fee_runner)
+        result = reconcile_signal_portfolio(portfolio_inputs=inputs,
+            evidence_cutoff="2025-01-11T00:00:00+00:00")
+        self.assertEqual(result["portfolio"]["trade_count"], 2)
+        self.assertEqual(len(result["ledger"]["executed_trade_scenarios"]), 4)
+        self.assertAlmostEqual(result["ledger"]["ending_equity"], 10190)
+        self.assertEqual(result["ledger"]["equity_curve"][3]["sale_receivables"], 2194)
+        self.assertEqual(result["ledger"]["equity_curve"][5]["sale_receivables"], 0)
+
 if __name__ == "__main__":
     unittest.main()

@@ -22,7 +22,7 @@ class HistoricalPanelUniverseGateTests(unittest.TestCase):
             {"security_id":"SID-A","symbol":"AAA","session_date":"2024-01-03","open":"10","high":"11","low":"9","close":"10","volume":"100","turnover":"1000"},
             {"security_id":"SID-B","symbol":"BBB","session_date":"2024-01-03","open":"20","high":"21","low":"19","close":"20","volume":"100","turnover":"2000"},
             {"security_id":"SID-B","symbol":"BBB","session_date":"2024-01-04","open":"20","high":"21","low":"19","close":"20","volume":"100","turnover":"2000"}]),
-          "corporate_actions":ds("actions",[]) }
+          "corporate_actions":ds("actions",[{"security_id":"SID-A","action_type":"dividend","announcement_date":"2023-11-01","effective_date":"2023-12-01","status":"completed"}]) }
     def readiness(self):
         return {"status":"READY","data_quality":"HIGH","strategy_eligibility":{
           "trend_momentum":{"eligible":True,"missing_datasets":[]},

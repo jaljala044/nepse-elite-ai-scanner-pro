@@ -178,6 +178,28 @@ def schedule_review_queue(queue: list[dict]) -> tuple[list[dict], dict]:
         bucket["pair_date_incidences"] += item["affected_pairs"]
     return reviewed, counts
 
+def partition_integrity(rows: list[dict], calendar_applied: bool) -> dict:
+    """Verify source-occurrence uniqueness, not cross-provider independence."""
+    seen, counts = set(), {}
+    allowed = {"adjacent_project_sessions_review", "intervening_project_sessions_missing_from_source_review",
+               "non_increasing_or_duplicate_session_order_review", "explicit_closure_date_conflict_review",
+               "date_not_in_project_calendar_review"}
+    for row in rows:
+        key = tuple(row[k] for k in ("repository", "commit_sha", "path", "previous_csv_line", "current_csv_line"))
+        if key in seen:
+            raise ValueError(f"duplicate source occurrence: {key!r}")
+        seen.add(key)
+        label = row.get("session_join_classification", "calendar_join_not_applied")
+        if calendar_applied and label not in allowed:
+            raise ValueError(f"missing or invalid partition label: {label!r}")
+        counts[label] = counts.get(label, 0) + 1
+    if sum(counts.values()) != len(seen):
+        raise ValueError("partition count mismatch")
+    return {"source_occurrence_count": len(seen), "duplicate_source_occurrences": 0,
+            "partition_counts": counts, "partition_total": sum(counts.values()),
+            "scope": "source occurrence keys; economic security-date duplicates across sources are not deduplicated",
+            "canonical_promotion_allowed": False}
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--source", action="append", nargs=3, metavar=("REPO", "COMMIT", "ROOT"), required=True)
@@ -199,6 +221,7 @@ def main() -> int:
     calendar_summary = None
     if args.calendar:
         all_rows, calendar_summary = join_project_calendar(all_rows, args.calendar)
+    integrity = partition_integrity(all_rows, calendar_summary is not None)
     csv_path = args.out / "repeated_adjacent_ohlcv_candidates.csv"
     fields = ["repository", "commit_sha", "path", "file_sha256", "symbol",
               "previous_date", "current_date", "previous_csv_line", "current_csv_line",
@@ -219,6 +242,7 @@ def main() -> int:
                             if calendar_summary is not None else "calendar_join_not_applied"),
         "classification": "review_only_not_invalid",
         "source_files_read_only": True,
+        "partition_integrity": integrity,
     }
     if calendar_summary:
         summary["project_calendar_join"] = calendar_summary
@@ -226,13 +250,26 @@ def main() -> int:
         (args.out / "unlisted_date_evidence_queue.json").write_text(json.dumps(queue, indent=2) + "\n", encoding="utf-8")
         reviewed, schedule_counts = schedule_review_queue(queue)
         (args.out / "unlisted_date_schedule_review.json").write_text(json.dumps(reviewed, indent=2) + "\n", encoding="utf-8")
+        with (args.out / "unlisted_date_schedule_review.csv").open("w", encoding="utf-8", newline="") as stream:
+            fields_review = ["date", "valid_iso_date", "affected_pairs", "distinct_symbols", "repositories", "disposition", "canonical_promotion_allowed", "weekday", "schedule_classification", "schedule_note", "independently_verified"]
+            writer = csv.DictWriter(stream, fieldnames=fields_review)
+            writer.writeheader()
+            for item in reviewed:
+                writer.writerow({**item, "repositories": json.dumps(item["repositories"])})
         summary["unlisted_date_schedule_review"] = {"counts": schedule_counts, "independently_verified_dates": 0, "promotion_allowed": False}
         summary["unlisted_date_queue"] = {"distinct_date_labels": len(queue),
             "valid_iso_dates": sum(item["valid_iso_date"] for item in queue),
             "top_10": queue[:10], "promotion_allowed": False}
     (args.out / "repeated_adjacent_ohlcv_summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    from datetime import datetime, timezone
+    files = ["repeated_adjacent_ohlcv_candidates.csv", "repeated_adjacent_ohlcv_summary.json"]
+    if calendar_summary is not None:
+        files += ["unlisted_date_evidence_queue.json", "unlisted_date_schedule_review.json", "unlisted_date_schedule_review.csv"]
+    manifest = {"generated_at_utc": datetime.now(timezone.utc).isoformat(), "files": [{"path": name, "sha256": sha256(args.out / name), "bytes": (args.out / name).stat().st_size} for name in files], "canonical_promotion_allowed": False}
+    (args.out / "evidence_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
+    print(json.dumps(manifest, indent=2))
     return 0
 
 if __name__ == "__main__":

@@ -180,7 +180,7 @@ def main() -> None:
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(json.dumps({k: report[k] for k in ("rows_seen", "rows_accepted", "rows_quarantined", "verified_calendar_dates", "gate_pass", "gate_note")}, indent=2))
+    print(json.dumps({k: report[k] for k in ("rows_seen", "rows_accepted", "rows_quarantined", "verified_calendar_dates", "project_accepted_open_dates", "explicit_calendar_dates", "gate_pass", "gate_note")}, indent=2))
     if not report["gate_pass"]:
         raise SystemExit(2)
 

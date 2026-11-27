@@ -123,7 +123,8 @@ class BrokerRawCaptureTests(unittest.TestCase):
 
     def test_rights_denial_and_incomplete_session_are_quarantined(self):
         manifest, raw = fixture()
-        denied = RawCaptureManifest(**{**manifest.__dict__, "source_rights_status": "denied"})
+        denied_evidence = SourceRightsEvidence(**{**manifest.source_rights_evidence.__dict__, "decision": "denied"})
+        denied = RawCaptureManifest(**{**manifest.__dict__, "source_rights_status": "denied", "source_rights_evidence": denied_evidence})
         incomplete = RawCaptureManifest(**{**manifest.__dict__, "capture_id": "CAP-2",
                                              "session_complete": False})
         self.assertEqual(self.registry.stage(denied, raw)["state"], "rejected")

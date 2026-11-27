@@ -99,6 +99,27 @@ class CaptureOfficialIndexHarTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "credential-like"):
                     capture_index_har_entry(har, 0, "candidate", Path(tmp) / "out")
 
+    def test_rejects_path_traversal_source_id_before_writing_anything(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            har = self._write(tmp, har_entry(
+                "https://www.nepalstock.com.np/api/nots/graph/index/58", "POST", request_body={"id": 58}
+            ))
+            output = Path(tmp) / "out"
+            with self.assertRaisesRegex(ValueError, "filename-safe"):
+                capture_index_har_entry(har, 0, "../escape", output)
+            self.assertFalse(output.exists())
+
+    def test_rejects_negative_or_boolean_entry_index_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            har = self._write(tmp, har_entry(
+                "https://www.nepalstock.com.np/api/nots/graph/index/58", "POST", request_body={"id": 58}
+            ))
+            output = Path(tmp) / "out"
+            for index in (-1, True):
+                with self.subTest(index=index), self.assertRaisesRegex(ValueError, "non-negative"):
+                    capture_index_har_entry(har, index, "candidate", output)
+            self.assertFalse(output.exists())
+
     def test_rejects_graph_post_without_json_body(self):
         with tempfile.TemporaryDirectory() as tmp:
             har = self._write(tmp, har_entry(

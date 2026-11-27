@@ -6,7 +6,7 @@ from pathlib import Path
 from app.broker_batch_manifest import (
     BrokerRawCaptureRegistry, CaptureConflict, CaptureRejected, RawCaptureManifest,
 )
-from app.broker_daily_history import BrokerDailyHistoryStore
+from app.broker_daily_history import BrokerDailyHistoryStore, DailyHistoryRejected
 from app.broker_ingestion import IngestionReport
 
 
@@ -179,6 +179,20 @@ class BrokerRawCaptureTests(unittest.TestCase):
         with self.assertRaises(CaptureRejected):
             self.registry.admit_to_daily_history(
                 batch, changed, coverage_manifest=coverage_manifest(), history_store=history)
+        self.assertEqual(history.count(), 0)
+
+    def test_daily_ledger_cannot_precede_raw_source_availability(self):
+        manifest, raw = fixture()
+        batch = self.registry.stage(manifest, raw)["batch_id"]
+        report = clean_report(batch)
+        digest = self.registry.record_dry_run(batch, report)
+        self.registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
+        late_coverage = coverage_manifest()
+        late_coverage["available_at"] = "2026-11-26T09:00:00+05:45"
+        history = BrokerDailyHistoryStore(self.root / "daily.duckdb")
+        with self.assertRaises(DailyHistoryRejected):
+            self.registry.admit_to_daily_history(
+                batch, report, coverage_manifest=late_coverage, history_store=history)
         self.assertEqual(history.count(), 0)
 
     def test_unapproved_or_ineligible_batches_cannot_reach_daily_history(self):

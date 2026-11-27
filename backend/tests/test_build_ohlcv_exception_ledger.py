@@ -50,7 +50,7 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         self.assertEqual(invalid["source_csv_line"], 7)
         self.assertEqual(invalid["raw_source_row"]["High"], "9")
         self.assertEqual(conflict["source_evidence"]["source-a"]["row"]["close"], "10")
-        self.assertEqual(conflict["source_evidence"]["source-b"]["row"]["close"], "11")
+        self.assertEqual(conflict["source_evidence"]["source-b"]["row"]["close"], "11")\n        self.assertEqual(conflict["source_evidence"]["source-a"]["source_csv_line"], 7)\n        self.assertEqual(conflict["source_evidence"]["source-b"]["source_csv_line"], 9)
         self.assertTrue(all(x["disposition"] == "quarantined_unresolved" for x in ledger["exceptions"]))
 
     def test_count_drift_fails_closed(self):

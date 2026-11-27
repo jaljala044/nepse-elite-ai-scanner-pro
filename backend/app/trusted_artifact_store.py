@@ -43,7 +43,10 @@ def _timestamp(value: Any, field: str) -> datetime:
         raise TrustedArtifactError(f"{field}_must_be_timezone_aware") from None
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise TrustedArtifactError(f"{field}_must_be_timezone_aware")
-    returndef _read_payload_bytes(root: Path, relative: Any) -> bytes:
+    return parsed.astimezone(timezone.utc)
+
+
+def _read_payload_bytes(root: Path, relative: Any) -> bytes:
     """Open a payload beneath root without following replaceable path symlinks.
 
     Each component is opened relative to an already-open directory descriptor.

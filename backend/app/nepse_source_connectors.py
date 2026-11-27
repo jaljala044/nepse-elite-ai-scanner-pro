@@ -102,7 +102,7 @@ def acquire_registered_capture(*, registry, source_id, dataset_kind, endpoint_ur
     return {"schema_version":"nepse-source-acquisition-1.0.0",
         "http_status":status, "content_type":(headers.get("Content-Type") or headers.get("content-type")) if isinstance(headers,dict) else None,
         "receipt":receipt, "raw_bytes":bytes(body), "validation":receipt_run,
-        "network_retrieval_performed":True, "production_enabled":False,
+        "network_retrieval_performed":transport is None, "transport_injected":transport is not None, "production_enabled":False,
         "limitations":[
             "The endpoint, host approval, rights status and evidence identity are operator-supplied.",
             "HTTP 200 and HTTPS do not cryptographically authenticate the publisher or prove dataset completeness.",

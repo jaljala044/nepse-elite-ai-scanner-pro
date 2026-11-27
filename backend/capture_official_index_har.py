@@ -57,11 +57,20 @@ def capture_index_har_entry(
     source_id: str,
     output_dir: str | Path,
 ) -> dict:
+    if not isinstance(source_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", source_id):
+        raise ValueError("source_id must be a 1-64 character filename-safe identifier")
+    if not isinstance(entry_index, int) or isinstance(entry_index, bool) or entry_index < 0:
+        raise ValueError("entry_index must be a non-negative integer")
     har_raw = Path(har_path).read_bytes()
     try:
         archive = json.loads(har_raw)
-        entry = archive["log"]["entries"][entry_index]
+        entries = archive["log"]["entries"]
+        if not isinstance(entries, list) or entry_index >= len(entries):
+            raise ValueError("entry_index is outside the HAR entries")
+        entry = entries[entry_index]
         request = entry["request"]
+        if not isinstance(request, dict):
+            raise ValueError("selected HAR request must be an object")
     except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError) as exc:
         raise ValueError("invalid HAR or selected entry") from exc
 
@@ -74,6 +83,7 @@ def capture_index_har_entry(
         raise ValueError("request query contains a credential-like parameter")
 
     post_data = request.get("postData")
+    request_body = None
     request_body_path = None
     request_body_sha256 = None
     request_body_bytes = 0
@@ -94,6 +104,13 @@ def capture_index_har_entry(
         request_body_bytes = len(request_body)
         if isinstance(parsed_body, dict):
             request_body_fields = sorted(str(key) for key in parsed_body)
+    elif method == "POST":
+        raise ValueError("candidate graph POST request body is missing")
+
+    response_metadata = capture_har_entry(
+        har_path, entry_index, source_id, output_dir
+    )
+    if request_body is not None:
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         body_path = out / f"{source_id}-{request_body_sha256}.request.json"
@@ -102,14 +119,11 @@ def capture_index_har_entry(
         if not body_path.exists():
             body_path.write_bytes(request_body)
         request_body_path = str(body_path)
-    elif method == "POST":
-        raise ValueError("candidate graph POST request body is missing")
-
-    response_metadata = capture_har_entry(
-        har_path, entry_index, source_id, output_dir
-    )
     result = dict(response_metadata)
     result.update(route)
+    request_headers = request.get("headers", [])
+    if not isinstance(request_headers, list) or any(not isinstance(h, dict) for h in request_headers):
+        raise ValueError("HAR request headers must be an array of objects")
     result.update({
         "request_path": parsed_url.path,
         "request_query_parameters": [{"name": key, "value": value} for key, value in query],
@@ -118,7 +132,7 @@ def capture_index_har_entry(
         "request_body_path": request_body_path,
         "request_body_top_level_fields": request_body_fields,
         "request_safe_headers": {
-            "accept": next((h.get("value") for h in request.get("headers", [])
+            "accept": next((h.get("value") for h in request_headers
                             if str(h.get("name", "")).lower() == "accept"), None),
             "content_type": next((h.get("value") for h in request.get("headers", [])
                                   if str(h.get("name", "")).lower() == "content-type"), None),

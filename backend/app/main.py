@@ -884,3 +884,46 @@ def research_unified_portfolio_event_ledger(request: UnifiedPortfolioEventReques
         return run_unified_portfolio_event_ledger(**request.model_dump())
     except (ValueError, TypeError, KeyError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .corporate_action_risk import assess_post_action_risk
+from .corporate_action_trade_plan import rebase_trade_plan, rebase_cash_action_plan
+
+class PortfolioRiskReviewRequest(BaseModel):
+    snapshot: dict
+    limits: dict
+    assessment_time: str
+
+@app.post("/v1/research/portfolio/risk-review")
+def research_portfolio_risk_review(request: PortfolioRiskReviewRequest):
+    """Stateless caller-supplied risk review; no live orders or saved holdings."""
+    try:
+        result = assess_post_action_risk(**request.model_dump())
+        return {**result, "schema_version":"1", "data_quality":"CALLER_ATTESTED",
+                "broker_intelligence_status":"UNKNOWN",
+                "profit_booking_status":"NOT_ASSESSED",
+                "live_notifications_enabled":False}
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+class CorporateActionPlanRequest(BaseModel):
+    signal: dict
+    action: dict
+    adjustment_time: str
+    quantity: int
+    cost_basis: float
+    available_cash: float | None = None
+    reference: dict | None = None
+    subscribed_quantity: int = 0
+
+@app.post("/v1/research/portfolio/adjust-plan")
+def research_portfolio_adjust_plan(request: CorporateActionPlanRequest):
+    try:
+        args = request.model_dump()
+        if request.action.get("action_type") in ("bonus","split"):
+            for key in ("available_cash","reference","subscribed_quantity"):
+                args.pop(key)
+            return rebase_trade_plan(**args)
+        return rebase_cash_action_plan(**args)
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

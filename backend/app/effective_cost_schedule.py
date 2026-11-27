@@ -84,6 +84,20 @@ def _broker_rate(records, trade_day, amount, side):
     return rate, record
 
 
+def _tax_for_holding(records, exit_day, holding_days):
+    candidates = []
+    for record in records:
+        lower = _decimal(record.get("holding_days_min", 0), "holding_days_min")
+        upper = (_decimal(record["holding_days_max_exclusive"], "holding_days_max_exclusive")
+                 if record.get("holding_days_max_exclusive") is not None else None)
+        if lower != lower.to_integral_value() or (upper is not None and
+                (upper != upper.to_integral_value() or upper <= lower)):
+            raise ValueError("invalid_holding_period_band")
+        if lower <= holding_days and (upper is None or holding_days < upper):
+            candidates.append(record)
+    return _effective(candidates, exit_day, "tax")
+
+
 def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, sell_date=None):
     """Return scenario rates only when every dated schedule component is covered."""
     day = _day(trade_date, "trade_date")
@@ -96,7 +110,8 @@ def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, s
         raise ValueError("invalid_cost_schedule_input")
     buy_rate, buy_record = _broker_rate(schedule.get("brokerage_slabs", []), day, buy, "buy")
     sell_rate, sell_record = _broker_rate(schedule.get("brokerage_slabs", []), exit_day, sell, "sell")
-    tax_record = _effective(schedule.get("tax_schedules", []), exit_day, "tax")
+    holding_days = (exit_day - day).days
+    tax_record = _tax_for_holding(schedule.get("tax_schedules", []), exit_day, holding_days)
     tax_rate = _decimal(tax_record.get("rate"), "capital_gain_tax_rate")
     regulatory = _decimal(schedule.get("regulatory_rate"), "regulatory_rate")
     dp = _decimal(schedule.get("sell_dp_charge"), "sell_dp_charge")
@@ -114,6 +129,7 @@ def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, s
             "tax": {k: tax_record[k] for k in ("schedule_id", "source_id", "source_sha256")},
         },
         "buy_date": day.isoformat(), "sell_date": exit_day.isoformat(),
+        "holding_calendar_days": holding_days,
         "classification": "caller_supplied_dated_cost_scenario",
         "production_eligible": False,
     }

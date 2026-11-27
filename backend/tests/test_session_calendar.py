@@ -47,6 +47,14 @@ class SessionCalendarTests(unittest.TestCase):
         self.assertEqual(classify_date(date(2026, 11, 23), {})["classification"],
                          "unverified_session_candidate")
 
+    def test_user_approved_2020_lockdown_and_exceptional_sessions(self):
+        self.assertFalse(schedule_candidate(date(2020, 4, 1))[0])
+        self.assertTrue(schedule_candidate(date(2020, 5, 12))[0])
+        self.assertTrue(schedule_candidate(date(2020, 5, 13))[0])
+        self.assertFalse(schedule_candidate(date(2020, 5, 14))[0])
+        self.assertFalse(schedule_candidate(date(2020, 6, 28))[0])
+        self.assertTrue(schedule_candidate(date(2020, 6, 29))[0])
+
     def test_weekly_regime_transitions_are_explicit(self):
         self.assertFalse(schedule_candidate(date(2022, 4, 29))[0]) # Friday odd-lot period
         self.assertFalse(schedule_candidate(date(2022, 5, 6))[0]) # Before two-day weekend starts
@@ -118,8 +126,30 @@ class SessionCalendarTests(unittest.TestCase):
 
     def test_unsupported_calendar_status_is_rejected(self):
         self.write_calendar([self.evidence(status="candidate_open")])
-        with self.assertRaisesRegex(ValueError, "unsupported evidence-backed"):
+        with self.assertRaisesRegex(ValueError, "unsupported calendar status"):
             load_calendar(self.calendar)
+
+
+    def test_project_accepted_archive_session_is_accepted_without_exchange_hash(self):
+        row = self.evidence()
+        row.update({
+            "status": "project_accepted_open",
+            "source_id": "SHARESANSAR_DERIVED_ARCHIVE",
+            "evidence_uri": "https://github.com/srijankarki07/nepse-data",
+            "raw_evidence_sha256": "",
+            "retrieved_at_utc": "",
+            "verified_at_utc": "",
+            "published_at": "",
+            "scope": "project-accepted historical baseline",
+            "notes": "User-approved archive baseline; not exchange-certified",
+        })
+        self.write_calendar([row])
+        loaded = load_calendar(self.calendar)
+        self.assertEqual(classify_date(date(2026, 11, 23), loaded)["classification"], "project_accepted_open")
+        self.write_prices([self.row()])
+        report = audit_ohlcv([self.data], self.calendar)
+        self.assertEqual(report["rows_accepted"], 1)
+        self.assertTrue(report["gate_pass"])
 
     def test_only_explicit_open_dates_pass(self):
         self.write_calendar([self.evidence()])

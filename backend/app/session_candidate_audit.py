@@ -95,7 +95,7 @@ def audit_session_candidates(
     )
     open_overlaps = sorted(
         day.isoformat() for day in candidate_dates
-        if evidence.get(day, {}).get("status") in {"verified_open", "verified_exceptional_open"}
+        if evidence.get(day, {}).get("status") in {"verified_open", "verified_exceptional_open", "project_accepted_open"}
     )
     weekday_violations = []
     for day in sorted(candidate_dates):

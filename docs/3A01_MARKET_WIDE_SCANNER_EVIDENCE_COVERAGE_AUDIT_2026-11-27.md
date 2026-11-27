@@ -84,9 +84,9 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 | Acceptance gate | Status | Evidence / blocker |
 |---|---|---|
-| Deterministic market-wide orchestration and API | Implemented on PR #155 | Latest-main draft integration includes backend implementation and API regression tests |
-| Dedicated frontend entry point | Implemented on PR #155 | Latest-main draft integration includes UI module and build integration |
-| Frontend build CI for PR #155 | Passed | Exact latest-main port head `070a556ffb89cd933053dabd2b0c1a80b905256a`: build run 45900204383 passed; backend test workflows are blocked by an unrelated missing SEBON module in current main |
+| Deterministic market-wide orchestration and API | Implemented on PR #157 | Exact-head backend tests passed; PR remains draft and unmerged |
+| Dedicated frontend entry point | Implemented on PR #157 | Dedicated UI module and build integration are included |
+| Exact-head CI for PR #157 | Passed | Unit tests run 45926537471, backend-unit-tests run 45926537414, frontend build run 45926522336 all passed |
 | Candidate universe has stable dated provenance | Partial | 281-row secondary snapshot is pinned; authoritative membership is not established |
 | Current security ID crosswalk | Partial | 281/281 current-snapshot matches; historical effective-dated identity outstanding |
 | Complete all-market instrument scope | Partial | Three official bulk dates reconcile; only those dates and current-snapshot instrument classifications are covered |
@@ -109,7 +109,7 @@ The repository contains an extensive 281-symbol historical archive and a derived
 
 ## Engineering integration note
 
-PR #155 (`reconcile/3a01-latest-main-sebon-2026-11-27`) is the current scanner integration candidate, based on the main snapshot that includes the SEBON evidence test addition. Its frontend build passed, but both full backend test workflows failed on the unrelated import error `ModuleNotFoundError: app.sebon_pdf_capture` from `backend/tests/test_sebon_pdf_capture.py`. All scanner-specific tests passed within those runs. This missing module must be corrected on main before the full CI gate can pass. PR #142 and PR #153 are left open as superseded scanner ports; PR #131 is an older divergent implementation. Do not merge the older PR #112 as a substitute; it risks replacing newer application features.
+PR #157 (`reconcile/3a01-after-sebon-test-fix-2026-11-27`) is the current scanner integration candidate. Its exact-head unit tests (run `45926537471`), backend tests (`45926537414`) and frontend build (`45926522336`) all passed. The earlier `app.sebon_pdf_capture` import blocker was removed from main before this port. PR #157 remains draft and unmerged. PR #142, #153 and #155 remain open, superseded ports; no older port should replace the current integration. PR #158 carries the companion evidence audit and also remains draft and unmerged.
 
 ## Source reports
 
@@ -149,6 +149,6 @@ The current scanner integration was re-applied onto the latest main snapshot aft
 - The orphan SEBON test was removed from main by commit `3ba03e1e2c5702eba18334799d2f09c17b61d913`, so the previous unrelated import blocker should no longer apply. Exact-head CI for PR #157 is currently running; no passing result is claimed yet.
 - Earlier scanner ports PR #142, #153 and #155 remain open but superseded. No merge or deployment is claimed.
 
-The evidence artifacts have been re-based onto current main in companion PR #158: [3A.01 evidence audit refresh](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/158). The audit branch currently compares 3 commits ahead and 0 behind current main. Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
+The evidence artifacts have been re-based onto current main in companion PR #158: [3A.01 evidence audit refresh](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/158). The evidence branch now includes the correction-ledger reconciliation: 713 total ledger rows = 711 derived-v2 operations + 2 earlier v1 RHGCL corrections. The 1,379 invariant flags remain distinct from 1,329 unique invalid symbol/date rows. Latest correction-audit commit `79850b09c5ec2e07827690aae731811223b7c9f9` has no workflow run returned yet; predecessor commit `120b467a95748dfd097e3efee9e485da87ccea9a` backend-tests run `45928384784` was in progress at last check.
 
 No pull request was merged. No deployment verification was performed.

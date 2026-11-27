@@ -23,7 +23,7 @@ _SECTOR_LABELS = (
     "Investment", "Others?",
 )
 _SECTOR_RE = re.compile(
-    r"^(?P<company>.+?)(?:\s{2,}|\s*\|\s*)(?P<sector>"
+    r"^(?P<company>.+?)(?:\s+|\s*\|\s*)(?P<sector>"
     + "|".join(_SECTOR_LABELS)
     + r")\s*$",
     re.IGNORECASE,

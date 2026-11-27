@@ -131,7 +131,16 @@ jobs:
               snap = {"as_of_date":day,"security_id":"SEC-CI","broker_entity_id":"BROKER-CI","window":"daily","buy_amount":"1","sell_amount":"0","net_amount":"1","source_ids":["SRC"],"evidence_ids":["E"],"payload_hashes":["a"*64],"status":"descriptive_only","observed_sessions":1,"requested_sessions":1,"first_session":day,"last_session":day,"observation_rows":1,"constituent_sessions":[day],"constituent_lineage":[{"session_date":day,"source_id":"SRC","evidence_id":"E","payload_sha256":"a"*64}]}
               rejected(lambda: store.append(snap,idempotency_key="quarantine-ci"),"quarantined constituent")
               assert store.count() == 0
-              Path("refresh/runtime-consumer-test.json").write_text(json.dumps({"tested_keys":len(keys|prior),"database_import":"passed","scenario":"passed","walk_forward":"passed","broker_memory_append":"passed","broker_rows_persisted":store.count(),"scope":"isolated DuckDB integration using actual blocked keys; not deployment acceptance","promotion_allowed":False},indent=2))
+              # Seed a legacy snapshot before the ledger is enabled, then verify
+              # that retrieval under the real ledger refuses it without deleting it.
+              config = {k: os.environ.pop(k) for k in ("NEPSE_QUARANTINE_LEDGER","NEPSE_QUARANTINE_LEDGER_SHA256","NEPSE_REQUIRE_QUARANTINE_LEDGER")}
+              try:
+                  store.append(snap,idempotency_key="legacy-ci")
+              finally:
+                  os.environ.update(config)
+              rejected(lambda: store.get_as_of(security_id="SEC-CI",broker_entity_id="BROKER-CI",as_of_date=day),"quarantined constituent")
+              assert store.count() == 1
+              Path("refresh/runtime-consumer-test.json").write_text(json.dumps({"tested_keys":len(keys|prior),"database_import":"passed","scenario":"passed","walk_forward":"passed","broker_memory_append":"passed","broker_memory_legacy_read":"passed","legacy_rows_preserved":store.count(),"scope":"isolated DuckDB integration using actual blocked keys; not deployment acceptance","promotion_allowed":False},indent=2))
           PY
           sha256sum refresh/runtime-consumer-test.json >> refresh/SHA256SUMS
       - uses: actions/upload-artifact@v4

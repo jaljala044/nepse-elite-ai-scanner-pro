@@ -196,7 +196,11 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             }
         else:
             smc_features_by_symbol[symbol] = smc_features(items)
-    idpat_features_by_symbol = {\n        symbol: idpat_price_volume_features(items)\n        for symbol, items in sorted(by_symbol.items()) if symbol\n    }\n    broker_footprint = broker_footprint_features(broker_rows)
+    idpat_features_by_symbol = {
+        symbol: idpat_price_volume_features(items)
+        for symbol, items in sorted(by_symbol.items()) if symbol
+    }
+    broker_footprint = broker_footprint_features(broker_rows)
     if expected_symbols:
         expected_rs_symbols = [str(symbol).strip().upper() for symbol in expected_symbols]
         benchmark_rows = [

@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "source_repository": "jaljala044/nepse-history-starter",
+  "policy": "archived audit report comparison only; no raw contract verification or official calendar promotion",
+  "records": [
+    {
+      "date": "2026-11-20",
+      "source_path": "historical_imports/sharesansar_2026-11-20.json",
+      "source_blob_sha": "3cc3995055d281908f0a4ae318022fc1579e97d5",
+      "source_symbols": 352,
+      "accepted_symbols": 348,
+      "classification": "third_party_observation_exceptional_friday_review",
+      "canonical_promotion_allowed": false
+    },
+    {
+      "date": "2026-11-23",
+      "eod_path": "scanner_inputs/audit/eod_2026-11-23.json",
+      "eod_blob_sha": "d683578ee066d687fb1bf965f7adbc357c5596d8",
+      "floorsheet_path": "scanner_inputs/audit/floorsheet_2026-11-23.json",
+      "floorsheet_blob_sha": "b6fb843177b8553c292dfeb711440f45b199a5e3",
+      "transactions": 42854,
+      "traded_shares": 10826913,
+      "turnover_npr": "3827606590.77",
+      "securities": 360,
+      "reported_pages": 86,
+      "archived_totals_match": true,
+      "classification": "corroborated_third_party_trade_observation",
+      "canonical_promotion_allowed": false,
+      "index_conflicts": {
+        "NEPSE Index": 2616.33,
+        "Sensitive Index": 476.35,
+        "Float Index": 181.98,
+        "Sensitive Float Index": 161.72
+      }
+    },
+    {
+      "date": "2026-11-24",
+      "eod_path": "scanner_inputs/audit/eod_2026-11-24.json",
+      "eod_blob_sha": "042e32f57040452d964a332117891dcb2b607b14",
+      "floorsheet_path": "scanner_inputs/audit/floorsheet_2026-11-24.json",
+      "floorsheet_blob_sha": "846ded09190ceeedbd7f80958fda820c7aee4483",
+      "transactions": 52387,
+      "traded_shares": 14670177,
+      "turnover_npr": "5553019249.46",
+      "securities": 350,
+      "reported_pages": 105,
+      "archived_totals_match": true,
+      "classification": "corroborated_third_party_trade_observation",
+      "canonical_promotion_allowed": false,
+      "index_conflicts": {
+        "NEPSE": {
+          "open": {
+            "ShareSansar": 2624.94,
+            "ShareHub": 2625.13
+          }
+        },
+        "Sensitive": {
+          "open": {
+            "ShareSansar": 479.04,
+            "ShareHub": 479.14
+          }
+        },
+        "Float": {
+          "open": {
+            "ShareSansar": 182.8,
+            "ShareHub": 182.82
+          },
+          "high": {
+            "ShareSansar": 183.89,
+            "ShareHub": 183.9
+          }
+        },
+        "Sensitive Float": {
+          "open": {
+            "ShareSansar": 162.59,
+            "ShareHub": 162.63
+          }
+        },
+        "Commercial Banks": {
+          "open": {
+            "ShareSansar": 1596.49,
+            "ShareHub": 1596.39
+          }
+        },
+        "Hotels And Tourism": {
+          "open": {
+            "ShareSansar": 6959.4,
+            "ShareHub": 6960.58
+          }
+        },
+        "Hydro Power": {
+          "open": {
+            "ShareSansar": 3576.27,
+            "ShareHub": 3577.54
+          }
+        },
+        "Others": {
+          "open": {
+            "ShareSansar": 1839.44,
+            "ShareHub": 1840
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-25",
+      "eod_path": "scanner_inputs/audit/eod_2026-11-25.json",
+      "eod_blob_sha": "b670d83e468646faae1137f7a5767b7d00bb475e",
+      "floorsheet_path": "scanner_inputs/audit/floorsheet_2026-11-25.json",
+      "floorsheet_blob_sha": "7ca7eab1d09be039242a1fad245e904f53d70e2c",
+      "transactions": 52669,
+      "traded_shares": 16523974,
+      "turnover_npr": "6146043909.54",
+      "securities": 356,
+      "reported_pages": 106,
+      "archived_totals_match": true,
+      "classification": "corroborated_third_party_trade_observation",
+      "canonical_promotion_allowed": false,
+      "index_conflicts": {
+        "NEPSE Index": {
+          "Open": [
+            "2644.68",
+            "2643.79"
+          ]
+        },
+        "Sensitive Index": {
+          "Open": [
+            "484.21",
+            "483.83"
+          ]
+        },
+        "Float Index": {
+          "Open": [
+            "184.33",
+            "184.23"
+          ]
+        },
+        "Sensitive Float Index": {
+          "Open": [
+            "164.55",
+            "164.37"
+          ]
+        },
+        "Banking SubIndex": {
+          "Open": [
+            "1626.0",
+            "1624.32"
+          ]
+        },
+        "Finance Index": {
+          "Open": [
+            "2126.6",
+            "2136.55"
+          ]
+        },
+        "HydroPower Index": {
+          "Open": [
+            "3598.76",
+            "3598.0"
+          ]
+        },
+        "Investment": {
+          "Open": [
+            "93.07",
+            "92.94"
+          ]
+        }
+      }
+    }
+  ]
+}

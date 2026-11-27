@@ -101,11 +101,39 @@ class PortfolioServiceTests(unittest.TestCase):
         self.assertEqual(saved["symbol"], "CFCL")
         self.assertEqual(saved["investment_horizon"], "one_to_three_months")
         self.assertEqual(saved["risk_preference"], "aggressive_growth")
+        self.assertEqual(saved["current_quantity"], "2500")
+        self.assertTrue(saved["holding_active"])
         self.assertEqual(
             service.list_holding_preferences(self.owner, self.portfolio["id"]),
             [saved],
         )
         self.assertEqual(service.list_holding_preferences("user-b", self.portfolio["id"]), None)
+
+    def test_preference_is_retained_but_marked_inactive_after_full_sale_and_reactivated_on_rebuy(self):
+        self.tx("BUY", "10", "100", "0", "2026-01-01")
+        saved = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "CFCL",
+            investment_horizon="one_to_three_months",
+            risk_preference="balanced",
+        )
+
+        self.tx("SELL", "4", "110", "0", "2026-01-02")
+        partial = service.list_holding_preferences(self.owner, self.portfolio["id"])[0]
+        self.assertTrue(partial["holding_active"])
+        self.assertEqual(partial["current_quantity"], "6")
+
+        self.tx("SELL", "6", "115", "0", "2026-01-03")
+        closed = service.list_holding_preferences(self.owner, self.portfolio["id"])[0]
+        self.assertFalse(closed["holding_active"])
+        self.assertEqual(closed["current_quantity"], "0")
+        self.assertEqual(closed["investment_horizon"], saved["investment_horizon"])
+        self.assertEqual(closed["risk_preference"], saved["risk_preference"])
+
+        self.tx("BUY", "3", "120", "0", "2026-01-04")
+        reopened = service.list_holding_preferences(self.owner, self.portfolio["id"])[0]
+        self.assertTrue(reopened["holding_active"])
+        self.assertEqual(reopened["current_quantity"], "3")
+        self.assertEqual(reopened["investment_horizon"], saved["investment_horizon"])
 
     def test_holding_preferences_reject_invalid_choices_and_missing_position(self):
         with self.assertRaisesRegex(LookupError, "positive holding not found"):

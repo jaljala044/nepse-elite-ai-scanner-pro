@@ -54,6 +54,7 @@ import os
 
 def runtime_quarantine_keys(*, required=False):
     """Server-owned configuration; partial configuration is never accepted."""
+    required = required or os.environ.get("NEPSE_REQUIRE_QUARANTINE_LEDGER") == "1"
     path = os.environ.get("NEPSE_QUARANTINE_LEDGER")
     digest = os.environ.get("NEPSE_QUARANTINE_LEDGER_SHA256")
     if not path and not digest and not required:

@@ -21,7 +21,7 @@ Derive the seven IDPAT scanner gates from validated backend report envelopes, ra
 
 ## Integration boundary
 This adapter is a backend-only contract. Its inputs must be produced by trusted server-side validators after they inspect raw manifests, reports and hashes. A client-supplied JSON object is not trusted merely because it has these fields.
-The current IDPAT HTTP request still accepts caller-supplied gate evidence for compatibility; this evidence is not independently authenticated. The next integration must replace that path with server-generated reports from the actual data stores before allowing risk planning or persistence over HTTP.
+The HTTP request no longer accepts gate evidence from the client. The route forces all seven gates blocked until a trusted server-side adapter is configured. An HTTP request cannot set the gates or persist a signal. The backend-only persistence function remains available to trusted internal callers after deriving all seven gates from validated reports.
 
 ## Current source reality
 No canonical, exchange-certified dataset is newly promoted by this change. Existing project audits document outstanding calendar, OHLCV, source-rights, floorsheet and security-universe gaps. Synthetic tests prove only the adapter contract.

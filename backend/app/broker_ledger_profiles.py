@@ -38,7 +38,7 @@ def ledger_profiles(*,as_of_date,decision_time,window):
           ORDER BY session_date""",[expected[0],expected[-1],cutoff]).fetchall()
         observations=con.execute("""SELECT security_id,broker_id,CAST(session_date AS VARCHAR),side,
           CAST(amount AS VARCHAR),CAST(quantity AS VARCHAR),source_id,evidence_id,source_payload_sha256,
-          CAST(coverage_ratio AS VARCHAR),CAST(available_at AS VARCHAR),status,batch_id,payload_json
+          CAST(coverage_ratio AS VARCHAR),CAST(available_at AS VARCHAR),status,batch_id,payload_json,natural_key,observation_id,source_row_count
           FROM broker_daily_observations WHERE session_date BETWEEN ? AND ? AND available_at<=?
           ORDER BY session_date,security_id,broker_id,side,source_id,evidence_id""",[expected[0],expected[-1],cutoff]).fetchall()
     finally: con.close()
@@ -52,10 +52,18 @@ def ledger_profiles(*,as_of_date,decision_time,window):
             and Decimal(m["source_coverage_ratio"])==1 and Decimal(m["identity_coverage_min"])==1):
             valid[d]=m["batch_id"]
     if set(valid)!=set(expected): return unavailable("complete_session_manifest_missing")
-    keys=("security_id","broker_id","session_date","side","amount","quantity","source_id","evidence_id","source_payload_sha256","coverage_ratio","available_at","status","batch_id","payload_json")
+    keys=("security_id","broker_id","session_date","side","amount","quantity","source_id","evidence_id","source_payload_sha256","coverage_ratio","available_at","status","batch_id","payload_json","natural_key","observation_id","source_row_count")
     rows=[]
     for item in observations:
         r=dict(zip(keys,item)); payload=json.loads(r.pop("payload_json"))
+        key=[r[k] for k in ("security_id","broker_id","session_date","side","source_id","evidence_id")]
+        canonical=json.dumps(key,separators=(",",":"),ensure_ascii=False)
+        if (payload["natural_key"]!=key or r["natural_key"]!=canonical
+            or sha256(canonical.encode()).hexdigest()!=r["observation_id"]
+            or any(Decimal(payload[k])!=Decimal(r[k]) for k in ("amount","quantity","coverage_ratio"))
+            or any(payload[k]!=r[k] for k in ("batch_id","status","source_payload_sha256","source_row_count"))
+            or stamp(payload["available_at"])!=stamp(r["available_at"])):
+            return unavailable("observation_payload_mismatch")
         if r["session_date"] not in valid or r["batch_id"]!=valid[r["session_date"]]: return unavailable("observation_manifest_mismatch")
         if Decimal(r["coverage_ratio"])!=1: return unavailable("observation_coverage_incomplete")
         rows.append(r)

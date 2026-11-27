@@ -1,9 +1,10 @@
 """Orchestrate operator-authorized paginated source capture through an injected transport."""
 from __future__ import annotations
 import hashlib
+import re
 from datetime import datetime
 from typing import Callable, Mapping
-from urllib.parse import urlparse, urlencode
+from urllib.parse import parse_qsl, urlparse, urlencode
 
 
 def _aware(value: object, name: str) -> datetime:
@@ -23,18 +24,25 @@ def capture_registered_source_pages(*, source_spec: Mapping[str, object], fetch_
     captured, cutoff = _aware(captured_at, "captured_at"), _aware(decision_cutoff, "decision_cutoff")
     if captured > cutoff:
         return {"status":"CAPTURE_BLOCKED","errors":[{"reason":"capture_after_decision_cutoff"}],"payloads":{},"manifest":None}
-    if not isinstance(max_pages,int) or max_pages < 1 or max_pages > 1000:
+    if isinstance(max_pages, bool) or not isinstance(max_pages,int) or max_pages < 1 or max_pages > 1000:
         raise ValueError("max_pages must be between 1 and 1000")
     if source_spec.get("review_status") != "approved":
         return {"status":"CAPTURE_BLOCKED","errors":[{"reason":"source_not_approved"}],"payloads":{},"manifest":None}
     source_id, publisher_id = str(source_spec.get("source_id","")).strip(), str(source_spec.get("publisher_id","")).strip()
     endpoint = str(source_spec.get("endpoint_url","")).strip()
     parsed = urlparse(endpoint); allowed = set(source_spec.get("allowed_hosts",[]))
-    if not source_id or not publisher_id or parsed.scheme != "https" or not parsed.hostname or parsed.hostname not in allowed:
+    page_parameter = source_spec.get("page_parameter", "page")
+    query_keys = [key for key, _value in parse_qsl(parsed.query, keep_blank_values=True)]
+    if (not isinstance(page_parameter, str) or
+            not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]{0,63}", page_parameter) or
+            page_parameter in query_keys):
+        return {"status":"CAPTURE_BLOCKED","errors":[{"reason":"page_parameter_invalid_or_already_present"}],"payloads":{},"manifest":None}
+    if (not source_id or not publisher_id or parsed.scheme != "https" or not parsed.hostname or
+            parsed.username or parsed.password or parsed.fragment or parsed.hostname not in allowed):
         return {"status":"CAPTURE_BLOCKED","errors":[{"reason":"endpoint_or_publisher_not_allowlisted"}],"payloads":{},"manifest":None}
     content_types = set(source_spec.get("allowed_content_types",[]))
     if not content_types: raise ValueError("allowed_content_types must be explicitly registered")
-    page_parameter, first_page = str(source_spec.get("page_parameter","page")), source_spec.get("first_page",1)
+    first_page = source_spec.get("first_page",1)
     if first_page != 1:
         raise ValueError("first_page must be 1 to satisfy the canonical contiguous capture manifest")
     try:

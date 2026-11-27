@@ -103,5 +103,12 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("bar_present_on_verified_no_trade_session:" + day, result["reasons"])
 
 
+    def test_zero_volume_bar_is_invalid_for_traded_session(self):
+        records = list(self.records)
+        records[0] = dict(records[0], volume="0")
+        result = self.evaluate(records=records)
+        self.assertIn("invalid_or_incomplete_ohlcv:" + self.sessions[0], result["reasons"])
+
+
 if __name__ == "__main__":
     unittest.main()

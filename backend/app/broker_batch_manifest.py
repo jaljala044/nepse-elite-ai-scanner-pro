@@ -328,6 +328,10 @@ class BrokerRawCaptureRegistry:
                 [batch_id]).fetchone()
         if not row:
             raise CaptureRejected("unknown_batch")
+        stored_capture = self.get(batch_id)
+        self._bind_row_lineage(report, stored_capture["manifest"])
+        payload = self._reconciliation_payload(report)
+        report_hash = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
         if row[0] not in {"approved", "admitted"} or not row[2]:
             raise CaptureRejected("explicit_operator_approval_required")
         if report.batch_id != batch_id or row[1] != report_hash:

@@ -112,5 +112,30 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(store.count(),1)
 
 
+    def test_omitted_quarantine_date_and_historical_alias(self):
+        from datetime import date
+        from unittest.mock import patch
+        from app.temporal_registry import SecurityMasterRecord
+        registry = [
+            SecurityMasterRecord("SEC-1","OLD","equity","active",date(2020,1,1),date(2026,11,23),"synthetic-old","primary_nepse_notice",True,True),
+            SecurityMasterRecord("SEC-1","NEW","equity","active",date(2026,11,24),None,"synthetic-new","primary_nepse_notice",True,True),
+        ]
+        store = BrokerMemoryStore(self.path, security_records=registry)
+        days = ["2026-11-22","2026-11-24"]
+        valid = snapshot(observed_sessions=2,requested_sessions=2,
+            first_session=days[0],last_session=days[-1],observation_rows=2,
+            constituent_sessions=days,constituent_lineage=[
+                {"session_date":d,"source_id":"SRC-1","evidence_id":"E-1","payload_sha256":"a"*64} for d in days])
+        with patch("app.broker_memory_store.runtime_quarantine_keys",return_value=frozenset({("OTHER","2026-11-23")})):
+            store.append(valid,idempotency_key="clean")
+            self.assertEqual(store.count(),1)
+        with patch("app.broker_memory_store.runtime_quarantine_keys",return_value=frozenset({("OLD","2026-11-23")})):
+            with self.assertRaisesRegex(ValueError,"quarantined constituent"):
+                store.append(valid,idempotency_key="blocked")
+            with self.assertRaisesRegex(ValueError,"quarantined constituent"):
+                store.get_as_of(security_id="SEC-1",broker_entity_id="BROKER-1",as_of_date=days[-1])
+            self.assertEqual(store.count(),1)
+
+
 if __name__ == "__main__":
     unittest.main()

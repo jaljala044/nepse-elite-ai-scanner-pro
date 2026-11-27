@@ -62,6 +62,7 @@ def adapt_floorsheet_parties_to_broker_batch(
     expected_source_ids: set[str],
     received_source_ids: set[str],
     available_at: str,
+    capture_batch_id: str | None = None,
     identity_coverage_threshold: Decimal = Decimal("0.95"),
 ) -> dict:
     """Return P4.33 IngestionReport plus source/identity audit metrics.
@@ -178,11 +179,21 @@ def adapt_floorsheet_parties_to_broker_batch(
             "source_id": item["source_id"], "evidence_id": evidence_id,
             "source_payload": source_payload, "source_payload_sha256": digest,
             "source_row_count": len(lineage), "coverage_ratio": str(source_ratio),
+            "raw_record_lineage": [
+                {"raw_record_sha256": h, "raw_record_locator": f"csv:row:{n}",
+                 "contract_id": c}
+                for n, c, h in lineage
+            ],
         })
 
     verified_brokers = {row["broker_id"] for row in ingestion_rows}
+    if capture_batch_id is not None and (
+        not isinstance(capture_batch_id, str) or not capture_batch_id.strip()
+    ):
+        raise FloorsheetBrokerAdapterError("invalid_capture_batch_id")
     report = reconcile_broker_batch(
-        batch_id="floorsheet:" + ":".join(sorted(expected_ids)) + ":" + str(available_at),
+        batch_id=(capture_batch_id.strip() if capture_batch_id is not None else
+                  "floorsheet:" + ":".join(sorted(expected_ids)) + ":" + str(available_at)),
         rows=ingestion_rows, verified_brokers=verified_brokers,
         verified_sessions=set(verified_sessions or set()),
         expected_source_ids=expected_ids, received_source_ids=received_ids,

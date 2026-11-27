@@ -185,6 +185,7 @@ def reconcile_broker_batch(
             "quantity": str(quantity), "amount": str(amount), "source_id": str(raw["source_id"]),
             "evidence_id": str(raw["evidence_id"]), "source_payload_sha256": digest,
             "source_row_count": row_count, "coverage_ratio": str(row_coverage),
+            "raw_record_lineage": raw.get("raw_record_lineage", []),
             "available_at": availability.isoformat(), "batch_id": batch_id,
             "status": "descriptive_only",
         })

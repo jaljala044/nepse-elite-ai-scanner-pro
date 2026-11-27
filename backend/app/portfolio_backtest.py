@@ -231,6 +231,7 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 "signal_id": candidate["signal_id"], "symbol": symbol, "sector": sector,
                 "entry_date": scenario["entry_session"], "exit_date": scenario["exit_session"],
                 "quantity": int(scenario["scenario_quantity"]), "buy_cash": buy_cash,
+                "entry_price": entry_price, "exit_price": float(scenario["exit_price"]),
                 "sell_cash": sell_cash, "settlement_date": cash_settlement,
                 "net_pnl": float(scenario["net_pnl"]),
                 "net_return_pct": float(scenario["net_return_pct"]),

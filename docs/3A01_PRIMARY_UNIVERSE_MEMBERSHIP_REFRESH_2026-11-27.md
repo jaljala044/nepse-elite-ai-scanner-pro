@@ -81,14 +81,29 @@ This is a valuable official statistical cross-check with a stated reference date
 
 Source: Nepal Rastra Bank, *Current Macroeconomic and Financial Situation ... one month of data of 2026/27*, https://www.nrb.org.np/contents/uploads/2026/09/Current-Macroeconomic-and-Financial-Situation-English-Based-on-One-Month-data-of-2026.27-3.pdf (Capital Market, paragraphs 65–68; figures sourced to NEPSE).
 
+
+### 6. Newer official NRB/NEPSE aggregate through mid-October 2026
+
+The newer NRB *Current Macroeconomic and Financial Situation* report, published 2026-11-19 and based on three months of FY 2026/27 data, supersedes the earlier mid-August aggregate for recency:
+
+- NEPSE-sourced count: **305 listed companies at mid-October 2026**.
+- Sector breakdown: 132 BFIs and insurance, 112 hydropower, 31 manufacturing/processing, 9 hotels, 7 investment, 4 trading and 10 others (sum: 305).
+- The same paragraph then says the number was 276 in mid-October 2026, an internally inconsistent comparison period/statement. Do not use that sentence as a valid prior-period baseline; the current 305 total and its sector breakdown are internally arithmetically consistent.
+- As with the earlier report, this is a company-level aggregate—not a symbol-level registry. It supplies no security IDs, instrument class per security, lifecycle status, or effective dates. It does not certify the 281-symbol candidate universe.
+
+Source: Nepal Rastra Bank, *Current Macroeconomic and Financial Situation of Nepal based on three months of data of 2026/27*, published 2026-11-19, Capital Market paragraphs 66–69, https://www.nrb.org.np/contents/uploads/2026/11/Current-Macroeconomic-and-Financial-Situation-EnglishBased-on-Three-Months-data-of-2026.27-1.pdf.
+
 ## Evidence comparison
 
 | Source | Latest explicit observation | Scope stated by source | Membership authority for 2026-11-27 |
 |---|---|---|---|
 | NEPSE `/stocklist` | 2026-10-15 15:00 | Official public stocklist / quote display | Official but stale; insufficient for current certification |
-| NEPSE `/en/catalogue` | 2026-09-24 15:00 | Official public catalogue / quote display | Older; insufficient |\n| NEPSE figures reproduced by NRB | Mid-August 2026 | 305 listed companies by sector | Official statistical aggregate; not a symbol-level equity registry |
+| NEPSE `/en/catalogue` | 2026-09-24 15:00 | Official public catalogue / quote display | Older; insufficient |
+| NEPSE figures reproduced by NRB | Mid-October 2026 (published 2026-11-19) | 305 listed companies by sector | Newer official statistical aggregate; not a symbol-level equity registry |
 | NepseAlpha `/traded-stocks` | Indexed 2026-11-27 | Only actively traded stocks | Secondary and narrower than complete listed-equity universe |
-| Project 2026-11-25 security snapshot | 2026-11-25 | 573-row mixed-instrument current catalogue snapshot | Secondary current-snapshot crosswalk; not an authenticated primary registry |\n| HamroShare listings | Indexed 2026-11-27 | 955 securities; 560 marked Active | Secondary provider-specific count; raw taxonomy/lifecycle not verified |\n| NEPSEDATA listed companies | 2026-11-26 snapshot label | Current market snapshot fields | Quote cross-check only; not a complete lifecycle registry |
+| Project 2026-11-25 security snapshot | 2026-11-25 | 573-row mixed-instrument current catalogue snapshot | Secondary current-snapshot crosswalk; not an authenticated primary registry |
+| HamroShare listings | Indexed 2026-11-27 | 955 securities; 560 marked Active | Secondary provider-specific count; raw taxonomy/lifecycle not verified |
+| NEPSEDATA listed companies | 2026-11-26 snapshot label | Current market snapshot fields | Quote cross-check only; not a complete lifecycle registry |
 | Project 2026-11-26 equity candidate manifest | 2026-11-26 | 281 equity candidates from NepseAlpha | Working candidate universe only |
 
 ## Decision and scanner impact
@@ -107,5 +122,9 @@ Acquire a fresh primary-source security master from NEPSE (or an authenticated N
 ## Public source references
 
 - NEPSE stocklist: https://www.nepalstock.com.np/stocklist
-- NEPSE catalogue: https://www.nepalstock.com.np/en/catalogue\n- NRB report reproducing NEPSE listing statistics: https://www.nrb.org.np/contents/uploads/2026/09/Current-Macroeconomic-and-Financial-Situation-English-Based-on-One-Month-data-of-2026.27-3.pdf
-- NepseAlpha actively traded/listed securities: https://www.nepsealpha.com/traded-stocks\n- HamroShare listings: https://hamroshare.com.np/nepse/stocks\n- NEPSEDATA listed companies: https://nepsedata.com/stock/companies/
+- NEPSE catalogue: https://www.nepalstock.com.np/en/catalogue
+- NRB one-month report: https://www.nrb.org.np/contents/uploads/2026/09/Current-Macroeconomic-and-Financial-Situation-English-Based-on-One-Month-data-of-2026.27-3.pdf
+- NRB three-month report (newer mid-October NEPSE aggregate): https://www.nrb.org.np/contents/uploads/2026/11/Current-Macroeconomic-and-Financial-Situation-EnglishBased-on-Three-Months-data-of-2026.27-1.pdf
+- NepseAlpha actively traded/listed securities: https://www.nepsealpha.com/traded-stocks
+- HamroShare listings: https://hamroshare.com.np/nepse/stocks
+- NEPSEDATA listed companies: https://nepsedata.com/stock/companies/

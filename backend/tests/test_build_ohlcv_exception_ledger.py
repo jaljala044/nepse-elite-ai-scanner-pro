@@ -74,7 +74,9 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
             saved = json.loads(jp.read_text(encoding="utf-8"))
             self.assertEqual(counts["total_exception_records"], 2)
             self.assertEqual(len(saved["source_audit"]["source_audit_report_sha256"]), 64)
-            self.assertTrue(cp.read_text(encoding="utf-8").startswith("exception_id,"))
+            with cp.open(encoding="utf-8", newline="") as stream:
+                import csv
+                self.assertIn("exception_id", csv.DictReader(stream).fieldnames)
 
 
     def test_user_authoritative_2025_07_28_conflict_is_resolved_only_for_exact_key(self):

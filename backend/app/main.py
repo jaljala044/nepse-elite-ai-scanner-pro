@@ -927,3 +927,21 @@ def research_portfolio_adjust_plan(request: CorporateActionPlanRequest):
         return rebase_cash_action_plan(**args)
     except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .integrated_research_pipeline import run_integrated_research
+
+class IntegratedResearchRequest(BaseModel):
+    snapshot: dict
+    as_of_date: str
+    as_of_timestamp: str
+    confirmation: dict | None = None
+    execution_by_horizon: dict[str, dict] | None = None
+
+@app.post("/v1/research/integrated")
+def research_integrated(request: IntegratedResearchRequest):
+    """Caller-attested research orchestration; no live orders."""
+    try:
+        return run_integrated_research(**request.model_dump())
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

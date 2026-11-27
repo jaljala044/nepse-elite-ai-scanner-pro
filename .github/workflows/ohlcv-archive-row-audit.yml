@@ -62,13 +62,6 @@ jobs:
             --repo jaljala044/nepse-history-starter \
             --workers 8 \
             --output data/reports/ohlcv-archive-audit.json
-      - name: Build immutable OHLCV exception ledger
-        if: always() && hashFiles('data/reports/ohlcv-archive-audit.json') != ''
-        run: |
-          python backend/build_ohlcv_exception_ledger.py \
-            --input data/reports/ohlcv-archive-audit.json \
-            --json-output data/reports/ohlcv-exception-ledger.json \
-            --csv-output data/reports/ohlcv-exception-ledger.csv
       - name: Cross-check flagged rows against SocrateAI unadjusted EOD
         if: always()
         run: |
@@ -78,6 +71,14 @@ jobs:
             echo "No OHLCV audit report was produced; cannot cross-check."
             exit 1
           fi
+      - name: Build immutable OHLCV exception ledger with external corroboration
+        if: always() && hashFiles('data/reports/ohlcv-archive-audit.json', 'data/reports/ohlcv-socrateai-crosscheck.json') != ''
+        run: |
+          python backend/build_ohlcv_exception_ledger.py \
+            --input data/reports/ohlcv-archive-audit.json \
+            --external-input data/reports/ohlcv-socrateai-crosscheck.json \
+            --json-output data/reports/ohlcv-exception-ledger.json \
+            --csv-output data/reports/ohlcv-exception-ledger.csv
       - name: Enumerate current SocrateAI floorsheet dates (manifest only)
         if: always()
         run: |

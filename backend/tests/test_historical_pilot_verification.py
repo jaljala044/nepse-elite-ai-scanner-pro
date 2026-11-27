@@ -4,7 +4,7 @@ from app.historical_pilot_verification import validate_official_first_trade_evid
 class OfficialFirstTradeVerificationTests(unittest.TestCase):
     def setUp(self):
         self.cohort=[{"symbol":"SAIL","reported_first_trade_date":"2025-11-23"}]
-        self.record={"symbol":"SAIL","source_type":"nepse_official_floorsheet","contract_id":"C-1","security_id":"SEC-1","source_record_id":"R-1","raw_sha256":"a"*64,"trade_date":"2025-11-23","available_at":"2025-11-23T15:00:00+05:45","captured_at":"2025-11-23T15:10:00+05:45","quantity":10,"price":100,"finality":"final","record_status":"verified"}
+        self.record={"symbol":"SAIL","source_type":"nepse_official_floorsheet","contract_id":"C-1","security_id":"SEC-1","source_record_id":"R-1","raw_sha256":"a"*64,"trade_date":"2025-11-23","available_at":"2025-11-23T15:00:00+05:45","captured_at":"2025-11-23T15:10:00+05:45","quantity":10,"price":100,"finality":"final","record_status":"verified","capture_complete":True}
     def run_check(self, record):
         return validate_official_first_trade_evidence(self.cohort,[record],decision_cutoff="2025-11-24T00:00:00+05:45")
     def test_official_contract_resolves_date(self):

@@ -172,3 +172,10 @@ Both required GitHub Actions workflows passed on exact PR head `80ccd06d18ee530e
 - `Backend contract tests` — run 45928317656, success.
 
 **Important boundary:** this reconciliation utility does not itself authenticate or load the official NEPSE security snapshot. Caller-supplied official records must already have independent source validation and point-in-time provenance. No real SEBON candidate rows were reconciled or promoted in this task; the PR tests use synthetic fixtures. Historical identity and effective-date mapping remain unresolved.
+
+
+### P2.03 official NEPSE registry schema profiler — PR #163 merged 2026-11-27
+
+PR #163 (490dcb1087c5794a851c45206d12777eadc0ffe7) adds `backend/app/nepse_registry_schema_profiler.py` and standard-library `unittest` coverage. Given exact captured JSON bytes, the bounded profiler reports the payload SHA-256 and byte count, JSON root type, nested object-array paths, row/non-object counts, field names and observed JSON value types. It enforces payload, traversal-depth and node-count limits. It does not assign field semantics, assume an array is a complete security universe, infer security IDs/symbols/company names/instrument types/sectors, normalize or reconcile records, or admit membership. Both required CI workflows passed on exact head `4c619e3fc7b7a5af19a70cd04356c5005aa73b68`; all four reported checks were successful before squash merge.
+
+**Next operational gate:** run the profiler against a separately captured, first-party NEPSE registry response only after its URL, retrieval timestamp, TLS/hostname validation, HTTP status, content type, raw byte count and SHA-256 have been preserved. No live official security registry payload was acquired in PR #163; the current snapshot remains unconnected to the new reconciliation layer.

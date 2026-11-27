@@ -128,6 +128,14 @@ class BrokerRawCaptureTests(unittest.TestCase):
         self.assertEqual(receipt["inserted"], 1)
         self.assertEqual(self.registry.get(batch)["state"], "admitted")
         self.assertEqual(history.count(), 1)
+        stored_rows = history.observations_as_of(
+            as_of_date="2026-11-25",
+            as_of_timestamp="2026-11-27T00:00:00+05:45")
+        self.assertEqual(stored_rows[0]["raw_capture_sha256"], manifest.raw_sha256)
+        self.assertEqual(stored_rows[0]["raw_capture_batch_id"], manifest.capture_id)
+        self.assertEqual(stored_rows[0]["parser_name"], manifest.parser_name)
+        self.assertEqual(stored_rows[0]["parser_version"], manifest.parser_version)
+        self.assertEqual(stored_rows[0]["reconciliation_sha256"], digest)
         events = self.registry.events(batch)
         self.assertEqual([e["event_type"] for e in events],
                          ["staged", "dry_run_passed", "approved", "admitted"])

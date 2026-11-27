@@ -32,7 +32,7 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
         disposition=r.get("disposition")
         if disposition=="resolved_with_user_authoritative_evidence":
             if r.get("exception_type")!="cross_source_ohlcv_conflict" or key not in USER_FINAL_KEYS:
-                errors.append(f"record {i} uses user-authoritative disposition outside approved 2025-07-28 keys")
+                errors.append(f"record {i} uses user-authoritative disposition outside the approved user-authoritative symbol/date keys")
             resolution=r.get("resolution_evidence") or {}
             if resolution.get("authority")!="explicit_user_designation_as_final_and_authoritative":
                 errors.append(f"record {i} lacks explicit user-authority resolution evidence")

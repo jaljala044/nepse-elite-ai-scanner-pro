@@ -1,0 +1,23 @@
+name: Repeated OHLCV session-evidence join tests
+
+on:
+  pull_request:
+    paths:
+      - "scripts/join_repeated_ohlcv_session_evidence.py"
+      - "backend/app/session_calendar.py"
+      - "tests/test_join_repeated_ohlcv_session_evidence.py"
+      - ".github/workflows/repeated-adjacent-session-join.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  session-evidence-join:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run session evidence join tests
+        run: python -m unittest discover -s tests -p 'test_join_repeated_ohlcv_session_evidence.py' -v

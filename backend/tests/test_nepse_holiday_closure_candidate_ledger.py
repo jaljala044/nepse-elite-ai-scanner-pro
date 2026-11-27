@@ -74,5 +74,5 @@ class HolidayClosureCandidateLedgerTests(unittest.TestCase):
             self.assertIn(result["rows"][0]["candidate_id"], csv_path.read_text())
 
 
-if __import__("__main__").__name__ == "__main__":
+if __name__ == "__main__":
     unittest.main()

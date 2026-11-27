@@ -141,7 +141,7 @@ def run_unified_portfolio_risk(*, execution_runs, daily_marks, market_controls,
                 if held==symbol: mark_price=price
                 else:
                     eligible=[(d,p) for (d,s),p in marks.items() if s==held and _time(next(m["decision_cutoff"] for m in daily_marks if m["symbol"]==s and m["session_date"]==d))<=ts]
-                    mark_price=max(eligible,key=lambda z:z[0])[1] if eligible else None
+                    mark_price=max(eligible,key=lambda z:z[0])[1] if eligible else position["cost_basis"]
                 if mark_price is None:
                     known_values=None; break
                 known_values[held]=Decimal(position["quantity"])*mark_price
@@ -160,7 +160,9 @@ def run_unified_portfolio_risk(*, execution_runs, daily_marks, market_controls,
             if sector_value/equity*100>sector_cap:
                 rejected.append({"execution_id":item["execution_id"],"reason":"sector_exposure_limit_exceeded"}); continue
             cash-=notional+fee
-            current["quantity"]+=qty; current["sector"]=sector
+            old_qty=Decimal(current["quantity"]); new_qty=old_qty+Decimal(qty)
+            current["cost_basis"]=((old_qty*current["cost_basis"])+(Decimal(qty)*price))/new_qty
+            current["quantity"]=int(new_qty); current["sector"]=sector
             positions[symbol]=current
         total_cost+=fee; realized_notional+=notional; accepted.append(item)
     try:

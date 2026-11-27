@@ -147,3 +147,16 @@ A pinned ShareSansar-scraped EOD archive yielded 616 unique date-file candidates
 A separate SocrateAI index repository tree contains index-date files for 614 of the 616 candidates; the missing index files are 2025-04-03 and 2026-11-20. All seven candidate dates absent from the starter 2026 market-summary file have one inspected `NEPSE_index` row in the separate-repository index files. This is corroboration with source lineage not fully verified, not primary exchange evidence.
 
 The candidate list is preserved as `candidate_unverified`; no `verified_open` dates were promoted and the canonical calendar is unchanged. Exact identity with the original extraction input and primary date-by-date proof remain open. P1 remains blocked.
+
+## Eligibility evaluator provenance hardening — 2026-11-27
+
+The single-instrument segment evaluator now requires a separate session_evidence record for every date in the caller-supplied expected-session grid. Each date must carry:
+- a status matching the explicit session_statuses classification;
+- a non-empty source ID and source-record reference;
+- an HTTPS source URL and SHA-256 of the retained evidence object;
+- approved source-rights status; and
+- timezone-aware source availability and retrieval timestamps, with source availability no later than the decision cutoff.
+
+Missing, mismatched, unlicensed, unhashed or post-cutoff session evidence is classified as unknown/ineligible. Evidence records outside the expected grid are rejected. This closes a contract gap where a caller could previously label a date "verified" without the evaluator requiring date-level provenance.
+
+The unit tests use synthetic fixture evidence only. They demonstrate fail-closed behavior and do not certify any real NEPSE session date. The 616-date reconstruction remains candidate-only; primary exchange open-session evidence and the original calendar identity are still unresolved. No 120-session audit or backtest promotion is claimed.

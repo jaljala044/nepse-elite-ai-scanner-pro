@@ -91,6 +91,7 @@ class BrokerDailyHistoryStore:
                 ("raw_capture_available_at", "TIMESTAMPTZ"),
                 ("raw_record_sha256", "VARCHAR"),
                 ("raw_record_locator", "VARCHAR"),
+                ("raw_record_lineage_json", "VARCHAR"),
                 ("parser_name", "VARCHAR"),
                 ("parser_version", "VARCHAR"),
                 ("reconciliation_sha256", "VARCHAR"),
@@ -226,20 +227,30 @@ class BrokerDailyHistoryStore:
             if raw_capture_manifest is not None:
                 if row["source_id"] != raw_capture_manifest["source_id"]:
                     raise DailyHistoryRejected("observation_source_capture_mismatch")
-                record_hash = row.get("raw_record_sha256")
-                record_locator = row.get("raw_record_locator")
+                record_lineage = row.get("raw_record_lineage")
                 capture_hash = row.get("raw_capture_sha256")
-                if (not isinstance(record_hash, str) or len(record_hash) != 64
-                        or any(ch not in "0123456789abcdef" for ch in record_hash.lower())):
-                    raise DailyHistoryRejected(f"invalid_raw_record_sha256:{index}")
-                if not isinstance(record_locator, str) or not record_locator.strip():
-                    raise DailyHistoryRejected(f"missing_raw_record_locator:{index}")
                 if capture_hash != lineage["raw_capture_sha256"]:
                     raise DailyHistoryRejected(f"observation_raw_capture_hash_mismatch:{index}")
-                row_lineage = {
-                    "raw_record_sha256": record_hash.lower(),
-                    "raw_record_locator": record_locator.strip(),
-                }
+                if not isinstance(record_lineage, list) or not record_lineage:
+                    raise DailyHistoryRejected(f"missing_raw_record_lineage:{index}")
+                normalized_records = []
+                for record_index, record in enumerate(record_lineage):
+                    if not isinstance(record, dict):
+                        raise DailyHistoryRejected(f"invalid_raw_record_lineage:{index}:{record_index}")
+                    record_hash = record.get("raw_record_sha256")
+                    record_locator = record.get("raw_record_locator")
+                    if (not isinstance(record_hash, str) or len(record_hash) != 64
+                            or any(ch not in "0123456789abcdef" for ch in record_hash.lower())):
+                        raise DailyHistoryRejected(f"invalid_raw_record_sha256:{index}:{record_index}")
+                    if not isinstance(record_locator, str) or not record_locator.strip():
+                        raise DailyHistoryRejected(f"missing_raw_record_locator:{index}:{record_index}")
+                    normalized_records.append({
+                        "raw_record_sha256": record_hash.lower(),
+                        "raw_record_locator": record_locator.strip(),
+                        **({"contract_id": str(record["contract_id"])}
+                           if record.get("contract_id") is not None else {}),
+                    })
+                row_lineage = {"raw_record_lineage_json": _canonical(normalized_records)}
             side = str(row.get("side", "")).upper()
             if side not in {"BUY", "SELL"}:
                 raise DailyHistoryRejected("invalid_observation_side")
@@ -310,9 +321,8 @@ class BrokerDailyHistoryStore:
                         source_row_count, coverage_ratio, batch_id, available_at, status,
                         payload_json, inserted_at, raw_capture_sha256, raw_capture_batch_id,
                         raw_capture_captured_at, raw_capture_available_at,
-                        raw_record_sha256, raw_record_locator,
-                        parser_name, parser_version, reconciliation_sha256
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        raw_record_lineage_json, parser_name, parser_version, reconciliation_sha256
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, [
                     observation_id, natural_key, row["security_id"], row["broker_id"],
                     session, str(row["side"]).upper(), amount, quantity, row["source_id"],
@@ -323,8 +333,7 @@ class BrokerDailyHistoryStore:
                     (lineage or {}).get("raw_capture_batch_id"),
                     (lineage or {}).get("raw_capture_captured_at"),
                     (lineage or {}).get("raw_capture_available_at"),
-                    (row_lineage or {}).get("raw_record_sha256"),
-                    (row_lineage or {}).get("raw_record_locator"),
+                    (row_lineage or {}).get("raw_record_lineage_json"),
                     (lineage or {}).get("parser_name"),
                     (lineage or {}).get("parser_version"),
                     (lineage or {}).get("reconciliation_sha256"),
@@ -361,8 +370,8 @@ class BrokerDailyHistoryStore:
                        CAST(coverage_ratio AS VARCHAR), batch_id,
                        CAST(available_at AS VARCHAR), status, raw_capture_sha256,
                        raw_capture_batch_id, CAST(raw_capture_captured_at AS VARCHAR),
-                       CAST(raw_capture_available_at AS VARCHAR), raw_record_sha256,
-                       raw_record_locator, parser_name, parser_version, reconciliation_sha256
+                       CAST(raw_capture_available_at AS VARCHAR), raw_record_lineage_json,
+                       parser_name, parser_version, reconciliation_sha256
                 FROM broker_daily_observations
                 WHERE session_date <= ? AND available_at <= ?
                 ORDER BY session_date, security_id, broker_id, side, source_id, evidence_id
@@ -373,7 +382,7 @@ class BrokerDailyHistoryStore:
                 "source_id", "evidence_id", "source_payload_sha256", "source_row_count",
                 "coverage_ratio", "batch_id", "available_at", "status",
                 "raw_capture_sha256", "raw_capture_batch_id", "raw_capture_captured_at",
-                "raw_capture_available_at", "raw_record_sha256", "raw_record_locator",
+                "raw_capture_available_at", "raw_record_lineage_json",
                 "parser_name", "parser_version", "reconciliation_sha256")
         return [dict(zip(keys, row)) for row in rows]
 

@@ -97,8 +97,8 @@ def simulate_exchange_execution(*, order, sessions, impact_bps="0", max_particip
                 continue
             available=min(depth,remaining,int(capacity)-daily_filled)
             if available<=0: continue
-            impact=price*impact/Decimal("10000")
-            execution_price=_round_tick(price+impact if side=="buy" else price-impact,tick,side)
+            impact_amount=price*impact_rate/Decimal("10000")
+            execution_price=_round_tick(price+impact_amount if side=="buy" else price-impact_amount,tick,side)
             execution_price=max(lower,min(upper,execution_price))
             if limit is not None and ((side=="buy" and execution_price>limit) or (side=="sell" and execution_price<limit)):
                 continue

@@ -87,6 +87,38 @@ def parse_broker_trades(raw,day,targets):
             errors[s]+=1
     return result,errors,timestamps,headers
 
+def timestamp_audit(raw, day, targets):
+    from datetime import time
+    groups={s:[] for s in targets}
+    errors=Counter()
+    for row in csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))):
+        symbol=(row.get("stock_symbol") or row.get("symbol") or "").strip().upper()
+        if symbol not in targets: continue
+        try:
+            _,d,c,q,p,a=signature(row)
+            if d!=day or not c.isdigit(): raise ValueError("date or contract")
+            stamp=time.fromisoformat(row["time"].strip())
+            if stamp.tzinfo is not None: raise ValueError("unexpected offset")
+            groups[symbol].append((stamp,int(c),p))
+        except (KeyError,ValueError,ArithmeticError):
+            errors[symbol]+=1
+    result={}
+    for symbol,rows in groups.items():
+        by_id=sorted(rows,key=lambda x:x[1])
+        ordered=sorted(rows,key=lambda x:x[0])
+        first={x[2] for x in ordered if x[0]==ordered[0][0]} if ordered else set()
+        last={x[2] for x in ordered if x[0]==ordered[-1][0]} if ordered else set()
+        unique=len({x[1] for x in rows})==len(rows)
+        result[symbol]={"timestamp_rows":len(rows),"errors":errors[symbol],"unique_contracts":unique,
+                        "contract_order_inversions":sum(a[0]>b[0] for a,b in zip(by_id,by_id[1:])),
+                        "first_time":ordered[0][0].isoformat() if ordered else None,
+                        "last_time":ordered[-1][0].isoformat() if ordered else None,
+                        "timestamp_open_candidate":str(next(iter(first))) if len(first)==1 and unique and not errors[symbol] else None,
+                        "timestamp_close_candidate":str(next(iter(last))) if len(last)==1 and unique and not errors[symbol] else None,
+                        "first_price_ambiguous":len(first)>1,"last_price_ambiguous":len(last)>1,
+                        "execution_order_authenticated":False}
+    return result
+
 def main():
     base=ROOT/"data/reports"
     primary=json.loads((base/"p443_floorsheet_extraction_manifest.json").read_text())["files"]
@@ -106,12 +138,13 @@ def main():
         a,ae=parse(raw,day,targets);b,be=parse(alternative_raw,day,targets)
         ab,abe,at,ah=parse_broker_trades(raw,day,targets)
         bb,bbe,bt,bh=parse_broker_trades(alternative_raw,day,targets)
+        chronology=timestamp_audit(alternative_raw,day,targets)
         for s in sorted(targets):
             records.append({"symbol":s,"date":day,"primary_sha256":hashlib.sha256(raw).hexdigest(),
                 "alternative_compressed_sha256":m["sha256"],"primary_errors":ae[s],"alternative_errors":be[s],**compare(a[s],b[s]),
                 "broker_parity":compare(ab[s],bb[s]),"primary_broker_errors":abe[s],"alternative_broker_errors":bbe[s],
                 "primary_timestamp_rows":at[s],"alternative_timestamp_rows":bt[s],"primary_headers":ah,"alternative_headers":bh,
-                "execution_order_verified":False})
+                "timestamp_audit":chronology[s],"execution_order_verified":False})
     if len(records)!=11: raise ValueError("scope mismatch")
     output={"records":records,"approved_corrections":[],"limitations":"shared lineage and execution order unverified; timestamp presence does not authenticate execution chronology"}
     dest=ROOT/"recovery-output/alternative-comparison.json"

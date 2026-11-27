@@ -1,6 +1,7 @@
 """Experimental shared level rule; not method-specific execution advice."""
 from decimal import Decimal
 from .six_scanner_pipeline import run_six_scanners
+from .scanner_candidate_decisions import classify_candidate, method_setup
 
 def attach_reference_plans(result,rows):
     if result["status"]!="RESEARCH": return result
@@ -23,5 +24,9 @@ def replay_research(decision_inputs):
         key=(inputs["symbol"],inputs["horizon"],inputs["decision_time"])
         if key in seen: raise ValueError("duplicate_decision")
         seen.add(key)
-        results.append(attach_reference_plans(run_six_scanners(**inputs),inputs["rows"]))
+        review=attach_reference_plans(run_six_scanners(**inputs),inputs["rows"])
+        for name,item in review["reviews"].items():
+            item["candidate_decision"]=classify_candidate(item)
+            item["setup"]=method_setup(item,name,inputs["sessions"][-1])
+        results.append(review)
     return dict(reviews=results,decision_count=len(results),accuracy=None,production_eligible=False)

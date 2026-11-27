@@ -37,6 +37,24 @@ class LedgerGuardTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 quarantine_keys(path, "0" * 64)
 
+    def test_ledger_requires_exact_source_repository_set_and_integer_count(self):
+        for mutate in ("repository", "boolean_count"):
+            with self.subTest(mutate=mutate), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "ledger.json"
+                ledger = json.loads(self._ledger("2025-07-28"))
+                if mutate == "repository":
+                    ledger["source_audit"]["repositories"] = {
+                        "attacker.example/other": {"commit_sha": "a" * 40},
+                        "jaljala044/nepse-history-starter": {"commit_sha": "b" * 40},
+                    }
+                else:
+                    ledger["counts"]["total_exception_records"] = True
+                raw = json.dumps(ledger).encode()
+                path.write_bytes(raw)
+                expected = "source audit" if mutate == "repository" else "count mismatch"
+                with self.assertRaisesRegex(ValueError, expected):
+                    quarantine_keys(path, hashlib.sha256(raw).hexdigest())
+
     def test_noncanonical_ledger_dates_are_rejected(self):
         for day in ("20250728", "2025-7-28", "2025-07-28T00:00:00"):
             with self.subTest(day=day), tempfile.TemporaryDirectory() as tmp:

@@ -2,7 +2,7 @@
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import re
-from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys, quarantine_gap_symbols
 
 def _day(value):
     if not isinstance(value, str) or date.fromisoformat(value).isoformat() != value:
@@ -32,8 +32,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     for field in ("suspension_overlap", "merger_or_successor_boundary"):
         if segment.get(field) is not False:
             reasons.append(field + "_unknown_or_crossed")
-    if not segment.get("adjustment_basis"):
-        reasons.append("adjustment_basis_missing")
+    if segment.get("adjustment_basis") != "raw":
+        reasons.append("adjustment_basis_not_verified_raw")
     try:
         start = _day(segment["effective_from"])
         end = _day(segment["effective_to"]) if segment.get("effective_to") is not None else "9999-12-31"
@@ -50,6 +50,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         return {"reasons": reasons + ["invalid_segment_contract"], "verified_traded_session_count":0,
                 "verified_no_trade_count":0, "exploratory_replay_eligible":False,
                 "approved_backtest_eligible":False, "production_promotion_allowed":False}
+    if quarantine_gap_symbols(((str(segment.get("symbol", "")), d) for d in sessions), blocked_keys):
+        reasons.append("quarantined_session_in_window")
     by_day = {}
     for row in records:
         day = row.get("session_date")
@@ -87,13 +89,15 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row.get("evidence_sha256", ""))):
             reasons.append("evidence_hash_missing_or_invalid:" + day)
         try:
+            if date.fromisoformat(day) > cutoff.date():
+                reasons.append("future_session:" + day)
             if _timestamp(row["available_at"]) > cutoff:
                 reasons.append("lookahead_available_after_cutoff:" + day)
         except (ValueError, TypeError, KeyError, AttributeError):
             reasons.append("invalid_availability:" + day)
         try:
             o,h,l,c,v = (Decimal(str(row[k])) for k in ("open","high","low","close","volume"))
-            if not all(x.is_finite() for x in (o,h,l,c,v)) or min(o,h,l,c) <= 0 or v <= 0 or h < max(o,l,c) or l > min(o,h,c):
+            if not all(x.is_finite() for x in (o,h,l,c,v)) or min(o,h,l,c) <= 0 or v <= 0 or v != v.to_integral_value() or h < max(o,l,c) or l > min(o,h,c):
                 raise ValueError("invalid OHLCV")
         except (InvalidOperation, ValueError, TypeError, KeyError):
             reasons.append("invalid_ohlcv:" + day)

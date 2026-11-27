@@ -16,6 +16,13 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
+from app.historical_quarantine import configured_holds, reject_held
+
+def _reject_historical_trade(row, holds):
+    if row["trade_date"] in {"2024-08-14", "2024-08-18"}:
+        raise ValueError("p443_archive_session_quarantined")
+    reject_held(row["symbol"], row["trade_date"], holds)
+
 ROOT = Path(__file__).resolve().parents[2]
 SILVER = ROOT / "data" / "silver" / "floorsheet"
 QUARANTINE = ROOT / "data" / "quarantine"
@@ -163,7 +170,15 @@ def normalize_floorsheet_csv(
     if not 0 <= max_reject_ratio < 1:
         raise ValueError("max_reject_ratio must be in [0, 1)")
 
+    holds = configured_holds()
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest in {
+        "205d9aaa6184efdf222102c856737a114fb060a4a9f19d7fb2c38d7ff8340142",
+        "7bf52ca5f7b029f9188b34dc5276e805eede2ce2b65c50edf8e45e251d264ffb",
+        "441f2b64106b48086a0326604ab92c40f2e02fa163bca97cfe17385c9f88ebc8",
+        "beee6326be30d364eb6b0c55a2c36d9aa847daeb0af1bf5ddb2e4d3b82850433",
+    }:
+        raise ValueError("p443_archive_quarantined")
     accepted: dict[tuple[str, str], dict[str, str]] = {}
     rejected: list[dict[str, Any]] = []
     duplicate_rows: list[dict[str, Any]] = []
@@ -197,6 +212,11 @@ def normalize_floorsheet_csv(
                 rejected.append({"source_file": path.name, "source_line": line_no,
                                  "raw": raw, "reason": f"{type(exc).__name__}: {exc}"})
 
+    # Reject the entire normalization batch if any accepted contract is held.
+    # Check outside the row-reject tolerance so a held contract cannot be dropped
+    # and a deceptively incomplete session published.
+    for record in accepted.values():
+        _reject_historical_trade(record, holds)
     reject_ratio = len(rejected) / row_count if row_count else 0.0
     QUARANTINE.mkdir(parents=True, exist_ok=True)
     quarantine_path = None
@@ -217,6 +237,13 @@ def normalize_floorsheet_csv(
     for record in accepted.values():
         by_date[record["trade_date"]].append(record)
 
+    # Preflight existing partitions before any write in this batch.
+    for trade_day in by_date:
+        existing_path = SILVER / f"date={trade_day}" / "floorsheet.csv"
+        if existing_path.exists():
+            with existing_path.open("r", encoding="utf-8", newline="") as handle:
+                for row in csv.DictReader(handle):
+                    _reject_historical_trade(row, holds)
     written = []
     for trade_day, rows in sorted(by_date.items()):
         rows.sort(key=lambda row: (row["contract_no"], row["symbol"]))

@@ -41,27 +41,28 @@ def reconcile_lifecycle_pilot_sources(
         else:
             seen_ids.add(capture_id)
         report = validate_official_capture_manifest(manifest, payloads, approved_registry=registry, decision_cutoff=decision_cutoff)
-        capture_reports[key] = {**report, "capture_key": key, "request_url": manifest.get("request_url"), "window_start": manifest.get("window_start"), "window_end": manifest.get("window_end"), "capture_complete": manifest.get("capture_complete") is True}
-    first_trade = validate_official_first_trade_evidence(cohort, official_first_trade_rows, decision_cutoff=decision_cutoff)
+        capture_reports[key] = {
+            **report, "capture_key": key, "request_url": manifest.get("request_url"),
+            "window_start": manifest.get("window_start"), "window_end": manifest.get("window_end"),
+            "capture_complete": manifest.get("capture_complete") is True,
+        }
+    first_trade = validate_official_first_trade_evidence(
+        cohort, official_first_trade_rows, decision_cutoff=decision_cutoff,
+        validated_capture_reports=capture_reports,
+    )
     failed = [key for key, report in capture_reports.items() if report.get("status") != "CAPTURE_VALIDATED"]
     all_valid = not missing and not failed and not duplicate_capture_ids
     first_complete = first_trade.get("all_cohort_first_trades_verified") is True
     return {
         "status": "SOURCE_EVIDENCE_RECONCILED" if all_valid and first_complete else "BLOCKED",
-        "required_capture_keys": required,
-        "capture_reports": capture_reports,
-        "missing_capture_keys": missing,
-        "failed_capture_keys": failed,
-        "duplicate_capture_ids": duplicate_capture_ids,
-        "first_trade_report": first_trade,
-        "capture_gate_passed": all_valid,
-        "first_trade_gate_passed": first_complete,
+        "required_capture_keys": required, "capture_reports": capture_reports,
+        "missing_capture_keys": missing, "failed_capture_keys": failed,
+        "duplicate_capture_ids": duplicate_capture_ids, "first_trade_report": first_trade,
+        "capture_gate_passed": all_valid, "first_trade_gate_passed": first_complete,
         "source_reconciliation_passed": all_valid and first_complete,
         "actual_source_payloads_supplied": bool(capture_reports) and not missing,
-        "publisher_authenticity_proven": False,
-        "exchange_completeness_proven": False,
-        "backtest_admission_allowed": False,
-        "production_enabled": False,
+        "publisher_authenticity_proven": False, "exchange_completeness_proven": False,
+        "backtest_admission_allowed": False, "production_enabled": False,
         "limitations": [
             "All raw bytes and manifests must be supplied by the operator; this module performs no network requests.",
             "Registry allowlisting and SHA-256 integrity do not authenticate the publisher cryptographically.",

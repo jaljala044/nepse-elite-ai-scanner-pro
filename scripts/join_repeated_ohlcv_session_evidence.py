@@ -24,6 +24,17 @@ REQUIRED = {"repository", "commit_sha", "path", "file_sha256", "symbol",
             "previous_date", "current_date", "previous_csv_line", "current_csv_line"}
 
 
+def _canonical_date(value: str, *, line: int, field: str) -> date:
+    """Accept only an exact YYYY-MM-DD value; reject timestamps and compact forms."""
+    try:
+        parsed = date.fromisoformat(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"line {line}: {field} must be canonical YYYY-MM-DD") from None
+    if parsed.isoformat() != value:
+        raise ValueError(f"line {line}: {field} must be canonical YYYY-MM-DD")
+    return parsed
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -53,8 +64,8 @@ def join_candidates(candidate_csv: str | Path, calendar_csv: str | Path,
             writer = csv.DictWriter(target, fieldnames=fields)
             writer.writeheader()
             for line, row in enumerate(reader, 2):
-                previous = date.fromisoformat(row["previous_date"])
-                current = date.fromisoformat(row["current_date"])
+                previous = _canonical_date(row["previous_date"], line=line, field="previous_date")
+                current = _canonical_date(row["current_date"], line=line, field="current_date")
                 if current <= previous:
                     raise ValueError(f"line {line}: current_date must follow previous_date")
                 prev = classify_date(previous, evidence)

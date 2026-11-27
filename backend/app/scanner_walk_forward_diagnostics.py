@@ -61,7 +61,8 @@ def diagnose_walk_forward_folds(*, fold_results, minimum_total_trades=30,
         expectancy_values = sorted(_d(x["expectancy_net_pct_per_trade"]) for x in complete)
         median = (expectancy_values[(len(expectancy_values)-1)//2] + expectancy_values[len(expectancy_values)//2]) / 2 if expectancy_values else None
         stable = (len(complete) >= minimum_folds and total >= minimum_total_trades
-                  and observed_ratio >= ratio and all(x["profitable_fold"] for x in complete))
+                  and observed_ratio >= ratio and len(complete) == len(folds)
+                  and all(x["profitable_fold"] for x in complete))
         # Strict all-fold gate is intentional: one weak/failed OOS fold blocks selection.
         results.append({"strategy_id": strategy, "horizon": horizon,
             "fold_count": len(folds), "complete_fold_count": len(complete),

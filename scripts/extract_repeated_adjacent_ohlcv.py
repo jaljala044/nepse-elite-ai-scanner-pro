@@ -80,6 +80,11 @@ def join_project_calendar(rows: list[dict], calendar_path: Path) -> tuple[list[d
             status = (row.get("status") or "").strip()
             if not day or day in status_by_date:
                 raise ValueError(f"missing or duplicate project calendar date: {day!r}")
+            if date.fromisoformat(day).isoformat() != day:
+                raise ValueError(f"noncanonical project calendar date: {day!r}")
+            if status not in {"project_accepted_open", "verified_open", "verified_exceptional_open",
+                              "verified_closed", "verified_exceptional_closed"}:
+                raise ValueError(f"unsupported project calendar status: {status!r}")
             status_by_date[day] = status
     open_statuses = {"project_accepted_open", "verified_open", "verified_exceptional_open"}
     ordered_open = sorted(day for day, status in status_by_date.items() if status in open_statuses)
@@ -159,7 +164,8 @@ def main() -> int:
         "source_counts": per_source,
         "total_candidates": len(all_rows),
         "baseline_metric_eligible_total": sum(r["baseline_metric_eligible"] for r in all_rows),
-        "calendar_status": "project_accepted_calendar_join_applied_not_exchange_certified",
+        "calendar_status": ("project_accepted_calendar_join_applied_not_exchange_certified"
+                            if calendar_summary is not None else "calendar_join_not_applied"),
         "classification": "review_only_not_invalid",
         "source_files_read_only": True,
     }

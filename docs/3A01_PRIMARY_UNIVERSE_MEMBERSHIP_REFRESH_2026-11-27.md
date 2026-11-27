@@ -115,6 +115,21 @@ Source: Nepal Rastra Bank, *Current Macroeconomic and Financial Situation of Nep
 5. Keep `membership_authoritatively_verified=false` and `promotion_allowed=false` until a raw, dated primary NEPSE/SEBON registry or equivalent authenticated exchange response is captured, hashed, independently parsed, and classified by instrument type and lifecycle.
 6. Preserve the canonical reviewed-row manifest as empty. This membership audit does not alter any OHLCV records, candidate symbols, security IDs, or runtime eligibility.
 
+
+### 7. NEPSE primary API endpoint discovery — authenticated access still required
+
+A public, independently maintained NEPSE client implementation documents the exact exchange API routes used for the two relevant datasets:
+
+- Company directory: `GET https://www.nepalstock.com/api/nots/company/list` (client method `getCompanyList()`; described by that implementation as listed companies, including delisted companies and excluding promoter shares).
+- Non-delisted security directory: `GET https://www.nepalstock.com/api/nots/security?nonDelisted=true` (client method `getSecurityList()`; described as valid securities not delisted, including promoter shares).
+- The client implementation obtains a NEPSE authorization token and sends it in the `Authorization: Salter ...` header. Its source also documents token refresh and request payload handling. This is third-party implementation evidence about the route and access pattern, not NEPSE's own API specification or an authenticated response.
+
+The project previously tested both routes without authentication and received HTTP 401. This endpoint discovery explains why anonymous retrieval failed and gives the next controlled acquisition path: use the official NEPSE web application/session through a permitted, documented login flow or obtain an exchange-provided export/credential. Do not reverse-engineer token generation, bypass access controls, or treat a third-party client's code as authorization. Once access is legitimately available, capture raw response bytes, headers with secrets redacted, request metadata, retrieval time, response schema, and SHA-256; parse company and security datasets separately and classify promoter shares and other instrument classes before matching candidates.
+
+The two lists have different scopes: the company list is not itself the active-security list, and the non-delisted security list may include promoter shares. A raw response from either route alone is insufficient to certify the common-equity universe without instrument classification and lifecycle/effective-date evidence.
+
+Implementation reference: https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/data/API_ENDPOINTS.json and https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/NepseLib.py. These are third-party technical references, not primary exchange evidence.
+
 ## Next evidence action
 
 Acquire a fresh primary-source security master from NEPSE (or an authenticated NEPSE/SEBON/CDSC registry with documented scope), preserving the raw response bytes, request URL/method, retrieval timestamp, as-of/effective date, schema, instrument-type and active/delisted/suspended fields, and SHA-256. Then reconcile all rows against the 281 candidates and report exact missing, additional, non-equity, inactive, ambiguous and duplicate records. Until this evidence exists, the universe gate remains blocked.

@@ -131,12 +131,21 @@ def validate_and_admit_ohlcv_csv(*, raw_path: str | Path, manifest: Mapping[str,
     for field in ("source_id", "source_uri", "publisher"):
         if not isinstance(manifest.get(field), str) or not manifest[field].strip():
             reasons.append(field + "_missing")
+    available_at = None
     try:
         available_at = _aware(str(manifest.get("available_at")), "manifest_available_at")
         if available_at > cutoff:
             reasons.append("manifest_available_after_decision_cutoff")
     except ValueError:
         reasons.append("manifest_available_at_invalid")
+    published_at = None
+    if manifest.get("published_at"):
+        try:
+            published_at = _aware(str(manifest.get("published_at")), "manifest_published_at")
+            if published_at > cutoff:
+                reasons.append("manifest_published_after_decision_cutoff")
+        except ValueError:
+            reasons.append("manifest_published_at_invalid")
 
     expected = dict(expected_symbols) if isinstance(expected_symbols, Mapping) else {}
     sessions = dict(verified_session_status) if isinstance(verified_session_status, Mapping) else {}
@@ -194,8 +203,8 @@ def validate_and_admit_ohlcv_csv(*, raw_path: str | Path, manifest: Mapping[str,
                         row_available = _aware(row.get("available_at"), "row_available_at")
                         if row_available > cutoff:
                             issues.append("row_available_after_decision_cutoff")
-                        if available_at and row_available < available_at:
-                            issues.append("row_available_before_manifest_capture")
+                        if published_at and row_available < published_at:
+                            issues.append("row_available_before_source_publication")
                     except ValueError:
                         issues.append("row_available_at_invalid")
                     rows.append({

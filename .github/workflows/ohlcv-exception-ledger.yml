@@ -1,0 +1,80 @@
+name: OHLCV exception ledger artifact
+
+on:
+  pull_request:
+    paths:
+      - "scripts/build_ohlcv_exception_ledger.py"
+      - "scripts/validate_ohlcv_exception_ledger.py"
+      - "tests/test_ohlcv_exception_ledger.py"
+      - "tests/test_ohlcv_exception_ledger_builder.py"
+      - ".github/workflows/ohlcv-exception-ledger.yml"
+      - "docs/OHLCV_EXCEPTION_LEDGER.md"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build-ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download pinned source audit artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -H "Accept: application/vnd.github+json" \
+            /repos/${GITHUB_REPOSITORY}/actions/artifacts/14921283424/zip \
+            > ohlcv-exception-ledger-source.zip
+      - name: Verify and build row-level ledger
+        run: |
+          echo "e1e5e8ac84e1d2ad273b605725c69614693a831117f96a6b8d7f5af2b4c81cb8  ohlcv-exception-ledger-source.zip" | sha256sum --check
+          python scripts/build_ohlcv_exception_ledger.py \
+            --artifact-zip ohlcv-exception-ledger-source.zip \
+            --artifact-id 14921283424 \
+            --artifact-sha256 e1e5e8ac84e1d2ad273b605725c69614693a831117f96a6b8d7f5af2b4c81cb8 \
+            --output-dir data/audits/ohlcv-exception-ledger
+      - name: Validate JSON and CSV identity parity
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          root = Path("data/audits/ohlcv-exception-ledger")
+          ledger = json.loads((root / "ohlcv_exception_ledger.json").read_text())
+          with (root / "ohlcv_exception_ledger.csv").open(newline="") as stream:
+              rows = list(csv.DictReader(stream))
+          json_ids = [row["exception_id"] for row in ledger["exceptions"]]
+          csv_ids = [row["exception_id"] for row in rows]
+          assert len(json_ids) == len(set(json_ids)) == 1339
+          assert len(csv_ids) == 1339 and set(csv_ids) == set(json_ids)
+          resolved = {row["symbol"] for row in ledger["exceptions"] if row["disposition"] == "resolved_with_user_authoritative_evidence"}
+          assert resolved == {"API", "BGWT", "HRL", "MEHL", "RAWA", "RHGCL", "ULHC"}
+          assert all(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"] if row["exception_type"] == "invalid_ohlc")
+          assert sum(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"]) == 1332
+          assert sum(row["disposition"] == "resolved_with_user_authoritative_evidence" for row in ledger["exceptions"]) == 7
+          assert all(row.get("resolution_evidence", {}).get("canonical_promotion_allowed") is False for row in ledger["exceptions"] if row["disposition"] == "resolved_with_user_authoritative_evidence")
+          print("PASS: 1,339 unique JSON/CSV IDs; 1,332 quarantined, 7 user-authoritatively resolved")
+          PY
+      - name: Run ledger builder regression tests
+        run: python -m unittest discover -s tests -p "test_ohlcv_exception_ledger_builder.py" -v
+      - name: Run ledger validation regression tests
+        run: python -m unittest discover -s tests -p "test_ohlcv_exception_ledger.py" -v
+      - name: Validate generated JSON and CSV
+        run: python scripts/validate_ohlcv_exception_ledger.py --json data/audits/ohlcv-exception-ledger/ohlcv_exception_ledger.json --csv data/audits/ohlcv-exception-ledger/ohlcv_exception_ledger.csv
+      - name: Package retained ledger artifact
+        run: |
+          cd data/audits
+          zip -r ohlcv-exception-ledger-generated.zip ohlcv-exception-ledger
+      - name: Upload generated ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohlcv-exception-ledger-generated
+          path: data/audits/ohlcv-exception-ledger-generated.zip
+          if-no-files-found: error
+          retention-days: 90

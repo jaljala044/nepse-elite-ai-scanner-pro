@@ -8,6 +8,10 @@ from collections import Counter
 from pathlib import Path
 
 EXPECTED = {"invalid_ohlc": 1331, "cross_source_ohlcv_conflict": 8}
+EXPECTED_DISPOSITIONS = {
+    "quarantined_unresolved": 1332,
+    "resolved_with_user_authoritative_evidence": 7,
+}
 COMMON_REQUIRED = {"exception_id", "exception_type", "symbol", "trade_date",
                    "source_repository", "disposition", "reviewer_rationale"}
 
@@ -34,12 +38,28 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
     ids = [r.get("exception_id") for r in records]
     if len(ids) != len(set(ids)):
         errors.append("duplicate exception_id values")
+    dispositions = Counter(r.get("disposition") for r in records)
+    if dispositions != Counter(EXPECTED_DISPOSITIONS):
+        errors.append(f"disposition counts differ: {dict(dispositions)}")
     for i, row in enumerate(records, 1):
         missing = sorted(k for k in COMMON_REQUIRED if row.get(k) in (None, ""))
         if missing:
             errors.append(f"JSON record {i} missing common fields: {missing}")
-        if row.get("disposition") != "quarantined_unresolved":
-            errors.append(f"JSON record {i} is not quarantined_unresolved")
+        disposition = row.get("disposition")
+        if row.get("exception_type") == "invalid_ohlc" and disposition != "quarantined_unresolved":
+            errors.append(f"JSON invalid-OHLC record {i} must remain quarantined_unresolved")
+        if disposition == "resolved_with_user_authoritative_evidence":
+            resolution = row.get("resolution_evidence") or {}
+            if row.get("exception_type") != "cross_source_ohlcv_conflict":
+                errors.append(f"JSON record {i} has a resolution on a non-conflict exception")
+            if resolution.get("authority") != "explicit_user_designation_as_final_and_authoritative":
+                errors.append(f"JSON record {i} lacks explicit user authority evidence")
+            if resolution.get("canonical_promotion_allowed") is not False:
+                errors.append(f"JSON record {i} incorrectly permits canonical promotion")
+            if resolution.get("raw_source_rows_modified") is not False:
+                errors.append(f"JSON record {i} does not affirm source immutability")
+        elif disposition != "quarantined_unresolved":
+            errors.append(f"JSON record {i} has unsupported disposition {disposition!r}")
         if row.get("exception_type") == "invalid_ohlc":
             for key in ("source_commit_sha", "source_path", "source_file_sha256", "source_csv_line", "raw_source_row"):
                 if row.get(key) in (None, ""):
@@ -53,10 +73,27 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
                     if item.get(key) in (None, ""):
                         errors.append(f"JSON conflict record {i} evidence {repo} missing {key}")
     for i, row in enumerate(rows, 1):
-        if row.get("disposition") != "quarantined_unresolved":
-            errors.append(f"CSV record {i} is not quarantined_unresolved")
-    if {r.get("exception_id") for r in rows} != set(ids):
+        if row.get("disposition") not in EXPECTED_DISPOSITIONS:
+            errors.append(f"CSV record {i} has unsupported disposition {row.get('disposition')!r}")
+    if Counter(r.get("disposition") for r in rows) != Counter(EXPECTED_DISPOSITIONS):
+        errors.append("CSV disposition counts differ from expected resolved/quarantined totals")
+    csv_by_id = {r.get("exception_id"): r for r in rows}
+    json_by_id = {r.get("exception_id"): r for r in records}
+    if set(csv_by_id) != set(json_by_id):
         errors.append("JSON and CSV exception_id sets differ")
+    else:
+        # Counts and ID sets alone can hide per-row swaps. Verify the key
+        # identity and disposition fields remain attached to the same ID.
+        parity_fields = ("exception_type", "symbol", "trade_date",
+                         "source_repository", "disposition")
+        for exception_id, json_row in json_by_id.items():
+            csv_row = csv_by_id[exception_id]
+            for field in parity_fields:
+                if str(json_row.get(field, "")) != str(csv_row.get(field, "")):
+                    errors.append(
+                        f"JSON/CSV {field} mismatch for {exception_id}: "
+                        f"{json_row.get(field)!r} != {csv_row.get(field)!r}"
+                    )
     return errors
 
 def main() -> int:
@@ -70,7 +107,7 @@ def main() -> int:
         for error in errors:
             print(f"- {error}")
         return 1
-    print("PASS: 1,339 unique unresolved exceptions; source evidence retained for both sides of all 8 conflicts.")
+    print("PASS: 1,339 unique exceptions; 1,332 quarantined and 7 user-authoritatively resolved; source evidence retained for both sides of all 8 conflicts.")
     return 0
 
 if __name__ == "__main__":

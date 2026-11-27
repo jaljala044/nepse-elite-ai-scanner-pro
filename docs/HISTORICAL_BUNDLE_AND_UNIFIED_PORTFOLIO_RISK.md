@@ -4,7 +4,7 @@
 
 `nepse_source_bundle.py` accepts an explicit list of registered CSV endpoints. Each item is fetched only through the approved-source HTTPS connector, parsed from the exact captured bytes, SHA-256 recorded and checked against the existing dataset schema. A deterministic manifest hash records the requests accepted, failures and readiness result. The bundle then runs the historical dataset readiness assessment across OHLCV, session calendar, effective-dated universe and corporate-action rows, plus optional feeds.
 
-No URL discovery, guessed endpoints, implicit pagination, or authentication is performed. The operator must enumerate archive pages/date partitions and provide the official source registry, rights approval and exact endpoints. Historical panel promotion is permitted only when the readiness result is READY and no acquisition request failed. PARTIAL/BLOCKED remains quarantined. Corporate-action two-source factor reconciliation remains a separate mandatory gate.
+No URL discovery, guessed endpoints, implicit pagination, or authentication is performed. The operator must enumerate archive pages/date partitions and provide the official source registry, rights approval and exact endpoints. Historical panel promotion requires READY dataset readiness, zero acquisition failures, and a separately supplied corporate-action reconciliation report with status `validated_for_research` and no withheld or rejected events. Without that independent report, the bundle remains non-promotable even if the raw dataset readiness is READY. PARTIAL/BLOCKED remains quarantined.
 
 ## Step 45 — Unified shared-capital risk
 

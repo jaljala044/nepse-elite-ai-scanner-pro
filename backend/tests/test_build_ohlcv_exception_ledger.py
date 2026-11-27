@@ -33,8 +33,8 @@ def report_fixture():
             "conflicts": [{
                 "symbol": "AAA", "date": "2026-01-02",
                 "source_rows": {
-                    "source-a": {"symbol": "AAA", "date": "2026-01-02", "close": "10"},
-                    "source-b": {"symbol": "AAA", "date": "2026-01-02", "close": "11"},
+                    "source-a": {"symbol": "AAA", "date": "2026-01-02", "close": "10", "source_csv_line": 2},
+                    "source-b": {"symbol": "AAA", "date": "2026-01-02", "close": "11", "source_csv_line": 2},
                 },
             }],
         },
@@ -50,7 +50,9 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         self.assertEqual(invalid["source_csv_line"], 7)
         self.assertEqual(invalid["raw_source_row"]["High"], "9")
         self.assertEqual(conflict["source_evidence"]["source-a"]["row"]["close"], "10")
-        self.assertEqual(conflict["source_evidence"]["source-b"]["row"]["close"], "11")\n        self.assertEqual(conflict["source_evidence"]["source-a"]["source_csv_line"], 7)\n        self.assertEqual(conflict["source_evidence"]["source-b"]["source_csv_line"], 9)
+        self.assertEqual(conflict["source_evidence"]["source-b"]["row"]["close"], "11")
+        self.assertEqual(conflict["source_evidence"]["source-a"]["source_csv_line"], 2)
+        self.assertEqual(conflict["source_evidence"]["source-b"]["source_csv_line"], 2)
         self.assertTrue(all(x["disposition"] == "quarantined_unresolved" for x in ledger["exceptions"]))
 
     def test_count_drift_fails_closed(self):

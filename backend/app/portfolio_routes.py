@@ -23,7 +23,7 @@ class PortfolioTransactionCreate(BaseModel):
     quantity: Decimal = Field(gt=0)
     price: Decimal = Field(gt=0)
     fees: Decimal = Field(default=Decimal("0"), ge=0)
-    trade_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    trade_date: str
     idempotency_key: str | None = Field(default=None, max_length=200)
 
 

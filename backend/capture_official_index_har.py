@@ -71,6 +71,9 @@ def capture_index_har_entry(
         request = entry["request"]
         if not isinstance(request, dict):
             raise ValueError("selected HAR request must be an object")
+        request_headers = request.get("headers", [])
+        if not isinstance(request_headers, list) or any(not isinstance(h, dict) for h in request_headers):
+            raise ValueError("HAR request headers must be an array of objects")
     except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError) as exc:
         raise ValueError("invalid HAR or selected entry") from exc
 
@@ -121,9 +124,6 @@ def capture_index_har_entry(
         request_body_path = str(body_path)
     result = dict(response_metadata)
     result.update(route)
-    request_headers = request.get("headers", [])
-    if not isinstance(request_headers, list) or any(not isinstance(h, dict) for h in request_headers):
-        raise ValueError("HAR request headers must be an array of objects")
     result.update({
         "request_path": parsed_url.path,
         "request_query_parameters": [{"name": key, "value": value} for key, value in query],
@@ -134,7 +134,7 @@ def capture_index_har_entry(
         "request_safe_headers": {
             "accept": next((h.get("value") for h in request_headers
                             if str(h.get("name", "")).lower() == "accept"), None),
-            "content_type": next((h.get("value") for h in request.get("headers", [])
+            "content_type": next((h.get("value") for h in request_headers
                                   if str(h.get("name", "")).lower() == "content-type"), None),
         },
         "request_sensitive_header_names_redacted": sorted({

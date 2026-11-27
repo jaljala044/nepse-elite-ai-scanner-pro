@@ -2310,3 +2310,13 @@ Build and validate the effective-dated security identity and corporate-action re
 - Current candidate: 1331 invalid OHLC rows, one cross-source conflict (RHGCL 2026-11-19), 1332 unique keys. All 1332 overlap baseline; zero new keys. Seven baseline conflict keys absent: API and HRL 2026-11-19; BGWT, MEHL, RAWA, RHGCL, ULHC 2025-07-28. Absence is not release authorization. Baseline 1339 keys remain blocked pending independent review.
 - Candidate ledger SHA-256 7e31e0f37747c770a02b0b6c4b569bf301d5be840f349f75868b83cb064f940a. 196542 repeated adjacent calendar-row flags remain unclassified; 25 source blob differences. No canonical promotion.
 - Backend CI 46004367518 and contract CI 46004367541 passed on 4880b62f2215917dbbaf7c656781e057ecc2e231. Actual consolidated runtime testing and private deployment remain pending; PR stays draft. AI recommendations and production backtesting remain disabled.
+
+
+## 2026-11-27 — conservative consolidated runtime quarantine ledger
+
+- Full-source refresh workflow run 46004557270 completed successfully; backend run 46004557272 and contract run 46004557416 passed on source commit 1c54bf7a30ed7dc6b05bab5da2a3e436d70ec7e9.
+- Current refresh candidate contains 1,332 exceptions (1,331 invalid OHLC rows and one current cross-source conflict). All 1,332 candidate symbol/date keys are contained in the original 1,339-key quarantine population; seven prior conflict keys are absent from the current comparison.
+- Created separate conservative consolidated runtime ledger by retaining all 1,339 original exception records and adding refresh comparison provenance. No prior key was released. JSON/CSV each contain 1,339 records, 1,339 unique IDs and 1,339 unique symbol/date keys; every disposition remains quarantined_unresolved.
+- Consolidated JSON SHA-256: 8e6195c7be36313dcdcd398e0e70ec731cfc8edfec80ae57802a7a07f380b9b2. Local runtime-loader-contract validation passed: schema, exact count, identity fields, canonical dates, unique IDs and all-blocked dispositions.
+- Artifacts: /mnt/data/2026-11-27-consolidated-runtime-quarantine-ledger.json and .csv. This ledger is conservative and review-only; no production installation or independent authorization is implied.
+- Remaining: test actual ledger with backend runtime integration in CI/private deployment, classify repeated adjacent-calendar-row flags, independently review invalid OHLC records and RHGCL conflict, and keep PR #188 draft until acceptance.

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from app.broker_batch_manifest import (
-    BrokerRawCaptureRegistry, CaptureConflict, CaptureRejected, RawCaptureManifest,
+    BrokerRawCaptureRegistry, CaptureConflict, CaptureRejected, RawCaptureManifest, SourceRightsEvidence,
 )
 from app.broker_daily_history import BrokerDailyHistoryStore, DailyHistoryRejected
 from app.broker_ingestion import IngestionReport
@@ -17,6 +17,11 @@ def fixture(raw=b"official source extract"):
         capture_id="CAP-1", captured_at="2026-11-26T09:00:00+05:45",
         available_at="2026-11-26T09:01:00+05:45",
         source_rights_status="cleared", source_rights_evidence_id="RIGHTS-1",
+        source_rights_evidence=SourceRightsEvidence(
+            source_id="SRC-A", evidence_id="RIGHTS-1", decision="cleared",
+            terms_url="https://publisher.example/terms", terms_sha256="c" * 64,
+            retrieved_at="2026-11-26T08:00:00+05:45",
+            permitted_uses=("internal_research", "broker_aggregation"), reviewer_id="reviewer-1"),
         raw_sha256=hashlib.sha256(raw).hexdigest(), raw_byte_count=len(raw),
         parser_name="floorsheet-csv", parser_version="1.0.0", session_complete=True,
     )
@@ -123,6 +128,47 @@ class BrokerRawCaptureTests(unittest.TestCase):
                                              "session_complete": False})
         self.assertEqual(self.registry.stage(denied, raw)["state"], "rejected")
         self.assertEqual(self.registry.stage(incomplete, raw)["state"], "rejected")
+
+
+    def test_structured_rights_evidence_is_required_and_bound_to_manifest(self):
+        manifest, raw = fixture()
+        missing = RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': None})
+        with self.assertRaisesRegex(CaptureRejected, 'structured_source_rights_evidence_required'):
+            self.registry.stage(missing, raw)
+        wrong_source = SourceRightsEvidence(**{**manifest.source_rights_evidence.__dict__, 'source_id': 'OTHER'})
+        with self.assertRaisesRegex(CaptureRejected, 'rights_evidence_source_mismatch'):
+            self.registry.stage(RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': wrong_source}), raw)
+        wrong_id = SourceRightsEvidence(**{**manifest.source_rights_evidence.__dict__, 'evidence_id': 'OTHER'})
+        with self.assertRaisesRegex(CaptureRejected, 'rights_evidence_id_mismatch'):
+            self.registry.stage(RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': wrong_id}), raw)
+
+    def test_rights_evidence_requires_https_hash_reviewer_and_permitted_use(self):
+        manifest, raw = fixture()
+        base = manifest.source_rights_evidence
+        invalids = [({'terms_url': 'http://publisher.example/terms'}, 'rights_terms_url_must_be_https'),
+                    ({'terms_sha256': 'bad'}, 'invalid_rights_terms_sha256'),
+                    ({'reviewer_id': ''}, 'rights_reviewer_required'),
+                    ({'permitted_uses': ('internal_research',)}, 'broker_aggregation_not_permitted')]
+        for changes, reason in invalids:
+            evidence = SourceRightsEvidence(**{**base.__dict__, **changes})
+            candidate = RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': evidence})
+            with self.subTest(reason=reason), self.assertRaisesRegex(CaptureRejected, reason):
+                self.registry.stage(candidate, raw)
+
+    def test_expired_rights_evidence_is_rejected(self):
+        manifest, raw = fixture()
+        expired = SourceRightsEvidence(**{**manifest.source_rights_evidence.__dict__, 'expires_at': '2026-11-26T08:30:00+05:45'})
+        candidate = RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': expired})
+        with self.assertRaisesRegex(CaptureRejected, 'rights_evidence_expired_at_capture'):
+            self.registry.stage(candidate, raw)
+
+    def test_rights_evidence_is_persisted_in_manifest(self):
+        manifest, raw = fixture()
+        result = self.registry.stage(manifest, raw)
+        evidence = self.registry.get(result['batch_id'])['manifest']['source_rights_evidence']
+        self.assertEqual(evidence['terms_sha256'], 'c' * 64)
+        self.assertEqual(evidence['permitted_uses'], ['broker_aggregation', 'internal_research'])
+        self.assertEqual(evidence['reviewer_id'], 'reviewer-1')
 
     def test_approval_requires_typed_clean_reconciliation_and_exact_hash(self):
         manifest, raw = fixture()

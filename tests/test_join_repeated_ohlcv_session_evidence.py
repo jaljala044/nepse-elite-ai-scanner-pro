@@ -103,5 +103,45 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
                     join_candidates(candidates, calendar, output, summary)
 
 
+    def test_rejects_malformed_source_provenance_locators(self):
+        invalid_cases = (
+            ("commit_sha", "not-a-commit", "commit_sha must be 40 hexadecimal characters"),
+            ("file_sha256", "xyz", "file_sha256 must be 64 hexadecimal characters"),
+            ("previous_csv_line", "0", "previous_csv_line must be a positive integer"),
+            ("current_csv_line", "3x", "current_csv_line must be a positive integer"),
+            ("current_csv_line", "2", "current_csv_line must follow previous_csv_line"),
+            ("repository", "", "repository must be non-empty"),
+            ("path", "   ", "path must be non-empty"),
+        )
+        for field, invalid_value, expected_error in invalid_cases:
+            with self.subTest(field=field, invalid_value=invalid_value), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                candidates = root / "candidates.csv"
+                calendar = root / "calendar.csv"
+                output = root / "joined.csv"
+                summary = root / "summary.json"
+                values = {
+                    "repository": "source/a", "commit_sha": "a" * 40,
+                    "path": "ABC.csv", "file_sha256": "b" * 64, "symbol": "ABC",
+                    "previous_date": "2026-11-05", "current_date": "2026-11-06",
+                    "previous_csv_line": "2", "current_csv_line": "3",
+                }
+                values[field] = invalid_value
+                with candidates.open("w", newline="", encoding="utf-8") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=list(values))
+                    writer.writeheader()
+                    writer.writerow(values)
+                calendar.write_text(
+                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\\n"
+                    "2026-11-05,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
+                    ",2026-11-05T10:00:00+05:45,2026-11-05T11:00:00Z,2026-11-05T12:00:00Z,all_market,open\\n"
+                    "2026-11-06,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
+                    ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,all_market,open\\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    join_candidates(candidates, calendar, output, summary)
+
+
 if __name__ == "__main__":
     unittest.main()

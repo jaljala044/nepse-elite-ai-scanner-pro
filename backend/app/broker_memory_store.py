@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Iterable
 
 import duckdb
+from app.historical_quarantine import configured_holds
+
 
 
 class IdempotencyConflict(ValueError):
@@ -77,6 +79,13 @@ class BrokerMemoryStore:
 
     @staticmethod
     def _validate_snapshot(snapshot: dict):
+        # Existing aggregates lack independently verified constituent symbol/date
+        # lineage. Until rebuilt from admitted daily observations, fail closed.
+        configured_holds()
+        raise ValueError("broker_memory_revalidation_required")
+
+    @staticmethod
+    def _validate_snapshot_schema(snapshot: dict):
         required = (
             "as_of_date", "security_id", "broker_entity_id", "window",
             "buy_amount", "sell_amount", "net_amount", "source_ids",
@@ -238,6 +247,8 @@ class BrokerMemoryStore:
     def get_as_of(self, *, security_id: str, broker_entity_id: str,
                   as_of_date: str, available_by: datetime | None = None) -> list[dict]:
         """Return snapshots visible by both event cutoff and availability cutoff."""
+        configured_holds()
+        raise ValueError("broker_memory_revalidation_required")
         cutoff = date.fromisoformat(as_of_date)
         available_by = available_by or datetime.now(timezone.utc)
         if available_by.tzinfo is None:

@@ -63,6 +63,8 @@ class LedgerBuilderTests(unittest.TestCase):
         archive, external = self.fixture()
         archive["cross_source"]["conflicts"][0]["symbol"] = "BGWT"
         archive["cross_source"]["conflicts"][0]["date"] = "2025-07-28"
+        for meta in archive["repositories"].values():
+            meta["files"][0]["symbol"] = "BGWT"
         with patch("scripts.build_ohlcv_exception_ledger.EXPECTED",
                    {"invalid_ohlc": 1, "cross_source_ohlcv_conflict": 1}):
             result = build(archive, external, 123, "a" * 64)

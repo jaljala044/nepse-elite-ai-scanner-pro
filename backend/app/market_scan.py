@@ -76,7 +76,13 @@ def run_market_scan(
                 "limitations": ["no_ohlcv_observations_available"],
             })
             continue
-        result = scan_symbol(symbol, rows, as_of)
+        # Capture orchestration metadata before invoking an untrusted callback.
+        # The callback receives its own row copies and cannot rewrite coverage
+        # counts or the latest-observation timestamp reported by this layer.
+        latest_day = _row_date(rows[-1])
+        observation_count = len(rows)
+        callback_rows = [dict(row) for row in rows]
+        result = scan_symbol(symbol, callback_rows, as_of)
         if not isinstance(result, dict):
             raise TypeError("scan_symbol must return a dictionary")
         result = dict(result)
@@ -86,13 +92,12 @@ def run_market_scan(
         # accidentally returns permissive ranking or BUY eligibility flags.
         result["ranking_eligible"] = False
         result["buy_list_eligible"] = False
-        latest_day = _row_date(rows[-1])
         result["latest_available_observation"] = latest_day.isoformat()
         result["latest_observation_calendar_age_days"] = (
             (as_of - latest_day).days if as_of is not None else None
         )
         result["freshness_status"] = "calendar_age_only_session_status_unverified"
-        result["observations"] = len(rows)
+        result["observations"] = observation_count
         results.append(result)
 
     status_counts = {}

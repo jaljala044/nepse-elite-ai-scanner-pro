@@ -69,4 +69,25 @@ class QuarantineTests(unittest.TestCase):
             self.assertEqual(broker_patterns(request),{"status":"test"})
             self.assertEqual(detector.call_args.kwargs["expected_sessions"],days)
 
+    def test_broker_api_cannot_bypass_quarantined_session_in_server_calendar(self):
+        from unittest.mock import patch
+        from app.main import BrokerPatternRequest, broker_patterns
+        symbol, quarantined_day = next(iter(sorted(QUARANTINE)))
+        start = date.fromisoformat(quarantined_day) - timedelta(days=2)
+        sessions = [str(start + timedelta(days=i)) for i in range(5)]
+        request = BrokerPatternRequest(
+            symbol=symbol, broker_rows=[], price_rows=[], market_context=[],
+            expected_sessions=sessions, complete_broker_sessions=sessions,
+            decision_at=sessions[-1] + "T23:59:59+05:45",
+        )
+        # The server-owned calendar is authoritative. If it includes the
+        # quarantined session, the API must pass that exact calendar to the
+        # detector, which must fail closed rather than trusting client rows.
+        with patch("app.main.trusted_sessions", return_value=sessions):
+            result = broker_patterns(request)
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertIn("historical_quarantine:" + quarantined_day,
+                      result["missing_features"])
+        self.assertFalse(result["production_eligible"])
+
 if __name__=="__main__":unittest.main()

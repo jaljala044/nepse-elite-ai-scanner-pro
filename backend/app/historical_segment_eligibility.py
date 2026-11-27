@@ -87,7 +87,8 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
                 reasons.append(f"bar_present_on_verified_no_trade_session:{day}")
             continue
         if len(rows) != 1:
-            reasons.append(f"{\"missing\" if not rows else \"duplicate\"}_bar:{day}")
+            reason = "missing_bar" if not rows else "duplicate_bar"
+            reasons.append(f"{reason}:{day}")
             continue
         row = rows[0]
         if str(row.get("symbol", "")).strip().upper() != symbol or str(row.get("security_id", "")) != security_id:

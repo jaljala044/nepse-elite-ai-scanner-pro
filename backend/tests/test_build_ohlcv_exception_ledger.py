@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from build_ohlcv_exception_ledger import build_ledger, write_ledger
+from build_ohlcv_exception_ledger import build_ledger, write_ledger, USER_AUTHORITATIVE_RESOLUTIONS
 
 
 def report_fixture():
@@ -93,6 +93,22 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         self.assertIn("conversation-memory://user-final-authoritative-2025-07-28-records", conflict["evidence_pointer"])
         self.assertEqual(ledger["counts"]["resolved_with_user_authoritative_evidence"], 1)
         self.assertEqual(ledger["counts"]["unresolved"], 0)
+        self.assertEqual(conflict["resolution_evidence"]["authoritative_values"]["close"], "957.17")
+        self.assertFalse(conflict["resolution_evidence"]["canonical_promotion_allowed"])
+        self.assertFalse(conflict["resolution_evidence"]["raw_source_rows_modified"])
+
+    def test_all_seven_user_authoritative_records_are_explicitly_allowlisted(self):
+        expected = {
+            ("BGWT", "2025-07-28"), ("MEHL", "2025-07-28"),
+            ("RAWA", "2025-07-28"), ("RHGCL", "2025-07-28"),
+            ("ULHC", "2025-07-28"), ("API", "2026-11-19"),
+            ("HRL", "2026-11-19"),
+        }
+        self.assertEqual(set(USER_AUTHORITATIVE_RESOLUTIONS), expected)
+        self.assertEqual(USER_AUTHORITATIVE_RESOLUTIONS[("API", "2026-11-19")]["close"], "331.80")
+        self.assertEqual(USER_AUTHORITATIVE_RESOLUTIONS[("HRL", "2026-11-19")]["close"], "483.90")
+        self.assertIsNone(USER_AUTHORITATIVE_RESOLUTIONS[("API", "2026-11-19")]["trades"])
+        self.assertIsNone(USER_AUTHORITATIVE_RESOLUTIONS[("HRL", "2026-11-19")]["trades"])
 
     def test_external_corroboration_is_attached_without_source_selection(self):
         report = report_fixture()

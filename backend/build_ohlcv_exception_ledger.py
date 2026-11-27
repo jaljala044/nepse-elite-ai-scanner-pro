@@ -86,7 +86,6 @@ def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | No
                     "disposition": "quarantined_unresolved",
                     "reviewer_rationale": invalid.get("error", "Invalid OHLC row; retain exact source values."),
                     "validation_rule_violated": invalid.get("error", "Invalid OHLC row; retain exact source values."),
-                    "validation_rule_violated": invalid.get("error", "Invalid OHLC row; retain exact source values."),
                     "source_commit_sha": snapshot["commit_sha"],
                     "source_path": item["path"],
                     "source_file_sha256": item["sha256"],

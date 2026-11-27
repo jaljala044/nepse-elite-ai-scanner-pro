@@ -21,5 +21,21 @@ class PilotReplayPreflightTests(unittest.TestCase):
         a=build_pilot_replay_preflight(**self.args())
         b=build_pilot_replay_preflight(**self.args())
         self.assertEqual(a["dataset_manifest"]["sha256"],b["dataset_manifest"]["sha256"])
+        self.assertEqual(a["dataset_manifest"]["sha256"], a["dataset_manifest"]["input_manifest_sha256"])
+        self.assertEqual(len(a["dataset_manifest"]["panel_output_sha256"]), 64)
+
+    def test_expected_session_evidence_is_bound_into_manifest(self):
+        args=self.args()
+        baseline=build_pilot_replay_preflight(**args)
+        args["expected_sessions"][0]["evidence_id"]="CAL-2"
+        changed=build_pilot_replay_preflight(**args)
+        self.assertNotEqual(baseline["dataset_manifest"]["sha256"], changed["dataset_manifest"]["sha256"])
+
+    def test_raw_capture_page_hash_is_bound_into_manifest(self):
+        args=self.args()
+        baseline=build_pilot_replay_preflight(**args)
+        args["source_reconciliation_report"]["capture_reports"]["first_day"]["verified_pages"]=[{"page_number":1,"payload_id":"PAGE-1","raw_sha256":"d"*64}]
+        changed=build_pilot_replay_preflight(**args)
+        self.assertNotEqual(baseline["dataset_manifest"]["sha256"], changed["dataset_manifest"]["sha256"])
 
 if __name__=="__main__": unittest.main()

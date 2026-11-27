@@ -43,6 +43,13 @@ class LedgerValidationTests(unittest.TestCase):
     def test_expected_ledger_passes(self):
         records = ([record("invalid_ohlc", i) for i in range(1331)] +
                    [record("cross_source_ohlcv_conflict", i) for i in range(8)])
+        for row in records[1331:1336]:
+            row["disposition"] = "resolved_with_user_authoritative_evidence"
+            row["resolution_evidence"] = {
+                "authority": "explicit_user_designation_as_final_and_authoritative",
+                "canonical_promotion_allowed": False,
+                "raw_source_rows_modified": False,
+            }
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             jp, cp = root / "ledger.json", root / "ledger.csv"
@@ -64,6 +71,13 @@ class LedgerValidationTests(unittest.TestCase):
     def test_unresolved_disposition_is_required(self):
         records = ([record("invalid_ohlc", i) for i in range(1331)] +
                    [record("cross_source_ohlcv_conflict", i) for i in range(8)])
+        for row in records[1331:1336]:
+            row["disposition"] = "resolved_with_user_authoritative_evidence"
+            row["resolution_evidence"] = {
+                "authority": "explicit_user_designation_as_final_and_authoritative",
+                "canonical_promotion_allowed": False,
+                "raw_source_rows_modified": False,
+            }
         records[0]["disposition"] = "accepted"
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -81,7 +95,7 @@ class LedgerValidationTests(unittest.TestCase):
                 for row in records:
                     writer.writerow({k: json.dumps(v) if isinstance(v, (dict, list)) else v
                                      for k, v in row.items()})
-            self.assertTrue(any("not quarantined_unresolved" in e for e in validate(jp, cp)))
+            self.assertTrue(any("must remain quarantined_unresolved" in e for e in validate(jp, cp)))
 
 
 if __name__ == "__main__":

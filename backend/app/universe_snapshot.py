@@ -57,7 +57,7 @@ def validate_universe_snapshot(snapshot: dict, *, expected_equities: int = 281,
     records = snapshot["records"]
     if not isinstance(records, list) or not records:
         raise ValueError("universe records must be a non-empty list")
-    seen_ids, seen_symbols = set(), set()
+    seen_ids, seen_symbols, all_security_ids = set(), set(), set()
     target_counts = {"equity": 0, "mutual_fund": 0}
     for index, row in enumerate(records):
         if not isinstance(row, dict):
@@ -69,6 +69,9 @@ def validate_universe_snapshot(snapshot: dict, *, expected_equities: int = 281,
         target = row.get("target_in_scope")
         if not isinstance(security_id, str) or not security_id.strip():
             raise ValueError(f"record {index}: security_id must be a nonblank string")
+        if security_id in all_security_ids:
+            raise ValueError(f"record {index}: duplicate security_id across snapshot records")
+        all_security_ids.add(security_id)
         if not isinstance(symbol, str) or not symbol.strip():
             raise ValueError(f"record {index}: symbol must be a nonblank string")
         if symbol != symbol.strip() or symbol != symbol.upper():

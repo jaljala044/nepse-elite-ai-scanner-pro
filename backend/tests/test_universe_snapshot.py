@@ -28,6 +28,16 @@ class UniverseSnapshotTests(unittest.TestCase):
         self.assertFalse(result["promotion_allowed"])
         self.assertEqual(result["target_security_count"], 3)
 
+    def test_duplicate_security_id_across_target_and_excluded_record_rejected(self):
+        item = self.snapshot()
+        item["records"].append({
+            "security_id": "S1", "symbol": "AAA-PROMOTER", "instrument_type": "promoter_share",
+            "status": "active", "target_in_scope": False,
+            "valid_from": "2020-01-01", "valid_to": None,
+        })
+        with self.assertRaisesRegex(ValueError, "duplicate security_id across snapshot records"):
+            validate_universe_snapshot(item, expected_equities=2, expected_mutual_funds=1)
+
     def test_target_count_mismatch_fails(self):
         with self.assertRaisesRegex(ValueError, "target universe count mismatch"):
             validate_universe_snapshot(self.snapshot())

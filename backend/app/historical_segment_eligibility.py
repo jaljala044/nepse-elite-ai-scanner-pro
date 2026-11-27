@@ -54,7 +54,7 @@ def _valid_ohlcv(row):
     values = {key: _decimal(row.get(key)) for key in ("open", "high", "low", "close", "volume")}
     if any(value is None for value in values.values()):
         return False
-    if any(values[key] <= 0 for key in ("open", "high", "low", "close")) or values["volume"] < 0:
+    if any(values[key] <= 0 for key in ("open", "high", "low", "close")) or values["volume"] <= 0:
         return False
     return (values["high"] >= max(values["open"], values["close"], values["low"])
             and values["low"] <= min(values["open"], values["close"], values["high"]))

@@ -47,6 +47,61 @@ def _aware(value: Any, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+
+@dataclass(frozen=True)
+class SourceRightsEvidence:
+    """Reviewable source-terms attestation; not a publisher signature."""
+    source_id: str
+    evidence_id: str
+    decision: str
+    terms_url: str
+    terms_sha256: str
+    retrieved_at: str
+    permitted_uses: tuple[str, ...]
+    reviewer_id: str
+    expires_at: str | None = None
+
+    def validate(self, *, manifest_source_id: str, manifest_evidence_id: str,
+                 captured_at: datetime) -> dict[str, Any]:
+        if self.source_id != manifest_source_id:
+            raise CaptureRejected("rights_evidence_source_mismatch")
+        if self.evidence_id != manifest_evidence_id:
+            raise CaptureRejected("rights_evidence_id_mismatch")
+        if self.decision not in {"cleared", "denied", "unknown"}:
+            raise CaptureRejected("invalid_rights_evidence_decision")
+        if not isinstance(self.terms_url, str) or not self.terms_url.startswith("https://"):
+            raise CaptureRejected("rights_terms_url_must_be_https")
+        digest = self.terms_sha256
+        if (not isinstance(digest, str) or len(digest) != 64
+                or any(ch not in "0123456789abcdef" for ch in digest.lower())):
+            raise CaptureRejected("invalid_rights_terms_sha256")
+        retrieved = _aware(self.retrieved_at, "rights_retrieved_at")
+        if retrieved > captured_at:
+            raise CaptureRejected("rights_evidence_retrieved_after_capture")
+        if not isinstance(self.reviewer_id, str) or not self.reviewer_id.strip():
+            raise CaptureRejected("rights_reviewer_required")
+        if not isinstance(self.permitted_uses, (tuple, list)) or not all(
+                isinstance(item, str) and item.strip() for item in self.permitted_uses):
+            raise CaptureRejected("invalid_rights_permitted_uses")
+        expires = None
+        if self.expires_at is not None:
+            expires = _aware(self.expires_at, "rights_expires_at")
+            if expires <= retrieved:
+                raise CaptureRejected("invalid_rights_expiry")
+            if captured_at > expires:
+                raise CaptureRejected("rights_evidence_expired_at_capture")
+        if self.decision == "cleared" and "broker_aggregation" not in self.permitted_uses:
+            raise CaptureRejected("broker_aggregation_not_permitted")
+        return {
+            "source_id": self.source_id, "evidence_id": self.evidence_id,
+            "decision": self.decision, "terms_url": self.terms_url,
+            "terms_sha256": digest.lower(), "retrieved_at": retrieved.isoformat(),
+            "permitted_uses": sorted(set(self.permitted_uses)),
+            "reviewer_id": self.reviewer_id.strip(),
+            "expires_at": expires.isoformat() if expires else None,
+        }
+
+
 @dataclass(frozen=True)
 class RawCaptureManifest:
     """Versioned evidence describing one immutable source capture."""
@@ -59,6 +114,7 @@ class RawCaptureManifest:
     available_at: str
     source_rights_status: str
     source_rights_evidence_id: str
+    source_rights_evidence: SourceRightsEvidence | None
     raw_sha256: str
     raw_byte_count: int
     parser_name: str
@@ -92,6 +148,15 @@ class RawCaptureManifest:
             raise CaptureRejected("invalid_session_completeness")
         if self.source_rights_status not in {"cleared", "denied", "unknown"}:
             raise CaptureRejected("invalid_source_rights_status")
+        if not isinstance(self.source_rights_evidence, SourceRightsEvidence):
+            raise CaptureRejected("structured_source_rights_evidence_required")
+        rights = self.source_rights_evidence.validate(
+            manifest_source_id=self.source_id,
+            manifest_evidence_id=self.source_rights_evidence_id,
+            captured_at=captured,
+        )
+        if rights["decision"] != self.source_rights_status:
+            raise CaptureRejected("rights_decision_manifest_mismatch")
         return {
             "manifest_version": self.manifest_version,
             "trade_date": self.trade_date, "source_id": self.source_id,
@@ -99,6 +164,7 @@ class RawCaptureManifest:
             "available_at": available.isoformat(),
             "source_rights_status": self.source_rights_status,
             "source_rights_evidence_id": self.source_rights_evidence_id,
+            "source_rights_evidence": rights,
             "raw_sha256": digest, "raw_byte_count": len(raw_bytes),
             "parser_name": self.parser_name, "parser_version": self.parser_version,
             "session_complete": self.session_complete,

@@ -312,7 +312,10 @@ def set_holding_preferences(owner: str, portfolio_id: str, symbol: str, *,
             FROM portfolio_holding_preferences
             WHERE owner=? AND portfolio_id=? AND symbol=?
         """, (owner, portfolio_id, symbol)).fetchone()
-    return dict(row)
+        result = dict(row)
+        result["current_quantity"] = position["quantity"]
+        result["holding_active"] = True
+    return result
 
 
 def list_holding_preferences(owner: str, portfolio_id: str) -> list[dict] | None:
@@ -328,4 +331,13 @@ def list_holding_preferences(owner: str, portfolio_id: str) -> list[dict] | None
             FROM portfolio_holding_preferences
             WHERE owner=? AND portfolio_id=? ORDER BY symbol
         """, (owner, portfolio_id)).fetchall()
-    return [dict(row) for row in rows]
+        positions = _calculate_positions(con, owner, portfolio_id)
+    preferences = []
+    for row in rows:
+        item = dict(row)
+        position = positions.get(item["symbol"])
+        quantity = Decimal(position["quantity"]) if position else Decimal(0)
+        item["current_quantity"] = str(quantity)
+        item["holding_active"] = quantity > 0
+        preferences.append(item)
+    return preferences

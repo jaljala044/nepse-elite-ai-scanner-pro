@@ -13,7 +13,7 @@ def action(source,publisher,fp="0.5",fv="2"):
 
 class HistoricalIntakeTests(unittest.TestCase):
     def test_csv_hash_is_computed_from_exact_bytes(self):
-        raw=b"security_id,session_date,open,high,low,close,volume,turnover\\nSEC1,2025-01-02,100,110,95,105,1000,105000\\n"
+        raw=b"security_id,session_date,open,high,low,close,volume,turnover\nSEC1,2025-01-02,100,110,95,105,1000,105000\n"
         out=ingest_captured_csv(raw_bytes=raw,dataset_kind="ohlcv",source_id="S1",publisher="P1",
             source_uri="https://source.invalid/file.csv",evidence_id="E1",captured_at="2025-01-03T10:00:00+05:45",
             decision_cutoff="2025-01-04T10:00:00+05:45",rights_status="approved",registry_review_id="R1")
@@ -26,7 +26,7 @@ class HistoricalIntakeTests(unittest.TestCase):
                 rights_status="approved",registry_review_id="R")
     def test_missing_columns_rejected(self):
         with self.assertRaisesRegex(ValueError,"missing_required_columns"):
-            ingest_captured_csv(raw_bytes=b"symbol,close\\nAAA,10\\n",dataset_kind="ohlcv",source_id="S",publisher="P",
+            ingest_captured_csv(raw_bytes=b"symbol,close\nAAA,10\n",dataset_kind="ohlcv",source_id="S",publisher="P",
                 source_uri="u",evidence_id="E",captured_at="2025-01-03T10:00:00+05:45",
                 decision_cutoff="2025-01-04T10:00:00+05:45",rights_status="approved",registry_review_id="R")
 

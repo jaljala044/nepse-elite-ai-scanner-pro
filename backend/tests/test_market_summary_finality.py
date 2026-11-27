@@ -56,8 +56,8 @@ class MarketSummaryFinalityTests(unittest.TestCase):
 
     def test_missing_session_fails_closed(self):
         capture, calendar, attestation = fixtures()
+        capture["rows"] = [row for row in capture["rows"] if row["session_date"] != "2026-11-26"]
         capture["rows"].append({"session_date": "2026-11-27", "source_payload_sha256": DIGEST})
-        calendar["session_dates"].append("2026-11-26")
         calendar["session_dates"].append("2026-11-27")
         calendar["session_dates"] = sorted(set(calendar["session_dates"]))
         result = self.validate(capture, calendar, attestation)

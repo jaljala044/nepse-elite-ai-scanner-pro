@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from enum import Enum
 from hashlib import sha256
 import json
+import re
+from datetime import date, datetime
 from typing import Protocol, Sequence
 
 
@@ -81,9 +83,9 @@ def promote_reconciled_batch(
     reasons: list[str] = []
     if not evidence.batch_id.strip():
         reasons.append("MISSING_BATCH_ID")
-    if len(evidence.source_payload_sha256) != 64:
+    if not isinstance(evidence.source_payload_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", evidence.source_payload_sha256):
         reasons.append("INVALID_SOURCE_PAYLOAD_DIGEST")
-    if len(evidence.source_manifest_sha256) != 64:
+    if not isinstance(evidence.source_manifest_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", evidence.source_manifest_sha256):
         reasons.append("INVALID_SOURCE_MANIFEST_DIGEST")
     if evidence.coverage_status != "COMPLETE":
         reasons.append("COVERAGE_NOT_COMPLETE")
@@ -99,8 +101,18 @@ def promote_reconciled_batch(
         reasons.append("SESSION_NOT_VERIFIED")
     if not evidence.point_in_time_valid:
         reasons.append("POINT_IN_TIME_GATE_FAILED")
-    if not evidence.session_date or not evidence.available_at:
-        reasons.append("MISSING_AS_OF_METADATA")
+    try:
+        parsed_day = date.fromisoformat(evidence.session_date)
+        if parsed_day.isoformat() != evidence.session_date:
+            raise ValueError
+    except (TypeError, ValueError):
+        reasons.append("INVALID_SESSION_DATE")
+    try:
+        available = datetime.fromisoformat(str(evidence.available_at).replace("Z", "+00:00"))
+        if available.tzinfo is None or available.utcoffset() is None:
+            raise ValueError
+    except (TypeError, ValueError):
+        reasons.append("INVALID_AVAILABLE_AT")
 
     digest = _canonical_digest(records)
     if reasons:

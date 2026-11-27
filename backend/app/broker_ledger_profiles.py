@@ -13,6 +13,12 @@ ROOT=Path(__file__).resolve().parents[2]
 def unavailable(reason):
     return {"status":"insufficient_evidence","reason":reason,"profiles":[],"production_eligible":False,"signals_enabled":False}
 
+def quarantine_category(security_id,mapping,quarantine,start,end):
+    symbols=mapping.get(security_id,set())
+    if len(symbols)!=1: return "identity_unmapped"
+    if any(s in symbols and start<=d<=end for s,d in quarantine): return "quarantine_blocked"
+    return "snapshot_crosswalk_clear"
+
 def ledger_profiles(*,as_of_date,decision_time,window):
     if window not in DEFAULT_WINDOWS: raise ValueError("unsupported window")
     day=date.fromisoformat(as_of_date)
@@ -79,13 +85,10 @@ def ledger_profiles(*,as_of_date,decision_time,window):
         return unavailable("invalid_quarantine_registry")
     blocked=unknown=clear=0
     for p in result["profiles"]:
-        symbols=mapping.get(p["security_id"],set())
-        if len(symbols)!=1:
-            unknown+=1
-        elif any(s in symbols and expected[0]<=d<=expected[-1] for s,d in q):
-            blocked+=1
-        else:
-            clear+=1
+        category=quarantine_category(p["security_id"],mapping,q,expected[0],expected[-1])
+        if category=="identity_unmapped": unknown+=1
+        elif category=="quarantine_blocked": blocked+=1
+        else: clear+=1
     # Snapshot identity is only a conservative exclusion aid, not historical certification.
     # No stock-price or historical identity clearance here: do not expose
     # per-security profiles until the P4.43 registry and identity joins are applied.

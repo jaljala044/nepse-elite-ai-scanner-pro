@@ -41,7 +41,12 @@ def build_signal_outcome_ledger(*,signals,replay_results):
                 "horizon": s.get("horizon"), "decision_time": s.get("decision_time"),
                 "feature_snapshot_sha256": s.get("feature_snapshot_sha256"),
             }
-            if any(not expected[key] or trade.get(key) != expected[key] for key in expected):
+            policy_digest = trade.get("replay_policy_sha256")
+            if (
+                any(not expected[key] or trade.get(key) != expected[key] for key in expected)
+                or not isinstance(policy_digest, str) or len(policy_digest) != 64
+                or any(char not in "0123456789abcdef" for char in policy_digest.lower())
+            ):
                 rejected.append({"signal_id": sid, "reason": "replay_trade_signal_metadata_mismatch"})
                 trades.pop(sid, None)
                 trade = None

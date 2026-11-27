@@ -14,6 +14,17 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "minimum_warmup_sessions": 20,
         }
         self.statuses = {day: "traded" for day in self.sessions}
+        self.session_evidence = {
+            day: {
+                "status": "traded", "source_id": "fixture-calendar-v1",
+                "source_record_ref": f"fixture:{day}",
+                "source_url": "https://example.invalid/calendar/2025",
+                "evidence_sha256": "b" * 64, "rights_status": "approved",
+                "retrieved_at": "2025-12-31T15:00:00+05:45",
+                "available_at": "2025-12-31T15:00:00+05:45",
+            }
+            for day in self.sessions
+        }
         self.records = [self.row(day) for day in self.sessions]
 
     def row(self, day):
@@ -25,9 +36,15 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         }
 
     def evaluate(self, **overrides):
+        statuses = overrides.get("session_statuses", self.statuses)
+        evidence = {
+            day: dict(item, status=statuses.get(day, item["status"]))
+            for day, item in self.session_evidence.items()
+        }
         args = dict(segment=self.segment, expected_sessions=self.sessions,
-                    session_statuses=self.statuses, records=self.records,
-                    required_sessions=120, available_warmup_sessions=20,
+                    session_statuses=self.statuses, session_evidence=evidence,
+                    records=self.records, required_sessions=120,
+                    available_warmup_sessions=20,
                     decision_cutoff="2026-01-01T00:00:00+05:45")
         args.update(overrides)
         return evaluate_historical_segment(**args)
@@ -154,6 +171,27 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         statuses = dict(self.statuses, **{"2025-06-01": "traded"})
         result = self.evaluate(session_statuses=statuses)
         self.assertIn("unexpected_session_status:2025-06-01", result["reasons"])
+
+    def test_missing_session_source_provenance_fails_closed(self):
+        evidence = dict(self.session_evidence)
+        del evidence[self.sessions[0]]
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_missing:" + self.sessions[0], result["reasons"])
+        self.assertEqual(result["unknown_session_count"], 1)
+
+    def test_session_source_provenance_must_match_classification(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(evidence[self.sessions[0]], status="no_trade_verified")
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_status_mismatch:" + self.sessions[0], result["reasons"])
+
+    def test_late_session_source_evidence_fails_point_in_time_gate(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(
+            evidence[self.sessions[0]], available_at="2026-01-02T00:00:00+05:45"
+        )
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_lookahead:" + self.sessions[0], result["reasons"])
 
 
 if __name__ == "__main__":

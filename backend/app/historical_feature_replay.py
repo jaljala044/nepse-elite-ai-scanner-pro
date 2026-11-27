@@ -65,10 +65,14 @@ def _sector_snapshot_for_decision(*, session, cutoff, membership_by_session, exp
     if not isinstance(membership, dict) or not isinstance(expected, dict) or not expected:
         return None, None, "point_in_time_sector_membership_missing"
     required = []
+    expected_sector_by_symbol = {}
     for sector_code, members in expected.items():
         if not isinstance(sector_code, str) or not sector_code.strip() or not isinstance(members, list) or not members:
             return None, None, "point_in_time_sector_membership_invalid"
-        required.extend(str(symbol).strip().upper() for symbol in members)
+        normalized_members = [str(symbol).strip().upper() for symbol in members]
+        required.extend(normalized_members)
+        for member in normalized_members:
+            expected_sector_by_symbol[member] = sector_code
     if not required or any(not symbol for symbol in required) or len(required) != len(set(required)):
         return None, None, "point_in_time_sector_membership_duplicate_or_blank"
     for symbol in required:
@@ -91,7 +95,7 @@ def _sector_snapshot_for_decision(*, session, cutoff, membership_by_session, exp
             or (effective_to is not None and date.fromisoformat(session) > effective_to)
             or not isinstance(record.get("source_id"), str) or not record["source_id"].strip()
             or len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest)
-            or record.get("sector_code") not in expected
+            or record.get("sector_code") != expected_sector_by_symbol.get(symbol)
         ):
             return None, None, "point_in_time_sector_membership_unverified_or_lookahead"
     return membership, expected, None
@@ -109,7 +113,9 @@ def build_historical_feature_series(
         raise ValueError("decision_points_required")
     if not isinstance(expected_symbols, list) or not expected_symbols:
         raise ValueError("expected_symbols_required")
-    normalized_symbols = [str(symbol).strip().upper() for symbol in expected_symbols]
+    if any(not isinstance(symbol, str) for symbol in expected_symbols):
+        raise ValueError("expected_symbols_must_be_unique_nonblank")
+    normalized_symbols = [symbol.strip().upper() for symbol in expected_symbols]
     if any(not symbol for symbol in normalized_symbols) or len(normalized_symbols) != len(set(normalized_symbols)):
         raise ValueError("expected_symbols_must_be_unique_nonblank")
     if not isinstance(evidence_manifests, dict):

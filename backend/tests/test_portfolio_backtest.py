@@ -192,5 +192,14 @@ class PortfolioBacktestTests(unittest.TestCase):
         self.assertEqual(result["corporate_action_excluded_signals"], [self.signal])
         self.assertAlmostEqual(result["ledger"]["ending_equity"], 10100)
 
+    def test_future_action_cannot_filter_earlier_signal_in_pit_mode(self):
+        from app.portfolio_backtest import reconcile_signal_portfolio
+        action = dict(symbol="AAA", status="verified", source_id="synthetic",
+                      available_at="2025-01-02T00:00:00+00:00")
+        with self.assertRaisesRegex(ValueError, "future_action_requires_event_aware_replay"):
+            reconcile_signal_portfolio(portfolio_inputs={"signals":[self.signal]},
+                evidence_cutoff="2025-01-11T00:00:00+00:00",
+                corporate_actions=[action], action_policy="point_in_time_guard")
+
 if __name__ == "__main__":
     unittest.main()

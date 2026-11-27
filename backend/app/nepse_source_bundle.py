@@ -3,6 +3,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from app.nepse_source_connectors import acquire_registered_capture
+from app.nepse_source_registry import validate_source_registry
 from app.nepse_historical_intake import ingest_captured_csv
 from app.nepse_dataset_readiness import assess_historical_dataset_readiness
 from app.nepse_official_adapters import SCHEMAS
@@ -20,6 +21,9 @@ def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
     if transport_by_source is None: transport_by_source={}
     if not isinstance(transport_by_source,dict): raise ValueError("transport_by_source_must_be_dict")
     intake={kind:[] for kind in SCHEMAS}
+    checked_registry=validate_source_registry(registry)
+    if checked_registry["errors"]: raise ValueError("source_registry_contains_invalid_records")
+    source_records={x["source_id"]:x for x in checked_registry["sources"]}
     captures=[]; failures=[]; seen_request_ids=set(); seen_hashes=set()
     for index,request in enumerate(requests):
         if not isinstance(request,dict):

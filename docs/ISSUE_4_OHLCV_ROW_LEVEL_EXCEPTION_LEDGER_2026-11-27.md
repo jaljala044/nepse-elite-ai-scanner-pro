@@ -43,3 +43,15 @@ The new `OHLCV exception ledger` workflow downloads the original immutable artif
 ## Current disposition
 
 Implementation and CI validation are pending in draft PR. This report does not authorize canonical OHLCV promotion, price repair, training, or predictive-signal promotion.
+
+## CI result — 2026-11-27
+
+The ledger workflow passed on PR #179 head `979f37c10bbe00e9a0da6a661b3fb34271bf42b8` (run `45932511623`). It downloaded the original audit artifact and matched its SHA-256, generated the JSON/CSV outputs, passed the strict validator and passed all three ledger regression tests.
+
+- Output artifact: `ohlcv-row-level-exception-ledger` (artifact ID `15169085846`)
+- ZIP SHA-256: `0db218d52d2777df0fb6f2f1dbe4eea7b7f1c9d65a7ef52913aba6faed221fc7`
+- JSON: 1,339 records; SHA-256 `1d7277067a6c839eb897b9d2d79fd3171840b8983d063c2fe34808c60b87ea46`
+- CSV: 1,339 records; SHA-256 `05e8b607d5501f7abbb070fa07bd0d23c2f5b141ed1617ff01fa7762c738c859`
+- Dispositions: 1,334 unresolved, five user-authority-resolved.
+
+The separate repository-wide backend test workflow failed because the Issue #20 implementation module `app.historical_segment_eligibility` exists only on PR #177 and has not been merged to `main`. This is a cross-PR dependency, not a ledger-validator failure. PR #179 remains draft and Issue #4 remains open until this dependency is resolved and the pinned full audit is rerun/reconciled.

@@ -7,6 +7,7 @@ classification effective dates, or NEPSE membership.
 from __future__ import annotations
 
 import hashlib
+import io
 import re
 from typing import Any
 
@@ -51,7 +52,7 @@ def extract_sebon_pdf_text(
         raise ValueError("expected_pdf_sha256_mismatch")
 
     try:
-        reader = PdfReader(__import__("io").BytesIO(raw_pdf), strict=True)
+        reader = PdfReader(io.BytesIO(raw_pdf), strict=True)
         if reader.is_encrypted:
             raise ValueError("encrypted_pdf_not_supported")
         page_count = len(reader.pages)

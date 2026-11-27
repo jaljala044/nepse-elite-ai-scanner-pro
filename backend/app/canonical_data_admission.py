@@ -208,7 +208,15 @@ def validate_and_admit_ohlcv_csv(*, raw_path: str | Path, manifest: Mapping[str,
                     except ValueError:
                         issues.append("row_available_at_invalid")
                     rows.append({
-                        "line_number": line_number, "symbol": symbol, "session_date": day,
+                        "line_number": line_number, "symbol": symbol, "security_id": security_id,
+                        "session_date": day,
+                        "values": {
+                            name: (str(prices[name]) if prices[name] is not None else None)
+                            for name in ("open", "high", "low", "close")
+                        } | {
+                            "volume": str(volume) if volume is not None else None,
+                            "turnover": str(turnover) if turnover is not None else None,
+                        },
                         "status": "valid_candidate" if not issues else "quarantined",
                         "reasons": issues,
                     })

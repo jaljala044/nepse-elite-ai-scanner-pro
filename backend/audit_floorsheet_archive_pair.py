@@ -112,6 +112,11 @@ def source_manifest(profile_name, source_id, path, expected_sha256, payload, rev
                     *, expected_git_blob_sha1: str | None = None):
     profile = PROFILES[profile_name]
     dynamic_blob_pin = expected_git_blob_sha1 is not None
+    if dynamic_blob_pin and (
+        not isinstance(source_id, str)
+        or not source_id.endswith("@blob:" + expected_git_blob_sha1)
+    ):
+        raise ValueError("source_id does not match date-specific Git blob pin")
     return {
         "source_id": source_id,
         "profile": profile_name,

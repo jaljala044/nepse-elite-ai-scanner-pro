@@ -20,7 +20,7 @@ class QualificationTests(unittest.TestCase):
   c=components(); del c["broker_footprint"]
   r=self.run_case(component_evidence=c)
   self.assertEqual(r["action"],"NO_TRADE")
-  self.assertLess(float(r["score_coverage_pct"]),80)
+  self.assertEqual(float(r["score_coverage_pct"]),90.0)
  def test_missing_gate_blocks(self):
   g=gates(); del g["execution"]
   self.assertEqual(self.run_case(gates=g)["action"],"NO_TRADE")

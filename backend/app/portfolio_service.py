@@ -49,7 +49,8 @@ def _connect():
             owner TEXT NOT NULL,
             name TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            deleted_at TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_portfolios_owner ON portfolios(owner);
         CREATE TABLE IF NOT EXISTS portfolio_transactions (
@@ -69,6 +70,9 @@ def _connect():
         CREATE INDEX IF NOT EXISTS idx_portfolio_tx_order
             ON portfolio_transactions(owner, portfolio_id, symbol, trade_date, created_at, id);
     """)
+    columns = {row["name"] for row in con.execute("PRAGMA table_info(portfolios)")}
+    if "deleted_at" not in columns:
+        con.execute("ALTER TABLE portfolios ADD COLUMN deleted_at TEXT")
     return con
 
 
@@ -84,8 +88,9 @@ def create_portfolio(owner: str, name: str) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     item_id = str(uuid4())
     with _connect() as con:
-        con.execute("INSERT INTO portfolios VALUES (?,?,?,?,?)",
-                    (item_id, owner, name, now, now))
+        con.execute(
+            "INSERT INTO portfolios (id,owner,name,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,NULL)",
+            (item_id, owner, name, now, now))
         row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=?",
                           (item_id, owner)).fetchone()
     return _portfolio(row)
@@ -93,14 +98,14 @@ def create_portfolio(owner: str, name: str) -> dict:
 
 def list_portfolios(owner: str) -> list[dict]:
     with _connect() as con:
-        rows = con.execute("SELECT * FROM portfolios WHERE owner=? ORDER BY created_at,id",
+        rows = con.execute("SELECT * FROM portfolios WHERE owner=? AND deleted_at IS NULL ORDER BY created_at,id",
                            (owner,)).fetchall()
     return [_portfolio(row) for row in rows]
 
 
 def get_portfolio(owner: str, portfolio_id: str) -> dict | None:
     with _connect() as con:
-        row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=?",
+        row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
                           (portfolio_id, owner)).fetchone()
     return _portfolio(row) if row else None
 
@@ -112,7 +117,7 @@ def update_portfolio(owner: str, portfolio_id: str, name: str) -> dict | None:
     now = datetime.now(timezone.utc).isoformat()
     with _connect() as con:
         changed = con.execute(
-            "UPDATE portfolios SET name=?,updated_at=? WHERE id=? AND owner=?",
+            "UPDATE portfolios SET name=?,updated_at=? WHERE id=? AND owner=? AND deleted_at IS NULL",
             (name, now, portfolio_id, owner)).rowcount
         row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=?",
                           (portfolio_id, owner)).fetchone() if changed else None
@@ -120,9 +125,15 @@ def update_portfolio(owner: str, portfolio_id: str, name: str) -> dict | None:
 
 
 def delete_portfolio(owner: str, portfolio_id: str) -> bool:
+    # A user-visible delete hides the portfolio but does not erase its immutable
+    # transaction ledger. Any eventual privacy/account-erasure workflow is a
+    # separate, explicit retention-policy operation.
+    now = datetime.now(timezone.utc).isoformat()
     with _connect() as con:
-        changed = con.execute("DELETE FROM portfolios WHERE id=? AND owner=?",
-                              (portfolio_id, owner)).rowcount
+        changed = con.execute(
+            "UPDATE portfolios SET deleted_at=?,updated_at=? "
+            "WHERE id=? AND owner=? AND deleted_at IS NULL",
+            (now, now, portfolio_id, owner)).rowcount
     return bool(changed)
 
 
@@ -156,7 +167,7 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
         # race past the pre-insert check. SQLite grants the write reservation
         # before either request reads the idempotency key.
         con.execute("BEGIN IMMEDIATE")
-        portfolio = con.execute("SELECT id FROM portfolios WHERE id=? AND owner=?",
+        portfolio = con.execute("SELECT id FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
                                 (portfolio_id, owner)).fetchone()
         if portfolio is None:
             raise LookupError("portfolio not found")
@@ -234,7 +245,7 @@ def _calculate_positions(con, owner: str, portfolio_id: str) -> dict[str, dict]:
 
 def portfolio_positions(owner: str, portfolio_id: str) -> list[dict] | None:
     with _connect() as con:
-        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=?",
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
                              (portfolio_id, owner)).fetchone()
         if not exists:
             return None

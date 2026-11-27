@@ -11,6 +11,20 @@ from .execution_constraints import settlement_date
 from .signal_outcome_validation import evaluate_signal_path
 
 
+def _canonical_day(value, name):
+    if type(value) is date:
+        return value.isoformat()
+    if not isinstance(value, str):
+        raise ValueError(name + "_must_be_canonical_iso_date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(name + "_must_be_canonical_iso_date") from None
+    if parsed.isoformat() != value:
+        raise ValueError(name + "_must_be_canonical_iso_date")
+    return value
+
+
 def _d(value, name, *, positive=False):
     try:
         result = Decimal(str(value))
@@ -71,16 +85,26 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
     except (AttributeError, ValueError) as exc:
         return {**base, "reason": str(exc)}
 
-    outcome = evaluate_signal_path(signal, rows, verified_sessions,
-                                   evaluation_date=str(evaluation_date), reviewed=reviewed)
+    try:
+        evaluation_day = _canonical_day(evaluation_date, "evaluation_date")
+        decision_day_text = _canonical_day(
+            signal.get("details", {}).get("decision_date"), "signal_decision_date")
+        session_days = [_canonical_day(day, "verified_session") for day in verified_sessions]
+        if session_days != sorted(session_days) or len(session_days) != len(set(session_days)):
+            raise ValueError("verified_sessions_must_be_sorted_unique")
+    except (TypeError, ValueError) as exc:
+        return {**base, "reason": str(exc)}
+
+    outcome = evaluate_signal_path(signal, rows, session_days,
+                                   evaluation_date=evaluation_day, reviewed=reviewed)
     if outcome.get("status") != "observed" or not outcome.get("entry_touched"):
         return {**base, "reason": "complete_reviewed_entry_path_required",
                 "path_status": outcome.get("status"), "path_reason": outcome.get("reason")}
     by_day = {str(row["date"]): row for row in rows}
     entry_day = outcome.get("entry_reference_date")
-    decision_day = date.fromisoformat(str(signal.get("details", {}).get("decision_date")))
-    future_window = [date.fromisoformat(str(day)) for day in verified_sessions
-                     if decision_day < date.fromisoformat(str(day)) <= date.fromisoformat(str(evaluation_date))]
+    decision_day = date.fromisoformat(decision_day_text)
+    future_window = [date.fromisoformat(day) for day in session_days
+                     if decision_day < date.fromisoformat(day) <= date.fromisoformat(evaluation_day)]
     future_window = sorted(future_window)[:outcome.get("sessions_observed", 0)]
     exit_day = outcome.get("exit_reference_date") or (future_window[-1].isoformat() if future_window else None)
     if entry_day not in by_day or exit_day not in by_day:
@@ -144,7 +168,7 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
     except (KeyError, TypeError, ValueError) as exc:
         return {**base, "reason": str(exc)}
 
-    settled_on = settlement_date(entry_day, verified_sessions)
+    settled_on = settlement_date(entry_day, session_days)
     if settled_on is None or date.fromisoformat(exit_day) < settled_on:
         return {**base, "reason": "settlement_eligibility_not_proven",
                 "required_settlement_date": str(settled_on) if settled_on else None,

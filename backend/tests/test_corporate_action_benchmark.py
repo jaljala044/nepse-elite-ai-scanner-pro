@@ -89,5 +89,12 @@ class BenchmarkComparisonTests(unittest.TestCase):
                 as_of_date="2025-01-01")
 
 
+    def test_malformed_ohlcv_date_is_rejected(self):
+        rows = [dict(self.rows[0], date="2025-01-01T00:00:00")]
+        with self.assertRaisesRegex(ValueError, "invalid_ohlcv_date"):
+            adjust_ohlcv_for_corporate_actions(
+                rows=rows, actions=[], as_of_date="2025-01-03",
+                evidence_cutoff="2025-01-03T15:00:00+05:45")
+
 if __name__ == "__main__":
     unittest.main()

@@ -2301,3 +2301,29 @@ Investigate official NEPSE `securityDailyTradeStat` historical date support and 
 ### P4.25 next
 
 Build and validate the effective-dated security identity and corporate-action registry using the existing 36-record historical identity evidence set, six typed lifecycle events and 281-row lifecycle coverage input. Preserve the current coverage: 44 secondary dated-start records, 237 undated, zero primary dated-start evidence; historical stable security IDs remain unresolved for the predecessor set. For BENH, preserve the ShareSansar listing notice, official per-security 14-Oct zero / 15-Oct first-positive rows and secondary first-trade archive match, while obtaining and pinning the underlying NEPSE listing PDF and contract-level floorsheet. Validate symbol/ID changes, mergers, delistings, bonus/rights, splits and instrument-class transitions before historical joins or scanner admission.
+
+
+## 2026-11-27 — full OHLCV source refresh and quarantine reconciliation (PR #188)
+
+- Workflow [46004367620](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/46004367620), artifact 15199303487, ZIP SHA-256 13f926befc2541641540923dba982f7662a71a2fda6b1c514743f6dc69827802. Audit, candidate build and artifact upload steps succeeded. ZIP and all three internal manifest hashes, JSON/CSV ID sets and source audit hash checked locally.
+- Pinned SMC commit 54fbed963830dd9f064332770309f1ffda5ebe42 and Starter commit dfbf96f0322459b2910fe9c3edb4bd2b26efae2c: 525/525 files each, 616344 rows combined, zero download errors, duplicate dates and out-of-order transitions.
+- Current candidate: 1331 invalid OHLC rows, one cross-source conflict (RHGCL 2026-11-19), 1332 unique keys. All 1332 overlap baseline; zero new keys. Seven baseline conflict keys absent: API and HRL 2026-11-19; BGWT, MEHL, RAWA, RHGCL, ULHC 2025-07-28. Absence is not release authorization. Baseline 1339 keys remain blocked pending independent review.
+- Candidate ledger SHA-256 7e31e0f37747c770a02b0b6c4b569bf301d5be840f349f75868b83cb064f940a. 196542 repeated adjacent calendar-row flags remain unclassified; 25 source blob differences. No canonical promotion.
+- Backend CI 46004367518 and contract CI 46004367541 passed on 4880b62f2215917dbbaf7c656781e057ecc2e231. Actual consolidated runtime testing and private deployment remain pending; PR stays draft. AI recommendations and production backtesting remain disabled.
+
+
+## 2026-11-27 — conservative consolidated runtime quarantine ledger
+
+- Full-source refresh workflow run 46004557270 completed successfully; backend run 46004557272 and contract run 46004557416 passed on source commit 1c54bf7a30ed7dc6b05bab5da2a3e436d70ec7e9.
+- Current refresh candidate contains 1,332 exceptions (1,331 invalid OHLC rows and one current cross-source conflict). All 1,332 candidate symbol/date keys are contained in the original 1,339-key quarantine population; seven prior conflict keys are absent from the current comparison.
+- Created separate conservative consolidated runtime ledger by retaining all 1,339 original exception records and adding refresh comparison provenance. No prior key was released. JSON/CSV each contain 1,339 records, 1,339 unique IDs and 1,339 unique symbol/date keys; every disposition remains quarantined_unresolved.
+- Consolidated JSON SHA-256: 8e6195c7be36313dcdcd398e0e70ec731cfc8edfec80ae57802a7a07f380b9b2. Local runtime-loader-contract validation passed: schema, exact count, identity fields, canonical dates, unique IDs and all-blocked dispositions.
+- Artifacts: /mnt/data/2026-11-27-consolidated-runtime-quarantine-ledger.json and .csv. This ledger is conservative and review-only; no production installation or independent authorization is implied.
+- Remaining: test actual ledger with backend runtime integration in CI/private deployment, classify repeated adjacent-calendar-row flags, independently review invalid OHLC records and RHGCL conflict, and keep PR #188 draft until acceptance.
+
+
+## 2026-11-27 — actual refresh ledger guard CI acceptance
+
+- Full refresh run [46006649576](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/46006649576) succeeded at commit 0b1bb5b299bd026f032f5cf06ef61bd4b287cc65. Step 9 exercised actual refreshed ledger keys plus seven retained historical conflict keys against historical input rejection and feature filtering. Artifact 15201087766; registered ZIP digest 45d5720610693543b8ad9a8d0ecf25f36c67a9732e7e2fc698eeaf89d90334dc.
+- Backend run 46006649250 and contract run 46006649374 succeeded. This is guard-level acceptance, not actual database, broker-memory or private deployment acceptance. No release or canonical promotion.
+- Twelve unresolved alternative records remain: HIDCL 2016-07-21; API 2016-09-03 and 2016-09-12; AHPC and HIDCL 2016-11-13; MERO 2017-03-20 and 2017-04-09; SPDL 2017-06-18; AHPC, API and HIDCL 2018-11-06; UNHPL 2020-06-29. Obtain dated session and independent OHLCV evidence before repair. No AI trade recommendations or approved production backtesting.

@@ -29,6 +29,16 @@ def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
     if not isinstance(repositories, dict) or not isinstance(conflicts, list):
         raise ValueError("audit report is missing repositories or cross-source conflicts")
 
+    if len(repositories) != 2:
+        raise ValueError("exactly two source repositories required")
+    for repo, snapshot in repositories.items():
+        files = snapshot.get("files", [])
+        if (not snapshot.get("file_count") or snapshot.get("files_audited") != snapshot["file_count"]
+                or snapshot.get("download_errors") != [] or len(files) != snapshot["file_count"]
+                or len({item["path"] for item in files}) != len(files)
+                or len({item["symbol"] for item in files}) != len(files)):
+            raise ValueError(f"{repo}: incomplete or ambiguous source audit")
+
     records: list[dict[str, Any]] = []
     file_lookup: dict[tuple[str, str], dict[str, Any]] = {}
     for repo, snapshot in repositories.items():

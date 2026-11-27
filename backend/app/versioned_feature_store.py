@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from app.feature_pipeline import build_feature_snapshot
+from app.quarantine_guard import filter_quarantined_feature_rows, runtime_quarantine_keys
+from app.point_in_time import build_as_of_snapshot
 from app.temporal_registry import security_as_of, corporate_actions_as_of
 
 
@@ -77,10 +79,11 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
             "corporate_action_source_universe_completeness_verified": action_result["source_universe_completeness_verified"],
             "corporate_action_evidence_ids": sorted({a.evidence_id for a in action_result["actions"]}),
         }
-    included_records = [
-        row for row in records
-        if row.get("available_at") and datetime.fromisoformat(row["available_at"].replace("Z", "+00:00")) <= cutoff
-    ]
+    keys = runtime_quarantine_keys()
+    included_records = filter_quarantined_feature_rows(
+        build_as_of_snapshot(records, decision_time)["records"], keys)
+    if len(included_records) != features["included_input_count"]:
+        raise ValueError("feature and lineage admission mismatch")
     input_lineage = []
     for row in included_records:
         payload_hash = str(row.get("source_payload_sha256") or row.get("payload_sha256") or "").lower()
@@ -91,7 +94,7 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
             "source_row_number": row.get("source_row_number"),
             "available_at": row.get("available_at"),
         })
-    lineage_complete = all(
+    lineage_complete = bool(input_lineage) and all(
         item["record_id"] and item["source_id"] and item["payload_sha256"]
         and isinstance(item["source_row_number"], int) and item["source_row_number"] > 0
         for item in input_lineage

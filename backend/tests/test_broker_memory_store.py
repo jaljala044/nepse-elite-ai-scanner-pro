@@ -84,5 +84,33 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(self.store.count(), 1)
 
 
+    def test_active_ledger_snapshot_admission_and_retrieval(self):
+        from datetime import date
+        from unittest.mock import patch
+        from app.temporal_registry import SecurityMasterRecord
+        registry = [SecurityMasterRecord("SEC-1", "AAA", "equity", "active",
+            date(2020,1,1), None, "synthetic-primary", "primary_nepse_notice", True, True)]
+        store = BrokerMemoryStore(self.path, security_records=registry)
+        day = "2026-11-24"
+        valid = snapshot(window="daily", observed_sessions=1, requested_sessions=1,
+            first_session=day, last_session=day, observation_rows=1,
+            constituent_sessions=[day], constituent_lineage=[{
+                "session_date":day,"source_id":"SRC-1","evidence_id":"E-1","payload_sha256":"a"*64}])
+        with patch("app.broker_memory_store.runtime_quarantine_keys", return_value=frozenset()):
+            with self.assertRaisesRegex(ValueError, "missing constituent"):
+                store.append(snapshot(), idempotency_key="missing")
+            with self.assertRaisesRegex(ValueError, "provenance mismatch"):
+                store.append(dict(valid, evidence_ids=["ALTERED"]), idempotency_key="tampered")
+            self.assertEqual(store.count(), 0)
+            store.append(valid, idempotency_key="valid", available_at=datetime(2026,11,24,12,tzinfo=timezone.utc))
+            self.assertEqual(len(store.get_as_of(security_id="SEC-1", broker_entity_id="BROKER-1", as_of_date=day)),1)
+        with patch("app.broker_memory_store.runtime_quarantine_keys", return_value=frozenset({("AAA",day)})):
+            with self.assertRaisesRegex(ValueError, "quarantined constituent"):
+                store.append(valid, idempotency_key="blocked")
+            with self.assertRaisesRegex(ValueError, "quarantined constituent"):
+                store.get_as_of(security_id="SEC-1", broker_entity_id="BROKER-1", as_of_date=day)
+        self.assertEqual(store.count(),1)
+
+
 if __name__ == "__main__":
     unittest.main()

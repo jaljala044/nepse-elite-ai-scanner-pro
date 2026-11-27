@@ -12,8 +12,19 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "boundary_reviewed": True, "suspension_overlap": False,
             "merger_or_successor_boundary": False, "adjustment_basis": "raw",
             "minimum_warmup_sessions": 20,
-            "identity_evidence": self.source_evidence("identity:NABIL:123"),
-            "lifecycle_evidence": self.source_evidence("lifecycle:NABIL:123"),
+            "identity_evidence": self.source_evidence(
+                "identity:NABIL:123", claims={"symbol": "NABIL", "security_id": "123"}
+            ),
+            "lifecycle_evidence": self.source_evidence(
+                "lifecycle:NABIL:123",
+                claims={
+                    "symbol": "NABIL", "security_id": "123",
+                    "effective_from": date(2025, 1, 1).isoformat(),
+                    "effective_to": None, "boundary_reviewed": True,
+                    "suspension_overlap": False,
+                    "merger_or_successor_boundary": False,
+                },
+            ),
         }
         self.statuses = {day: "traded" for day in self.sessions}
         self.session_evidence = {
@@ -29,8 +40,8 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         }
         self.records = [self.row(day) for day in self.sessions]
 
-    def source_evidence(self, record_ref):
-        return {
+    def source_evidence(self, record_ref, claims=None):
+        evidence = {
             "source_id": "nepse-official-v1", "source_record_ref": record_ref,
             "source_url": "https://www.nepalstock.com/api/evidence",
             "evidence_sha256": "c" * 64, "payload_sha256": "c" * 64,
@@ -38,6 +49,9 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "available_at": "2025-12-30T00:00:00+05:45",
             "retrieved_at": "2025-12-31T15:00:00+05:45",
         }
+        if claims is not None:
+            evidence["claims"] = claims
+        return evidence
 
     def row(self, day):
         return {
@@ -196,6 +210,32 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         records[0] = dict(records[0], source_evidence={"source_url": "https://www.nepalstock.com"})
         result = self.evaluate(records=records)
         self.assertIn("bar_source_evidence_unverified:" + self.sessions[0], result["reasons"])
+
+    def test_identity_claims_must_match_segment_identity(self):
+        segment = dict(
+            self.segment,
+            identity_evidence=self.source_evidence(
+                "identity:NABIL:123", claims={"symbol": "OTHER", "security_id": "123"}
+            ),
+        )
+        result = self.evaluate(segment=segment)
+        self.assertIn("instrument_identity_claims_mismatch", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_lifecycle_claims_must_match_effective_boundaries(self):
+        segment = dict(self.segment)
+        segment["lifecycle_evidence"] = self.source_evidence(
+            "lifecycle:NABIL:123",
+            claims={
+                "symbol": "NABIL", "security_id": "123",
+                "effective_from": "2024-01-01", "effective_to": None,
+                "boundary_reviewed": True, "suspension_overlap": False,
+                "merger_or_successor_boundary": False,
+            },
+        )
+        result = self.evaluate(segment=segment)
+        self.assertIn("lifecycle_claims_mismatch", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
 
     def test_identity_and_lifecycle_flags_without_source_evidence_fail(self):
         segment = dict(self.segment, identity_evidence=None, lifecycle_evidence=None)

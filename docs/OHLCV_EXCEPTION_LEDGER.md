@@ -80,7 +80,18 @@ each user-authoritatively resolved record. The supplied PDF binary's SHA-256 was
 captured in this run; the filename and page are retained as the evidence locator
 rather than inventing a checksum.
 
-## User-authoritative 2026-11-19 API and HRL resolutions\n\nThe source repository records that the user supplied the final chart OHLC and floorsheet quantity/turnover for API and HRL on 2026-11-19. The reconciliation is recorded in commit `e4d069c6ed292c127e7805b19f98e2837e999073`; the source-row changes are recorded in commits `4b8d2523df3e43877c3b8cf4d5de19606785b47e` (API) and `412efe0a83c5b3db5c72783f9f105eafa34ec396` (HRL). Values are accepted as user-final project data, not independently verified NEPSE records.\n\n| Symbol | Open | High | Low | Close | Shares | Turnover (NPR) | Calculated VWAP |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| API | 331.00 | 334.20 | 330.00 | 331.80 | 105,340 | 34,929,701 | 331.59 |\n| HRL | 483.00 | 488.00 | 483.90 | 483.90 | 49,184 | 23,836,472 | 484.64 |\n\nTrade counts were not included in the retrieved reconciliation record and are left null rather than inferred. Original pinned source rows remain intact in the ledger; the newer source repository commits are provenance references, not replacements for the pinned audit baseline.\n\n## Retained generated output
+## User-authoritative 2026-11-19 API and HRL resolutions
+
+The source repository records that the user supplied the final chart OHLC and floorsheet quantity/turnover for API and HRL on 2026-11-19. The reconciliation is recorded in commit `e4d069c6ed292c127e7805b19f98e2837e999073`; the source-row changes are recorded in commits `4b8d2523df3e43877c3b8cf4d5de19606785b47e` (API) and `412efe0a83c5b3db5c72783f9f105eafa34ec396` (HRL). Values are accepted as user-final project data, not independently verified NEPSE records.
+
+| Symbol | Open | High | Low | Close | Shares | Turnover (NPR) | Calculated VWAP |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| API | 331.00 | 334.20 | 330.00 | 331.80 | 105,340 | 34,929,701 | 331.59 |
+| HRL | 483.00 | 488.00 | 483.90 | 483.90 | 49,184 | 23,836,472 | 484.64 |
+
+Trade counts were not included in the retrieved reconciliation record and are left null rather than inferred. Original pinned source rows remain intact in the ledger; the newer source repository commits are provenance references, not replacements for the pinned audit baseline.
+
+## Retained generated output
 
 The pull-request workflow rebuilds the ledger from the pinned source artifact, verifies the archive SHA-256, checks the 1,339 unique JSON/CSV IDs, the exact seven user-authoritative resolutions, and the remaining unresolved dispositions, and uploads the generated JSON/CSV package as a 90-day GitHub Actions artifact. The first retained artifact is [run 45929360486, artifact 15167354458](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45929360486). Its downloaded outer ZIP SHA-256 is `125f786aadff0dda295f153f51caa097d383fd1331138b2126c668f3d8e2d8e9`; the inner generated ZIP SHA-256 is `6e8a3ee7f202af6386bc39a1b72c100ea6af27ef3978d40a6a05836e43e4d66c`.
 

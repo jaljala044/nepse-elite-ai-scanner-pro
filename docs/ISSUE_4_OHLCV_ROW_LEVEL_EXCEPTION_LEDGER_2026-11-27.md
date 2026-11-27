@@ -108,6 +108,37 @@ The audit now retains original CSV line numbers on every normalized valid observ
 
 The read-only builder test also asserts that the source audit JSON bytes remain unchanged and that the output stores their SHA-256. No raw OHLCV rows were modified, repaired, merged or promoted.
 
+
+## Invalid-row evidence triage — 2026-11-27
+
+A read-only analysis of the latest downloaded ledger classified all 1,331 quarantined invalid rows by their raw OHLC relationships. This is a structural triage, not a repair or source-of-truth decision.
+
+| Mutually exclusive raw-value pattern | Rows |
+|---|---:|
+| High is below open or close, while high is not below low | 774 |
+| Low is above open or close, while low is not above high | 535 |
+| High is below low | 22 |
+| **Total** | **1,331** |
+
+Both sides of the original validation rule remain preserved verbatim in `validation_rule_violated`; the categories above are derived only for review. All 1,331 invalid rows originate from the pinned `nepse-smc-data` snapshot.
+
+Concentration by symbol:
+
+| Symbol | Invalid rows |
+|---|---:|
+| AHPC | 588 |
+| SKBBL | 379 |
+| API | 122 |
+| MERO | 102 |
+| SPDL | 53 |
+| CHL | 45 |
+| HIDCL | 30 |
+| Other eight symbols combined | 12 |
+
+The SocrateAI corroboration metadata for these 1,331 records classifies 1,320 as partial/conflicting, five as all-source matches, two as no-source matches, three as symbol not present in the external daily file, and one as external daily file not published. It is third-party EOD corroboration only; even an external match does not authorize overwriting an invalid source row.
+
+No pattern is treated as a proven transposition, column shift, or vendor error. Every row remains quarantined until exchange-origin evidence or a documented, independently reviewed correction establishes the actual values. No historical prices, model features, or signals are promoted from this triage.
+
 ## Closure status
 
 The ledger implementation, source-lineage, exact pinned rerun, corroboration attachment, deterministic JSON/CSV validation and regression tests are complete. The source-quality gate itself remains FAIL because 1,331 invalid rows and one non-user-authoritative conflict (RHGCL 2026-11-19) remain quarantined; this does not authorize canonical OHLCV promotion. PR #179 is stacked on PR #177 (Issue #20 evaluator), remains draft, and still requires independent review and integration of its base dependency. Do not close Issue #4 or merge this stacked PR until the PR base is integrated and the final review is complete.

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
-from app.quarantine_guard import is_quarantined
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys, ledger_blocked
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
@@ -21,7 +21,9 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                            session_dates: list[str] | None = None) -> dict:
     """Filter every input by availability before deriving any feature."""
     snapshot = build_as_of_snapshot(records, decision_time)
-    rows = [r for r in snapshot["records"] if not is_quarantined(r)]
+    keys = runtime_quarantine_keys()
+    rows = [r for r in snapshot["records"] if not is_quarantined(r)
+            and not (r.get("record_type") in {"ohlcv", "broker"} and ledger_blocked(r, keys))]
     quarantined_count = len(snapshot["records"]) - len(rows)
     raw_prices = [r for r in rows if r.get("record_type") == "ohlcv"]
     raw_broker_rows = [r for r in rows if r.get("record_type") == "broker"]

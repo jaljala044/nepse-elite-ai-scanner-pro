@@ -12,8 +12,8 @@ def record(kind, number):
     else:
         symbol,day=(USER_KEYS+OTHER_KEYS)[number]
         common.update({"symbol":symbol,"trade_date":day,"source_repository":"multiple_pinned_sources","source_evidence":{
-            "jaljala044/nepse-smc-data":{"commit_sha":"a"*40,"path":"data/example.csv","file_sha256":"b"*64,"row":{"close":"10"}},
-            "jaljala044/nepse-history-starter":{"commit_sha":"c"*40,"path":"data/example.csv","file_sha256":"d"*64,"row":{"close":"11"}}}})
+            "jaljala044/nepse-smc-data":{"commit_sha":"a"*40,"path":"data/example.csv","file_sha256":"b"*64,"source_csv_line":2,"row":{"close":"10"}},
+            "jaljala044/nepse-history-starter":{"commit_sha":"c"*40,"path":"data/example.csv","file_sha256":"d"*64,"source_csv_line":2,"row":{"close":"11"}}}})
         if number<7:
             common.update({
                 "disposition":"resolved_with_user_authoritative_evidence",

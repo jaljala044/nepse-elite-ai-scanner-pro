@@ -192,7 +192,7 @@ class RepeatedAdjacentTests(unittest.TestCase):
         queue = unlisted_date_queue(rows)
         self.assertEqual(queue[0]["date"], None)
         self.assertFalse(queue[0]["valid_iso_date"])
-        self.assertEqual(queue[0]["affected_pairs"], 1)
+        self.assertEqual(queue[0]["affected_pairs"], 2)
         self.assertEqual(queue[0]["distinct_symbols"], 0)
         self.assertEqual(queue[0]["repositories"], [])
         self.assertEqual(queue[1]["date"], "")

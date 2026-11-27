@@ -103,5 +103,27 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("bar_present_on_verified_no_trade_session:" + day, result["reasons"])
 
 
+    def test_runtime_requires_pinned_ledger(self):
+        from unittest.mock import patch
+        from app.historical_segment_eligibility import evaluate_runtime_historical_segment
+        with patch("app.historical_segment_eligibility.runtime_quarantine_keys", side_effect=ValueError("missing")):
+            result = evaluate_runtime_historical_segment()
+        self.assertFalse(result["exploratory_replay_eligible"])
+        self.assertFalse(result["approved_backtest_eligible"])
+
+    def test_runtime_ledger_cannot_be_overridden_by_empty_caller_keys(self):
+        from unittest.mock import patch
+        from app.historical_segment_eligibility import evaluate_runtime_historical_segment
+        with patch("app.historical_segment_eligibility.runtime_quarantine_keys",
+                   return_value=frozenset({("NABIL", self.sessions[0])})):
+            result = evaluate_runtime_historical_segment(
+                segment=self.segment, expected_sessions=self.sessions,
+                session_statuses=self.statuses, records=self.records,
+                required_sessions=120, available_warmup_sessions=20,
+                decision_cutoff="2026-01-01T00:00:00+05:45", blocked_keys=set())
+        self.assertIn("quarantined_bar:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+
 if __name__ == "__main__":
     unittest.main()

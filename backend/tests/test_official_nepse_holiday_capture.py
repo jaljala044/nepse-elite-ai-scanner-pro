@@ -33,7 +33,15 @@ class OfficialNepseHolidayCaptureTests(unittest.TestCase):
 
     def test_canonical_calendar_contains_only_explicit_api_closures(self):
         calendar = load_calendar(ROOT / "data/reference/nepse_session_calendar.csv")
-        self.assertEqual(len(calendar), 41)
+        self.assertEqual(len(calendar), 3671)
+        self.assertEqual(
+            sum(row["status"] in {"verified_closed", "verified_exceptional_closed"} for row in calendar.values()),
+            41,
+        )
+        self.assertEqual(
+            sum(row["status"] == "project_accepted_open" for row in calendar.values()),
+            3630,
+        )
         self.assertEqual(
             calendar[__import__("datetime").date.fromisoformat("2026-09-21")]["status"],
             "verified_exceptional_closed",

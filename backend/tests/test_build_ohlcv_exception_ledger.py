@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from build_ohlcv_exception_ledger import build_ledger, write_ledger, USER_AUTHORITATIVE_RESOLUTIONS
+from build_ohlcv_exception_ledger import build_ledger, write_ledger, USER_AUTHORITATIVE_RESOLUTIONS, FIELD_SCOPED_NEPSE_RESOLUTIONS
 
 
 def report_fixture():
@@ -109,14 +109,12 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         expected = {
             ("BGWT", "2025-07-28"), ("MEHL", "2025-07-28"),
             ("RAWA", "2025-07-28"), ("RHGCL", "2025-07-28"),
-            ("ULHC", "2025-07-28"), ("API", "2026-11-19"),
-            ("HRL", "2026-11-19"),
+            ("ULHC", "2025-07-28"),
         }
         self.assertEqual(set(USER_AUTHORITATIVE_RESOLUTIONS), expected)
-        self.assertEqual(USER_AUTHORITATIVE_RESOLUTIONS[("API", "2026-11-19")]["close"], "331.80")
-        self.assertEqual(USER_AUTHORITATIVE_RESOLUTIONS[("HRL", "2026-11-19")]["close"], "483.90")
-        self.assertIsNone(USER_AUTHORITATIVE_RESOLUTIONS[("API", "2026-11-19")]["trades"])
-        self.assertIsNone(USER_AUTHORITATIVE_RESOLUTIONS[("HRL", "2026-11-19")]["trades"])
+        self.assertEqual(set(FIELD_SCOPED_NEPSE_RESOLUTIONS), {("API", "2026-11-19"), ("RHGCL", "2026-11-19")})
+        self.assertEqual(FIELD_SCOPED_NEPSE_RESOLUTIONS[("RHGCL", "2026-11-19")]["supported_fields"]["close"], "258.00")
+        self.assertNotIn("open", FIELD_SCOPED_NEPSE_RESOLUTIONS[("RHGCL", "2026-11-19")]["supported_fields"])
 
     def test_external_corroboration_is_attached_without_source_selection(self):
         report = report_fixture()
@@ -132,6 +130,35 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         self.assertEqual(conflict["external_corroboration"]["external_file_sha256"], "f" * 64)
         self.assertEqual(invalid["disposition"], "quarantined_unresolved")
         self.assertEqual(conflict["disposition"], "quarantined_unresolved")
+
+
+    def test_hrl_2026_11_19_remains_a_source_conflict(self):
+        report = report_fixture()
+        for repo in ("source-a", "source-b"):
+            report["repositories"][repo]["files"][0]["symbol"] = "HRL"
+            report["repositories"][repo]["files"][0]["path"] = "HRL_OHLCV.csv"
+            report["repositories"][repo]["files"][0]["invalid_rows"] = []
+        report["cross_source"]["conflicts"][0]["symbol"] = "HRL"
+        report["cross_source"]["conflicts"][0]["date"] = "2026-11-19"
+        ledger = build_ledger(report, expected_invalid_rows=0, expected_conflicts=1)
+        conflict = ledger["exceptions"][0]
+        self.assertEqual(conflict["disposition"], "quarantined_unresolved")
+        self.assertNotIn("resolution_evidence", conflict)
+
+    def test_rhgcl_nepse_evidence_is_field_scoped_and_omits_open(self):
+        report = report_fixture()
+        for repo in ("source-a", "source-b"):
+            report["repositories"][repo]["files"][0]["symbol"] = "RHGCL"
+            report["repositories"][repo]["files"][0]["path"] = "RHGCL_OHLCV.csv"
+            report["repositories"][repo]["files"][0]["invalid_rows"] = []
+        report["cross_source"]["conflicts"][0]["symbol"] = "RHGCL"
+        report["cross_source"]["conflicts"][0]["date"] = "2026-11-19"
+        ledger = build_ledger(report, expected_invalid_rows=0, expected_conflicts=1)
+        conflict = ledger["exceptions"][0]
+        self.assertEqual(conflict["disposition"], "resolved_with_nepse_field_evidence")
+        self.assertEqual(conflict["resolution_evidence"]["supported_fields"]["volume"], "9054")
+        self.assertEqual(conflict["resolution_evidence"]["omitted_fields"], ["open"])
+        self.assertFalse(conflict["resolution_evidence"]["canonical_promotion_allowed"])
 
 if __name__ == "__main__":
     unittest.main()

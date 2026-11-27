@@ -163,6 +163,9 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
             VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (transaction_id, owner, portfolio_id, symbol, side, str(qty), str(unit_price),
              str(fee), normalized_date, idempotency_key, now))
+        # Recompute the complete chronological ledger before committing. This
+        # rejects backdated sells that would make an earlier position negative.
+        _calculate_positions(con, owner, portfolio_id)
         row = con.execute("SELECT * FROM portfolio_transactions WHERE id=?",
                           (transaction_id,)).fetchone()
     return _transaction(row)

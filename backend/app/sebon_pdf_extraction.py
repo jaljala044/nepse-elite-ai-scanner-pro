@@ -17,7 +17,7 @@ from pypdf import PdfReader
 _MAX_PDF_BYTES = 30 * 1024 * 1024
 _MAX_PAGES = 500
 _SECTOR_LABELS = (
-    "Commercial Banks?", "Development Banks?", "Finance Companies?",
+    "Commercial Banks?", "Development Banks?", "Finance", "Finance Companies?",
     "Microfinance", "Hydropower", "Life Insurance", "Non[- ]Life Insurance",
     "Manufacturing and Processing", "Hotels? and Tourism", "Trading",
     "Investment", "Others?",

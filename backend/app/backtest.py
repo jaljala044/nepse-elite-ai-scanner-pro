@@ -16,6 +16,20 @@ from .signal_outcome_validation import HORIZON_SESSIONS, evaluate_signal_path
 METHODOLOGY_VERSION = "p4.43_walk_forward_v1"
 
 
+def _canonical_day(value, name):
+    if type(value) is date:
+        return value
+    if not isinstance(value, str):
+        raise ValueError(name + "_must_be_canonical_iso_date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(name + "_must_be_canonical_iso_date") from None
+    if parsed.isoformat() != value:
+        raise ValueError(name + "_must_be_canonical_iso_date")
+    return parsed
+
+
 def _digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
@@ -74,6 +88,7 @@ def run_walk_forward_backtest(*, signals, rows_by_symbol, verified_sessions_by_s
         raise ValueError("symbol_market_data_required")
     if not 0 < train_ratio < 1 or not 0 < validation_ratio < 1 or train_ratio + validation_ratio >= 1:
         raise ValueError("invalid_partition_ratios")
+    cutoff = _canonical_day(evaluation_date, "evaluation_date")
     unique = {}
     normalized = []
     for signal in signals:
@@ -88,7 +103,10 @@ def run_walk_forward_backtest(*, signals, rows_by_symbol, verified_sessions_by_s
         if sid in unique:
             continue
         unique[sid] = True
-        decision = date.fromisoformat(str(signal.get("details", {}).get("decision_date")))
+        decision = _canonical_day(signal.get("details", {}).get("decision_date"),
+                                   "signal_decision_date")
+        if decision > cutoff:
+            raise ValueError("signal_decision_date_after_evaluation_date")
         normalized.append((decision, sid, signal))
     normalized.sort(key=lambda x: (x[0], x[1]))
     if len(normalized) < min_partition * 3:
@@ -115,8 +133,11 @@ def run_walk_forward_backtest(*, signals, rows_by_symbol, verified_sessions_by_s
             sessions = verified_sessions_by_symbol.get(symbol)
             if not isinstance(sessions, list) or not sessions:
                 continue
-            parsed = sorted(date.fromisoformat(str(x)) for x in sessions)
-            if len(parsed) != len(set(parsed)):
+            try:
+                parsed = [_canonical_day(x, "verified_session") for x in sessions]
+            except ValueError:
+                continue
+            if parsed != sorted(parsed) or len(parsed) != len(set(parsed)):
                 continue
             horizon_len = HORIZON_SESSIONS[signal["horizon"]]
             future = [d for d in parsed if d > decision]
@@ -135,7 +156,7 @@ def run_walk_forward_backtest(*, signals, rows_by_symbol, verified_sessions_by_s
                 continue
             try:
                 outcome = evaluate_signal_path(signal, rows, sessions,
-                    evaluation_date=str(evaluation_date), reviewed=reviewed)
+                    evaluation_date=cutoff.isoformat(), reviewed=reviewed)
             except (ValueError, TypeError, KeyError):
                 withheld += 1
                 continue
@@ -154,7 +175,7 @@ def run_walk_forward_backtest(*, signals, rows_by_symbol, verified_sessions_by_s
         }
     config = {"methodology_version": METHODOLOGY_VERSION, "train_ratio": train_ratio,
               "validation_ratio": validation_ratio, "min_partition": min_partition,
-              "evaluation_date": str(evaluation_date), "long_only": True,
+              "evaluation_date": cutoff.isoformat(), "long_only": True,
               "fill_model": "daily_ohlcv_price_reference_only"}
     return {
         "status": "completed_with_limitations",

@@ -64,7 +64,8 @@ def quarantine_keys(path, expected_sha256, *, expected_source_commits=None):
     if expected_source_commits is not None and actual_source_commits != expected_source_commits:
         raise ValueError("quarantine ledger source commits stale")
     counts = ledger.get("counts")
-    if (not isinstance(counts, dict) or type(counts.get("total_exception_records")) is not int\n            or counts.get("total_exception_records") != len(rows)):
+    if (not isinstance(counts, dict) or type(counts.get("total_exception_records")) is not int
+            or counts.get("total_exception_records") != len(rows)):
         raise ValueError("quarantine ledger count mismatch")
     keys = set()
     ids = set()

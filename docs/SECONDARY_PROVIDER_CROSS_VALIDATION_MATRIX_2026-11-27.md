@@ -189,3 +189,33 @@ Reopened existing library workbook NEPSE_Floorsheet_Evidence.xlsx (ShareHub dail
 All five recomputed closes match ShareHub daily history to two decimal places. Accept as project-level `verified_reconstructed_close`, not exchange-certified EOD captures; preserve existing owner-authoritative values and distinguish published LTP labels, actual last execution and full-day VWAP. No raw/canonical rows changed. All five quantity, turnover and counts replayed from contracts. BGWT all-execution low is 925 versus published low 933.4. Contract 2025072801025823 at 13:21:49.720 NPT, buyer 54, seller 48, one share at NPR 925, amount NPR 925, is consistent with an odd lot; explicit exchange segment/type not in workbook. Keep suspected classification and all original totals; this trade is outside closing window and cannot affect reconstructed close.
 
 P1-A: numerical reconstruction complete 5/5; official exchange-issued board not obtained. P1-B/C: ShareHub archived dated evidence recovered and replayed, but original provider response/licensing metadata and independent lineage not established; do not inflate formal 2/6 gate count or call secondary consensus passed. P1-D: contract identity and timing recovered, explicit type flag remains pending. No duplicate evidence file or repeat collection required. Other P1 gates remain open.
+
+
+## Closure decision — five-stock 2025-07-28 numerical reconciliation — 2026-11-27
+
+**CLOSED / COMPLETED:** P1-A closing-price reconstruction (5/5); timestamped ShareHub floorsheet replay; quantity reconciliation (5/5); turnover reconciliation (5/5); BGWT contract identification and timestamp recovery. The existing `NEPSE_Floorsheet_Evidence.xlsx` evidence was reused; no duplicate evidence file, broad recapture or API purchase was required. The authoritative replay and calculation are recorded in commit `e78c6c0938a4dd47f3db61e219101144974ed2a0`.
+
+### Accepted reconstructed closes
+
+| Symbol | Final 15-minute quantity | Final 15-minute turnover (NPR) | Reconstructed close | ShareHub daily-history close | Result |
+|---|---:|---:|---:|---:|---|
+| BGWT | 4,030 | 3,857,411.00 | 957.17 | 957.17 | MATCH |
+| MEHL | 1,470 | 699,170.00 | 475.63 | 475.63 | MATCH |
+| RAWA | 230 | 183,288.00 | 796.90 | 796.90 | MATCH |
+| RHGCL | 20,380 | 7,276,603.00 | 357.05 | 357.05 | MATCH |
+| ULHC | 2,041 | 1,042,446.10 | 510.75 | 510.75 | MATCH |
+
+All 1,931 timestamped contracts were replayed; contract IDs are unique within each target security. The 14:45:00 inclusive to 15:00:00 exclusive Nepal-time weighted-average calculation reproduces all five ShareHub daily-history closes to two decimal places. Store these as `verified_reconstructed_close` (project-level), not as NEPSE-certified/exchange-issued closes. Preserve `last_execution_price` and `full_day_vwap` as separate fields; neither is interchangeable with the reconstructed close.
+
+### BGWT exception is isolated, not a blocker to closing P1-A
+
+Contract `2025072801025823` is now identified with timestamp 13:21:49.720 NPT, buyer broker 54, seller broker 48, quantity 1, rate/amount NPR 925. Its identity and timestamp recovery are **complete**. Its explicit exchange trade-type/segment classification remains **pending**; retain `suspected_odd_lot_pending_trade_type_confirmation`. Keep the published BGWT low NPR 933.40 distinct from the all-execution tape low NPR 925.00. This unresolved classification does not invalidate the five final-window close matches because the contract occurred outside the closing window. Do not alter or delete the contract.
+
+### Separate workstreams remain open
+
+- P1-B secondary-provider consensus: not passed (formal evidence remains below 4/6).
+- P1-C independent upstream lineage: not established.
+- BGWT explicit exchange trade-type flag: pending, separately tracked.
+- Other project-wide P1 calendar/repeated-OHLCV gates retain their existing statuses.
+
+These separate gates do **not** reopen the completed five-stock close reconstruction, timestamped tape replay, quantity/turnover arithmetic or BGWT contract identification. Do not recollect or re-investigate those completed items absent a concrete contradiction. The overarching P1 tracking issue remains open only for the separately listed gates; no AI/web/Android phase is authorized by this closure.

@@ -67,3 +67,8 @@ No candidate is relabelled as a confirmed holiday, non-session, carry-forward, o
 ## Next acceptance gate
 
 Obtain immutable official NEPSE schedule-change notice bytes for the 2022 and 2026 weekly-regime transitions, and acquire primary date-level open-session observations. Reconcile their publication/effective dates, instrument scope, retrieval time and hashes; then rerun the candidate join with explicit statuses. Do not use weekday regimes or API absence to synthesize `verified_open` dates.
+
+
+## CI dependency alignment and fixture correction — 2026-11-27
+
+The archive-audit test fixture now records the official NEPSE holiday endpoint URL and requested year, matching the provenance contract enforced by the audit. The earlier backend and contract runs (`45989094705`, `45989094901`) were executed against a merge composition that did not contain `app.historical_segment_eligibility`; the dedicated holiday-ledger workflow (`45989095374`) passed. This PR is now based on `fix/main-historical-segment-ci-dependency` at `b2ac5873b116225a6244151a2e15d55cf4084b13`, which includes the shared evaluator dependency. The backend and contract workflows must run again on the new exact head before this PR is treated as CI-clear. No raw source or canonical calendar was changed.

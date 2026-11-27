@@ -170,3 +170,22 @@ These are existing archived/replayed calculations, not newly acquired data. They
 - Resolve only the missing chronology and eligibility details that materially affect Open, High, Low, LTP, VWAP or official Close. If those details are absent from existing artifacts, identify that exact gap before requesting any additional evidence.
 - Keep Close, LTP and VWAP as separate fields. The five Source A values match MeroLagani's dated LTP; the competing ShareSansar-derived Close/VWAP values remain a distinct measure. No official exchange Close has yet been established.
 - No canonical promotion or training until each field's own gate passes. P1 remains open; 616 session-date candidates and 196,784 repeated-OHLCV candidates retain their existing statuses.
+
+
+## Targeted existing-evidence replay and field-specific acceptance — 2026-11-27
+
+Project owner authorized reuse of existing chart/floorsheet evidence and evidence-quality-based acceptance instead of repeating completed collection. The 4/6 plus two-lineage rule remains applicable to claims of secondary consensus; direct authoritative evidence or reproducible, documented exchange-rule calculations are separate acceptance routes, with distinct labels. No global P1 or production/AI gate is waived.
+
+Reopened existing library workbook NEPSE_Floorsheet_Evidence.xlsx (ShareHub daily history and full timestamped floorsheets). Recomputed from 1,931 contract rows for 2025-07-28; within-symbol contract IDs are unique. No new provider download. Weighted price = sum(amount)/sum(quantity), window 14:45:00 inclusive to 15:00:00 exclusive NPT. No final-window trade below 10 shares. Contemporary rule evidence: https://www.sharesansar.com/newsdetail/nepse-to-implement-15-minute-weighted-average-closing-price-rule-from-chaitra-07-2025-03-19 ; https://www.fiscalnepal.com/2025/03/20/19882/nepse-to-implement-new-method-for-determining-final-trading-price/ ; suspension effective September 23 reported at https://eng.merolagani.com/NewsDetail.aspx?newsID=118684 . July 28 falls within that rule period.
+
+| Symbol | Open | High | Published low | Recomputed close | Last execution | Full-day VWAP | Shares | Turnover NPR | Trades | Final-window trades | Final-window shares | Final-window turnover NPR |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BGWT | 940 | 992 | 933.4 | 957.17 | 992 | 944.9918 | 14028 | 13256345 | 194 | 47 | 4030 | 3857411 |
+| MEHL | 471.1 | 480.5 | 460 | 475.63 | 478 | 470.8399 | 29753 | 14008898.1 | 333 | 26 | 1470 | 699170 |
+| RAWA | 796 | 811 | 780.3 | 796.90 | 798 | 794.8381 | 3165 | 2515662.5 | 74 | 10 | 230 | 183288 |
+| RHGCL | 346.7 | 362 | 341.4 | 357.05 | 362 | 350.0754 | 296715 | 103872614.4 | 1030 | 99 | 20380 | 7276603 |
+| ULHC | 509 | 515 | 495 | 510.75 | 512 | 504.0059 | 32288 | 16273342.1 | 300 | 36 | 2041 | 1042446.1 |
+
+All five recomputed closes match ShareHub daily history to two decimal places. Accept as project-level `verified_reconstructed_close`, not exchange-certified EOD captures; preserve existing owner-authoritative values and distinguish published LTP labels, actual last execution and full-day VWAP. No raw/canonical rows changed. All five quantity, turnover and counts replayed from contracts. BGWT all-execution low is 925 versus published low 933.4. Contract 2025072801025823 at 13:21:49.720 NPT, buyer 54, seller 48, one share at NPR 925, amount NPR 925, is consistent with an odd lot; explicit exchange segment/type not in workbook. Keep suspected classification and all original totals; this trade is outside closing window and cannot affect reconstructed close.
+
+P1-A: numerical reconstruction complete 5/5; official exchange-issued board not obtained. P1-B/C: ShareHub archived dated evidence recovered and replayed, but original provider response/licensing metadata and independent lineage not established; do not inflate formal 2/6 gate count or call secondary consensus passed. P1-D: contract identity and timing recovered, explicit type flag remains pending. No duplicate evidence file or repeat collection required. Other P1 gates remain open.

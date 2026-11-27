@@ -19,6 +19,18 @@ The current NEPSE website's own navigation links to a **Listed Securities** inte
 
 The separate NEPSE homepage/dashboard extraction exposed an "As of Nov 26, 2026, 3:00:00 PM" market snapshot and a current market summary of 355 scrips traded. This is a daily activity count, not total listed securities or active-equity membership.
 
+## API access check
+
+A public reverse-engineered NEPSE client repository identifies the following routes as its company/security list calls:
+
+- `GET /api/nots/company/list`
+- `GET /api/nots/security?nonDelisted=true`
+
+The checked-in third-party route map is at:
+https://raw.githubusercontent.com/basic-bgnr/NepseUnofficialApi/master/nepse/data/API_ENDPOINTS.json
+
+A read-only, unauthenticated request to both routes on the current official host returned HTTP **401 Unauthorized** on 2026-11-27. No authentication headers, token-generation logic, or undocumented access mechanism was attempted. The client is reverse-engineered third-party evidence, not an official API contract. The observed 401 confirms that these direct unauthenticated requests cannot currently supply the raw security master.
+
 ## What remains unverified
 
 - The extractor did not expose a complete page-size-500 result or page traversal, and no raw JSON/API response, export file, or stable documented pagination contract was captured.

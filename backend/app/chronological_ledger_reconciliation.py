@@ -82,11 +82,18 @@ def reconcile_chronological_ledger(*,ledger_inputs,events):
             compare("share_credit:"+aid,a["quantity"],sum(e["quantities"].values()))
     for aid,typ in set(action_audit)-observed_audit:
         differences["missing_chronological_event:"+aid+":"+typ]="missing_chronological_event"
+    compare("pending_paid_rights",final["rights_paid_at_cost"],chronological["pending_paid_rights"])
+    supplied={t["trade_id"]:t for t in ledger_inputs["trades"]}
+    for tid in set(observed)&set(supplied):
+        if observed[tid]["settlement_date"]!=supplied[tid]["settlement_date"]:
+            differences["settlement_date:"+tid]="settlement_date_mismatch"
     for a in unified["corporate_action_entitlements"]:
+        if a["action_id"] in chronological["record_entitlements"]:
+            compare("record_quantity:"+a["action_id"],a["entitlement_quantity"],chronological["record_entitlements"][a["action_id"]])
         e=records.get(a["action_id"])
         if e and (e["symbol"],e["date"])!=(a["symbol"],a["record_date"]):
             differences["record_identity:"+a["action_id"]]="symbol_or_date_mismatch"
     return dict(balance_checks_passed=not differences,differences=differences,
         unified=unified,chronological=chronological,full_accounting_reconciled=False,
-        production_eligible=False,limitations=["Aggregate average-cost versus explicit lot allocation differences are reported, not treated as proof of error. Individual credit events compared; record-date quantities and settlement evidence not fully reconciled. Gross versus net dividend differences are reported.",
+        production_eligible=False,limitations=["Aggregate average-cost versus explicit lot allocation differences are reported, not treated as proof of error. Individual credit events compared; record-date quantities and supplied settlement dates compared, but custody evidence not independently reconciled. Gross versus net dividend differences are reported.",
         "Different intraday settlement assumptions may reject otherwise comparable histories."])

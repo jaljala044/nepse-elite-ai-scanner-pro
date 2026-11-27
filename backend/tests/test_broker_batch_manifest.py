@@ -157,6 +157,8 @@ class BrokerRawCaptureTests(unittest.TestCase):
             as_of_timestamp="2026-11-27T00:00:00+05:45")
         self.assertEqual(stored_rows[0]["raw_capture_sha256"], manifest.raw_sha256)
         self.assertEqual(stored_rows[0]["raw_capture_batch_id"], manifest.capture_id)
+        self.assertEqual(stored_rows[0]["raw_capture_captured_at"], "2026-11-26 03:15:00+00")
+        self.assertEqual(stored_rows[0]["raw_capture_available_at"], "2026-11-26 03:16:00+00")
         self.assertEqual(stored_rows[0]["parser_name"], manifest.parser_name)
         self.assertEqual(stored_rows[0]["parser_version"], manifest.parser_version)
         self.assertEqual(stored_rows[0]["reconciliation_sha256"], digest)

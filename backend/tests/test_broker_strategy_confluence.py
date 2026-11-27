@@ -4,7 +4,7 @@ from app.broker_strategy_confluence import unified_research
 def bundle():
     return dict(symbol="TEST",as_of="2026-04-24",mode="swing",ohlcv=[],
         smc_result={"status":"research_only","as_of":"2026-04-24","score":70},
-        ict_result={"status":"research_only","as_of":"2026-04-24"},
+        ict_result={"status":"research_only","as_of":"2026-04-24","engine_id":"nepse_ict_research","engine_version":"0.1.0","evidence_sha256":"a"*64},
         idpat_result={"status":"research_features_ready","as_of":"2026-04-24"},
         broker_result={"status":"insufficient_evidence","as_of":"2026-04-24","signals_enabled":False})
 class UnifiedResearchTests(unittest.TestCase):
@@ -16,6 +16,9 @@ class UnifiedResearchTests(unittest.TestCase):
         self.assertFalse(r["production_eligible"])
         self.assertFalse(r["signals_enabled"])
         self.assertFalse(r["idpat_specification_verified"])
+    def test_unversioned_ict_claim_is_rejected(self):
+        x=bundle();x["ict_result"].pop("engine_id")
+        self.assertEqual(unified_research(**x)["reason"],"ict_engine_not_implemented_or_unverified")
     def test_as_of_mismatch(self):
         x=bundle();x["ict_result"]["as_of"]="2026-04-25"
         self.assertEqual(unified_research(**x)["reason"],"ict_as_of_mismatch")

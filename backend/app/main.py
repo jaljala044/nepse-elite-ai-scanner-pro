@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ConfigDict
 from .broker_context_server import server_context
+from .broker_ledger_profiles import ledger_profiles
 from .broker_research_security import BrokerResearchSecurity
 from .broker_context_metrics import concentration, sector_rotation
 from .market_structure import add_event_evidence, detect_structure
@@ -95,6 +96,22 @@ def broker_context_rotation_research(request: BrokerRotationContextRequest):
         return sector_rotation(prior,current)
     except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
         raise HTTPException(422,"Invalid rotation evidence") from exc
+
+class BrokerLedgerRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    as_of_date: date
+    decision_time: str
+    window: str = "weekly"
+
+@app.post("/v1/research/broker-ledger-profiles")
+def broker_ledger_research(request: BrokerLedgerRequest):
+    try:
+        return ledger_profiles(as_of_date=request.as_of_date.isoformat(),
+            decision_time=request.decision_time,window=request.window)
+    except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
+        raise HTTPException(422,"Invalid ledger evidence") from exc
+    except OSError as exc:
+        raise HTTPException(503,"Ledger evidence unavailable") from exc
 
 class EarlySignalRequest(BaseModel):
     as_of_date: date

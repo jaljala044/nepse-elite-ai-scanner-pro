@@ -162,3 +162,22 @@ The exact-head ledger run fetched and audited all 525 files from each pinned sou
 
 Downloaded-artifact inspection independently confirmed 1,339 JSON rows and 1,339 CSV rows, identical unique exception IDs, zero field or nested-evidence mismatches, 1,331 invalid rows each carrying a specific violated rule, all 16 conflict source-line references present, and seven resolution payloads with canonical promotion disabled. Dispositions: 1,332 unresolved; seven user-authoritatively resolved. The archive audit's integrity gate remains FAIL while unresolved source-quality exceptions exist; the ledger workflow succeeds because it preserves and validates those exceptions.
 
+
+
+## Disposition correction — 2026-11-28
+
+The earlier seven-record description above is superseded by the field-scoped correction in the current PR branch:
+
+| Disposition | Records | Keys |
+|---|---:|---|
+| User-authoritative project values | 5 | BGWT, MEHL, RAWA, RHGCL, ULHC — 2025-07-28 only |
+| Captured NEPSE field-scoped evidence | 2 | API and RHGCL — 2026-11-19 |
+| Source conflict retained | 1 | HRL — 2026-11-19 |
+| Invalid OHLC rows quarantined | 1,331 | All original invalid rows |
+| **Total** | **1,339** | |
+
+API and RHGCL 2026-11-19 are no longer classified as user-authoritative. Their resolution evidence is separately typed as `resolved_with_nepse_field_evidence` and lists only the fields supported by the captured NEPSE security-history responses. The response omits `open`; the ledger explicitly records that omission and does not infer an opening price. RHGCL's supported fields include high, low, close, volume (9,054) and trades (47).
+
+HRL 2026-11-19 remains `quarantined_unresolved` as a source conflict. Preserve the user-finalized project low NPR 483.90 and the NEPSE/ShareHub observed low NPR 480.00 side by side. The project value is not silently replaced, but it is not re-labelled as exchange-verified. The OHLC geometry discrepancy (open NPR 483.00 versus project low NPR 483.90) remains visible.
+
+The corrected disposition totals are 1,332 unresolved (1,331 invalid rows plus HRL), five user-authoritative resolutions and two field-scoped NEPSE resolutions. Neither resolution class permits canonical promotion or source-row mutation. Regression tests and the strict validator now enforce the exact keys and supported field sets.

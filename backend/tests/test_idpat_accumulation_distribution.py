@@ -69,7 +69,7 @@ class IDPATAccumulationDistributionTests(unittest.TestCase):
 
     def test_upthrust_rejection_candidate(self):
         data = make_snapshot({
-            "open": "100.1", "high": "102.0", "low": "99.8",
+            "open": "100.1", "high": "103.5", "low": "99.8",
             "close": "100.0", "volume": "2500",
         })
         result = self.analyze(data)

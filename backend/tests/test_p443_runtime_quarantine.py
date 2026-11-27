@@ -90,4 +90,35 @@ class QuarantineTests(unittest.TestCase):
                       result["missing_features"])
         self.assertFalse(result["production_eligible"])
 
+
+    def test_generated_partial_research_cannot_enter_runtime(self):
+        import json
+        from pathlib import Path
+        from app.partial_field_recovery import build_partial_view
+        from app.training_dataset_quarantine import audit_training_windows
+        root=Path(__file__).resolve().parents[2]
+        paths=["data/reference/p443_equity_quarantine.json",
+               "data/reports/p443_reconstructed_candle_comparison_v1.json",
+               "data/reports/p443_timestamp_chronology_comparison_v1.json"]
+        inputs=[json.loads((root/p).read_text())["records"] for p in paths]
+        rows=build_partial_view(*inputs)["records"]
+        self.assertEqual({(r["symbol"],r["date"]) for r in rows},QUARANTINE)
+        self.assertEqual(len(rows),1329)
+        for r in rows:
+            symbol,day=r["symbol"],r["date"]
+            self.assertFalse(r["scanner_eligible"])
+            self.assertFalse(r["admission_allowed"])
+            self.assertTrue(all(v is None for v in r["canonical_fields"].values()))
+            # Even a consumer that fills every missing field with a valid
+            # synthetic value must not bypass symbol/date quarantine.
+            flattened=bar(day)
+            flattened.update({k:float(v) for k,v in r["research_candidates"].items() if v is not None})
+            if not window_errors(symbol,[flattened],[day]):
+                self.fail("research row bypassed quarantine: "+symbol+":"+day)
+            self.assertTrue(assess(symbol,[flattened],day+"T23:59:59+05:45",{}))
+            training=audit_training_windows([{"record_id":symbol+day,"symbol":symbol,
+                "history_start":day,"observation_date":day,"outcome_end":day}])
+            self.assertEqual(training["status"],"blocked")
+            self.assertFalse(training["model_training_allowed"])
+
 if __name__=="__main__":unittest.main()

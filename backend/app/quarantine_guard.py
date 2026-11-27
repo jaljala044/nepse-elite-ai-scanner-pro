@@ -48,3 +48,30 @@ def reject_quarantined_history(rows, symbol, keys):
         day = row.get("session_date", row.get("trade_date", row.get("date")))
         if is_quarantined(row) or (symbol, date.fromisoformat(str(day)).isoformat()) in keys:
             raise ValueError("quarantined historical input")
+
+
+import os
+
+def runtime_quarantine_keys(*, required=False):
+    """Server-owned configuration; partial configuration is never accepted."""
+    path = os.environ.get("NEPSE_QUARANTINE_LEDGER")
+    digest = os.environ.get("NEPSE_QUARANTINE_LEDGER_SHA256")
+    if not path and not digest and not required:
+        return None
+    if not path or not digest:
+        raise ValueError("pinned quarantine ledger required")
+    try:
+        return quarantine_keys(path, digest)
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+        raise ValueError("invalid runtime quarantine ledger") from exc
+
+def ledger_blocked(row, keys, symbol=None):
+    if is_quarantined(row):
+        return True
+    if keys is None:
+        return False
+    name = symbol if symbol is not None else row.get("symbol")
+    day = row.get("session_date", row.get("trade_date", row.get("date")))
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("missing quarantine lookup symbol")
+    return (name.strip().upper(), date.fromisoformat(str(day)).isoformat()) in keys

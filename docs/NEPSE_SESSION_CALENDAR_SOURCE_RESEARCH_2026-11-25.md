@@ -173,3 +173,43 @@ These are observed endpoint coverage and payload-validation facts. A returned ag
 - **Not completed:** recover the original 616-date input/generator; establish full historical endpoint coverage; prove session semantics and all-security scope; collect official date-specific opening/suspension/closure evidence across historical regimes; retrieve and hash the original April 2026 schedule notice; hash/archive the 2022 schedule PDF; resolve conflicts and review every candidate date.
 - No `verified_open` dates are promoted by this capture. No missing date is promoted to `verified_closed`. The 616 candidates and 196,784 repeated-OHLCV candidates remain quarantined/review-only.
 - **Priority 1 remains active and acceptance is not met.** The narrower next-task statement (“retrieve the official NEPSE historical market-summary data and identify its underlying API endpoint”) is now complete; the next P1 task is date-by-date evidence reconciliation and historical notice acquisition.
+
+
+## Historical per-security EOD route lead — 2026-11-27
+
+A second official-API acquisition route has been identified in public NEPSE client implementations. This is a route-contract lead, not yet a successful first-party capture.
+
+### Observed client contract
+
+The public NepseUnofficialApi implementation calls getCompanyPriceVolumeHistory(symbol, start_date, end_date). Its request builder supplies a per-security identifier resolved from the security list, size=500, startDate=YYYY-MM-DD and endDate=YYYY-MM-DD, then issues a GET through the NEPSE authenticated client. The method returns the response content field. Its default start date is one year before the end date, but this is a client-side default and does not prove that NEPSE enforces a 365-day server-side cap. The literal endpoint path is loaded from a separate API_ENDPOINTS.json file and is not exposed in the inspected method.
+
+Reference: [public client implementation, getCompanyPriceVolumeHistory](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/NepseLib.py#L2292-L2307).
+
+### Independent cap claim — unverified against the exchange
+
+A separate Hugging Face NEPSE dataset card reports that, on 2026-08-21, a request using startDate=2010-01-01 on NEPSE's per-security history route returned exactly 365 days and totalPages=1. The dataset author characterizes the official EOD history API as clamped to a rolling 365-day window.
+
+Reference: [NEPSE market-data dataset card](https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data).
+
+This is an independently reported observation, not an exchange-published API specification or a raw response captured by this project. It must not be treated as verified endpoint behavior until the exact request, authentication context, response headers/body, dates and pagination metadata are reproduced and archived.
+
+### Required validation experiment
+
+Once the endpoint path and authenticated request contract are established, run a controlled per-security test using one currently listed security and one known older security:
+1. Request a narrow recent interval and record totalElements, totalPages, size, number, content date minimum/maximum and response schema.
+2. Repeat with a start date before 2025-11-27 and an end date in the current 365-day window.
+3. Repeat with a start date in 2010 (or earliest supported date) and the same end date.
+4. If the server returns exactly a rolling 365-day interval regardless of the earlier start date, preserve all three raw responses and compare pagination metadata before recording a server-side cap.
+5. Test page traversal only if the returned metadata indicates multiple pages; do not infer pagination parameters from a client library alone.
+6. Capture raw response bytes, response headers, exact URL/method, retrieval timestamp, TLS/origin validation and SHA-256 for every request.
+
+### Calendar-use limitation
+
+Per-security EOD rows can corroborate that a particular security has a reported observation on a date. They do not alone establish a complete exchange-wide session, and an empty per-security response cannot establish a market closure. Keep date-level calendar status and the 196,784 repeated-OHLCV candidates unchanged until exchange-wide or date-specific primary evidence is obtained.
+
+### Current disposition
+
+- New lead: authenticated per-security EOD history route with explicit start/end date parameters and page size 500 is described by a public client implementation.
+- Not yet verified: literal endpoint path from its API endpoint map; successful current request; 365-day server-side limit; response schema/pagination; historical coverage.
+- Next concrete step: recover the literal path from the client's endpoint map or NEPSE frontend source, then execute and archive the controlled date-window test.
+- Priority 1 remains active. No calendar dates are promoted.

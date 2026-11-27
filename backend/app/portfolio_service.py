@@ -139,7 +139,7 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
     unit_price = _decimal(price, "price")
     fee = _decimal(fees, "fees", allow_zero=True)
     date_text = str(trade_date)
-    if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", date_text):
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_text):
         raise ValueError("trade_date must be YYYY-MM-DD")
     try:
         normalized_date = date.fromisoformat(date_text).isoformat()

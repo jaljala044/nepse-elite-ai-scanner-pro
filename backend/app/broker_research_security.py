@@ -2,7 +2,7 @@
 import os,hmac,time,threading
 from collections import deque
 from starlette.responses import JSONResponse
-PATHS={"/v1/research/broker-mode","/v1/research/broker-leaderboards","/v1/research/broker-ledger-profiles","/v1/research/broker-context","/v1/research/broker-concentration","/v1/research/broker-context-rotation"}
+PATHS={"/v1/research/unified-broker-confluence","/v1/research/broker-mode","/v1/research/broker-leaderboards","/v1/research/broker-ledger-profiles","/v1/research/broker-context","/v1/research/broker-concentration","/v1/research/broker-context-rotation"}
 MAX_BYTES=5*1024*1024
 WINDOW=60
 LIMIT=30

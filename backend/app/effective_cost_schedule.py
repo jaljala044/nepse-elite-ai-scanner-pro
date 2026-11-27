@@ -98,7 +98,7 @@ def _tax_for_holding(records, exit_day, holding_days):
     return _effective(candidates, exit_day, "tax")
 
 
-def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, sell_date=None):
+def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, sell_date=None, require_dated_charges=False):
     """Return scenario rates only when every dated schedule component is covered."""
     day = _day(trade_date, "trade_date")
     exit_day = day if sell_date is None else _day(sell_date, "sell_date")
@@ -113,17 +113,35 @@ def resolve_cost_assumptions(trade_date, buy_amount, sell_amount, schedule, *, s
     holding_days = (exit_day - day).days
     tax_record = _tax_for_holding(schedule.get("tax_schedules", []), exit_day, holding_days)
     tax_rate = _decimal(tax_record.get("rate"), "capital_gain_tax_rate")
-    regulatory = _decimal(schedule.get("regulatory_rate"), "regulatory_rate")
-    dp = _decimal(schedule.get("sell_dp_charge"), "sell_dp_charge")
-    minimum = _decimal(schedule.get("min_broker_fee"), "min_broker_fee")
-    if tax_rate > 1 or regulatory > 1:
+    dated_keys = ("regulatory_schedules", "dp_schedules", "minimum_brokerage_schedules")
+    charge_evidence = {}
+    if require_dated_charges or any(k in schedule for k in dated_keys):
+        def charge(key, when, side, field):
+            records = [r for r in schedule.get(key, []) if r.get("side", "both") in (side, "both")]
+            selected = _effective(records, when, key + "_" + side)
+            charge_evidence[key + "_" + side] = {k: selected[k] for k in ("schedule_id", "source_id", "source_sha256")}
+            return _decimal(selected.get(field), field)
+        buy_regulatory = charge("regulatory_schedules", day, "buy", "rate")
+        sell_regulatory = charge("regulatory_schedules", exit_day, "sell", "rate")
+        dp = charge("dp_schedules", exit_day, "sell", "amount")
+        buy_minimum = charge("minimum_brokerage_schedules", day, "buy", "amount")
+        sell_minimum = charge("minimum_brokerage_schedules", exit_day, "sell", "amount")
+    else:
+        buy_regulatory = sell_regulatory = _decimal(schedule.get("regulatory_rate"), "regulatory_rate")
+        dp = _decimal(schedule.get("sell_dp_charge"), "sell_dp_charge")
+        buy_minimum = sell_minimum = _decimal(schedule.get("min_broker_fee"), "min_broker_fee")
+    if tax_rate > 1 or max(buy_regulatory, sell_regulatory) > 1:
         raise ValueError("invalid_cost_rate")
     return {
         "buy_broker_rate": str(buy_rate), "sell_broker_rate": str(sell_rate),
-        "regulatory_rate": str(regulatory), "sell_dp_charge": str(dp),
+        "regulatory_rate": str(buy_regulatory), "sell_dp_charge": str(dp),
+        "buy_regulatory_rate": str(buy_regulatory), "sell_regulatory_rate": str(sell_regulatory),
         "capital_gain_tax_rate": str(tax_rate), "slippage_bps": str(_decimal(schedule.get("slippage_bps", 0), "slippage_bps")),
-        "min_broker_fee": str(minimum),
+        "min_broker_fee": str(buy_minimum),
+        "buy_min_broker_fee": str(buy_minimum), "sell_min_broker_fee": str(sell_minimum),
+        "dated_charges_resolved": bool(charge_evidence),
         "schedule_evidence": {
+            **charge_evidence,
             "buy_brokerage": {k: buy_record[k] for k in ("schedule_id", "source_id", "source_sha256")},
             "sell_brokerage": {k: sell_record[k] for k in ("schedule_id", "source_id", "source_sha256")},
             "tax": {k: tax_record[k] for k in ("schedule_id", "source_id", "source_sha256")},

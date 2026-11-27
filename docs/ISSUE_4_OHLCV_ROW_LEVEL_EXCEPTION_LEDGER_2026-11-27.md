@@ -20,10 +20,10 @@ The canonical backend generator emits one record per exception:
 Disposition is evidence-aware:
 
 - **1,331 invalid OHLC rows:** `quarantined_unresolved`; source arithmetic failures cannot be resolved by choosing a mirror or third-party value.
-- **3 remaining source conflicts:** `quarantined_unresolved`; both pinned source observations and file hashes are retained.
-- **5 conflicts on 2025-07-28 (BGWT, MEHL, RAWA, RHGCL, ULHC):** `resolved_with_user_authoritative_evidence`. The user explicitly designated their supplied records as final and authoritative for these five symbols on this date. Preserve the user's supplied OHLC chart readings and floorsheet quantity/turnover; ignore conflicting Source A/B/C values and do not leave these five keys unresolved because of those conflicts. The original archive observations remain in the ledger for traceability.
+- **1 remaining source conflict (RHGCL, 2026-11-19):** `quarantined_unresolved`; both pinned source observations and file hashes are retained.
+- **7 user-finalized conflicts:** the five 2025-07-28 records (BGWT, MEHL, RAWA, RHGCL, ULHC) plus API and HRL on 2026-11-19 use `resolved_with_user_authoritative_evidence`. The supplied values are embedded separately in `resolution_evidence.authoritative_values`; both original pinned-source observations remain preserved.
 
-This produces 1,334 unresolved and five user-authority-resolved records. The five user-authority dispositions are narrowly allow-listed by exact symbol/date; the validator rejects using this disposition for any other key or for invalid-OHLC records.
+This produces 1,332 unresolved and seven user-authority-resolved records. The seven user-authority dispositions are narrowly allow-listed by exact symbol/date; the validator rejects using this disposition for any other key or for invalid-OHLC records.
 
 ## Provenance and limitations
 
@@ -60,4 +60,21 @@ The separate repository-wide backend test workflow failed because the Issue #20 
 
 The first draft introduced a second, parallel builder. This was removed after review. PR #179 now extends the repository's existing `backend/build_ohlcv_exception_ledger.py` and its backend unit tests, so the normal `ohlcv-archive-row-audit` workflow produces the same canonical ledger. The builder accepts the SocrateAI cross-check JSON and attaches per-record corroboration status, external row, source comparisons and daily-file SHA-256 without selecting an external value.
 
-The canonical audit workflow now runs the external cross-check before building the ledger. The dedicated PR workflow downloads the pinned original audit artifact and runs this same backend builder plus the strict JSON/CSV validator. The five user-authoritative 2025-07-28 source-conflict keys are dispositioned separately; all invalid OHLC rows and the other three source conflicts remain unresolved.
+The canonical audit workflow now runs the external cross-check before building the ledger. The dedicated PR workflow downloads the pinned original audit artifact and runs this same backend builder plus the strict JSON/CSV validator. The seven user-authoritative source-conflict keys are dispositioned separately; all invalid OHLC rows and RHGCL 2026-11-19 remain unresolved.
+
+## User-authoritative resolution values
+
+The five 2025-07-28 values are transcribed from the user-provided `NEPSE_Chart_Evidence.pdf`, page 1 (ShareHub daily OHLC and reconciled floorsheet totals). The API/HRL 2026-11-19 values are recorded in the user-finalized reconciliation at `nepse-smc-data` commit `e4d069c6ed292c127e7805b19f98e2837e999073`. The latter are accepted as user-final project values, not independently verified NEPSE records.
+
+| Symbol/date | Open | High | Low | Close | Shares | Turnover (NPR) | Trades | VWAP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| BGWT 2025-07-28 | 940.00 | 992.00 | 933.40 | 957.17 | 14,028 | 13,256,345.00 | 194 | — |
+| MEHL 2025-07-28 | 471.10 | 480.50 | 460.00 | 475.63 | 29,753 | 14,008,898.10 | 333 | — |
+| RAWA 2025-07-28 | 796.00 | 811.00 | 780.30 | 796.90 | 3,165 | 2,515,662.50 | 74 | — |
+| RHGCL 2025-07-28 | 346.70 | 362.00 | 341.40 | 357.05 | 296,715 | 103,872,614.40 | 1,030 | — |
+| ULHC 2025-07-28 | 509.00 | 515.00 | 495.00 | 510.75 | 32,288 | 16,273,342.10 | 300 | — |
+| API 2026-11-19 | 331.00 | 334.20 | 330.00 | 331.80 | 105,340 | 34,929,701 | null | 331.59 |
+| HRL 2026-11-19 | 483.00 | 488.00 | 483.90 | 483.90 | 49,184 | 23,836,472 | null | 484.64 |
+
+Trade counts for API and HRL were not present in the reconciliation record and remain null. The PDF binary SHA-256 was not captured; no checksum is claimed. These dispositions do not authorize canonical promotion or raw source edits.
+

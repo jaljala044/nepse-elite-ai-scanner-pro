@@ -89,5 +89,27 @@ class EffectiveCostScheduleTests(unittest.TestCase):
         self.assertGreater(result["sell_fees"],25)
         self.assertFalse(result["production_eligible"])
 
+    def test_cross_period_sell_and_tax_selection(self):
+        s = fixture()
+        for row in s["brokerage_slabs"]:
+            row["effective_to"] = "2026-06-30"
+        later = [dict(row, effective_from="2026-07-01", effective_to="2026-12-31", rate="0.002", schedule_id=row["schedule_id"]+"-later") for row in s["brokerage_slabs"]]
+        s["brokerage_slabs"].extend(later)
+        s["tax_schedules"][0]["effective_to"] = "2026-06-30"
+        s["tax_schedules"].append(dict(s["tax_schedules"][0], effective_from="2026-07-01", effective_to="2026-12-31", rate="0.07", schedule_id="tax-later"))
+        result = resolve_cost_assumptions("2026-06-30", 5000, 5500, s, sell_date="2026-07-01")
+        self.assertEqual(result["buy_broker_rate"], "0.0036")
+        self.assertEqual(result["sell_broker_rate"], "0.002")
+        self.assertEqual(result["capital_gain_tax_rate"], "0.07")
+        self.assertEqual(result["sell_date"], "2026-07-01")
+
+    def test_exit_before_entry_rejected(self):
+        with self.assertRaisesRegex(ValueError, "sell_date_before_buy_date"):
+            resolve_cost_assumptions("2026-06-02", 100, 100, fixture(), sell_date="2026-06-01")
+
+    def test_exit_schedule_gap_rejected(self):
+        with self.assertRaisesRegex(ValueError, "brokerage_slab_missing"):
+            resolve_cost_assumptions("2026-12-31", 100, 100, fixture(), sell_date="2027-01-01")
+
 if __name__ == "__main__":
     unittest.main()

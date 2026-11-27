@@ -2301,3 +2301,12 @@ Investigate official NEPSE `securityDailyTradeStat` historical date support and 
 ### P4.25 next
 
 Build and validate the effective-dated security identity and corporate-action registry using the existing 36-record historical identity evidence set, six typed lifecycle events and 281-row lifecycle coverage input. Preserve the current coverage: 44 secondary dated-start records, 237 undated, zero primary dated-start evidence; historical stable security IDs remain unresolved for the predecessor set. For BENH, preserve the ShareSansar listing notice, official per-security 14-Oct zero / 15-Oct first-positive rows and secondary first-trade archive match, while obtaining and pinning the underlying NEPSE listing PDF and contract-level floorsheet. Validate symbol/ID changes, mergers, delistings, bonus/rights, splits and instrument-class transitions before historical joins or scanner admission.
+
+
+## 2026-11-27 — full OHLCV source refresh and quarantine reconciliation (PR #188)
+
+- Workflow [46004367620](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/46004367620), artifact 15199303487, ZIP SHA-256 13f926befc2541641540923dba982f7662a71a2fda6b1c514743f6dc69827802. Audit, candidate build and artifact upload steps succeeded. ZIP and all three internal manifest hashes, JSON/CSV ID sets and source audit hash checked locally.
+- Pinned SMC commit 54fbed963830dd9f064332770309f1ffda5ebe42 and Starter commit dfbf96f0322459b2910fe9c3edb4bd2b26efae2c: 525/525 files each, 616344 rows combined, zero download errors, duplicate dates and out-of-order transitions.
+- Current candidate: 1331 invalid OHLC rows, one cross-source conflict (RHGCL 2026-11-19), 1332 unique keys. All 1332 overlap baseline; zero new keys. Seven baseline conflict keys absent: API and HRL 2026-11-19; BGWT, MEHL, RAWA, RHGCL, ULHC 2025-07-28. Absence is not release authorization. Baseline 1339 keys remain blocked pending independent review.
+- Candidate ledger SHA-256 7e31e0f37747c770a02b0b6c4b569bf301d5be840f349f75868b83cb064f940a. 196542 repeated adjacent calendar-row flags remain unclassified; 25 source blob differences. No canonical promotion.
+- Backend CI 46004367518 and contract CI 46004367541 passed on 4880b62f2215917dbbaf7c656781e057ecc2e231. Actual consolidated runtime testing and private deployment remain pending; PR stays draft. AI recommendations and production backtesting remain disabled.

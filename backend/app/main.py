@@ -178,9 +178,21 @@ def early_signals(request: EarlySignalRequest):
 def broker_patterns(request: BrokerPatternRequest):
     """Point-in-time accumulation/distribution candidates, never trading instructions."""
     try:
+        cutoff = datetime.fromisoformat(request.decision_at.replace("Z", "+00:00"))
+        if cutoff.tzinfo is None or cutoff.utcoffset() is None:
+            raise ValueError("decision_at must be timezone-aware")
+        if not request.expected_sessions:
+            raise ValueError("expected_sessions must not be empty")
+        decision_day = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
+        sessions = trusted_sessions(
+            [{"date": request.expected_sessions[0]}, {"date": decision_day.isoformat()}],
+            cutoff,
+        )
+        if sessions is None or sessions != request.expected_sessions:
+            raise ValueError("trusted session calendar unavailable or client calendar mismatch")
         return detect_broker_patterns(
             request.symbol, request.broker_rows, request.price_rows, request.market_context,
-            expected_sessions=request.expected_sessions,
+            expected_sessions=sessions,
             complete_broker_sessions=request.complete_broker_sessions,
             decision_at=request.decision_at,
         )

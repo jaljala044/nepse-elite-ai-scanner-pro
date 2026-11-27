@@ -69,6 +69,22 @@ class MarketSummaryFinalityTests(unittest.TestCase):
         self.assertEqual(result["unexpected_sessions"], ["2026-11-27"])
         self.assertFalse(result["promotion_allowed"])
 
+    def test_short_reviewer_key_cannot_sign_or_verify(self):
+        capture, calendar, attestation = fixtures()
+        with self.assertRaisesRegex(ValueError, "at_least_32_bytes"):
+            sign_finality_attestation(attestation, b"short")
+        with self.assertRaisesRegex(ValueError, "trusted_reviewer_signature_required"):
+            validate_market_summary_finality(
+                capture, session_calendar=calendar, attestation=attestation,
+                reviewer_keys={"independent-reviewer": b"short"},
+                decision_time=CUTOFF,
+            )
+
+    def test_nonfinite_attestation_payload_is_not_signable(self):
+        attestation = {"reviewer": "independent-reviewer", "confidence": float("nan")}
+        with self.assertRaises(ValueError):
+            sign_finality_attestation(attestation, KEY)
+
     def test_unsigned_attestation_rejected(self):
         capture, calendar, attestation = fixtures()
         attestation["signature"] = "0" * 64

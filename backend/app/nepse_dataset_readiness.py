@@ -133,13 +133,24 @@ def assess_historical_dataset_readiness(*, intake_reports, start_date, end_date,
     core_errors=list(errors)
     quality="LOW" if core_errors else ("MEDIUM" if any(inventory[k]["availability"]=="missing_optional" for k in OPTIONAL) else "HIGH")
     status="BLOCKED" if core_errors else ("PARTIAL" if quality=="MEDIUM" else "READY")
+    strategy_requirements={
+        "trend_momentum":[],
+        "idpat_smart_money":["floorsheet","broker_summary"],
+        "broker_footprint":["broker_summary"],
+        "smc_ict_liquidity":[],
+        "hybrid_consensus":["broker_summary","sector_index"],
+        "fundamental_investment":["fundamentals","sector_index"],
+    }
+    strategy_eligibility={name:{"eligible":all(inventory[k]["availability"]=="available" for k in req),
+        "missing_datasets":[k for k in req if inventory[k]["availability"]!="available"]}
+        for name,req in strategy_requirements.items()}
     return {"schema_version":"nepse-historical-readiness-1.0.0","status":status,
         "data_quality":quality,"research_panel_assembly_allowed":status in {"READY","PARTIAL"},
         "start_date":start.isoformat(),"end_date":end.isoformat(),"decision_cutoff":cutoff.isoformat(),
         "open_session_count":len(sessions),"open_session_dates":sessions,
         "historical_universe_symbol_count":len(universe_result["security_ids"]),"inactive_security_count":universe_result["inactive_security_count"],"expected_ohlcv_rows":expected,
         "observed_unique_ohlcv_rows":observed,"ohlcv_session_coverage_pct":str(coverage),
-        "minimum_session_coverage_pct":str(minimum),"per_security_coverage":per_security,
+        "minimum_session_coverage_pct":str(minimum),"per_security_coverage":per_security,"strategy_eligibility":strategy_eligibility,
         "duplicate_calendar_sessions":duplicate_sessions,"duplicate_ohlcv_records":duplicate_bars,
         "invalid_ohlcv_records":invalid_bars,"inventory":inventory,"errors":sorted(set(errors)),
         "corporate_action_rows_for_reconciliation":len(ca_rows),

@@ -105,7 +105,13 @@ def build_broker_behavior_memory(
             memories.append({
                 "security_id": security_id, "broker_entity_id": broker_id,
                 "window": window_name, "requested_sessions": session_count,
-                "observed_sessions": len(dates), "first_session": min(dates).isoformat(),
+                "observed_sessions": len(dates), "constituent_sessions": sorted(d.isoformat() for d in dates),
+                "constituent_lineage": sorted([
+                    {"session_date": r["trade_date"].isoformat(), "source_id": r["source_id"],
+                     "evidence_id": r["evidence_id"], "payload_sha256": r["source_payload_sha256"]}
+                    for r in selected
+                ], key=lambda item: (item["session_date"], item["source_id"], item["evidence_id"], item["payload_sha256"])),
+                "first_session": min(dates).isoformat(),
                 "last_session": max(dates).isoformat(), "as_of_date": cutoff.isoformat(),
                 "buy_amount": str(buy_amount), "sell_amount": str(sell_amount),
                 "net_amount": str(buy_amount - sell_amount),

@@ -74,3 +74,14 @@ Re-read the existing conflict ledger, P1 investigation log, cross-repository aud
 - ShareHub authorized historical API access remains unestablished; Chukul historical access not obtained; Punji and NEPSE Alpha date-specific rows remain unaudited. No fresh access tests were performed during this repository-only audit. No new independent lineage was established.
 
 Next: obtain missing dated records and lineage statements, resolve official close semantics with timestamped tape or official EOD documentation, preserve original bytes and SHA-256; retain P1 gate and existing quarantines. No AI/app development authorized by this audit.
+
+
+## Field semantics, integrity and outstanding-gap follow-up — 2026-11-27
+
+Continuation from `86a7b7478898a98eb396de0c42b08930567eaaab`. Source A's stored Close values (BGWT 957.17, MEHL 475.63, RAWA 796.90, RHGCL 357.05, ULHC 510.75) match MeroLagani's labelled LTP, not a confirmed exchange-designated close. Source B reported Close approximates full-day VWAP; neither establishes official close. Keep all fields distinct and owner-authoritative data unchanged.
+
+Integrity: existing OmitNomis daily-board bytes match upstream base64 contents and Git blob `28b5edf90ea5ebfe7e419c5162eedd0f30a9ce82`; 54,019 bytes SHA-256 `36730b61430c2a42f7f1e33231c6b1b39e58037acc27bf24a62ac40ffed7a37d`. Manifest updated in `ffe47550c90c83e6cf797a9d7254339813552e36`. This closes this archive checksum gap, not HTTP metadata or upstream data accuracy.
+
+BGWT one-share Rs 925 exception: classify investigation `suspected_odd_lot_pending_trade_type_confirmation`. MeroLagani company profile https://merolagani.com/CompanyDetail.aspx?symbol=BGWT reports paid-up value 100; contemporary July 17 2025 reporting https://eng.merolagani.com/NewsDetail.aspx?newsID=116589 describes 10-share board lot for Rs 100 face value, with smaller trades odd lots. https://www.newbusinessage.com/news/44702/nepse-enhances-odd-lot-trading-transparency-to-address-investor-concerns/ reports odd lots do not affect official market price/index. This is a plausible explanation, not contract-level confirmation. Require contract ID and exchange trade-type/segment flag or official confirmation; preserve original row, quantity, amount and rate; no exclusion, deletion or alteration approved.
+
+Punji public features https://www.punji.app/features advertises charts up to a year of candles; target date is outside that advertised span as of audit. Terms https://punji.app/terms claim public NEPSE endpoint sourcing, not independent lineage proof. No dated target rows captured. ShareHub documentation https://sharehubnepal.com/data/nepse-data-documentation/ rechecked; no authorized target-date response obtained. Chukul and NEPSE Alpha dated coverage remains outstanding. No new qualifying provider vote; 4/6 plus two independent lineages remains unmet, P1 open. No canonical promotion or development gate changes.

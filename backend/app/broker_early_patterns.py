@@ -124,20 +124,30 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
     daily = selected["1D"]
     weekly = selected["1W"]
     monthly = selected["1M"]
+    buy_ratio = daily.get("latest_buy_vs_prior_20_avg_ratio")
+    sell_ratio = daily.get("latest_sell_vs_prior_20_avg_ratio")
+    for field, value in (
+        ("latest_buy_vs_prior_20_avg_ratio", buy_ratio),
+        ("latest_sell_vs_prior_20_avg_ratio", sell_ratio),
+    ):
+        if (isinstance(value, bool) or not isinstance(value, (int, float))
+                or not math.isfinite(value) or value < 0):
+            return _insufficient(
+                broker_code, symbol, "daily_flow_baseline_ratio_invalid", [field]
+            )
+
     entry_pattern = (
         daily.get("flow_class") == "net_buyer"
         and weekly.get("flow_class") == "net_buyer"
         and monthly.get("flow_class") == "net_buyer"
-        and isinstance(daily.get("latest_buy_vs_prior_20_avg_ratio"), (int, float))
-        and daily["latest_buy_vs_prior_20_avg_ratio"] >= minimum_daily_flow_multiple
+        and buy_ratio >= minimum_daily_flow_multiple
         and market_context["price_extension_status"] == "not_extended"
     )
     exit_pattern = (
         daily.get("flow_class") == "net_seller"
         and weekly.get("flow_class") == "net_buyer"
         and monthly.get("flow_class") == "net_buyer"
-        and isinstance(daily.get("latest_sell_vs_prior_20_avg_ratio"), (int, float))
-        and daily["latest_sell_vs_prior_20_avg_ratio"] >= minimum_daily_flow_multiple
+        and sell_ratio >= minimum_daily_flow_multiple
         and market_context["price_extension_status"] == "extended"
     )
     if entry_pattern:

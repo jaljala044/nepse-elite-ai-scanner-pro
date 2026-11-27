@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from backend.app.historical_pilot_cohort import (
+from app.historical_pilot_cohort import (
     CANDIDATE,
     QUARANTINED,
     load_lifecycle_pilot_cohort,

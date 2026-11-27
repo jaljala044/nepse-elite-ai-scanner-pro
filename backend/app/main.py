@@ -945,3 +945,26 @@ def research_integrated(request: IntegratedResearchRequest):
         return run_integrated_research(**request.model_dump())
     except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .portfolio_dashboard_review import portfolio_dashboard_review
+
+class PortfolioDashboardRequest(BaseModel):
+    holding: dict
+    quote: dict
+    snapshot: dict
+    limits: dict
+    distribution: dict
+    market: dict
+    sector: dict
+    assessment_time: str
+    reduction_fraction: float
+    cost_assumptions: dict | None = None
+    trailing_inputs: dict | None = None
+
+@app.post("/v1/research/portfolio/dashboard")
+def research_portfolio_dashboard(request: PortfolioDashboardRequest):
+    try:
+        return portfolio_dashboard_review(**request.model_dump())
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

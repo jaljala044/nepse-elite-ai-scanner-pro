@@ -12,20 +12,20 @@ class TimeframeTests(unittest.TestCase):
     def test_unverified_rows_are_blocked(self):
         self.assertEqual(evaluate_timeframes(fixture())["status"],"unavailable")
     def test_missing_calendar_blocks_weekly(self):
-        result=evaluate_timeframes(fixture(),eligible=True)
-        self.assertEqual(result["weekly_completed_bars"],0)
+        result=evaluate_timeframes(fixture(),eligible=True,symbol="TEST")
+        self.assertEqual(result["status"],"unavailable")
         self.assertIsNone(result["score"])
     def test_current_week_excluded(self):
         rows=fixture()
-        result=evaluate_timeframes(rows,eligible=True,verified_sessions=[r["date"] for r in rows])
+        result=evaluate_timeframes(rows,eligible=True,symbol="TEST",verified_sessions=[r["date"] for r in rows])
         self.assertEqual(result["weekly_completed_bars"],5)
         self.assertEqual(result["t_plus_2"]["action"],"NO TRADE")
     def test_missing_week_resets_history(self):
         rows=fixture()
         observed=rows[:10]+rows[15:]
-        result=evaluate_timeframes(observed,eligible=True,verified_sessions=[r["date"] for r in rows])
-        self.assertEqual(result["weekly_completed_bars"],2)
+        result=evaluate_timeframes(observed,eligible=True,symbol="TEST",verified_sessions=[r["date"] for r in rows])
+        self.assertEqual(result["status"],"unavailable")
     def test_incomplete_week_resets_history(self):
         rows=fixture()
-        result=evaluate_timeframes(rows[:19]+rows[20:],eligible=True,verified_sessions=[r["date"] for r in rows])
-        self.assertEqual(result["weekly_completed_bars"],1)
+        result=evaluate_timeframes(rows[:19]+rows[20:],eligible=True,symbol="TEST",verified_sessions=[r["date"] for r in rows])
+        self.assertEqual(result["status"],"unavailable")

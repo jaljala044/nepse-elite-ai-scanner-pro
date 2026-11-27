@@ -6,6 +6,7 @@ import re
 from types import MappingProxyType
 
 from .scanner import quality_errors
+from .historical_quarantine import window_errors
 from .point_in_time import eligible_as_of
 
 APPROVED_SOURCES = {"sharehub", "chukul", "sharesansar", "nepsealpha", "nepse"}
@@ -19,16 +20,14 @@ def _nonblank(value):
     return isinstance(value, str) and bool(value.strip())
 
 
-def assess(symbol, rows, decision_time, reviewed):
+def assess(symbol, rows, decision_time, reviewed, *, verified_sessions=None):
     """Fail closed unless every OHLCV row has complete, matching evidence.
 
     This is the runtime gate, so it deliberately repeats identity, lifecycle,
     session, source, corporate-action and price-basis requirements rather than
     relying on a manifest loader having been the only caller.
     """
-    errors = quality_errors(rows)
-    if not rows:
-        errors.append("no_rows")
+    errors = window_errors(symbol, rows, verified_sessions, require_calendar=len(rows)>1)
     if errors:
         return errors
     for row in rows:

@@ -1,0 +1,30 @@
+name: P443 alternative floorsheet comparison
+on:
+  push:
+    branches: [p443-runtime-quarantine]
+    paths:
+      - '.github/workflows/p443-alternative-floorsheets.yml'
+      - 'backend/compare_p443_alternative_floorsheets.py'
+      - 'backend/tests/test_compare_p443_alternative_floorsheets.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Comparison regression tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p test_compare_p443_alternative_floorsheets.py
+      - name: Compare pinned archives
+        run: python backend/compare_p443_alternative_floorsheets.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p443-alternative-comparison
+          path: recovery-output/alternative-comparison.json
+          if-no-files-found: error

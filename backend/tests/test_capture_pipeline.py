@@ -47,10 +47,13 @@ class CapturePipelineIntegrationTests(unittest.TestCase):
             self.assertEqual(result["normalized_record_count"], 3)
             features = result["feature_snapshot"]
             self.assertEqual(features["included_input_count"], 3)
-            self.assertEqual(features["market_breadth"]["advancing"], 1)
-            self.assertEqual(features["market_breadth"]["declining"], 1)
+            self.assertEqual(features["market_breadth"]["advancing"], 0)
+            self.assertEqual(features["market_breadth"]["declining"], 0)
             self.assertEqual(features["market_breadth"]["eligible_symbols"], 3)
-            self.assertEqual(features["broker_participation"]["unmapped_or_unverified_rows"], 1)
+            self.assertEqual(features["broker_participation"]["unmapped_or_unverified_rows"], 0)
+            self.assertEqual(features["broker_participation"]["verified_broker_rows"], 0)
+            self.assertEqual(features["input_contracts"]["broker_floorsheet"]["excluded_rows"], 1)
+            self.assertEqual(features["broker_participation"]["status"], "insufficient_evidence")
             self.assertTrue(features["point_in_time_eligible"])
 
     def test_receipt_after_decision_time_is_excluded(self):

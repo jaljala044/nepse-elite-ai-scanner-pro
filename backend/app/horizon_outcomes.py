@@ -22,7 +22,7 @@ def evaluate_outcomes(symbol, rows, observation, *, verified_sessions=None,
     if decision not in sessions or decision not in by_day:
         return dict(result,status="decision_session_unverified")
     prefix = [by_day[d] for d in sorted(by_day) if d<=decision]
-    if assess(symbol,prefix,datetime.combine(decision,time.max,ZoneInfo("Asia/Kathmandu")).isoformat(),reviewed):
+    if assess(symbol,prefix,datetime.combine(decision,time.max,ZoneInfo("Asia/Kathmandu")).isoformat(),reviewed,verified_sessions=verified_sessions):
         return dict(result,status="decision_evidence_unverified")
     forward = [d for d in sessions if decision<d<=end]
     cutoff = datetime.combine(end,time.max,ZoneInfo("Asia/Kathmandu")).isoformat()
@@ -37,7 +37,7 @@ def evaluate_outcomes(symbol, rows, observation, *, verified_sessions=None,
                 required=forward[:n]
                 if any(d not in by_day for d in required):
                     item["status"]="missing_session"
-                elif assess(symbol,[by_day[d] for d in required],cutoff,reviewed):
+                elif assess(symbol,[by_day[d] for d in required],cutoff,reviewed,verified_sessions=verified_sessions):
                     item["status"]="outcome_evidence_unverified"
                 else:
                     item.update(status="observed",date=required[-1].isoformat(),

@@ -1,0 +1,151 @@
+{
+  "workflow_run": 46006318678,
+  "workflow_job": 140530249316,
+  "records": [
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-24",
+      "timestamp_rows": 52,
+      "errors": 0,
+      "unique_contracts": true,
+      "contract_order_inversions": 0,
+      "first_time": "11:17:35",
+      "last_time": "14:57:24",
+      "timestamp_open_candidate": null,
+      "timestamp_close_candidate": null,
+      "first_price_ambiguous": true,
+      "last_price_ambiguous": true,
+      "first_boundary_trades": [
+        {
+          "contract": "2026042404001156",
+          "price": "445.00"
+        },
+        {
+          "contract": "2026042404001157",
+          "price": "445.00"
+        },
+        {
+          "contract": "2026042404001158",
+          "price": "442.50"
+        },
+        {
+          "contract": "2026042404001159",
+          "price": "441.10"
+        },
+        {
+          "contract": "2026042404001160",
+          "price": "441.00"
+        },
+        {
+          "contract": "2026042404001161",
+          "price": "440.50"
+        }
+      ],
+      "last_boundary_trades": [
+        {
+          "contract": "2026042404012885",
+          "price": "445.20"
+        },
+        {
+          "contract": "2026042404012886",
+          "price": "445.10"
+        }
+      ],
+      "execution_order_authenticated": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "API",
+      "date": "2026-04-27",
+      "timestamp_rows": 543,
+      "errors": 0,
+      "unique_contracts": true,
+      "contract_order_inversions": 0,
+      "first_time": "11:01:01",
+      "last_time": "14:59:59",
+      "timestamp_open_candidate": "345.00",
+      "timestamp_close_candidate": null,
+      "first_price_ambiguous": false,
+      "last_price_ambiguous": true,
+      "first_boundary_trades": [
+        {
+          "contract": "2026042704000057",
+          "price": "345.00"
+        }
+      ],
+      "last_boundary_trades": [
+        {
+          "contract": "2026042704012454",
+          "price": "340.90"
+        },
+        {
+          "contract": "2026042704012455",
+          "price": "341.00"
+        }
+      ],
+      "execution_order_authenticated": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29",
+      "timestamp_rows": 58,
+      "errors": 0,
+      "unique_contracts": true,
+      "contract_order_inversions": 0,
+      "first_time": "11:11:49",
+      "last_time": "14:59:42",
+      "timestamp_open_candidate": "610.00",
+      "timestamp_close_candidate": null,
+      "first_price_ambiguous": false,
+      "last_price_ambiguous": true,
+      "first_boundary_trades": [
+        {
+          "contract": "2026042905000407",
+          "price": "610.00"
+        }
+      ],
+      "last_boundary_trades": [
+        {
+          "contract": "2026042905014107",
+          "price": "600.00"
+        },
+        {
+          "contract": "2026042905014108",
+          "price": "603.00"
+        },
+        {
+          "contract": "2026042905014109",
+          "price": "605.00"
+        },
+        {
+          "contract": "2026042905014110",
+          "price": "605.00"
+        },
+        {
+          "contract": "2026042905014111",
+          "price": "605.00"
+        },
+        {
+          "contract": "2026042905014112",
+          "price": "605.00"
+        },
+        {
+          "contract": "2026042905014113",
+          "price": "609.00"
+        },
+        {
+          "contract": "2026042905014114",
+          "price": "610.00"
+        },
+        {
+          "contract": "2026042905014115",
+          "price": "610.00"
+        }
+      ],
+      "execution_order_authenticated": false,
+      "admission_allowed": false
+    }
+  ],
+  "approved_corrections": []
+}

@@ -50,7 +50,8 @@ class ReadinessCliTests(unittest.TestCase):
                 corporate_action_reviewed=True, holdout_protocol_id="walk-forward-v1",
                 historical_coverage=0.99, evidence_snapshot_id="snapshot-1")
             result = evaluate_from_paths(args)
-            self.assertTrue(result["training_readiness"]["training_ready"])
+            self.assertFalse(result["training_readiness"]["training_ready"])
+            self.assertIn("historical_quarantine_clearance_verified", result["training_readiness"]["blockers"])
             self.assertFalse(result["training_readiness"]["model_performance_claimed"])
 
     def test_malformed_json_is_not_silently_ignored(self):

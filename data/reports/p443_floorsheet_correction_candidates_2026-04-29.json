@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "source_repository": "jaljala044/nepse-smc-data",
+  "source_path": "reference/P4_10_floorsheet_open_review_2026-04-29.csv",
+  "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+  "register_blob": "24c67bff0a12bf388cb94a2a0dd9e3ce1db99e9b",
+  "records": [
+    {
+      "symbol": "BGWT",
+      "date": "2026-04-29",
+      "original": {
+        "open": "740.0",
+        "high": "731.0",
+        "low": "718.0",
+        "close": "730.0",
+        "volume": "1573.0"
+      },
+      "candidate": {
+        "open": "720",
+        "high": "731",
+        "low": "700.4",
+        "close": "730",
+        "volume": "1573"
+      },
+      "contracts": "32",
+      "published_contracts": "32",
+      "first_contract": "2026042905001005",
+      "last_contract": "2026042905014105",
+      "source_review_status": "MISMATCH",
+      "high_low_close_volume_match": false,
+      "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+      "admission_allowed": false,
+      "reason": "contract-sorted candidate only; raw tape completeness and execution ordering not independently verified"
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-04-29",
+      "original": {
+        "open": "685.5",
+        "high": "685.0",
+        "low": "676.1",
+        "close": "679.2",
+        "volume": "74867.0"
+      },
+      "candidate": {
+        "open": "685",
+        "high": "685",
+        "low": "659.4",
+        "close": "679.2",
+        "volume": "74867"
+      },
+      "contracts": "900",
+      "published_contracts": "900",
+      "first_contract": "2026042905000025",
+      "last_contract": "2026042905014268",
+      "source_review_status": "MISMATCH",
+      "high_low_close_volume_match": false,
+      "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+      "admission_allowed": false,
+      "reason": "contract-sorted candidate only; raw tape completeness and execution ordering not independently verified"
+    },
+    {
+      "symbol": "RADHI",
+      "date": "2026-04-29",
+      "original": {
+        "open": "780.0",
+        "high": "775.0",
+        "low": "755.0",
+        "close": "764.8",
+        "volume": "57510.0"
+      },
+      "candidate": {
+        "open": "775",
+        "high": "775",
+        "low": "749.9",
+        "close": "764.8",
+        "volume": "57510"
+      },
+      "contracts": "276",
+      "published_contracts": "276",
+      "first_contract": "2026042904000225",
+      "last_contract": "2026042904013930",
+      "source_review_status": "MISMATCH",
+      "high_low_close_volume_match": false,
+      "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+      "admission_allowed": false,
+      "reason": "contract-sorted candidate only; raw tape completeness and execution ordering not independently verified"
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29",
+      "original": {
+        "open": "615.0",
+        "high": "610.0",
+        "low": "587.0",
+        "close": "610.0",
+        "volume": "2840.0"
+      },
+      "candidate": {
+        "open": "610",
+        "high": "610",
+        "low": "587",
+        "close": "610",
+        "volume": "2840"
+      },
+      "contracts": "58",
+      "published_contracts": "58",
+      "first_contract": "2026042905000407",
+      "last_contract": "2026042905014115",
+      "source_review_status": "MATCH_TOTALS_CONTRACT_ORDER_REVIEW",
+      "high_low_close_volume_match": true,
+      "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+      "admission_allowed": false,
+      "reason": "contract-sorted candidate only; raw tape completeness and execution ordering not independently verified"
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-29",
+      "original": {
+        "open": "446.0",
+        "high": "444.9",
+        "low": "438.0",
+        "close": "438.0",
+        "volume": "9360.0"
+      },
+      "candidate": {
+        "open": "442.6",
+        "high": "444.9",
+        "low": "424.9",
+        "close": "438",
+        "volume": "9360"
+      },
+      "contracts": "102",
+      "published_contracts": "102",
+      "first_contract": "2026042904000760",
+      "last_contract": "2026042904013274",
+      "source_review_status": "MISMATCH",
+      "high_low_close_volume_match": false,
+      "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+      "admission_allowed": false,
+      "reason": "contract-sorted candidate only; raw tape completeness and execution ordering not independently verified"
+    },
+    {
+      "symbol": "UNHPL",
+      "date": "2026-04-29",
+      "original": {
+        "open": "487.9",
+        "high": "487.0",
+        "low": "475.0",
+        "close": "475.4",
+        "volume": "46481.0"
+      },
+      "candidate": {
+        "open": "480.2",
+        "high": "487",
+        "low": "475",
+        "close": "475.4",
+        "volume": "46481"
+      },
+      "contracts": "150",
+      "published_contracts": "150",
+      "first_contract": "2026042904000127",
+      "last_contract": "2026042904014035",
+      "source_review_status": "MATCH_TOTALS_CONTRACT_ORDER_REVIEW",
+      "high_low_close_volume_match": true,
+      "source_blob": "68f351df096e0e70983af11b20b493aa0927df1a",
+      "admission_allowed": false,
+      "reason": "contract-sorted candidate only; raw tape completeness and execution ordering not independently verified"
+    }
+  ],
+  "approved_corrections": 0
+}

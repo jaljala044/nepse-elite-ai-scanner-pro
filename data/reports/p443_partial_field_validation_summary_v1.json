@@ -1,0 +1,16 @@
+{
+  "workflow_run": 46005737106,
+  "workflow_job": 140528299376,
+  "artifact_url": "https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/46005737106/artifacts/15201561072",
+  "records": 1329,
+  "records_with_candidates": 11,
+  "candidate_fields": {
+    "open": 10,
+    "high": 11,
+    "low": 11,
+    "volume": 11,
+    "close": 8
+  },
+  "canonical_admissions": 0,
+  "unique_keys": 1329
+}

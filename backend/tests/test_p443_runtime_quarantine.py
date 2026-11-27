@@ -1,0 +1,124 @@
+import unittest
+from datetime import date,timedelta
+from app.historical_quarantine import QUARANTINE,window_errors
+from app.scanner_eligibility import assess
+from app.structure_timeframes import evaluate_timeframes
+from app.historical_replay import replay
+
+def bar(day):
+    return dict(date=str(day),open=100,high=102,low=99,close=101,volume=100)
+
+class QuarantineTests(unittest.TestCase):
+    def test_all_keys(self):
+        self.assertEqual(len(QUARANTINE),1329)
+        for symbol,day in sorted(QUARANTINE):
+            with self.subTest(symbol=symbol,day=day):
+                self.assertIn("historical_quarantine:"+day,window_errors(symbol,[bar(day)],[day]))
+                self.assertIn("historical_quarantine:"+day,assess(symbol,[bar(day)],day+"T23:59:59+05:45",{}))
+                self.assertEqual(evaluate_timeframes([bar(day)],eligible=True,verified_sessions=[day],symbol=symbol)["status"],"unavailable")
+    def test_omitted_key(self):
+        symbol,day=next(iter(sorted(QUARANTINE)))
+        d=date.fromisoformat(day)
+        before=str(d-timedelta(days=1)); after=str(d+timedelta(days=1))
+        self.assertIn("historical_quarantine:"+day,window_errors(symbol.lower(),[bar(before),bar(after)],[before,after]))
+    def test_continuity(self):
+        days=["2025-01-01","2025-01-02","2025-01-03"]
+        rows=[bar(days[0]),bar(days[2])]
+        self.assertIn("session_continuity_failed",window_errors("TEST",rows,days))
+        self.assertIn("verified_session_calendar_required",window_errors("TEST",rows))
+        self.assertIn("invalid_session_calendar",window_errors("TEST",rows,days[::-1]))
+        self.assertTrue(window_errors("TEST",[rows[0],rows[0]],days))
+        self.assertEqual(window_errors("TEST",[bar(d) for d in days],days),[])
+    def test_replay(self):
+        symbol,day=next(iter(sorted(QUARANTINE)))
+        r=replay(symbol,[bar(day)],reviewed={},verified_sessions=[day])
+        self.assertEqual(r["observations"],[])
+        self.assertIn("historical_quarantine:"+day,r["excluded"][0]["reasons"])
+    def test_broker_detector_blocks_every_quarantine_key(self):
+        from app.broker_pattern_detector import detect_broker_patterns
+        for symbol, day in sorted(QUARANTINE):
+            d = date.fromisoformat(day)
+            sessions = [str(d + timedelta(days=i)) for i in (-2,-1,1,2,3)]
+            with self.subTest(symbol=symbol,day=day):
+                result = detect_broker_patterns(symbol, [], [], [],
+                    expected_sessions=sessions, complete_broker_sessions=sessions,
+                    decision_at=sessions[-1]+"T23:59:59+05:45")
+                self.assertEqual(result["status"],"INSUFFICIENT_EVIDENCE")
+                self.assertIn("historical_quarantine:"+day,result["missing_features"])
+                self.assertFalse(result["production_eligible"])
+
+    def test_broker_api_rejects_client_calendar_mismatch(self):
+        from unittest.mock import patch
+        from fastapi import HTTPException
+        from app.main import BrokerPatternRequest, broker_patterns
+        days=["2025-01-01","2025-01-02","2025-01-03","2025-01-04","2025-01-05"]
+        request=BrokerPatternRequest(symbol="TEST",broker_rows=[],price_rows=[],
+            market_context=[],expected_sessions=days,complete_broker_sessions=days,
+            decision_at="2025-01-06T23:59:59+05:45")
+        with patch("app.main.trusted_sessions",return_value=days+["2025-01-06"]), \
+             patch("app.main.detect_broker_patterns") as detector:
+            with self.assertRaises(HTTPException) as exc:
+                broker_patterns(request)
+            self.assertEqual(exc.exception.status_code,422)
+            detector.assert_not_called()
+        with patch("app.main.trusted_sessions",return_value=None):
+            with self.assertRaises(HTTPException):
+                broker_patterns(request)
+        with patch("app.main.trusted_sessions",return_value=days), \
+             patch("app.main.detect_broker_patterns",return_value={"status":"test"}) as detector:
+            self.assertEqual(broker_patterns(request),{"status":"test"})
+            self.assertEqual(detector.call_args.kwargs["expected_sessions"],days)
+
+    def test_broker_api_cannot_bypass_quarantined_session_in_server_calendar(self):
+        from unittest.mock import patch
+        from app.main import BrokerPatternRequest, broker_patterns
+        symbol, quarantined_day = next(iter(sorted(QUARANTINE)))
+        start = date.fromisoformat(quarantined_day) - timedelta(days=2)
+        sessions = [str(start + timedelta(days=i)) for i in range(5)]
+        request = BrokerPatternRequest(
+            symbol=symbol, broker_rows=[], price_rows=[], market_context=[],
+            expected_sessions=sessions, complete_broker_sessions=sessions,
+            decision_at=sessions[-1] + "T23:59:59+05:45",
+        )
+        # The server-owned calendar is authoritative. If it includes the
+        # quarantined session, the API must pass that exact calendar to the
+        # detector, which must fail closed rather than trusting client rows.
+        with patch("app.main.trusted_sessions", return_value=sessions):
+            result = broker_patterns(request)
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertIn("historical_quarantine:" + quarantined_day,
+                      result["missing_features"])
+        self.assertFalse(result["production_eligible"])
+
+
+    def test_generated_partial_research_cannot_enter_runtime(self):
+        import json
+        from pathlib import Path
+        from app.partial_field_recovery import build_partial_view
+        from app.training_dataset_quarantine import audit_training_windows
+        root=Path(__file__).resolve().parents[2]
+        paths=["data/reference/p443_equity_quarantine.json",
+               "data/reports/p443_reconstructed_candle_comparison_v1.json",
+               "data/reports/p443_timestamp_chronology_comparison_v1.json"]
+        inputs=[json.loads((root/p).read_text())["records"] for p in paths]
+        rows=build_partial_view(*inputs)["records"]
+        self.assertEqual({(r["symbol"],r["date"]) for r in rows},QUARANTINE)
+        self.assertEqual(len(rows),1329)
+        for r in rows:
+            symbol,day=r["symbol"],r["date"]
+            self.assertFalse(r["scanner_eligible"])
+            self.assertFalse(r["admission_allowed"])
+            self.assertTrue(all(v is None for v in r["canonical_fields"].values()))
+            # Even a consumer that fills every missing field with a valid
+            # synthetic value must not bypass symbol/date quarantine.
+            flattened=bar(day)
+            flattened.update({k:float(v) for k,v in r["research_candidates"].items() if v is not None})
+            if not window_errors(symbol,[flattened],[day]):
+                self.fail("research row bypassed quarantine: "+symbol+":"+day)
+            self.assertTrue(assess(symbol,[flattened],day+"T23:59:59+05:45",{}))
+            training=audit_training_windows([{"record_id":symbol+day,"symbol":symbol,
+                "history_start":day,"observation_date":day,"outcome_end":day}])
+            self.assertEqual(training["status"],"blocked")
+            self.assertFalse(training["model_training_allowed"])
+
+if __name__=="__main__":unittest.main()

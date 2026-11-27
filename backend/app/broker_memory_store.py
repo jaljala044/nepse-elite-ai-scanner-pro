@@ -27,6 +27,32 @@ def _sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _quarantine_check(snapshot: dict) -> None:
+    """Conservative exclusion only: a current crosswalk cannot prove historical identity."""
+    import csv
+    from .historical_quarantine import QUARANTINE
+    path = Path(__file__).resolve().parents[2] / "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
+    with path.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    identity = snapshot["security_id"].strip()
+    symbols = {row["symbol"].strip().upper() for row in rows
+               if identity == row["security_id"] or identity.upper() == row["symbol"]}
+    if len(symbols) != 1:
+        raise ValueError("quarantine_identity_unresolved")
+    # Missing bounds must never be interpreted as a clean window.
+    try:
+        first = date.fromisoformat(snapshot["first_session"])
+        last = date.fromisoformat(snapshot["last_session"])
+        cutoff = date.fromisoformat(snapshot["as_of_date"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("quarantine_window_unverified") from exc
+    if not first <= last <= cutoff:
+        raise ValueError("quarantine_window_invalid")
+    if any(symbol in symbols and first.isoformat() <= day <= last.isoformat()
+           for symbol, day in QUARANTINE):
+        raise ValueError("historical_quarantine")
+
+
 class BrokerMemoryStore:
     """Append-only snapshot store; caller owns the database path."""
 
@@ -102,6 +128,8 @@ class BrokerMemoryStore:
         for field in ("source_ids", "evidence_ids", "payload_hashes"):
             if not isinstance(snapshot[field], list) or not snapshot[field]:
                 raise ValueError(f"{field} must be a non-empty list")
+
+        _quarantine_check(snapshot)
 
     def append(self, snapshot: dict, *, idempotency_key: str,
                methodology_version: str = "p4.31-v1",
@@ -254,11 +282,18 @@ class BrokerMemoryStore:
             """, [security_id, broker_entity_id, cutoff, available_by]).fetchall()
         finally:
             con.close()
+        eligible = []
+        for row in rows:
+            try:
+                self._validate_snapshot(json.loads(row[0]))
+            except (ValueError, TypeError, KeyError):
+                continue  # Preserve immutable bytes, but withhold unsafe snapshots.
+            eligible.append(row)
         return [{
             "snapshot": json.loads(row[0]), "payload_sha256": row[1],
             "methodology_version": row[2], "available_at": row[3].isoformat(),
             "created_at": row[4].isoformat(),
-        } for row in rows]
+        } for row in eligible]
 
     def count(self) -> int:
         con = self._connect()

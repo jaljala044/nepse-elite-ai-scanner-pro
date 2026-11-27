@@ -110,6 +110,12 @@ def detect_broker_patterns(
                              ["five_session_window"])
 
     window = sessions[-5:]
+    from .historical_quarantine import QUARANTINE
+    blocked = sorted(day for ticker, day in QUARANTINE
+                     if ticker == symbol and window[0] <= day <= window[-1])
+    if blocked:
+        return _insufficient(symbol, decision_at, window[-1], methodology_version,
+                             ["historical_quarantine:" + day for day in blocked])
     complete = set(str(x) for x in complete_broker_sessions)
     if not set(window) <= complete:
         return _insufficient(symbol, decision_at, window[-1], methodology_version,

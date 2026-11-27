@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "source": "https://huggingface.co/datasets/urekmazino69/Nepse-floorsheet-and-indices",
+  "source_tree_blob": "f9dc3dd6ae73919bdd2217664bfbed7bcdfd38e5",
+  "quarantine_blob": "ecccab0b05c12d3a35d2cc4f35aee42d5bdfb3b5",
+  "records": [
+    {
+      "symbol": "API",
+      "date": "2026-04-27",
+      "path": "floorsheet/2026-04-27.csv.gz",
+      "sha256": "71b33bcc3ace130dd209c3f178566f577e1d510864a2cd6c01591e2b9f3b9528",
+      "size": 1251238,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "MERO",
+      "date": "2026-04-24",
+      "path": "floorsheet/2026-04-24.csv.gz",
+      "sha256": "e2f7c0bddd9dc9963696aa3b31d655e0cdbf9f3f566c00769312a6f317cc9113",
+      "size": 1172108,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "SPDL",
+      "date": "2026-04-28",
+      "path": "floorsheet/2026-04-28.csv.gz",
+      "sha256": "2794b8b7da3a711679211830921a223ae4b2dd8d3d1393e86a2337863d8f434f",
+      "size": 2723447,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "RADHI",
+      "date": "2026-04-29",
+      "path": "floorsheet/2026-04-29.csv.gz",
+      "sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "size": 1518000,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-27",
+      "path": "floorsheet/2026-04-27.csv.gz",
+      "sha256": "71b33bcc3ace130dd209c3f178566f577e1d510864a2cd6c01591e2b9f3b9528",
+      "size": 1251238,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29",
+      "path": "floorsheet/2026-04-29.csv.gz",
+      "sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "size": 1518000,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-24",
+      "path": "floorsheet/2026-04-24.csv.gz",
+      "sha256": "e2f7c0bddd9dc9963696aa3b31d655e0cdbf9f3f566c00769312a6f317cc9113",
+      "size": 1172108,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-29",
+      "path": "floorsheet/2026-04-29.csv.gz",
+      "sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "size": 1518000,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "UNHPL",
+      "date": "2026-04-29",
+      "path": "floorsheet/2026-04-29.csv.gz",
+      "sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "size": 1518000,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2026-04-29",
+      "path": "floorsheet/2026-04-29.csv.gz",
+      "sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "size": 1518000,
+      "already_reconstructed": true
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-04-29",
+      "path": "floorsheet/2026-04-29.csv.gz",
+      "sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "size": 1518000,
+      "already_reconstructed": true
+    }
+  ],
+  "admission_allowed": false,
+  "limitations": "inventory only; contract identity, source rights, completeness and chronology unverified"
+}

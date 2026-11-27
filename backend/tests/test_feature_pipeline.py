@@ -14,8 +14,9 @@ class FeaturePipelineTests(unittest.TestCase):
         ]
         result = build_feature_snapshot(rows, "2026-11-24T12:00:00Z", ["AAA","BBB"])
         self.assertEqual(result["excluded_input_count"], 1)
-        self.assertEqual(result["security_features"]["AAA"]["close"], 11)
-        self.assertEqual(result["market_breadth"]["observed_symbols"], 1)
+        self.assertEqual(result["security_features"]["AAA"]["status"], "input_contract_unverified")
+        self.assertNotIn("close", result["security_features"]["AAA"])
+        self.assertEqual(result["market_breadth"]["observed_symbols"], 0)
         self.assertTrue(result["point_in_time_eligible"])
         self.assertEqual(result["interpretation"], "descriptive_only_not_a_trading_signal")
 

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "inventory_blob": "5598b98e4b14beeae9af6294cccf886fa75ac57b",
+  "files": [
+    {
+      "date": "2026-04-24",
+      "source_repository": "socrateai-official/nepse-open-data",
+      "source_commit": "70324524df83eaa7c2964441ad4026d6ab00cc7e",
+      "path": "floorsheet/floorsheet_2026-04-24.csv",
+      "git_blob_sha": "942888549b4ae2c1a23945d6e36e28ee8edb3f48",
+      "size_bytes": 4406037,
+      "symbols": [
+        "MERO",
+        "UAIL"
+      ]
+    },
+    {
+      "date": "2026-04-27",
+      "source_repository": "socrateai-official/nepse-open-data",
+      "source_commit": "70324524df83eaa7c2964441ad4026d6ab00cc7e",
+      "path": "floorsheet/floorsheet_2026-04-27.csv",
+      "git_blob_sha": "fafcefb281bfa0cafa14e9982e5e40e7f0d939c3",
+      "size_bytes": 4734508,
+      "symbols": [
+        "API",
+        "RAWA"
+      ]
+    },
+    {
+      "date": "2026-04-28",
+      "source_repository": "socrateai-official/nepse-open-data",
+      "source_commit": "70324524df83eaa7c2964441ad4026d6ab00cc7e",
+      "path": "floorsheet/floorsheet_2026-04-28.csv",
+      "git_blob_sha": "00d71215a765fad19e4bea3e5d8f8ec89e0522bf",
+      "size_bytes": 8878878,
+      "symbols": [
+        "SPDL"
+      ]
+    },
+    {
+      "date": "2026-04-29",
+      "source_repository": "socrateai-official/nepse-open-data",
+      "source_commit": "70324524df83eaa7c2964441ad4026d6ab00cc7e",
+      "path": "floorsheet/floorsheet_2026-04-29.csv",
+      "git_blob_sha": "a795fac9aec031a107256f276a4136d1a83749ac",
+      "size_bytes": 6032321,
+      "symbols": [
+        "RADHI",
+        "RAWA",
+        "UAIL",
+        "UNHPL",
+        "BGWT",
+        "HRL"
+      ]
+    }
+  ],
+  "admission_allowed": false
+}

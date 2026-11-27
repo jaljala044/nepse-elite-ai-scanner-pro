@@ -27,8 +27,8 @@ class ReplayTests(unittest.TestCase):
     def test_prefix_invariance(self):
         rows,reviewed=fixture()
         day=rows[21]["date"]
-        full=replay("TEST",rows,reviewed=reviewed,decision_dates=[day])
-        short=replay("TEST",rows[:22],reviewed=reviewed,decision_dates=[day])
+        full=replay("TEST",rows,reviewed=reviewed,decision_dates=[day],verified_sessions=[str(r["date"]) for r in rows])
+        short=replay("TEST",rows[:22],reviewed=reviewed,decision_dates=[day],verified_sessions=[str(r["date"]) for r in rows])
         self.assertEqual(full,short)
         self.assertEqual(full["observations"][0]["input_count"],22)
         self.assertEqual(full["observations"][0]["action"],"NO TRADE")
@@ -36,7 +36,7 @@ class ReplayTests(unittest.TestCase):
         rows,reviewed=fixture()
         day=rows[3]["date"]
         reviewed[("TEST",str(day))]["available_at"]="2025-01-20T11:00:00Z"
-        result=replay("TEST",rows,reviewed=reviewed,decision_dates=[day])
+        result=replay("TEST",rows,reviewed=reviewed,decision_dates=[day],verified_sessions=[str(r["date"]) for r in rows])
         self.assertFalse(result["observations"])
         self.assertTrue(any("availability_unverified_or_future" in reason for reason in result["excluded"][0]["reasons"]))
     def test_invalid_bar_rejected(self):

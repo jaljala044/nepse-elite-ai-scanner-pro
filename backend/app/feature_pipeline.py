@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
+from app.historical_quarantine import QUARANTINE, window_errors
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
@@ -123,22 +124,47 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         if sector_membership_contract_ok:
             sector_membership_contract_reason = None
 
+    # Entire affected symbol windows are excluded; no gap bridging.
+    for symbol, contract in price_contract_by_symbol.items():
+        group = [dict(r, date=r.get("session_date")) for r in raw_prices
+                 if str(r.get("symbol", "")).strip().upper() == symbol]
+        issues = window_errors(symbol, group, normalized_calendar if valid_calendar else None)
+        if issues or contract["exclusions"]:
+            failure = {"symbol": symbol, "reason": "whole_window_quarantined",
+                       "details": issues, "session_date": None}
+            price_contract_failures.append(failure)
+            contract["exclusions"].append(failure)
+            contract["admitted_rows"] = 0
+    prices = [r for r in prices if price_contract_by_symbol[
+        str(r.get("symbol", "")).strip().upper()]["admitted_rows"] > 0]
+
+    for symbol, contract in broker_contract_by_symbol.items():
+        days = [str(r.get("trade_date", "")) for r in raw_broker_rows
+                if str(r.get("symbol", "")).strip().upper() == symbol]
+        blocked = sorted(d for ticker, d in QUARANTINE
+                         if ticker == symbol and days and min(days) <= d <= max(days))
+        if not symbol or blocked or contract["exclusions"]:
+            failure = {"symbol": symbol, "reason": "whole_broker_window_unverified",
+                       "details": ["historical_quarantine:" + d for d in blocked]}
+            broker_contract_failures.append(failure)
+            contract["exclusions"].append(failure)
+            contract["admitted_rows"] = 0
+    broker_rows = [r for r in broker_rows if broker_contract_by_symbol[
+        str(r.get("symbol", "")).strip().upper()]["admitted_rows"] > 0]
+
     for contract in price_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
     for contract in broker_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
 
-    # Keep raw point-in-time prices for descriptive diagnostics; the contract
-    # gate below independently controls whether each symbol's component score is admitted.
-    prices = raw_prices
 
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
-        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(raw_prices) - len(price_contract_failures),
-                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and not price_contract_failures,
+        "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(prices),
+                  "excluded_rows": len(raw_prices) - len(prices), "score_eligible": bool(raw_prices) and not price_contract_failures,
                   "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
-                  "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
+                  "excluded_rows": len(raw_broker_rows) - len(broker_rows), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
                   "exclusions": broker_contract_failures, "symbols": broker_contract_by_symbol},
         "sector_membership": {"score_eligible": sector_membership_contract_ok,
                               "reason": sector_membership_contract_reason},
@@ -319,6 +345,25 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         )
         aggregate_scores[symbol]["decision_status"] = "research_only_fail_closed_stage2_preview"
 
+    # Preserve response keys for rejected symbols, but never compute their features.
+    for symbol, contract in price_contract_by_symbol.items():
+        if not symbol or contract["score_eligible"]:
+            continue
+        unavailable = {"status": "input_contract_unverified", "score": None}
+        for mapping in (security_features, trend_features, volume_features,
+                        wyckoff_features, smc_features_by_symbol):
+            mapping[symbol] = dict(unavailable)
+        bundle = {name: dict(unavailable) for name in
+                  ("wyckoff", "trend", "relative_strength", "broker", "volume",
+                   "liquidity", "sector", "smc")}
+        component_feature_bundles[symbol] = bundle
+        component_candidates[symbol] = {name: None for name in bundle}
+        aggregate_scores[symbol] = score_feature_bundle(
+            bundle, stage1_quality="UNKNOWN", structure_confirmed=False,
+            liquidity_ok=False, market_tradeable=False, reward_risk=None,
+            hard_blocks=["historical_input_contract_unverified"])
+        aggregate_scores[symbol]["decision_status"] = "research_only_fail_closed_stage2_preview"
+
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
@@ -340,7 +385,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         "component_feature_bundles": component_feature_bundles,
         "aggregate_scores": aggregate_scores,
         "relative_strength": relative_strength,
-        "broker_participation": broker_participation_summary(raw_broker_rows),
+        "broker_participation": broker_participation_summary(broker_rows),
         "broker_footprint": broker_footprint,
         "sector_strength": sector_features,
         "liquidity_tradability": liquidity_snapshot,

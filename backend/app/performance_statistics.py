@@ -1,7 +1,9 @@
 """Research statistics over completed hypothetical trades, not verified performance."""
 from math import isfinite
+from .historical_quarantine import QUARANTINE
+from datetime import date
 
-def summarize(trades, *, initial_capital):
+def summarize(trades, *, initial_capital, synthetic=False):
     if isinstance(initial_capital,bool) or not isinstance(initial_capital,(int,float)) or not isfinite(initial_capital) or initial_capital<=0:
         raise ValueError("positive finite initial capital required")
     values=[]
@@ -13,6 +15,17 @@ def summarize(trades, *, initial_capital):
         pnl=trade.get("net_pnl")
         if isinstance(pnl,bool) or not isinstance(pnl,(int,float)) or not isfinite(pnl):
             raise ValueError("invalid completed trade PnL")
+        if not synthetic:
+            symbol = str(trade.get("symbol") or "").strip().upper()
+            try:
+                start = date.fromisoformat(trade["history_start"]).isoformat()
+                end = date.fromisoformat(trade["history_end"]).isoformat()
+            except (KeyError, TypeError, ValueError):
+                excluded += 1
+                continue
+            if not symbol or start > end or any(t == symbol and start <= d <= end for t,d in QUARANTINE):
+                excluded += 1
+                continue
         values.append(pnl)
     wins=[v for v in values if v>0]
     losses=[v for v in values if v<0]
@@ -23,7 +36,7 @@ def summarize(trades, *, initial_capital):
         peak=max(peak,capital)
         drawdown=max(drawdown,100*(peak-capital)/peak)
     n=len(values)
-    return {"classification":"hypothetical_research_statistics","sample_size":n,
+    return {"classification":"hypothetical_research_statistics","synthetic_only":synthetic,"production_eligible":False,"sample_size":n,
             "excluded_count":excluded,"wins":len(wins),"losses":len(losses),
             "breakeven":n-len(wins)-len(losses),
             "win_rate_pct":100*len(wins)/n if n else None,

@@ -1,0 +1,55 @@
+name: NEPSE holiday closure-candidate ledger
+
+on:
+  pull_request:
+    paths:
+      - "backend/audit_nepse_holiday_api_archive.py"
+      - "backend/build_nepse_holiday_closure_candidate_ledger.py"
+      - "backend/tests/test_nepse_holiday_closure_candidate_ledger.py"
+      - "data/evidence/raw/nepse/holiday-api-authenticated/**"
+      - ".github/workflows/nepse-holiday-closure-candidate-ledger.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  closure-candidate-ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run full pinned holiday archive integrity audit
+        run: python backend/audit_nepse_holiday_api_archive.py
+      - name: Build review-only closure-candidate ledger
+        run: |
+          python backend/build_nepse_holiday_closure_candidate_ledger.py --require-years
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          report = json.loads(Path("data/reports/nepse-holiday-closure-candidates-2015-2026.json").read_text())
+          with Path("data/reports/nepse-holiday-closure-candidates-2015-2026.csv").open(newline="") as f:
+              rows = list(csv.DictReader(f))
+          assert report["capture_year_count"] == 12
+          assert report["closure_evidence_candidate_count"] == 499
+          assert report["unique_year_date_count"] == 498
+          assert report["duplicate_date_row_count"] == 1
+          assert len(rows) == 499
+          assert sum(r["holiday_date"] == "2020-04-13" for r in rows) == 2
+          assert all(r["disposition"] == "review_only_closure_evidence_candidate" for r in rows)
+          assert all(r["canonical_calendar_promotion_allowed"] == "False" for r in rows)
+          print("PASS: 12 captures, 499 preserved rows, one two-record date, zero promotion.")
+          PY
+      - name: Upload closure-candidate ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: nepse-holiday-closure-candidates-2015-2026
+          path: |
+            data/reports/nepse-holiday-closure-candidates-2015-2026.json
+            data/reports/nepse-holiday-closure-candidates-2015-2026.csv
+          if-no-files-found: error
+          retention-days: 90

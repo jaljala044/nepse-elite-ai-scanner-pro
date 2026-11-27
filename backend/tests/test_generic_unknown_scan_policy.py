@@ -58,6 +58,7 @@ class GenericUnknownScanPolicyTests(unittest.TestCase):
             stack.enter_context(patch.object(main, "DATA", {"ADBL": [row]}))
             stack.enter_context(patch.object(main, "REVIEWED_ROWS", reviewed))
             stack.enter_context(patch.object(main, "assess", return_value=[]))
+            stack.enter_context(patch.object(main, "trusted_sessions", return_value=["2025-01-01"]))
             stack.enter_context(patch.object(main, "analyze", return_value={"symbol": "ADBL", "status": "screened", "signals": [], "metrics": {}}))
             stack.enter_context(patch.object(main, "detect_structure", return_value={"status": "observed", "bias": "neutral", "events": []}))
             stack.enter_context(patch.object(main, "add_event_evidence"))

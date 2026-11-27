@@ -155,6 +155,29 @@ def unlisted_date_queue(rows: list[dict]) -> list[dict]:
                        "canonical_promotion_allowed": False})
     return sorted(result, key=lambda item: (-item["affected_pairs"], item["date"]))
 
+def schedule_review_queue(queue: list[dict]) -> tuple[list[dict], dict]:
+    """Apply the shared historical schedule as context, not closure evidence."""
+    import sys
+    backend = Path(__file__).resolve().parents[1] / "backend"
+    sys.path.insert(0, str(backend))
+    from app.session_calendar import schedule_candidate
+    reviewed, counts = [], {}
+    for item in queue:
+        if not item["valid_iso_date"]:
+            label, note, weekday = "malformed_date_review", "", None
+        else:
+            day = date.fromisoformat(item["date"])
+            expected_open, note = schedule_candidate(day)
+            weekday = day.strftime("%A")
+            label = "scheduled_open_evidence_required" if expected_open else "scheduled_non_session_evidence_required"
+        reviewed.append({**item, "weekday": weekday, "schedule_classification": label,
+                         "schedule_note": note, "independently_verified": False,
+                         "canonical_promotion_allowed": False})
+        bucket = counts.setdefault(label, {"dates": 0, "pair_date_incidences": 0})
+        bucket["dates"] += 1
+        bucket["pair_date_incidences"] += item["affected_pairs"]
+    return reviewed, counts
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--source", action="append", nargs=3, metavar=("REPO", "COMMIT", "ROOT"), required=True)
@@ -201,6 +224,9 @@ def main() -> int:
         summary["project_calendar_join"] = calendar_summary
         queue = unlisted_date_queue(all_rows)
         (args.out / "unlisted_date_evidence_queue.json").write_text(json.dumps(queue, indent=2) + "\n", encoding="utf-8")
+        reviewed, schedule_counts = schedule_review_queue(queue)
+        (args.out / "unlisted_date_schedule_review.json").write_text(json.dumps(reviewed, indent=2) + "\n", encoding="utf-8")
+        summary["unlisted_date_schedule_review"] = {"counts": schedule_counts, "independently_verified_dates": 0, "promotion_allowed": False}
         summary["unlisted_date_queue"] = {"distinct_date_labels": len(queue),
             "valid_iso_dates": sum(item["valid_iso_date"] for item in queue),
             "top_10": queue[:10], "promotion_allowed": False}

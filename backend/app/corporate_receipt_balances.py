@@ -71,6 +71,7 @@ class ReceiptBalanceLedger:
         uri=Path(source_path).resolve().as_uri()+"?mode=ro"
         with closing(sqlite3.connect(uri,uri=True)) as source, source:
             source.execute("BEGIN")
+            if not self._retired(source): raise ValueError("legacy_writer_not_retired")
             rows=source.execute("SELECT portfolio_id,action_id,payload_hash,payload FROM corporate_receipts").fetchall()
         imported=skipped=0
         with closing(sqlite3.connect(self.path,timeout=30)) as db, db:
@@ -102,10 +103,7 @@ class ReceiptBalanceLedger:
         uri=Path(source_path).resolve().as_uri()+"?mode=ro"
         with closing(sqlite3.connect(uri,uri=True)) as source, source:
             source.execute("BEGIN")
-            triggers=dict(source.execute("SELECT name,sql FROM sqlite_master WHERE type='trigger' AND tbl_name='corporate_receipts'"))
-            retired=all(" ".join(triggers.get("retired_receipts_"+op.lower(),"").lower().split())==
-                f"create trigger retired_receipts_{op.lower()} before {op.lower()} on corporate_receipts begin select raise(abort,'legacy_receipt_writer_retired'); end"
-                for op in ("INSERT","UPDATE","DELETE"))
+            retired=self._retired(source)
             rows=source.execute("SELECT portfolio_id,action_id,payload_hash,payload FROM corporate_receipts").fetchall()
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("BEGIN")
@@ -121,3 +119,11 @@ class ReceiptBalanceLedger:
         return dict(source_writer_retired=retired,source_count=len(rows),destination_count=len(target),
             missing=missing,conflicts=conflicts,portfolio_reports=reports,research_cutover_checks_passed=ready,
             production_eligible=False,limitations=["Requires quiescent destination during verification; no external custody or authorization checks."])
+
+    @staticmethod
+    def _retired(source):
+        triggers=dict(source.execute("SELECT name,sql FROM sqlite_master WHERE type='trigger' AND tbl_name='corporate_receipts'"))
+        retired=all(" ".join(triggers.get("retired_receipts_"+op.lower(),"").lower().split())==
+            f"create trigger retired_receipts_{op.lower()} before {op.lower()} on corporate_receipts begin select raise(abort,'legacy_receipt_writer_retired'); end"
+            for op in ("INSERT","UPDATE","DELETE"))
+        return retired

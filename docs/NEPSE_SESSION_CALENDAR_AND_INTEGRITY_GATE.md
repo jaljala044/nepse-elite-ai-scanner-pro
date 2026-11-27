@@ -20,12 +20,16 @@ duplicate date rows fail calendar loading. Keep the source notice/document and i
 hash in the evidence archive; do not cite a general public-holiday list as proof that
 NEPSE actually closed.
 
-The schedule regimes are candidate hints only:
-- Through 2022-05-14: Sunday–Thursday regular-session candidates; Friday odd-lot excluded; Saturday closed.
-- 2022-05-15 through 2022-06-14: temporary Monday–Friday candidates; Saturday/Sunday closed.
-- 2022-06-15 through 2022-09-16: temporary Sunday–Friday candidates; Saturday closed.
-- 2022-09-17 through 2026-04-05: Sunday–Thursday candidates; Friday/Saturday excluded.
-- From 2026-04-06: Monday–Friday candidates; Saturday/Sunday excluded.
+The user-approved schedule regimes are candidate context; dated calendar rows take precedence:
+- 2020-01-01 through 2020-03-22: Sunday–Thursday regular; Friday odd-lot only; Saturday closed.
+- 2020-03-23 through 2020-05-11: COVID lockdown; trading suspended.
+- 2020-05-12 and 2020-05-13: exceptional restricted sessions, 11:00–13:00.
+- 2020-05-14 through 2020-06-28: COVID lockdown; trading suspended.
+- 2020-06-29 through 2022-05-14: Sunday–Thursday regular; Friday odd-lot only; Saturday closed.
+- 2022-05-15 through 2022-06-14: Monday–Friday regular; Saturday/Sunday closed.
+- 2022-06-15 through 2022-09-16: Sunday–Thursday regular; Friday half-day; Saturday closed.
+- 2022-09-17 through 2026-04-05: Sunday–Thursday regular; Friday/Saturday closed.
+- From 2026-04-06: Monday–Friday regular; Saturday/Sunday closed.
 
 The 2022 transition from Sunday–Thursday to Monday–Friday was announced for the two-day weekend beginning 15 May; the next schedule change restored Sunday–Friday trading from 15 June. This makes 14 May the end of the first regime, not 5 May. Sources: [Nepal News, 29 April 2022](https://english.nepalnews.com/s/business/nepse-to-open-on-friday/), [Khabarhub, 13 June 2022](https://english.khabarhub.com/2022/13/257305/),
 [The Himalayan Times, 13 June 2022](https://thehimalayantimes.com/business/nepse-to-operate-six-days-a-week-effective-june-15),

@@ -147,3 +147,14 @@ PR #154 (`cab084e1e2d64b8dba4e4f48a8c7bbd13e24be36`) adds `backend/app/sebon_par
 ### P2.03 SEBON raw PDF capture — PR #156 pending
 
 PR #156 adds `backend/app/sebon_pdf_capture.py` and nine tests. It restricts requests to official SEBON HTTPS PDF hosts, constructs its own httpx client with TLS verification enabled and redirects disabled, validates HTTP status/content type/PDF magic/size, records peer certificate fingerprint and capture timestamps, and persists exact bytes with the existing immutable content-addressed raw capture store. It does not yet acquire the two identified documents in this environment, parse PDF content, or establish sector membership. Membership admission and production sector signals remain disabled. CI must pass before merge.
+
+
+### P2.03 SEBON raw PDF capture — PR #156 merged 2026-11-27
+
+PR #156 (`45cd0b3d29ba3a6aa9a79be4faf15d69d03b8639`) adds `backend/app/sebon_pdf_capture.py` and nine regression tests. The adapter restricts capture to official SEBON HTTPS PDF hosts, creates its own TLS-verified httpx client, disables redirects, validates HTTP status/content type/PDF signature/size, records capture timestamps and peer certificate fingerprint, and persists exact bytes through the immutable content-addressed raw capture store. Both `backend-tests` and `Backend contract tests` passed on exact PR head `6da35563b0183de1b40a6be2ee9cad71a7a9c2e9`.
+
+This is capture infrastructure only. The two discovered SEBON PDFs have not been acquired and archived by this adapter in the current task. Publisher content, document completeness and sector classification dates remain unverified; no membership admission or production sector signals are enabled.
+
+### P2.03 SEBON page-referenced PDF extraction — PR #159 pending
+
+PR #159 adds `backend/app/sebon_pdf_extraction.py`, a bounded `pypdf` dependency and seven tests. It extracts selectable page text, per-page text hashes and stable payload-hash/page/line references. Conservative company-sector candidates are emitted only after a same-page `Name of Company` + `Sector` header and remain `candidate_review_required`; identity and effective date remain unresolved/unknown. It does not OCR scanned pages, certify table completeness, reconcile companies to NEPSE securities, or enable sector signals. CI is pending; do not merge until both required workflows pass.

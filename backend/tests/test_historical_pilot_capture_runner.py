@@ -37,6 +37,31 @@ class CaptureRunnerTests(unittest.TestCase):
         ingested=ingest_captured_ohlcv_csv(capture_report=report,manifest=out["manifest"],payloads=out["payloads"],column_map={"symbol":"ticker","session_date":"date","open":"o","high":"h","low":"l","close":"c","volume":"qty"},decision_cutoff="2025-02-02T00:00:00+05:45")
         self.assertEqual(ingested["status"],"INGESTED")
         self.assertEqual(ingested["row_count"],1)
+    def test_boolean_page_limit_is_rejected(self):
+        with self.assertRaises(ValueError):
+            capture_registered_source_pages(source_spec=self.spec(),fetch_page=lambda url:None,captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45",max_pages=True)
+
+    def test_duplicate_page_parameter_in_endpoint_blocks_before_transport(self):
+        calls=[]; spec=self.spec(); spec["endpoint_url"]="https://data.example.test/history?page=7"
+        out=capture_registered_source_pages(source_spec=spec,fetch_page=lambda url:calls.append(url),captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(out["status"],"CAPTURE_BLOCKED")
+        self.assertEqual(out["errors"][0]["reason"],"page_parameter_invalid_or_already_present")
+        self.assertEqual(calls,[])
+
+    def test_unsafe_page_parameter_blocks_before_transport(self):
+        calls=[]; spec=self.spec(); spec["page_parameter"]="page&token"
+        out=capture_registered_source_pages(source_spec=spec,fetch_page=lambda url:calls.append(url),captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(out["status"],"CAPTURE_BLOCKED")
+        self.assertEqual(calls,[])
+
+    def test_endpoint_userinfo_or_fragment_blocks_before_transport(self):
+        for endpoint in ("https://user:pass@data.example.test/history","https://data.example.test/history#secret"):
+            with self.subTest(endpoint=endpoint):
+                calls=[]; spec=self.spec(); spec["endpoint_url"]=endpoint
+                out=capture_registered_source_pages(source_spec=spec,fetch_page=lambda url:calls.append(url),captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
+                self.assertEqual(out["status"],"CAPTURE_BLOCKED")
+                self.assertEqual(calls,[])
+
     def test_unapproved_source_never_calls_transport(self):
         called=[]; spec=self.spec(); spec["review_status"]="pending"
         out=capture_registered_source_pages(source_spec=spec,fetch_page=lambda url:called.append(url),captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")

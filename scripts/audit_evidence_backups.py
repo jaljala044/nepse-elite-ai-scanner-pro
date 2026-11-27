@@ -26,9 +26,30 @@ def audit(root: Path, max_age_hours: float, minimum_verified: int) -> dict:
     records = []
     invalid = []
     for candidate in sorted(root.iterdir()):
-        if candidate.is_symlink() or not candidate.is_dir():
+        if candidate.is_symlink():
+            invalid.append({
+                "path": str(candidate),
+                "reason": "backup_entry_is_symlink",
+                "verification": {"status": "invalid", "issues": ["backup_entry_is_symlink"]},
+            })
+            continue
+        if not candidate.is_dir():
             continue
         manifest_path = candidate / BACKUP_MANIFEST
+        if manifest_path.is_symlink():
+            invalid.append({
+                "path": str(candidate),
+                "reason": "backup_manifest_is_symlink",
+                "verification": {"status": "invalid", "issues": ["backup_manifest_is_symlink"]},
+            })
+            continue
+        if any(path.is_symlink() for path in candidate.rglob("*")):
+            invalid.append({
+                "path": str(candidate),
+                "reason": "backup_contains_symlink",
+                "verification": {"status": "invalid", "issues": ["backup_contains_symlink"]},
+            })
+            continue
         if not manifest_path.is_file():
             continue
         verification = verify_evidence_backup(candidate)

@@ -160,3 +160,35 @@ The single-instrument segment evaluator now requires a separate session_evidence
 Missing, mismatched, unlicensed, unhashed or post-cutoff session evidence is classified as unknown/ineligible. Evidence records outside the expected grid are rejected. This closes a contract gap where a caller could previously label a date "verified" without the evaluator requiring date-level provenance.
 
 The unit tests use synthetic fixture evidence only. They demonstrate fail-closed behavior and do not certify any real NEPSE session date. The 616-date reconstruction remains candidate-only; primary exchange open-session evidence and the original calendar identity are still unresolved. No 120-session audit or backtest promotion is claimed.
+
+## Additional evaluator provenance controls — 2026-11-27
+
+A follow-up review identified that caller-supplied identity/lifecycle booleans,
+bare OHLCV hashes and arbitrary HTTPS hosts were not sufficient provenance
+contracts. The evaluator has now been hardened to require:
+
+- primary-source evidence envelopes for instrument identity and lifecycle
+  boundary decisions, not only boolean flags;
+- a primary-source evidence envelope for every traded OHLCV row, including
+  source ID, record reference, HTTPS URL on the NEPSE host allowlist, matching
+  evidence/payload SHA-256 declarations, approved rights status, and
+  timezone-aware availability/retrieval timestamps;
+- the same allowlisted source and envelope checks for each session-date record;
+- retrieval no earlier than source availability and availability no later
+  than the decision cutoff;
+- an explicit positive factor, factor version and effective date evidence
+  whenever the selected adjustment basis is `verified_adjusted`; and
+- whole-share integer volume (fractional or zero volume is rejected).
+
+The envelope checks are intentionally not described as raw-byte verification:
+the evaluator receives metadata and matching digest declarations, not the
+retained source bytes, so an independent acquisition/re-hash step is still
+required before any real source record can be accepted as verified. The
+synthetic fixtures only exercise rejection behavior; they are not NEPSE
+market evidence. The NEPSE host allowlist also does not itself prove that a
+specific endpoint or record is authoritative. Rights approval and source
+record correctness require independent evidence review.
+
+New exact-head CI is required for the latest implementation and regression
+tests. No calendar dates, security identities, lifecycle intervals, OHLCV
+records or corporate-action factors were promoted by these code changes.

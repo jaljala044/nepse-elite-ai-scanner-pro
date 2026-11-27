@@ -55,6 +55,15 @@ class FloorsheetArchiveCliTests(unittest.TestCase):
         self.assertIsNone(manifest["profile_expected_size_bytes"])
         self.assertIsNone(manifest["profile_expected_raw_sha256"])
         self.assertNotIn("canonical_promotion_allowed", manifest)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "samir-2026-11-25.csv"
+            path.write_bytes(payload)
+            with self.assertRaisesRegex(ValueError, "source_id does not match"):
+                source_manifest(
+                    "samir", "SamirWagle/Nepse-All-Scraper@blob:" + "0" * 40,
+                    path, hashlib.sha256(payload).hexdigest(), payload, review,
+                    expected_git_blob_sha1=blob_sha1,
+                )
 
     def test_date_specific_blob_pin_rejects_wrong_blob_sha1(self):
         payload = b"date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"

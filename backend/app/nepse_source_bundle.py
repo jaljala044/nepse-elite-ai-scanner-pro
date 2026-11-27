@@ -55,10 +55,10 @@ def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
                 continue
             seen_hashes.add(receipt["raw_sha256"])
             report=ingest_captured_csv(raw_bytes=result["raw_bytes"],dataset_kind=kind,
-                source_id=source_id,publisher=receipt["publisher_id"],
+                source_id=source_id,publisher=source_records[source_id]["publisher_name"],
                 source_uri=request["endpoint_uri"],evidence_id=request["evidence_id"],
                 captured_at=request["captured_at"],decision_cutoff=decision_cutoff,
-                rights_status=request["rights_status"],registry_review_id=receipt["registry_review_id"],
+                rights_status=request["rights_status"],registry_review_id=source_records[source_id]["review_id"],
                 source_validation_status="verified",finality_status="final")
             if report["status"]!="validated_for_research":
                 failures.append({"request_id":request_id,"reason":"captured_csv_failed_schema_validation",

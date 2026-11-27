@@ -6,6 +6,7 @@ trusted per-decision gate/level/execution evidence. It does not invent levels.
 from __future__ import annotations
 from datetime import datetime,timezone
 import hashlib
+import json
 from decimal import Decimal,InvalidOperation
 from app.scanner_trade_plan import build_evidence_backed_trade_plan
 from app.scanner_risk_engine import calculate_risk_limited_position,evaluate_execution_constraints
@@ -32,7 +33,7 @@ def generate_historical_research_signals(*,feature_series,signal_contexts,minimu
     if min_score is None or min_cov is None or not 0<=min_score<=100 or not 0<=min_cov<=100: raise ValueError("invalid_thresholds")
     signals=[]; withheld=[]
     for snap in feature_series["snapshots"]:
-        snapshot_digest=hashlib.sha256(__import__("json").dumps(snap,sort_keys=True,separators=(",",":"),default=str).encode("utf-8")).hexdigest()
+        snapshot_digest=hashlib.sha256(json.dumps(snap,sort_keys=True,separators=(",",":"),default=str).encode("utf-8")).hexdigest()
         cutoff=_time(snap.get("decision_time"))
         if cutoff is None: withheld.append({"reason":"snapshot_decision_time_invalid"}); continue
         for symbol,strategy_map in snap.get("feature_series",{}).items():

@@ -1,0 +1,94 @@
+import unittest
+
+from app.idpat_accumulation_distribution import analyze_idpat_accumulation_distribution
+
+
+def make_snapshot(last_overrides=None, volume=1000):
+    bars = []
+    # Stable reference period followed by a compressed, lower-volume range.
+    for i in range(40):
+        if i < 20:
+            base = 100 + (i % 4) * 0.5
+            high, low, opn, close = base + 1, base - 1, base - 0.3, base + 0.3
+            vol = 1000
+        else:
+            base = 100 + (i % 3) * 0.1
+            high, low, opn, close = base + 0.3, base - 0.3, base + 0.05, base - 0.05
+            vol = 600
+        bars.append({
+            "date": f"2026-10-{i + 1:02d}", "open": str(opn),
+            "high": str(high), "low": str(low), "close": str(close),
+            "volume": str(vol),
+        })
+    if last_overrides:
+        bars[-1].update(last_overrides)
+    return {
+        "symbol": "TEST",
+        "price_volume": {
+            "status": "verified", "source_id": "TEST_OHLCV",
+            "coverage": "1", "available_at": "2026-11-26T15:00:00+05:45",
+            "bars": bars,
+        },
+    }
+
+
+class IDPATAccumulationDistributionTests(unittest.TestCase):
+    def analyze(self, data):
+        return analyze_idpat_accumulation_distribution(
+            data, as_of_date="2026-11-26",
+            as_of_timestamp="2026-11-26T16:00:00+05:45",
+        )
+
+    def test_partial_result_never_becomes_trade_recommendation(self):
+        result = self.analyze(make_snapshot())
+        self.assertEqual(result["status"], "partial_research_only")
+        self.assertEqual(result["action"], "NO_TRADE")
+        self.assertIsNone(result["overall_score"])
+
+    def test_low_coverage_is_withheld(self):
+        data = make_snapshot()
+        data["price_volume"]["coverage"] = "0.7"
+        result = self.analyze(data)
+        self.assertEqual(result["status"], "withheld")
+        self.assertEqual(result["reason"], "coverage_below_threshold")
+
+    def test_insufficient_history_is_withheld(self):
+        data = make_snapshot()
+        data["price_volume"]["bars"] = data["price_volume"]["bars"][-25:]
+        result = self.analyze(data)
+        self.assertEqual(result["reason"], "at_least_40_valid_bars_required")
+
+    def test_shakeout_reclaim_candidate(self):
+        data = make_snapshot({
+            "open": "99.8", "high": "100.1", "low": "98.5",
+            "close": "100.0", "volume": "2500",
+        })
+        result = self.analyze(data)
+        self.assertTrue(result["signals"]["possible_shakeout"])
+
+    def test_upthrust_rejection_candidate(self):
+        data = make_snapshot({
+            "open": "100.1", "high": "102.0", "low": "99.8",
+            "close": "100.0", "volume": "2500",
+        })
+        result = self.analyze(data)
+        self.assertTrue(result["signals"]["possible_upthrust"])
+
+    def test_climax_requires_volume_and_spread_expansion(self):
+        data = make_snapshot({
+            "open": "99.0", "high": "100.0", "low": "98.0",
+            "close": "98.2", "volume": "3000",
+        })
+        result = self.analyze(data)
+        self.assertTrue(result["signals"]["possible_selling_climax"])
+
+    def test_future_bar_is_withheld_by_upstream_validator(self):
+        data = make_snapshot()
+        data["price_volume"]["bars"][-1]["date"] = "2026-11-27"
+        result = self.analyze(data)
+        self.assertEqual(result["status"], "withheld")
+        self.assertEqual(result["reason"], "bar_after_cutoff")
+
+
+if __name__ == "__main__":
+    unittest.main()

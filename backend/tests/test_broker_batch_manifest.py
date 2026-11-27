@@ -83,16 +83,20 @@ class BrokerRawCaptureTests(unittest.TestCase):
         self.assertEqual(first["batch_id"], second["batch_id"])
         self.assertTrue(second["idempotent_replay"])
 
-    def test_changed_capture_metadata_is_conflict_not_overwrite(self):
+    def test_changed_capture_metadata_is_conflict_and_audited(self):
         manifest, raw = fixture()
-        self.registry.stage(manifest, raw)
+        first = self.registry.stage(manifest, raw)
         changed = RawCaptureManifest(**{**manifest.__dict__, "parser_version": "2.0.0"})
         with self.assertRaises(CaptureConflict):
             self.registry.stage(changed, raw)
+        events = self.registry.events(first["batch_id"])
+        self.assertEqual(events[-1]["event_type"], "capture_identity_conflict")
+        self.assertEqual(events[-1]["detail"]["proposed_parser_version"], "2.0.0")
+        self.assertEqual(events[-1]["detail"]["proposed_raw_sha256"], hashlib.sha256(raw).hexdigest())
 
-    def test_changed_raw_bytes_under_same_capture_identity_are_conflicts(self):
+    def test_changed_raw_bytes_are_retained_and_conflict_is_audited(self):
         manifest, raw = fixture()
-        self.registry.stage(manifest, raw)
+        first = self.registry.stage(manifest, raw)
         changed_raw = b"corrected source extract"
         changed_manifest = RawCaptureManifest(**{
             **manifest.__dict__,
@@ -101,6 +105,12 @@ class BrokerRawCaptureTests(unittest.TestCase):
         })
         with self.assertRaises(CaptureConflict):
             self.registry.stage(changed_manifest, changed_raw)
+        events = self.registry.events(first["batch_id"])
+        self.assertEqual(events[-1]["event_type"], "capture_identity_conflict")
+        proposed_hash = hashlib.sha256(changed_raw).hexdigest()
+        proposed_object = self.root / "objects" / proposed_hash[:2] / (proposed_hash + ".bin")
+        self.assertEqual(proposed_object.read_bytes(), changed_raw)
+        self.assertEqual(events[-1]["detail"]["proposed_raw_sha256"], proposed_hash)
 
     def test_late_available_capture_is_retained_with_both_timestamps(self):
         manifest, raw = fixture()

@@ -73,3 +73,36 @@ Use this template in the canonical GitHub issue/PR:
 ## Conflict resolution
 
 When records disagree, do not overwrite either record. Prefer the most authoritative and specific evidence: merged implementation and exact-head CI, approved review, immutable source artifact, then canonical issue/progress register. Record the discrepancy and resolve it with the project owner. User-finalized data remains authoritative for the scope explicitly designated by the user unless the user changes that instruction.
+
+
+## Canonical ownership record and short-lived lease
+
+The existing GitHub issue is the canonical task/acceptance record; linked PR conversations carry implementation ownership and file-level handoff details. Cross-link this record from the project progress register rather than opening a second task just to claim work.
+
+Post one claim before editing. Include every field below (UTC timestamps):
+
+~~~markdown
+### Ownership claim / heartbeat
+- Task key / issue:
+- Acceptance criteria claimed:
+- Actor (stable agent or contributor handle):
+- Branch:
+- Files or evidence scope:
+- Started at (UTC):
+- Lease expires at (UTC):
+- Last heartbeat at (UTC):
+- Dependencies:
+- Handoff / release / next owner:
+~~~
+
+Use a 30-minute coordination lease by default and renew it with a heartbeat at least every 10 minutes while actively working. Release the claim when stopping or handing off. The claim is stale after its expiry unless renewed in the canonical issue/PR thread.
+
+### Overlap and collision handling
+
+- The first valid, unexpired claim in the canonical thread owns the overlapping acceptance criteria and paths.
+- A later claimant must not edit the overlapping files; coordinate with the incumbent and record any agreed split before parallel work.
+- If two claims have indistinguishable order, missing timestamps, unclear scope, or uncertain expiry, pause overlapping work and ask the project owner to resolve it.
+- Search open PR changed-file lists and recent commits for exact path overlap, not merely similar titles or task keywords.
+- A lease does not authorize overwriting another contributor's uncommitted or unreviewed work. Keep changes on separate branches and hand off explicitly.
+
+**Important limitation:** issue comments and Markdown checklists are not a technical mutual-exclusion lock. They do not prevent concurrent writes. This protocol improves visibility and defines when contributors must stop, but it cannot guarantee execution-level locking. That requires an atomic server-side lease/lock service and a mandatory validation at the write or merge boundary. Do not claim that AGENTS.md alone prevents simultaneous file edits.

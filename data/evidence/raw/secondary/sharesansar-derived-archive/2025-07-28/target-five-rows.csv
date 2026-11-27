@@ -1,0 +1,6 @@
+symbol,date,open,high,low,close,ltp,vwap,volume,turnover,transactions,source
+BGWT,2025-07-28,940.00,992.00,933.40,945.00,992.00,944.99,14028,13256345.00,194,ShareSansar-derived archive
+MEHL,2025-07-28,471.10,480.50,460.00,470.83,478.00,470.84,29753,14008898.10,333,ShareSansar-derived archive
+RAWA,2025-07-28,796.00,811.00,780.30,794.83,798.00,794.84,3165,2515662.50,74,ShareSansar-derived archive
+RHGCL,2025-07-28,346.70,362.00,341.40,350.07,362.00,350.08,296715,103872614.40,1030,ShareSansar-derived archive
+ULHC,2025-07-28,509.00,515.00,495.00,504.00,512.00,504.01,32288,16273342.10,300,ShareSansar-derived archive

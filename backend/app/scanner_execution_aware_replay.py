@@ -86,6 +86,9 @@ def run_execution_aware_replay(*, order_batches, daily_marks_by_run,
                 "symbol":symbol,"execution_date":event_at.astimezone(NEPAL).date().isoformat(),
                 "execution_at":event_at.isoformat(),"sequence":event["sequence"],
                 "side":queue["side"],"quantity":fill["quantity"],"price":fill["price"],
+                "strategy_id":strategy,"horizon":horizon,"partition":partition,
+                "sector":batch.get("sector"),"source_signal_id":batch.get("source_signal_id"),
+                "sellable_inventory":batch.get("sellable_inventory") if queue["side"]=="sell" else None,
                 "evidence_status":"verified","source_id":event["source_id"],
                 "evidence_id":event["evidence_id"],"available_at":event["available_at"]})
     reports=[]

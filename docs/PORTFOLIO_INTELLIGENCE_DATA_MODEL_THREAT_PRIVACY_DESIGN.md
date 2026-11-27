@@ -104,3 +104,15 @@ The design should be implemented in independently reviewable increments; do not 
 Each phase must ship with its own migration/test evidence and exact-head CI result. Do not merge a later phase by copying or reimplementing a completed phase; extend the accepted contract and record its owner/status first.
 
 The current PR remains a design-only proposal. No API, database migration, tenant-isolation control, accounting engine, web/mobile screen, encryption, or deployment is claimed as implemented by this sequence.
+
+## 10. Retention, deletion, export, and jurisdiction decisions
+
+These are product and legal-policy prerequisites, not implementation claims:
+
+- Publish a data inventory and retention schedule for portfolio records, transaction corrections, analysis snapshots, alerts, audit events, support artifacts, application logs, and backups. Assign an owner and purpose to each category.
+- Provide an authenticated account export that includes the user's portfolio data, transaction history, calculation/configuration metadata, and machine-readable timestamps. Re-authorize the export request, scope it to the authenticated tenant, audit the export event, and prevent public or guessable download links.
+- Define account deletion as a documented workflow. Identify which personal/profile data can be erased, which financial/audit records must be retained under applicable law, the lawful basis and retention period for each exception, and how retained records are minimized or pseudonymized. Do not silently promise full erasure where a legal retention duty applies.
+- Specify backup expiry and deletion propagation: deleted or expired records must age out of immutable backups on a stated schedule, with restore procedures that reapply deletion tombstones before restored data becomes available. Record the maximum backup-retention window and test the process.
+- Minimize audit logs: retain actor, tenant, object reference, action, timestamp, and outcome where justified; exclude secrets, full holdings, raw notes, and unnecessary personal data. Define access controls and retention for audit events separately from transaction records.
+- Before enabling tax-aware calculations, obtain a product/legal decision for supported jurisdictions, base currency, tax treatment, and the selected cost-basis method. The current Slice A weighted-average implementation is an accounting prototype, not a declaration that weighted average is legally appropriate in every jurisdiction. Store the applicable method/configuration with effective dates and preserve an auditable history when it changes.
+- Do not launch jurisdiction-specific tax, deletion, export, or retention claims until reviewed by qualified privacy/legal owners for the actual operating markets.

@@ -96,3 +96,28 @@ class ReceiptBalanceLedger:
                     db.execute("INSERT INTO receipt_balance_totals VALUES (?,?,?) ON CONFLICT(portfolio,asset) DO UPDATE SET amount=excluded.amount",(portfolio,asset,str(total)))
                 imported+=1
         return dict(imported=imported,skipped=skipped,production_eligible=False)
+
+    def verify_cutover(self,source_path,assessment_time):
+        from pathlib import Path
+        uri=Path(source_path).resolve().as_uri()+"?mode=ro"
+        with closing(sqlite3.connect(uri,uri=True)) as source, source:
+            source.execute("BEGIN")
+            triggers=dict(source.execute("SELECT name,sql FROM sqlite_master WHERE type='trigger' AND tbl_name='corporate_receipts'"))
+            retired=all(" ".join(triggers.get("retired_receipts_"+op.lower(),"").lower().split())==
+                f"create trigger retired_receipts_{op.lower()} before {op.lower()} on corporate_receipts begin select raise(abort,'legacy_receipt_writer_retired'); end"
+                for op in ("INSERT","UPDATE","DELETE"))
+            rows=source.execute("SELECT portfolio_id,action_id,payload_hash,payload FROM corporate_receipts").fetchall()
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("BEGIN")
+            target={(p,a):(h,v) for p,a,h,v in db.execute("SELECT portfolio,action,digest,payload FROM receipt_balance_events")}
+        missing=[]
+        conflicts=[]
+        for p,a,h,v in rows:
+            if (p,a) not in target: missing.append([p,a])
+            elif target[p,a]!=(h,v) or hashlib.sha256(v.encode()).hexdigest()!=h: conflicts.append([p,a])
+        portfolios=sorted({p for p,a in target}|{p for p,a,h,v in rows})
+        reports={p:self.reconcile(p,assessment_time) for p in portfolios}
+        ready=retired and not missing and not conflicts and all(r["reconciled"] for r in reports.values())
+        return dict(source_writer_retired=retired,source_count=len(rows),destination_count=len(target),
+            missing=missing,conflicts=conflicts,portfolio_reports=reports,research_cutover_checks_passed=ready,
+            production_eligible=False,limitations=["Requires quiescent destination during verification; no external custody or authorization checks."])

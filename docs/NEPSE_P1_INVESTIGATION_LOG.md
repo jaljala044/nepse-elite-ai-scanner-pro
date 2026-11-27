@@ -532,3 +532,20 @@ Classify Chukul as `public_historical_data_not_verified_login_or_subscription_ma
 If the project owner has an authorized Chukul account, use its normal login and available subscription permissions to inspect individual-stock history and daily chart date controls for all five symbols. Do not request credentials in chat or bypass access controls. If the service requires a higher tier, ask Chukul support whether its historical daily OHLCV includes 2025-07-28 and which close field it reports.
 
 The five conflicts remain quarantined; this Chukul attempt does not change the Source A/Source B comparison or the primary NEPSE evidence gate.
+
+
+## 2026-11-27: evidence-first, field-level approval policy and reuse-first plan
+
+The project owner directed that existing floorsheet and chart evidence be reused; full-dataset recollection and API purchase are not prerequisites. The project policy is revised accordingly:
+
+- The earlier 4-of-6 providers plus at least two independent lineages threshold is retained as a **secondary-source consensus fallback**, not a universal requirement and not a NEPSE regulatory rule.
+- An authentic, date/security-specific official NEPSE record may establish an individual field directly when provenance, integrity, field semantics, adjustment status and the applicable calculation method are established. It need not be repeated by four secondary websites.
+- Existing floorsheet evidence can establish derived fields only when the source contains sufficient chronology, trade eligibility and calculation inputs. Raw contracts must remain unchanged; derived results must be reproducible and traceable to contract IDs.
+- Approve fields independently. A Close conflict must not automatically quarantine otherwise-supported Open, High, Low, quantity or turnover. Keep LTP, official Close and VWAP distinct.
+- Use the existing SocrateAI floorsheet archive, ShareSansar-derived daily-board/chart archives, extracted target rows and recorded MeroLagani date-filtered results. Do not repeat completed captures or purchase API access unless a specific field remains impossible to resolve from existing evidence.
+
+Existing replay facts for 2025-07-28 remain: BGWT 194 contracts / 14,028 quantity / Rs 13,256,345 turnover / Rs 944.9918 full-day VWAP; MEHL 333 / 29,753 / Rs 14,008,898.10 / Rs 470.8399; RAWA 74 / 3,165 / Rs 2,515,662.50 / Rs 794.8381; RHGCL 1,030 / 296,715 / Rs 103,872,614.40 / Rs 350.0754; ULHC 300 / 32,288 / Rs 16,273,342.10 / Rs 504.0059. These are archived calculations and were not recollected in this policy update.
+
+Limits remain explicit: the archived floorsheet has no timestamps, so file order cannot prove first/last execution; trade-type eligibility is not established for all contracts; BGWT contract 2025072801025823,BGWT,54,48,1.0,925.0,925.0,2025-07-28 remains unchanged and classified suspected_odd_lot_pending_trade_type_confirmation. Do not infer its trade type from quantity or the contract-code substring. Therefore arithmetic totals and VWAP can be reproduced, but official OHLC extrema/open/last-price treatment still needs the relevant eligibility and chronology rules. The official exchange-designated Close remains unverified for all five.
+
+Next: perform a reproducible field-level comparison against the existing evidence, promote only fields whose individual criteria pass, and quarantine only the unresolved fields. P1 remains open; no API purchase, broad recapture, canonical promotion or training is authorized by this update. Existing 616 calendar candidates and 196,784 repeated-OHLCV candidates retain their current statuses.

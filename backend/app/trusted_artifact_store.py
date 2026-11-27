@@ -71,9 +71,20 @@ class TrustedArtifactStore:
             cutoff_date = date.fromisoformat(decision_date)
         except (TypeError, ValueError):
             raise TrustedArtifactError("decision_date_must_be_iso_date") from None
-        cutoff = _timestamp(decision_time, "decision_time")
-        if cutoff.date() < cutoff_date:
+        # Compare the supplied timestamp's own calendar date before
+        # normalizing it to UTC. A valid Nepal-local midnight timestamp can
+        # fall on the previous UTC date and must not be rejected.
+        if not isinstance(decision_time, str):
+            raise TrustedArtifactError("decision_time_must_be_timezone_aware")
+        try:
+            local_cutoff = datetime.fromisoformat(decision_time.replace("Z", "+00:00"))
+        except ValueError:
+            raise TrustedArtifactError("decision_time_must_be_timezone_aware") from None
+        if local_cutoff.tzinfo is None or local_cutoff.utcoffset() is None:
+            raise TrustedArtifactError("decision_time_must_be_timezone_aware")
+        if local_cutoff.date() < cutoff_date:
             raise TrustedArtifactError("decision_time_precedes_decision_date")
+        cutoff = _timestamp(decision_time, "decision_time")
         if not isinstance(self.registry, Mapping):
             raise TrustedArtifactError("server_registry_invalid")
 

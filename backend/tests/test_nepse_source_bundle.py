@@ -34,7 +34,8 @@ class HistoricalBundleTests(unittest.TestCase):
             end_date="2025-01-02",transport_by_source=transports)
         self.assertEqual(result["capture_count"],4)
         self.assertEqual(result["readiness"]["status"],"READY")
-        self.assertTrue(result["historical_panel_promotion_allowed"])
+        self.assertFalse(result["historical_panel_promotion_allowed"])
+        self.assertEqual(result["promotion_block_reason"],"independent corporate-action reconciliation evidence must be supplied and verified separately")
         self.assertEqual(len(result["manifest"]["manifest_sha256"]),64)
 
     def test_missing_required_dataset_blocks_promotion(self):

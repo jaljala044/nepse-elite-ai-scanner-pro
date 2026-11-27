@@ -1,0 +1,41 @@
+symbol,date,provider,field,provider_value,comparison_status,notes
+BGWT,2025-07-28,ShareSansar-derived archive,Open,940.00,match_with_MeroLagani,
+BGWT,2025-07-28,ShareSansar-derived archive,High,992.00,match_with_MeroLagani,
+BGWT,2025-07-28,ShareSansar-derived archive,Low,933.40,match_with_MeroLagani,
+BGWT,2025-07-28,ShareSansar-derived archive,Close,945.00,field_semantics_unresolved,Keep distinct from LTP and VWAP
+BGWT,2025-07-28,ShareSansar-derived archive,LTP,992.00,value_conflict_with_MeroLagani,Literal source field retained
+BGWT,2025-07-28,ShareSansar-derived archive,VWAP,944.99,field_semantics_unresolved,
+BGWT,2025-07-28,ShareSansar-derived archive,Volume,14028,match_with_MeroLagani,
+BGWT,2025-07-28,ShareSansar-derived archive,Turnover,13256345.00,match_with_MeroLagani,
+MEHL,2025-07-28,ShareSansar-derived archive,Open,471.10,match_with_MeroLagani,
+MEHL,2025-07-28,ShareSansar-derived archive,High,480.50,match_with_MeroLagani,
+MEHL,2025-07-28,ShareSansar-derived archive,Low,460.00,match_with_MeroLagani,
+MEHL,2025-07-28,ShareSansar-derived archive,Close,470.83,field_semantics_unresolved,Keep distinct from LTP and VWAP
+MEHL,2025-07-28,ShareSansar-derived archive,LTP,478.00,value_conflict_with_MeroLagani,Literal source field retained
+MEHL,2025-07-28,ShareSansar-derived archive,VWAP,470.84,field_semantics_unresolved,
+MEHL,2025-07-28,ShareSansar-derived archive,Volume,29753,match_with_MeroLagani,
+MEHL,2025-07-28,ShareSansar-derived archive,Turnover,14008898.10,match_with_MeroLagani,
+RAWA,2025-07-28,ShareSansar-derived archive,Open,796.00,match_with_MeroLagani,
+RAWA,2025-07-28,ShareSansar-derived archive,High,811.00,match_with_MeroLagani,
+RAWA,2025-07-28,ShareSansar-derived archive,Low,780.30,match_with_MeroLagani,
+RAWA,2025-07-28,ShareSansar-derived archive,Close,794.83,field_semantics_unresolved,Keep distinct from LTP and VWAP
+RAWA,2025-07-28,ShareSansar-derived archive,LTP,798.00,value_conflict_with_MeroLagani,Literal source field retained
+RAWA,2025-07-28,ShareSansar-derived archive,VWAP,794.84,field_semantics_unresolved,
+RAWA,2025-07-28,ShareSansar-derived archive,Volume,3165,match_with_MeroLagani,
+RAWA,2025-07-28,ShareSansar-derived archive,Turnover,2515662.50,match_with_MeroLagani,
+RHGCL,2025-07-28,ShareSansar-derived archive,Open,346.70,match_with_MeroLagani,
+RHGCL,2025-07-28,ShareSansar-derived archive,High,362.00,match_with_MeroLagani,
+RHGCL,2025-07-28,ShareSansar-derived archive,Low,341.40,match_with_MeroLagani,
+RHGCL,2025-07-28,ShareSansar-derived archive,Close,350.07,field_semantics_unresolved,Keep distinct from LTP and VWAP
+RHGCL,2025-07-28,ShareSansar-derived archive,LTP,362.00,value_conflict_with_MeroLagani,Literal source field retained
+RHGCL,2025-07-28,ShareSansar-derived archive,VWAP,350.08,field_semantics_unresolved,
+RHGCL,2025-07-28,ShareSansar-derived archive,Volume,296715,match_with_MeroLagani,
+RHGCL,2025-07-28,ShareSansar-derived archive,Turnover,103872614.40,match_with_MeroLagani,
+ULHC,2025-07-28,ShareSansar-derived archive,Open,509.00,match_with_MeroLagani,
+ULHC,2025-07-28,ShareSansar-derived archive,High,515.00,match_with_MeroLagani,
+ULHC,2025-07-28,ShareSansar-derived archive,Low,495.00,match_with_MeroLagani,
+ULHC,2025-07-28,ShareSansar-derived archive,Close,504.00,field_semantics_unresolved,Keep distinct from LTP and VWAP
+ULHC,2025-07-28,ShareSansar-derived archive,LTP,512.00,value_conflict_with_MeroLagani,Literal source field retained
+ULHC,2025-07-28,ShareSansar-derived archive,VWAP,504.01,field_semantics_unresolved,
+ULHC,2025-07-28,ShareSansar-derived archive,Volume,32288,match_with_MeroLagani,
+ULHC,2025-07-28,ShareSansar-derived archive,Turnover,16273342.10,match_with_MeroLagani,

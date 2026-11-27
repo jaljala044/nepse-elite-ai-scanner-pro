@@ -18,8 +18,8 @@ async function run(){
  const body=JSON.parse(await f.text());
  const mode=el("broker-context-mode").value;
  const path={context:"broker-context",concentration:"broker-concentration",rotation:"broker-context-rotation"}[mode];
- const response=await fetch("/v1/research/"+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store",signal:AbortSignal.timeout(20000)});
- if(!response.ok)throw Error("Evidence rejected or API unavailable");
+ const response=await fetch("/v1/research/"+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+el("broker-context-token").value},body:JSON.stringify(body),cache:"no-store",signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw Error(response.status===401?"Research credential rejected":response.status===503?"Research access not configured":response.status===429?"Request budget exceeded":"Evidence rejected or API unavailable");
  const d=await response.json();if(id!==generation)return;
  if(d.production_eligible!==false||d.signals_enabled!==false)throw Error("Unexpected research safety contract");
  if(d.status==="insufficient_evidence"){status.textContent="UNKNOWN — "+(d.reason||"Incomplete evidence");return;}

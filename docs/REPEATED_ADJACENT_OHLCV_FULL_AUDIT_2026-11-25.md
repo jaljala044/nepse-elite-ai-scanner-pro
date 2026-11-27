@@ -99,3 +99,10 @@ Year distribution of the 196,784 candidates:
 - 2026: 42,771 consecutive-date valid-bound + 92 date-gap candidates.
 
 The 196,542 consecutive-calendar-date candidates remain review-only, not exchange-session-confirmed. No source rows were modified. This analysis does not resolve the calendar blocker or authorize OHLCV repair/training.
+
+
+## Project-accepted calendar now applied — 2026-11-27
+
+The previous requirement to obtain a first-party NEPSE confirmation for every historical open date has been removed for project-level session joins. The canonical working calendar now contains 3,630 unique `project_accepted_open` dates from the ShareSansar-derived `srijankarki07/nepse-data` yearly close indexes (2011–2026), plus 41 explicit NEPSE holiday API closure dates. No date overlap was found between these sets. The 2020-05-12 and 2020-05-13 exceptional sessions are included in the archive baseline.
+
+The session join may now classify candidate date pairs against this calendar. Keep the provenance tier attached to every result: project-accepted dates are not NEPSE-certified. The 196,784 rows remain review candidates until duplicate-key, date ordering, OHLC bounds, source-lineage and per-security checks complete. Calendar acquisition is no longer a blocker; no raw OHLCV row is repaired or promoted by this decision.

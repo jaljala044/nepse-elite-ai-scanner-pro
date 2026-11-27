@@ -88,8 +88,14 @@ def apply_reconciled_adjustments(*, bars, reconciled_events, decision_cutoff):
             raise ValueError("unreconciled_action_cannot_adjust_prices")
         available=_time(event.get("available_at")); effective=_day(event.get("effective_date"))
         fp,fv=_dec(event.get("price_adjustment_factor")),_dec(event.get("volume_adjustment_factor"))
-        if available is None or available>cutoff or effective is None or effective>cutoff.date() or fp is None or fv is None or fp<=0 or fv<=0:
-            raise ValueError("action_not_valid_at_cutoff")
+        sources=event.get("source_ids"); publishers=event.get("publishers"); evidence=event.get("evidence_ids")
+        if (available is None or available>cutoff or effective is None or effective>cutoff.date()
+            or fp is None or fv is None or fp<=0 or fv<=0
+            or not isinstance(sources,list) or len(set(sources))<2
+            or not isinstance(publishers,list) or len(set(publishers))<2
+            or not isinstance(evidence,list) or len(set(evidence))<2
+            or not event.get("security_id") or not event.get("event_key")):
+            raise ValueError("action_not_valid_at_cutoff_or_independent_provenance_missing")
         events.append((event, effective, fp, fv))
     output=[]
     for bar in bars:

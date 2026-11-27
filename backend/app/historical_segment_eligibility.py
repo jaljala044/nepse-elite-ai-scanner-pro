@@ -55,10 +55,43 @@ def _valid_ohlcv(row):
     values = {key: _decimal(row.get(key)) for key in ("open", "high", "low", "close", "volume")}
     if any(value is None for value in values.values()):
         return False
-    if any(values[key] <= 0 for key in ("open", "high", "low", "close")) or values["volume"] <= 0:
+    if any(values[key] <= 0 for key in ("open", "high", "low", "close")):
+        return False
+    # NEPSE traded quantity is expressed in whole shares; fractional quantity
+    # is rejected until an explicitly versioned unit rule says otherwise.
+    if values["volume"] <= 0 or values["volume"] != values["volume"].to_integral_value():
         return False
     return (values["high"] >= max(values["open"], values["close"], values["low"])
             and values["low"] <= min(values["open"], values["close"], values["high"]))
+
+
+def _valid_primary_evidence(evidence, cutoff):
+    """Validate a source-evidence envelope; this is not a substitute for raw-byte review."""
+    if not isinstance(evidence, dict):
+        return False
+    required_text = ("source_id", "source_record_ref")
+    if any(not isinstance(evidence.get(key), str) or not evidence[key].strip()
+           for key in required_text):
+        return False
+    try:
+        parsed = urlsplit(evidence.get("source_url", ""))
+        host = (parsed.hostname or "").lower()
+        if parsed.scheme != "https" or host not in {"nepalstock.com", "www.nepalstock.com"}:
+            return False
+    except ValueError:
+        return False
+    digest = str(evidence.get("evidence_sha256") or "").lower()
+    payload_digest = str(evidence.get("payload_sha256") or "").lower()
+    if not _SHA256.fullmatch(digest) or digest != payload_digest:
+        return False
+    if evidence.get("rights_status") != "approved":
+        return False
+    try:
+        available = _aware_datetime(evidence.get("available_at"), "available_at")
+        retrieved = _aware_datetime(evidence.get("retrieved_at"), "retrieved_at")
+    except ValueError:
+        return False
+    return available <= cutoff and retrieved >= available
 
 
 def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
@@ -108,8 +141,12 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         reasons.append("segment_security_id_missing")
     if segment.get("identity_verified") is not True:
         reasons.append("instrument_identity_not_verified")
+    if not _valid_primary_evidence(segment.get("identity_evidence"), cutoff):
+        reasons.append("instrument_identity_source_evidence_unverified")
     if segment.get("boundary_reviewed") is not True:
         reasons.append("lifecycle_boundary_not_reviewed")
+    if not _valid_primary_evidence(segment.get("lifecycle_evidence"), cutoff):
+        reasons.append("lifecycle_source_evidence_unverified")
     if segment.get("suspension_overlap") is not False:
         reasons.append("suspension_overlap_or_unknown")
     if segment.get("merger_or_successor_boundary") is not False:
@@ -132,6 +169,15 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     adjustment_basis = segment.get("adjustment_basis")
     if adjustment_basis not in _ALLOWED_ADJUSTMENT_BASES:
         reasons.append("adjustment_basis_unverified")
+    if adjustment_basis == "verified_adjusted":
+        adjustment_evidence = segment.get("adjustment_evidence")
+        if (not _valid_primary_evidence(adjustment_evidence, cutoff)
+                or not isinstance(adjustment_evidence.get("factor_version"), str)
+                or not adjustment_evidence["factor_version"].strip()
+                or _decimal(adjustment_evidence.get("factor")) is None
+                or _decimal(adjustment_evidence.get("factor")) <= 0
+                or not isinstance(adjustment_evidence.get("effective_date"), str)):
+            reasons.append("adjustment_factor_evidence_unverified")
     minimum_warmup = segment.get("minimum_warmup_sessions", 0)
     if not isinstance(minimum_warmup, int) or isinstance(minimum_warmup, bool) or minimum_warmup < 0:
         reasons.append("minimum_warmup_sessions_invalid")
@@ -206,33 +252,13 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             if evidence.get("status") != state:
                 reasons.append(f"session_evidence_status_mismatch:{day_text}")
                 evidence_valid = False
-            if not isinstance(evidence.get("source_id"), str) or not evidence["source_id"].strip():
+            if not _valid_primary_evidence(evidence, cutoff):
                 evidence_valid = False
-            if not isinstance(evidence.get("source_record_ref"), str) or not evidence["source_record_ref"].strip():
-                evidence_valid = False
-            source_url = evidence.get("source_url")
-            try:
-                parsed_source_url = urlsplit(source_url) if isinstance(source_url, str) else None
-                if (parsed_source_url is None or parsed_source_url.scheme != "https"
-                        or not parsed_source_url.hostname):
-                    evidence_valid = False
-            except ValueError:
-                evidence_valid = False
-            if not _SHA256.fullmatch(str(evidence.get("evidence_sha256") or "").lower()):
-                evidence_valid = False
-            if evidence.get("rights_status") not in _ALLOWED_RIGHTS:
-                evidence_valid = False
-            try:
-                evidence_available_at = _aware_datetime(evidence.get("available_at"), "session evidence available_at")
-                if evidence_available_at > cutoff:
-                    reasons.append(f"session_evidence_lookahead:{day_text}")
-                    evidence_valid = False
-            except ValueError:
-                evidence_valid = False
-            try:
-                _aware_datetime(evidence.get("retrieved_at"), "session evidence retrieved_at")
-            except ValueError:
-                evidence_valid = False
+                try:
+                    if _aware_datetime(evidence.get("available_at"), "session evidence available_at") > cutoff:
+                        reasons.append(f"session_evidence_lookahead:{day_text}")
+                except ValueError:
+                    pass
             if not evidence_valid:
                 reasons.append(f"session_evidence_unverified:{day_text}")
         if not evidence_valid:
@@ -281,15 +307,11 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"adjustment_basis_mismatch:{day_text}")
         if row.get("rights_status") not in _ALLOWED_RIGHTS:
             reasons.append(f"source_rights_not_approved:{day_text}")
+        if not _valid_primary_evidence(row.get("source_evidence"), cutoff):
+            reasons.append(f"bar_source_evidence_unverified:{day_text}")
         digest = str(row.get("evidence_sha256") or "").lower()
         if not _SHA256.fullmatch(digest):
             reasons.append(f"evidence_hash_missing_or_invalid:{day_text}")
-        try:
-            available_at = _aware_datetime(row.get("available_at"), "available_at")
-            if available_at > cutoff:
-                reasons.append(f"lookahead_available_after_cutoff:{day_text}")
-        except ValueError:
-            reasons.append(f"available_at_unverified:{day_text}")
 
     if verified_traded < required_sessions:
         reasons.append("insufficient_traded_sessions")

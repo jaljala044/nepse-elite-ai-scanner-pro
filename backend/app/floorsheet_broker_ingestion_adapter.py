@@ -178,6 +178,11 @@ def adapt_floorsheet_parties_to_broker_batch(
             "source_id": item["source_id"], "evidence_id": evidence_id,
             "source_payload": source_payload, "source_payload_sha256": digest,
             "source_row_count": len(lineage), "coverage_ratio": str(source_ratio),
+            "raw_record_lineage": [
+                {"raw_record_sha256": h, "raw_record_locator": f"csv:row:{n}",
+                 "contract_id": c}
+                for n, c, h in lineage
+            ],
         })
 
     verified_brokers = {row["broker_id"] for row in ingestion_rows}

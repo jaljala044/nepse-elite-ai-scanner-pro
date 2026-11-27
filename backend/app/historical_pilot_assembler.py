@@ -1,6 +1,6 @@
 """Assemble a deterministic pilot OHLCV panel from validated capture ingestions."""
 from __future__ import annotations
-from datetime import date
+from datetime import date, datetime
 from typing import Iterable, Mapping
 
 from app.historical_pilot_panel import build_lifecycle_panel_readiness
@@ -58,8 +58,8 @@ def assemble_lifecycle_pilot_panel(
             continue
         source_ids = sorted({str(r["source_id"]) for r in rows})
         publishers = sorted({str(r["publisher_id"]) for r in rows})
-        if len(source_ids) < minimum_independent_sources:
-            insufficient.append({"symbol": symbol, "session_date": day.isoformat(), "source_ids": source_ids, "required_sources": minimum_independent_sources})
+        if len(publishers) < minimum_independent_sources:
+            insufficient.append({"symbol": symbol, "session_date": day.isoformat(), "publisher_ids": publishers, "required_independent_publishers": minimum_independent_sources})
             continue
         identity = identity_by_symbol.get(symbol)
         if not identity:
@@ -76,7 +76,7 @@ def assemble_lifecycle_pilot_panel(
             continue
         values = next(iter(distinct_values))
         first = sorted(rows, key=lambda r: (str(r["source_id"]), str(r["capture_id"]), int(r["page_number"]), int(r["source_row_number"])))[0]
-        assembled.append({"symbol": symbol, "security_id": str(identity["security_id"]), "session_date": day.isoformat(), **dict(zip(_FIELDS, values)), "available_at": max(str(r["available_at"]) for r in rows), "raw_sha256": first["raw_sha256"], "source_ids": source_ids, "publisher_ids": publishers, "capture_ids": sorted({str(r["capture_id"]) for r in rows}), "row_hashes": sorted({str(r["row_sha256"]) for r in rows})})
+        assembled.append({"symbol": symbol, "security_id": str(identity["security_id"]), "session_date": day.isoformat(), **dict(zip(_FIELDS, values)), "available_at": max((str(r["available_at"]) for r in rows), key=lambda value: datetime.fromisoformat(value.replace("Z", "+00:00"))), "raw_sha256": first["raw_sha256"], "source_ids": source_ids, "publisher_ids": publishers, "capture_ids": sorted({str(r["capture_id"]) for r in rows}), "row_hashes": sorted({str(r["row_sha256"]) for r in rows})})
     # Use the strict existing validator for calendar, coverage, cutoff and corporate actions.
     readiness_bars = [{k: r[k] for k in ("symbol", "session_date", "open", "high", "low", "close", "volume", "available_at", "raw_sha256")} for r in assembled]
     readiness = build_lifecycle_panel_readiness(cohort_symbols=symbols, security_master=master, expected_sessions=sessions, bars=readiness_bars, corporate_action_status=corporate_action_status, decision_cutoff=decision_cutoff)

@@ -166,6 +166,31 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     if effective_from and effective_to and effective_to < effective_from:
         reasons.append("invalid_effective_interval")
 
+    identity_evidence = segment.get("identity_evidence")
+    identity_claims = identity_evidence.get("claims") if isinstance(identity_evidence, dict) else None
+    if not isinstance(identity_claims, dict) or any(
+        identity_claims.get(key) != expected
+        for key, expected in (("symbol", symbol), ("security_id", security_id))
+    ):
+        reasons.append("instrument_identity_claims_mismatch")
+
+    lifecycle_evidence = segment.get("lifecycle_evidence")
+    lifecycle_claims = lifecycle_evidence.get("claims") if isinstance(lifecycle_evidence, dict) else None
+    expected_lifecycle_claims = {
+        "symbol": symbol,
+        "security_id": security_id,
+        "effective_from": segment.get("effective_from"),
+        "effective_to": segment.get("effective_to"),
+        "boundary_reviewed": True,
+        "suspension_overlap": False,
+        "merger_or_successor_boundary": False,
+    }
+    if not isinstance(lifecycle_claims, dict) or any(
+        lifecycle_claims.get(key) != expected
+        for key, expected in expected_lifecycle_claims.items()
+    ):
+        reasons.append("lifecycle_claims_mismatch")
+
     adjustment_basis = segment.get("adjustment_basis")
     if adjustment_basis not in _ALLOWED_ADJUSTMENT_BASES:
         reasons.append("adjustment_basis_unverified")

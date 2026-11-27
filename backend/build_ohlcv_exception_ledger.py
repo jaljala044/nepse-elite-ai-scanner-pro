@@ -18,17 +18,24 @@ CSV_FIELDS = [
     "exception_id", "exception_type", "symbol", "trade_date",
     "source_repository", "disposition", "reviewer_rationale",
     "source_commit_sha", "source_path", "source_file_sha256",
-    "source_csv_line", "raw_source_row", "source_evidence",
+    "source_csv_line", "raw_source_row", "source_evidence", "external_corroboration", "evidence_pointer",
 ]
 
 
-def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
-                 expected_conflicts: int = 8) -> dict[str, Any]:
+USER_FINAL_KEYS = {("BGWT", "2025-07-28"), ("MEHL", "2025-07-28"), ("RAWA", "2025-07-28"), ("RHGCL", "2025-07-28"), ("ULHC", "2025-07-28")}
+
+
+def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | None = None,
+                 expected_invalid_rows: int = 1331, expected_conflicts: int = 8) -> dict[str, Any]:
     repositories = report.get("repositories")
     conflicts = report.get("cross_source", {}).get("conflicts")
     if not isinstance(repositories, dict) or not isinstance(conflicts, list):
         raise ValueError("audit report is missing repositories or cross-source conflicts")
 
+    external_lookup = {
+        (str(row.get("symbol", "")).upper(), str(row.get("date", ""))): row
+        for row in (external_report or {}).get("records", [])
+    }
     records: list[dict[str, Any]] = []
     file_lookup: dict[tuple[str, str], dict[str, Any]] = {}
     for repo, snapshot in repositories.items():
@@ -44,6 +51,7 @@ def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
                 day = raw.get("Date") or raw.get("date")
                 if not day:
                     raise ValueError(f"{repo}/{item['path']}:{line}: invalid row lacks date")
+                external = external_lookup.get((str(item["symbol"]).upper(), str(day)), {})
                 records.append({
                     "exception_id": f"invalid_ohlc:{repo}:{item['symbol']}:{line}",
                     "exception_type": "invalid_ohlc",
@@ -57,6 +65,13 @@ def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
                     "source_file_sha256": item["sha256"],
                     "source_csv_line": line,
                     "raw_source_row": raw,
+                    "external_corroboration": {
+                        key: external.get(key) for key in (
+                            "external_status", "external_row", "external_file_sha256",
+                            "source_comparisons", "classification"
+                        ) if key in external
+                    } or None,
+                    "evidence_pointer": f"https://github.com/{repo}/blob/{snapshot['commit_sha']}/{item['path']}#L{line}",
                 })
 
     for conflict in conflicts:
@@ -76,18 +91,35 @@ def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
                 "file_sha256": item["sha256"],
                 "row": row,
             }
+        user_final = (symbol, day) in USER_FINAL_KEYS
+        external = external_lookup.get((str(symbol).upper(), str(day)), {})
         records.append({
             "exception_id": f"cross_source_ohlcv_conflict:{symbol}:{day}",
             "exception_type": "cross_source_ohlcv_conflict",
             "symbol": symbol,
             "trade_date": day,
             "source_repository": "|".join(sorted(evidence)),
-            "disposition": "quarantined_unresolved",
+            "disposition": "resolved_with_user_authoritative_evidence" if user_final else "quarantined_unresolved",
             "reviewer_rationale": (
-                "Pinned archive sources disagree on one or more OHLCV fields; "
-                "retain both versions pending independent authorized source review."
+                "User explicitly designated supplied 2025-07-28 data as final and authoritative for this symbol; preserve user OHLC chart readings and floorsheet quantity/turnover, ignore conflicting source values, and retain original observations for traceability."
+                if user_final else
+                "Pinned archive sources disagree on one or more OHLCV fields; retain both versions pending independent authorized source review."
             ),
             "source_evidence": evidence,
+            "external_corroboration": {
+                key: external.get(key) for key in (
+                    "external_status", "external_row", "external_file_sha256",
+                    "source_comparisons", "classification"
+                ) if key in external
+            } or None,
+            "evidence_pointer": (
+                "conversation-memory://user-final-authoritative-2025-07-28-records"
+                if user_final else
+                " | ".join(
+                    f"https://github.com/{repo}/blob/{repositories[repo]['commit_sha']}/{file_lookup[(repo, symbol)]['path']}"
+                    for repo in sorted(evidence)
+                )
+            ),
         })
 
     records.sort(key=lambda row: (
@@ -107,7 +139,7 @@ def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
         raise ValueError("duplicate exception IDs generated")
 
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "source_audit": {
             "generated_at_utc": report.get("generated_at_utc"),
             "mode": report.get("mode"),
@@ -121,18 +153,22 @@ def build_ledger(report: dict[str, Any], *, expected_invalid_rows: int = 1331,
             "total_exception_records": len(records),
             "invalid_ohlc_rows": actual_invalid,
             "cross_source_conflict_keys": actual_conflicts,
+            "unresolved": sum(row["disposition"] == "quarantined_unresolved" for row in records),
+            "resolved_with_user_authoritative_evidence": sum(row["disposition"] == "resolved_with_user_authoritative_evidence" for row in records),
         },
         "exceptions": records,
     }
 
 
 def write_ledger(report_path: Path, json_path: Path, csv_path: Path, *,
+                 external_report_path: Path | None = None,
                  expected_invalid_rows: int = 1331,
                  expected_conflicts: int = 8) -> dict[str, Any]:
     report_bytes = report_path.read_bytes()
     report = json.loads(report_bytes)
+    external_report = json.loads(external_report_path.read_text(encoding="utf-8")) if external_report_path else None
     ledger = build_ledger(
-        report, expected_invalid_rows=expected_invalid_rows,
+        report, external_report=external_report, expected_invalid_rows=expected_invalid_rows,
         expected_conflicts=expected_conflicts,
     )
     ledger["source_audit"]["source_audit_report_sha256"] = hashlib.sha256(report_bytes).hexdigest()
@@ -154,13 +190,14 @@ def write_ledger(report_path: Path, json_path: Path, csv_path: Path, *,
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path, help="pinned OHLCV audit JSON")
+    parser.add_argument("--external-input", type=Path, help="optional SocrateAI cross-check JSON")
     parser.add_argument("--json-output", required=True, type=Path)
     parser.add_argument("--csv-output", required=True, type=Path)
     parser.add_argument("--expected-invalid-rows", type=int, default=1331)
     parser.add_argument("--expected-conflicts", type=int, default=8)
     args = parser.parse_args()
     counts = write_ledger(
-        args.input, args.json_output, args.csv_output,
+        args.input, args.json_output, args.csv_output, external_report_path=args.external_input,
         expected_invalid_rows=args.expected_invalid_rows,
         expected_conflicts=args.expected_conflicts,
     )

@@ -46,13 +46,13 @@ def _digest(value: Any) -> bool:
 def attestation_payload(attestation: dict[str, Any]) -> bytes:
     unsigned = {key: value for key, value in attestation.items() if key != "signature"}
     return json.dumps(unsigned, sort_keys=True, separators=(",", ":"),
-                      ensure_ascii=False).encode("utf-8")
+                      ensure_ascii=False, allow_nan=False).encode("utf-8")
 
 
 def sign_finality_attestation(attestation: dict[str, Any], reviewer_key: bytes) -> str:
     """Signing helper for controlled review tooling; never store keys in source."""
-    if not isinstance(reviewer_key, bytes) or not reviewer_key:
-        raise ValueError("reviewer_key_required")
+    if not isinstance(reviewer_key, bytes) or len(reviewer_key) < 32:
+        raise ValueError("reviewer_key_must_be_at_least_32_bytes")
     return hmac.new(reviewer_key, attestation_payload(attestation), hashlib.sha256).hexdigest()
 
 
@@ -105,7 +105,7 @@ def validate_market_summary_finality(
     reviewer = attestation.get("reviewer")
     key = reviewer_keys.get(reviewer) if isinstance(reviewer, str) else None
     signature = attestation.get("signature")
-    if not isinstance(key, bytes) or not key or not isinstance(signature, str):
+    if not isinstance(key, bytes) or len(key) < 32 or not isinstance(signature, str):
         raise ValueError("trusted_reviewer_signature_required")
     expected_signature = sign_finality_attestation(attestation, key)
     if not hmac.compare_digest(expected_signature, signature):

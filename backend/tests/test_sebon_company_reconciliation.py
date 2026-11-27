@@ -9,7 +9,8 @@ from app.sebon_company_reconciliation import (
 )
 
 
-GIT_BLOB = "a" * 40
+ARTIFACT_BLOB = "d" * 40
+SOURCE_SNAPSHOT_BLOB = "a" * 40
 SNAPSHOT_DATE = "2026-11-25"
 SOURCE_HASH = "b" * 64
 
@@ -20,7 +21,7 @@ def make_crosswalk(rows=None):
          "security_name": "Himalayan Example Hydropower Limited",
          "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
          "crosswalk_status": "snapshot_id_match_active_status_A",
-         "source_snapshot_blob_sha": SOURCE_HASH},
+         "source_snapshot_blob_sha": SOURCE_SNAPSHOT_BLOB},
         {"symbol": "BBB", "security_id": "102",
          "security_name": "Other Example Finance Company Ltd.",
          "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
@@ -50,7 +51,8 @@ class SebonCompanyReconciliationTests(unittest.TestCase):
         return reconcile_sebon_company_candidates(
             candidates, raw,
             expected_crosswalk_payload_sha256=hashlib.sha256(raw).hexdigest(),
-            expected_crosswalk_git_blob_sha=GIT_BLOB,
+            expected_crosswalk_artifact_git_blob_sha=ARTIFACT_BLOB,
+            expected_source_snapshot_blob_sha=SOURCE_SNAPSHOT_BLOB,
             expected_snapshot_date=SNAPSHOT_DATE,
             **kwargs,
         )

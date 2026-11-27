@@ -66,8 +66,12 @@ def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
     finally:
         con.close()
     data: dict[str, list[dict]] = {}
+    # Withhold the complete affected symbol history; dropping a single bar
+    # would silently bridge an unresolved session in downstream indicators.
+    blocked_symbols = {symbol for symbol, d, *_ in bars
+                       if ledger_blocked({"date": d}, keys, symbol)}
     for symbol, d, o, h, l, c, v in bars:
-        if ledger_blocked({"date": d}, keys, symbol):
+        if symbol in blocked_symbols:
             continue
         data.setdefault(symbol, []).append({
             "date": d, "open": o, "high": h, "low": l, "close": c, "volume": v

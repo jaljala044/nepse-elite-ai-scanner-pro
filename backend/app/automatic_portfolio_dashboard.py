@@ -1,4 +1,5 @@
 """Automatic research evidence orchestration, not independent source verification."""
+from .pending_asset_risk import review_pending_asset_risk
 import hashlib
 import json
 from .liquidity_trap_review import review_liquidity_trap
@@ -8,7 +9,7 @@ from .corporate_action_trade_plan import _number, _time
 def automatic_portfolio_dashboard(*,holding,quote,snapshot,limits,market,sector,
                                   assessment_time,reduction_fraction,rows,benchmark_rows,
                                   sessions,broker_records,broker_numbers,cost_assumptions=None,
-                                  trailing_config=None):
+                                  trailing_config=None,corporate_assets=None):
     symbol=holding["symbol"]
     trap=review_liquidity_trap(symbol=symbol,rows=rows,benchmark_rows=benchmark_rows,
         sessions=sessions,assessment_time=assessment_time,broker_records=broker_records,
@@ -36,6 +37,16 @@ def automatic_portfolio_dashboard(*,holding,quote,snapshot,limits,market,sector,
     result=portfolio_dashboard_review(holding=holding,quote=quote,snapshot=snapshot,limits=limits,
         distribution=distribution,market=market,sector=sector,assessment_time=assessment_time,
         reduction_fraction=reduction_fraction,cost_assumptions=cost_assumptions,trailing_inputs=trailing)
+    overlay=None
+    if corporate_assets is not None:
+        if set(corporate_assets)!={"entitlements","confirmations"}:
+            raise ValueError("invalid_corporate_assets_contract")
+        overlay=review_pending_asset_risk(snapshot=snapshot,limits=limits,
+            assessment_time=assessment_time,**corporate_assets)
+    # Missing coverage is not a clear purchase gate. Preserve existing exit reviews.
+    result["corporate_asset_risk"]=overlay
+    result["new_entries_allowed_by_risk_gate"]=bool(overlay and overlay["new_entries_allowed_by_risk_gate"])
+    result["corporate_asset_coverage"]="NOT_ASSESSED" if overlay is None else "CALLER_ATTESTED"
     return dict(result,distribution_evidence=distribution,liquidity_trap_review=trap,
                 broker_memory_status="DERIVED_FROM_SUPPLIED_HISTORY",
                 production_eligible=False,execution_eligible=False)

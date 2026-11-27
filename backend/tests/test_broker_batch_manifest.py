@@ -124,6 +124,13 @@ class BrokerRawCaptureTests(unittest.TestCase):
         self.assertEqual(stored["captured_at"], "2026-11-25T10:15:00+00:00")
         self.assertEqual(stored["available_at"], "2026-11-27T03:15:00+00:00")
 
+    def test_capture_trade_date_requires_canonical_iso_format(self):
+        manifest, raw = fixture()
+        for invalid in ("20261125", "2026/11/25", "2026-02-30"):
+            candidate = RawCaptureManifest(**{**manifest.__dict__, "trade_date": invalid})
+            with self.subTest(trade_date=invalid), self.assertRaisesRegex(CaptureRejected, "invalid_trade_date"):
+                self.registry.stage(candidate, raw)
+
     def test_raw_hash_and_byte_count_are_verified(self):
         manifest, raw = fixture()
         with self.assertRaises(CaptureRejected):

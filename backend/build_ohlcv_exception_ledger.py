@@ -15,12 +15,6 @@ from pathlib import Path
 from typing import Any
 
 USER_AUTHORITATIVE_RESOLUTIONS = {
-    ("API", "2026-11-19"): {
-        "open": "331.00", "high": "334.20", "low": "330.00", "close": "331.80",
-        "volume": "105340", "turnover_npr": "34929701", "trades": None,
-        "calculated_vwap": "331.59",
-        "authority_reference": "nepse-smc-data commit e4d069c6ed292c127e7805b19f98e2837e999073; user-finalized reconciliation record",
-    },
     ("BGWT", "2025-07-28"): {
         "open": "940.00", "high": "992.00", "low": "933.40", "close": "957.17",
         "volume": "14028", "turnover_npr": "13256345.00", "trades": 194,

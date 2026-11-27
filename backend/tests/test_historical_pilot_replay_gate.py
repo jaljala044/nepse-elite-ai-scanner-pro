@@ -7,7 +7,7 @@ class PilotReplayPreflightTests(unittest.TestCase):
         return dict(cohort_symbols=["AAA"],security_master=[{"symbol":"AAA","security_id":"SEC-1","effective_from":"2025-01-01"}],expected_sessions=[{"session_date":"2025-01-02","status":"confirmed_open","evidence_id":"CAL-1","available_at":"2025-01-02T15:00:00+05:45"}],ingestion_reports=[{"status":"INGESTED","all_rows_accepted":True,"rows":[row]}],corporate_action_status={"status":"validated_for_research","withheld_events":[],"rejected_events":[]},source_reconciliation_report={"status":"SOURCE_EVIDENCE_RECONCILED","capture_reports":{"first_day":{"status":"CAPTURE_VALIDATED"}},"first_trade_report":{"all_cohort_first_trades_verified":True,"verified_count":1,"cohort_count":1,"unresolved_count":0}},decision_cutoff="2025-01-03T00:00:00+05:45",required_capture_keys=["first_day"])
     def test_ready_preflight_never_auto_admits_backtest(self):
         out=build_pilot_replay_preflight(**self.args())
-        self.assertEqual(out["status"],"BOUNDED_PILOT_REPLAY_PREFLIGHT_READY")
+        self.assertEqual(out["status"],"BOUNDED_PILOT_REPLAY_PREFLIGHT_READY", msg=repr(out.get("gate_diagnostics")))
         self.assertFalse(out["historical_replay_executed"])
         self.assertFalse(out["backtest_admission_allowed"])
         self.assertEqual(len(out["dataset_manifest"]["sha256"]),64)

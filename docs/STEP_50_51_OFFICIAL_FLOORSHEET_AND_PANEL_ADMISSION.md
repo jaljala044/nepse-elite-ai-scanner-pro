@@ -51,14 +51,15 @@ The committed real cohort currently has **0/18 official contract matches** and *
 - Only after the admission report is ready should the selected panel enter six-strategy OOS replay.
 
 
-## CI and repository recheck addendum — 2026-11-27
+## Final CI and repository recheck — 2026-11-27
 
 - Main baseline at branch creation: `fe61ae040b31c81df283f87dcd91642f78abb30e`.
-- Final PR head after test correction: `5e317ff959720f034e6d50bd35cfbbe25bd2b852`.
-- Backend unit-test workflow run `46056829736`: **success**.
-- NEPSE historical data integrity workflow run `46056829744`: **success**.
-- An earlier test run failed only because a test expected five missing-evidence blockers when the fixture already supplied the first-trade proof and therefore correctly returned four. The assertion was corrected to four; both final workflows passed.
-- PR #244 is open, draft, mergeable, and not merged. The branch is seven commits ahead and zero behind current `main` at the final comparison.
-- The cohort's actual evidence state remains 0/18 official contract matches and 18/18 pending. The CI pass validates code/tests, not external market evidence.
+- Final implementation/test head: `ef79f58625aed5f65ebe4f4f4fb0058e6ece1522`.
+- Backend unit-test workflow run `46057008131`: **success**.
+- NEPSE historical data integrity workflow run `46057008217`: **success**.
+- The first test attempt exposed an incorrect expected blocker count; the assertion was corrected, and the final workflows passed on the strengthened implementation.
+- Final observed PR #244 state: open, draft, mergeable, not merged. The implementation branch compares as 10 commits ahead and zero behind current `main`.
+- The latest validator additionally checks security-ID joins, effective-date validity, first-trade inclusion in verified open sessions, calendar and OHLCV provenance, and two distinct corporate-action evidence sources with raw hashes.
+- The cohort's actual evidence state remains 0/18 official contract matches and 18/18 pending. CI validates implementation and regression tests, not external market evidence.
 
 No canonical dataset, backtest eligibility, training permission or production trading authorization is enabled.

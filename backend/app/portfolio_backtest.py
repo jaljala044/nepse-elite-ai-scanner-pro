@@ -167,6 +167,7 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 "sector": position["sector"], "entry_date": position["entry_date"],
                 "exit_date": position["exit_date"], "cash_settlement_date": position["settlement_date"],
                 "quantity": position["quantity"],
+                "entry_price": position["entry_price"], "exit_price": position["exit_price"],
                 "buy_cash": position["buy_cash"], "sell_cash": position["sell_cash"],
                 "net_pnl": position["net_pnl"], "net_return_pct": position["net_return_pct"],
                 "risk_budget_cash": position["risk_budget_cash"],
@@ -319,7 +320,7 @@ def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_a
             raise ValueError("entry_settlement_not_proven")
         for side, day, settle, price, fees in (
             ("BUY", t["entry_date"], buy_settle.isoformat(), t["entry_price"], t["buy_cash"]-qty*t["entry_price"]),
-            ("SELL", t["exit_date"], t["settlement_date"], t["exit_price"], qty*t["exit_price"]-t["sell_cash"])):
+            ("SELL", t["exit_date"], t["cash_settlement_date"], t["exit_price"], qty*t["exit_price"]-t["sell_cash"])):
             if fees < -1e-7:
                 raise ValueError("execution_cost_reconciliation_failed")
             trades.append(dict(trade_id=sid+":"+side, signal_id=sid, symbol=symbol,

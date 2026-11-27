@@ -71,6 +71,12 @@ class CaptureOfficialHarTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "approved official"):
                     capture_har_entry(har, 0, "registry", Path(tmp) / "out")
 
+    def test_rejects_credential_like_query_parameters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            har = self._write_har(tmp, make_har(b'{"x":1}', url="https://www.nepalstock.com.np/api/list?token=secret"))
+            with self.assertRaisesRegex(ValueError, "credential-like query"):
+                capture_har_entry(har, 0, "registry", Path(tmp) / "out")
+
     def test_rejects_non_200_status(self):
         with tempfile.TemporaryDirectory() as tmp:
             har = self._write_har(tmp, make_har(b'{"x":1}', status=302))

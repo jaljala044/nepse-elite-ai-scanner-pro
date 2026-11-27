@@ -52,12 +52,27 @@ def build_pilot_replay_preflight(
     manifest_bytes = json.dumps(manifest_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()
     gates_pass = panel.get("status") == "PANEL_ASSEMBLED_FOR_BOUNDED_RESEARCH" and admission.get("status") == "BOUNDED_PILOT_EVIDENCE_READY"
+    gate_diagnostics = {
+        "panel_status": panel.get("status"),
+        "panel_readiness_status": panel.get("readiness_report", {}).get("status"),
+        "panel_identity_errors": panel.get("readiness_report", {}).get("identity_errors", []),
+        "panel_session_errors": panel.get("readiness_report", {}).get("session_errors", []),
+        "panel_bar_errors": panel.get("readiness_report", {}).get("bar_errors", []),
+        "panel_missing_symbol_sessions": panel.get("readiness_report", {}).get("missing_symbol_sessions", []),
+        "panel_corporate_actions": panel.get("readiness_report", {}).get("corporate_actions"),
+        "panel_assembly_errors": panel.get("ingestion_errors", []),
+        "panel_source_conflicts": panel.get("conflicts", []),
+        "panel_insufficient_source_coverage": panel.get("insufficient_source_coverage", []),
+        "admission_status": admission.get("status"),
+        "admission_blocking_reasons": admission.get("blocking_reasons", []),
+    }
     return {
         "status": "BOUNDED_PILOT_REPLAY_PREFLIGHT_READY" if gates_pass else "BLOCKED",
         "panel": panel,
         "admission": admission,
         "dataset_manifest": {"sha256": manifest_hash, "row_count": len(canonical_rows), "decision_cutoff": decision_cutoff, "cohort_count": len(symbols)},
         "replay_preflight_passed": gates_pass,
+        "gate_diagnostics": gate_diagnostics,
         "historical_replay_executed": False,
         "backtest_admission_allowed": False,
         "canonical_promotion_allowed": False,

@@ -30,20 +30,20 @@ class PanelTests(unittest.TestCase):
         self.assertEqual(out["panel_rows"],3)
     def test_missing_session_excludes_symbol(self):
         ds=datasets(); ds["ohlcv"]["accepted_rows"].pop()
-        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45")
+        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45",readiness_report=readiness())
         self.assertNotIn("AAA",out["eligible_symbols"])
         self.assertTrue(any("incomplete_session_history" in x for x in out["excluded_symbols"]["AAA"]))
     def test_unresolved_split_action_excludes_symbol(self):
         ds=datasets(); ds["corporate_actions"]["accepted_rows"].append({"security_id":"S1","action_type":"split","effective_date":"2025-01-02","status":"completed"})
-        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45")
+        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45",readiness_report=readiness())
         self.assertNotIn("AAA",out["eligible_symbols"])
     def test_dataset_available_after_cutoff_blocks_entire_panel(self):
         ds=datasets(); ds["ohlcv"]["available_at"]="2025-01-05T12:00:00+05:45"
-        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45")
+        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45",readiness_report=readiness())
         self.assertEqual(out["status"],"blocked")
     def test_universe_missing_excludes_symbol(self):
         ds=datasets(); ds["instrument_universe"]["accepted_rows"]=[]
-        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45")
+        out=assemble_historical_panel(datasets=ds,start_date="2025-01-01",end_date="2025-01-03",decision_cutoff="2025-01-04T12:00:00+05:45",readiness_report=readiness())
         self.assertEqual(out["status"],"blocked")
 
 class WalkForwardTests(unittest.TestCase):

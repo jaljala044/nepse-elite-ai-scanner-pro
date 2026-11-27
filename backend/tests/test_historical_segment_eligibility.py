@@ -82,6 +82,18 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(available_warmup_sessions=5)
         self.assertIn("insufficient_causal_warmup", result["reasons"])
 
+    def test_no_trade_does_not_count_toward_required_traded_sessions(self):
+        day = self.sessions[-1]
+        statuses = dict(self.statuses, **{day: "no_trade_verified"})
+        result = self.evaluate(session_statuses=statuses, records=self.records[:-1])
+        self.assertIn("insufficient_traded_sessions", result["reasons"])
+        self.assertEqual(result["verified_traded_session_count"], 119)
+
+    def test_session_outside_effective_lifecycle_fails_closed(self):
+        segment = dict(self.segment, effective_to=self.sessions[-2])
+        result = self.evaluate(segment=segment)
+        self.assertIn("session_outside_instrument_effective_interval:" + self.sessions[-1], result["reasons"])
+
     def test_no_trade_session_with_bar_is_conflict(self):
         day = self.sessions[-1]
         statuses = dict(self.statuses, **{day: "no_trade_verified"})

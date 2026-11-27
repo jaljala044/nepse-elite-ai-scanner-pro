@@ -126,5 +126,22 @@ class VersionedFeatureStoreTests(unittest.TestCase):
             persist_versioned_snapshot(tempfile.gettempdir(), {"snapshot_sha256":"bad"})
 
 
+    def test_quarantine_withholds_entire_symbol_and_matching_lineage(self):
+        from unittest.mock import patch
+        def row(symbol, day):
+            return {"record_id":symbol+day,"source_id":"fixture","source_payload_sha256":"a"*64,
+                    "source_row_number":1,"record_type":"ohlcv","symbol":symbol,
+                    "session_date":day,"available_at":day+"T16:00:00Z",
+                    "close":11,"previous_close":10,"volume":100}
+        records = [row("AAA","2026-11-22"),row("AAA","2026-11-23"),row("BBB","2026-11-23")]
+        keys = frozenset({("AAA","2026-11-22")})
+        with patch("app.feature_pipeline.runtime_quarantine_keys",return_value=keys), patch("app.versioned_feature_store.runtime_quarantine_keys",return_value=keys):
+            result = build_versioned_feature_snapshot(records,"2026-11-24T12:00:00Z",[],[])
+        self.assertEqual(set(result["features"]["security_features"]),{"BBB"})
+        self.assertEqual(result["features"]["included_input_count"],1)
+        self.assertEqual(result["features"]["quarantined_input_count"],2)
+        self.assertEqual([x["record_id"] for x in result["input_lineage"]],["BBB2026-11-23"])
+
+
 if __name__ == "__main__":
     unittest.main()

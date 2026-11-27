@@ -131,6 +131,13 @@ def load_deployment_broker_dashboard(*, decision_date: str, decision_time: str) 
         raise TrustedArtifactError("trusted_broker_artifact_store_not_configured")
     root = Path(root_value).resolve()
     registry_path = Path(registry_value).resolve()
+    # The registry is part of the private artifact store. Resolve symlinks
+    # before checking containment so a deployment misconfiguration cannot
+    # silently load a registry from outside the protected mount.
+    try:
+        registry_path.relative_to(root)
+    except ValueError:
+        raise TrustedArtifactError("trusted_broker_registry_path_escapes_store") from None
     if not registry_path.is_file():
         raise TrustedArtifactError("trusted_broker_registry_unavailable")
     try:

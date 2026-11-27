@@ -83,6 +83,17 @@ class NepseHolidayApiArchiveAuditTests(unittest.TestCase):
             self.assertEqual(result["failure_count"], 1)
             self.assertIn("official NEPSE holiday endpoint", result["failures"][0]["error"])
 
+    def test_noncanonical_holiday_date_is_rejected(self):
+        for value in ("20250101", "2025/01/01", "2025-1-01"):
+            with self.subTest(holiday_date=value), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                self._capture(root, 2025, [
+                    {"holidayDate": value, "holidayDescription": "Noncanonical"},
+                ])
+                result = audit_archive(root)
+                self.assertEqual(result["failure_count"], 1)
+                self.assertIn("canonical YYYY-MM-DD", result["failures"][0]["error"])
+
     def test_hash_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

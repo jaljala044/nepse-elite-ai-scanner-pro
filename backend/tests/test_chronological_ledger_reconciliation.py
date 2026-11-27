@@ -31,3 +31,35 @@ class CrossLedgerTests(unittest.TestCase):
         result=reconcile_chronological_ledger(ledger_inputs=inputs,events=events[:-1])
         self.assertFalse(result["balance_checks_passed"])
         self.assertIn("missing_chronological_event:A:bonus_shares",result["differences"])
+
+    def opening_scenario(self):
+        inputs,events=self.scenario()
+        inputs["trades"]=[]
+        inputs["initial_holdings"]={"ABC":{"quantity":10,"average_cost":100}}
+        lots=[dict(lot_id="old",symbol="ABC",quantity=10,total_cost=1000,
+                   acquisition_date="2024-12-20",settlement_date="2024-12-24",
+                   status="verified",source_id="synthetic",available_at=inputs["evidence_cutoff"])]
+        events=events[1:]
+        events[1]["quantities"]={"old":2}
+        return inputs,events,lots
+    def test_opening_lot_reconciliation(self):
+        inputs,events,lots=self.opening_scenario()
+        result=reconcile_chronological_ledger(ledger_inputs=inputs,events=events,opening_lots=lots)
+        self.assertTrue(result["balance_checks_passed"],result["differences"])
+        self.assertEqual(result["chronological"]["available_cash"],"2000")
+    def test_opening_cost_mismatch(self):
+        inputs,events,lots=self.opening_scenario()
+        lots[0]["total_cost"]=999
+        with self.assertRaisesRegex(ValueError,"opening_lot_balance_mismatch"):
+            reconcile_chronological_ledger(ledger_inputs=inputs,events=events,opening_lots=lots)
+    def test_opening_unsettled_lot(self):
+        inputs,events,lots=self.opening_scenario()
+        lots[0]["settlement_date"]=inputs["portfolio_sessions"][0]
+        with self.assertRaisesRegex(ValueError,"invalid_opening_lot"):
+            reconcile_chronological_ledger(ledger_inputs=inputs,events=events,opening_lots=lots)
+    def test_opening_duplicate_lot(self):
+        inputs,events,lots=self.opening_scenario()
+        lots[0]["quantity"]=5
+        lots[0]["total_cost"]=500
+        with self.assertRaisesRegex(ValueError,"invalid_opening_lot"):
+            reconcile_chronological_ledger(ledger_inputs=inputs,events=events,opening_lots=lots*2)

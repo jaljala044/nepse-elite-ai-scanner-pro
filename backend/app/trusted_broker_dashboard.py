@@ -151,6 +151,8 @@ def load_deployment_broker_dashboard(*, decision_date: str, decision_time: str) 
         max_age_days = int(max_age_raw)
     except (TypeError, ValueError):
         raise TrustedArtifactError("trusted_artifact_max_age_days_invalid") from None
+    if max_age_days < 0:
+        raise TrustedArtifactError("trusted_artifact_max_age_days_invalid")
     store = TrustedArtifactStore(root, registry, max_age_days=max_age_days)
     return build_trusted_broker_dashboard(
         store, decision_date=decision_date, decision_time=decision_time,

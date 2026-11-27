@@ -44,7 +44,11 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertEqual(result["index_intelligence"]["source_ids"], ["NEPSE_PRIMARY_EOD_01"])
 
     def test_nepal_local_midnight_is_not_rejected_by_utc_date_rollover(self):
-        result = self.store().load(
+        # The pinned artifact must be available before the Nepal-local
+        # decision cutoff; keep this fixture independent of the later default
+        # availability timestamp used by the other store tests.
+        entry = dict(self.entry, available_at="2026-11-27T00:05:00+05:45")
+        result = self.store(entry).load(
             decision_date="2026-11-27",
             decision_time="2026-11-27T00:10:00+05:45",
             required_modules=("index_intelligence",),

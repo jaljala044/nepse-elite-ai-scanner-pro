@@ -172,6 +172,17 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(session_statuses=statuses)
         self.assertIn("unexpected_session_status:2025-06-01", result["reasons"])
 
+    def test_expected_sessions_must_be_a_date_list(self):
+        with self.assertRaisesRegex(ValueError, "expected_sessions must be a verified date list"):
+            self.evaluate(expected_sessions="2025-01-01")
+
+    def test_session_source_url_requires_https_host(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(evidence[self.sessions[0]], source_url="https://")
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+        self.assertEqual(result["unknown_session_count"], 1)
+
     def test_missing_session_source_provenance_fails_closed(self):
         evidence = dict(self.session_evidence)
         del evidence[self.sessions[0]]

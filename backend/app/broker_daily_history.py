@@ -250,6 +250,8 @@ class BrokerDailyHistoryStore:
                         **({"contract_id": str(record["contract_id"])}
                            if record.get("contract_id") is not None else {}),
                     })
+                if len(normalized_records) != row.get("source_row_count"):
+                    raise DailyHistoryRejected(f"raw_record_lineage_count_mismatch:{index}")
                 row_lineage = {"raw_record_lineage_json": _canonical(normalized_records)}
             side = str(row.get("side", "")).upper()
             if side not in {"BUY", "SELL"}:

@@ -116,6 +116,17 @@ Source: Nepal Rastra Bank, *Current Macroeconomic and Financial Situation of Nep
 6. Preserve the canonical reviewed-row manifest as empty. This membership audit does not alter any OHLCV records, candidate symbols, security IDs, or runtime eligibility.
 
 
+
+### 8. Official NEPSE stock-dealer eligible-company notice — useful subset, not full membership
+
+A direct NEPSE-hosted notice PDF titled *Notice III: List of Companies Eligible for Trading for Securities Dealers* was located. It contains a numbered list of **110 companies/symbols** (sequence 1–110) and says the companies meet criteria under the Securities Dealer (Stock Dealer) Operating Procedure. This is a regulatory/operational subset for stock-dealer eligibility, not a complete list of all active ordinary-equity listings and not a substitute for the security master.
+
+Important source-quality limitation: the PDF's OCR text renders its date as 2062/10/29 BS, while the search index says the PDF was crawled about nine months before this audit. Those date signals conflict, so no effective date is assigned. The notice's scope and 110-entry sequence are recorded only as a separate corroborating subset; it is not used to add/remove candidate symbols or certify the 281-symbol universe.
+
+Official NEPSE-hosted PDF: https://www.nepalstock.com/api/nots/news/notice/fetchFiles/c0699e3d57114311dc167a9904939e94.pdf. The PDF states that its listed firms satisfy the stock-dealer eligibility criteria, and enumerates entries 1–110; see the notice heading and table.
+
+A separate official NEPSE market-statistics page is indexed with a latest visible quote snapshot of 2026-10-09 15:00. It contains traded symbols and quote fields, but it is a market-statistics/quote view, not a status-filtered security master. It therefore cannot certify active versus suspended/delisted membership either. Source: https://www.nepalstock.com/stat.aspx.
+
 ### 7. NEPSE primary API endpoint discovery — authenticated access still required
 
 A public, independently maintained NEPSE client implementation documents the exact exchange API routes used for the two relevant datasets:

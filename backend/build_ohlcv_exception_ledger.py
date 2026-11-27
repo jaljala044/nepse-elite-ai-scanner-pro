@@ -115,6 +115,7 @@ def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | No
                 "commit_sha": snapshot["commit_sha"],
                 "path": item["path"],
                 "file_sha256": item["sha256"],
+                "source_csv_line": row.get("source_csv_line"),
                 "row": row,
             }
         user_resolution = USER_AUTHORITATIVE_RESOLUTIONS.get((symbol, day))
@@ -144,7 +145,7 @@ def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | No
                  "https://github.com/jaljala044/nepse-smc-data/commit/e4d069c6ed292c127e7805b19f98e2837e999073")
                 if user_resolution else
                 " | ".join(
-                    f"https://github.com/{repo}/blob/{repositories[repo]['commit_sha']}/{file_lookup[(repo, symbol)]['path']}"
+                    f"https://github.com/{repo}/blob/{repositories[repo]['commit_sha']}/{file_lookup[(repo, symbol)]['path']}#L{evidence[repo]['source_csv_line']}"
                     for repo in sorted(evidence)
                 )
             ),

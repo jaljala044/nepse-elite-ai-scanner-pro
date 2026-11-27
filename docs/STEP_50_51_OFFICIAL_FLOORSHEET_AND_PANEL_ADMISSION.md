@@ -49,3 +49,16 @@ The committed real cohort currently has **0/18 official contract matches** and *
 - Verify lifecycle identity and corporate actions for each selected symbol.
 - Reconcile raw OHLCV against official and independent sources; quarantine unresolved discrepancies.
 - Only after the admission report is ready should the selected panel enter six-strategy OOS replay.
+
+
+## CI and repository recheck addendum — 2026-11-27
+
+- Main baseline at branch creation: `fe61ae040b31c81df283f87dcd91642f78abb30e`.
+- Final PR head after test correction: `5e317ff959720f034e6d50bd35cfbbe25bd2b852`.
+- Backend unit-test workflow run `46056829736`: **success**.
+- NEPSE historical data integrity workflow run `46056829744`: **success**.
+- An earlier test run failed only because a test expected five missing-evidence blockers when the fixture already supplied the first-trade proof and therefore correctly returned four. The assertion was corrected to four; both final workflows passed.
+- PR #244 is open, draft, mergeable, and not merged. The branch is seven commits ahead and zero behind current `main` at the final comparison.
+- The cohort's actual evidence state remains 0/18 official contract matches and 18/18 pending. The CI pass validates code/tests, not external market evidence.
+
+No canonical dataset, backtest eligibility, training permission or production trading authorization is enabled.

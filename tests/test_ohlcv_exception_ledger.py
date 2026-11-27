@@ -43,7 +43,7 @@ class LedgerValidationTests(unittest.TestCase):
     def test_expected_ledger_passes(self):
         records = ([record("invalid_ohlc", i) for i in range(1331)] +
                    [record("cross_source_ohlcv_conflict", i) for i in range(8)])
-        for row in records[1331:1336]:
+        for row in records[1331:1338]:
             row["disposition"] = "resolved_with_user_authoritative_evidence"
             row["resolution_evidence"] = {
                 "authority": "explicit_user_designation_as_final_and_authoritative",

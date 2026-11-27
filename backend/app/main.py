@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone, time
 from pathlib import Path
 import os
+from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -20,17 +21,25 @@ from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
 from .quarantine_guard import runtime_quarantine_keys
 
-app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
-              description="Research-only NEPSE analytics API. No trade execution.")
-
-
 def validate_quarantine_configuration():
     """Validate the pinned exception ledger before serving a required deployment."""
     if os.getenv("NEPSE_REQUIRE_QUARANTINE_LEDGER") == "1":
         runtime_quarantine_keys(required=True)
 
 
-app.add_event_handler("startup", validate_quarantine_configuration)
+@asynccontextmanager
+async def lifespan(_app):
+    """Use the supported lifespan API for fail-closed deployment validation."""
+    validate_quarantine_configuration()
+    yield
+
+
+app = FastAPI(
+    title="NEPSE ELITE AI SCANNER PRO",
+    version="0.1.0",
+    description="Research-only NEPSE analytics API. No trade execution.",
+    lifespan=lifespan,
+)
 
 _UNIVERSE_PATH = Path(__file__).resolve().parents[2] / "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
 try:

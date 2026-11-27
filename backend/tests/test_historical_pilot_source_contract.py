@@ -23,6 +23,17 @@ class SourceContractTests(unittest.TestCase):
         c=self.contract(); c["api_key"]="do-not-commit"
         out=validate_historical_source_contract(contract=c,decision_cutoff="2025-02-02T00:00:00+05:45")
         self.assertIn("secret_material_must_not_be_embedded_in_contract",str(out["errors"]))
+    def test_rejects_credentials_in_endpoint_query(self):
+        c=self.contract(); c["endpoint_url"]="https://data.example.test/eod?api_key=secret"
+        out=validate_historical_source_contract(contract=c,decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(out["status"],"CONTRACT_BLOCKED")
+        self.assertIn("endpoint_query_must_not_contain_credentials",str(out["errors"]))
+
+    def test_rejects_url_userinfo_and_fragment(self):
+        c=self.contract(); c["endpoint_url"]="https://user:password@data.example.test/eod#token"
+        out=validate_historical_source_contract(contract=c,decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(out["status"],"CONTRACT_BLOCKED")
+
     def test_rejects_contract_review_after_decision_cutoff(self):
         out=validate_historical_source_contract(contract=self.contract(),decision_cutoff="2025-01-01T00:00:00+05:45")
         self.assertEqual(out["status"],"CONTRACT_BLOCKED")

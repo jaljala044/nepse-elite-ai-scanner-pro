@@ -12,6 +12,7 @@ class QualityDashboardTests(unittest.TestCase):
             reconciliation_report={"status":"SOURCE_EVIDENCE_RECONCILED","missing_capture_keys":[],"failed_capture_keys":[],"duplicate_capture_ids":[],"first_trade_report":{"all_cohort_first_trades_verified":True,"verified_count":1,"cohort_count":1,"unresolved_count":0}},
             replay_preflight={"status":"BOUNDED_PILOT_REPLAY_PREFLIGHT_READY","dataset_manifest":{"sha256":"a"*64}},
             corporate_action_status={"status":"validated_for_research","withheld_events":[],"rejected_events":[]},
+            calendar_coverage_contract={"coverage_contract_id":"CAL-RANGE-1","evidence_id":"CAL-SOURCE-1","start_date":"2025-01-02","end_date":"2025-01-02","expected_dates":["2025-01-02"]},
         )
 
     def build(self, **changes):
@@ -89,6 +90,46 @@ class QualityDashboardTests(unittest.TestCase):
         self.assertEqual(out["status"], "BLOCKED")
         self.assertIsNone(out["coverage_pct"])
         self.assertIn("expected_symbol_session_denominator_empty", out["blocking_reasons"])
+
+    def test_unknown_or_suspended_in_range_date_blocks_even_with_complete_panel(self):
+        for status in ("unknown", "suspended"):
+            with self.subTest(status=status):
+                args = self.args()
+                args["expected_sessions"][0]["status"] = status
+                out = self.build(**args)
+                self.assertEqual(out["status"], "BLOCKED")
+                self.assertIn("session_status_unresolved", [x["reason"] for x in out["expected_session_errors"]])
+
+    def test_omitted_date_inside_declared_range_blocks(self):
+        args = self.args()
+        args["calendar_coverage_contract"] = {
+            "coverage_contract_id":"CAL-RANGE-2","evidence_id":"CAL-SOURCE-2",
+            "start_date":"2025-01-02","end_date":"2025-01-03",
+            "expected_dates":["2025-01-02","2025-01-03"],
+        }
+        out = self.build(**args)
+        self.assertEqual(out["status"], "BLOCKED")
+        self.assertIn({"session_date":"2025-01-03","reason":"calendar_date_unaccounted"}, out["expected_session_errors"])
+
+    def test_missing_or_incomplete_calendar_coverage_contract_blocks(self):
+        args = self.args()
+        args.pop("calendar_coverage_contract")
+        out = self.build(**args)
+        self.assertEqual(out["status"], "BLOCKED")
+        self.assertIn("calendar_coverage_contract_missing", [x["reason"] for x in out["expected_session_errors"]])
+
+    def test_confirmed_closure_is_accounted_but_not_in_open_session_denominator(self):
+        args = self.args()
+        args["calendar_coverage_contract"] = {
+            "coverage_contract_id":"CAL-RANGE-3","evidence_id":"CAL-SOURCE-3",
+            "start_date":"2025-01-02","end_date":"2025-01-03",
+            "expected_dates":["2025-01-02","2025-01-03"],
+        }
+        args["expected_sessions"].append({"session_date":"2025-01-03","status":"confirmed_closed","evidence_id":"HOL-1"})
+        out = self.build(**args)
+        self.assertEqual(out["status"], "QUALITY_REVIEW_READY")
+        self.assertEqual(out["verified_open_session_count"], 1)
+        self.assertEqual(out["expected_symbol_sessions"], 1)
 
     def test_invalid_manifest_hash_blocks(self):
         args = self.args()

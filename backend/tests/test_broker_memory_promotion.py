@@ -72,6 +72,26 @@ class PromotionTests(unittest.TestCase):
         self.assertIn("POINT_IN_TIME_GATE_FAILED", result.reason_codes)
         self.assertEqual(store.calls, [])
 
+    def test_non_hex_digests_are_blocked(self):
+        store = FakeStore()
+        result = promote_reconciled_batch(
+            evidence(source_payload_sha256="g" * 64, source_manifest_sha256="z" * 64),
+            [{"symbol": "ABC"}], store)
+        self.assertEqual(result.status, PromotionStatus.BLOCKED)
+        self.assertIn("INVALID_SOURCE_PAYLOAD_DIGEST", result.reason_codes)
+        self.assertIn("INVALID_SOURCE_MANIFEST_DIGEST", result.reason_codes)
+        self.assertEqual(store.calls, [])
+
+    def test_noncanonical_session_and_naive_availability_are_blocked(self):
+        store = FakeStore()
+        result = promote_reconciled_batch(
+            evidence(session_date="20261126", available_at="2026-11-26T16:00:00"),
+            [{"symbol": "ABC"}], store)
+        self.assertEqual(result.status, PromotionStatus.BLOCKED)
+        self.assertIn("INVALID_SESSION_DATE", result.reason_codes)
+        self.assertIn("INVALID_AVAILABLE_AT", result.reason_codes)
+        self.assertEqual(store.calls, [])
+
     def test_row_count_mismatch_blocks(self):
         store = FakeStore()
         result = promote_reconciled_batch(evidence(), [], store)

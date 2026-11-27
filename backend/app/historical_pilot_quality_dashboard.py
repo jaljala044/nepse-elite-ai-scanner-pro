@@ -44,8 +44,7 @@ def build_historical_pilot_quality_dashboard(
             key = (str(row["symbol"]), date.fromisoformat(str(row["session_date"])).isoformat())
         except (KeyError, ValueError, TypeError):
             continue
-        if key in expected:
-            observed.add(key)
+        observed.add(key)
     missing = [{"symbol": s, "session_date": d} for s, d in sorted(expected - observed)]
     unexpected = [{"symbol": s, "session_date": d} for s, d in sorted(observed - expected)]
     conflict_rows = list(panel_report.get("conflicts", []))

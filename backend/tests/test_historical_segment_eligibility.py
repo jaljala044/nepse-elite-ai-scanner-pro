@@ -27,7 +27,7 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
     def evaluate(self, **overrides):
         args = dict(segment=self.segment, expected_sessions=self.sessions,
                     session_statuses=self.statuses, records=self.records,
-                    required_sessions=120, required_warmup_sessions=20,
+                    required_sessions=120, available_warmup_sessions=20,
                     decision_cutoff="2026-01-01T00:00:00+05:45")
         args.update(overrides)
         return evaluate_historical_segment(**args)
@@ -79,7 +79,7 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("duplicate_bar:" + self.sessions[0], result["reasons"])
 
     def test_insufficient_warmup_fails_closed(self):
-        result = self.evaluate(required_warmup_sessions=5)
+        result = self.evaluate(available_warmup_sessions=5)
         self.assertIn("insufficient_causal_warmup", result["reasons"])
 
     def test_no_trade_session_with_bar_is_conflict(self):

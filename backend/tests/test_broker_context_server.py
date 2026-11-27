@@ -26,6 +26,11 @@ class BrokerContextServerTests(unittest.TestCase):
             self.assertEqual(calc.call_args.kwargs["expected_sessions"],self.days)
             with self.assertRaises(ValueError):
                 server_context({},[],[],[],decision_time=self.ts,expected_sessions=[self.days[0],self.days[-1]])
+    def test_missing_quarantine_registry_fails_closed(self):
+        with patch("app.broker_context_server.Path.read_text", side_effect=OSError("missing registry")):
+            with self.assertRaises(OSError):
+                server_context({}, [], [], [], decision_time=self.ts, expected_sessions=self.days)
+
     def test_late_calendar_blocks(self):
         rows={date.fromisoformat(d):{"scope":"market_wide","verified_at_utc":"2026-04-25T00:00:00Z","status":"verified_open"} for d in self.days}
         with patch("app.broker_context_server.load_calendar",return_value=rows):

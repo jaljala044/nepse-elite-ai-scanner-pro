@@ -77,5 +77,37 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
             self.assertTrue(cp.read_text(encoding="utf-8").startswith("exception_id,"))
 
 
+    def test_user_authoritative_2025_07_28_conflict_is_resolved_only_for_exact_key(self):
+        report = report_fixture()
+        report["repositories"]["source-a"]["files"][0]["symbol"] = "BGWT"
+        report["repositories"]["source-a"]["files"][0]["path"] = "BGWT_OHLCV.csv"
+        report["repositories"]["source-b"]["files"][0]["symbol"] = "BGWT"
+        report["repositories"]["source-b"]["files"][0]["path"] = "BGWT_OHLCV.csv"
+        report["cross_source"]["conflicts"][0]["symbol"] = "BGWT"
+        report["cross_source"]["conflicts"][0]["date"] = "2025-07-28"
+        for repo in ("source-a", "source-b"):
+            report["repositories"][repo]["files"][0]["invalid_rows"] = []
+        ledger = build_ledger(report, expected_invalid_rows=0, expected_conflicts=1)
+        conflict = ledger["exceptions"][0]
+        self.assertEqual(conflict["disposition"], "resolved_with_user_authoritative_evidence")
+        self.assertIn("conversation-memory://user-final-authoritative-2025-07-28-records", conflict["evidence_pointer"])
+        self.assertEqual(ledger["counts"]["resolved_with_user_authoritative_evidence"], 1)
+        self.assertEqual(ledger["counts"]["unresolved"], 0)
+
+    def test_external_corroboration_is_attached_without_source_selection(self):
+        report = report_fixture()
+        external = {"records": [{
+            "symbol": "AAA", "date": "2026-01-02", "external_status": "matched_symbol",
+            "external_file_sha256": "f" * 64, "classification": "partial_or_conflicting",
+            "external_row": {"close": "12"}, "source_comparisons": {"source-a": {"status": "partial_match"}}
+        }]}
+        ledger = build_ledger(report, external_report=external, expected_invalid_rows=1, expected_conflicts=1)
+        invalid = next(row for row in ledger["exceptions"] if row["exception_type"] == "invalid_ohlc")
+        conflict = next(row for row in ledger["exceptions"] if row["exception_type"] == "cross_source_ohlcv_conflict")
+        self.assertEqual(invalid["external_corroboration"]["classification"], "partial_or_conflicting")
+        self.assertEqual(conflict["external_corroboration"]["external_file_sha256"], "f" * 64)
+        self.assertEqual(invalid["disposition"], "quarantined_unresolved")
+        self.assertEqual(conflict["disposition"], "quarantined_unresolved")
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ REQUIRED_GATES = (
     "source_lineage_complete", "ohlcv_integrity_passed", "broker_identity_policy_passed",
     "point_in_time_leakage_checks_passed", "corporate_action_policy_reviewed",
     "historical_coverage_threshold_met", "holdout_protocol_defined",
+    "historical_quarantine_clearance_verified",
 )
 
 

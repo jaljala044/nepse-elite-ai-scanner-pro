@@ -20,7 +20,7 @@ The compare response identified two changed SMC OHLCV paths and five changed His
 
 | Repository | Symbol/date | Pinned row | Current-main row | Result |
 | --- | --- | --- | --- | --- |
-| nepse-smc-data | API 2026-11-19 | 331.0 / 334.2 / 330.2 / 333.0 / 26,717.0 | 331.0 / 334.2 / 330.0 / 331.8 / 105,340.0 | Changed source value; user-finalized by explicit reconciliation record |
+| nepse-smc-data | API 2026-11-19 | 331.0 / 334.2 / 330.2 / 333.0 / 26,717.0 | 331.0 / 334.2 / 330.0 / 331.8 / 105,340.0 | Changed source value; retain as unresolved conflict |
 | nepse-smc-data | HRL 2026-11-19 | 483.0 / 488.0 / 480.0 / 486.0 / 18,817.0 | 483.0 / 488.0 / 480.0 / 483.9 / 49,184.0 | Changed source value; retain as unresolved conflict |
 | nepse-history-starter | BGWT 2025-07-28 | 940 / 992 / 933.4 / 945.00 / 14,028 | 940 / 992 / 933.4 / 957.17 / 14,028 | Matches user-authoritative resolution |
 | nepse-history-starter | MEHL 2025-07-28 | 471.1 / 480.5 / 460 / 470.83 / 29,753 | 471.1 / 480.5 / 460 / 475.63 / 29,753 | Matches user-authoritative resolution |
@@ -42,13 +42,13 @@ OHLCV field order in this table is Open / High / Low / Close / Volume. Current-m
 
 The five 2025-07-28 rows now agree with the values the user designated authoritative. Their ledger disposition remains `resolved_with_user_authoritative_evidence`; this source update is not independent authority and does not replace the user's supplied chart/floorsheet evidence.
 
-API and HRL's current SMC rows match the user-finalized values recorded in SMC commits `4b8d2523df3e43877c3b8cf4d5de19606785b47e` and `412efe0a83c5b3db5c72783f9f105eafa34ec396`. The user-finalized reconciliation is documented in `e4d069c6ed292c127e7805b19f98e2837e999073`; it records the user-supplied chart OHLC and floorsheet quantity/turnover. Their pinned source rows remain immutable in the audit ledger, with the accepted values separately recorded as row-level resolution evidence. RHGCL 2026-11-19 remains unresolved.
+API and HRL remain unresolved cross-source exceptions. Their current SMC values differ from the pinned SMC values, so the pinned baseline values must remain immutable in the ledger. No selection or correction is authorized from this delta alone.
 
 ## Audit disposition
 
 - Do not rewrite the pinned audit ledger or its source commit references.
 - Do not mutate raw source files.
 - Keep the five user-authoritative resolutions intact.
-- Resolve API and HRL 2026-11-19 using the user-finalized reconciliation evidence; keep RHGCL 2026-11-19 unresolved and quarantined.
+- Keep API and HRL 2026-11-19 unresolved and quarantined.
 - This targeted delta is a supplementary audit observation only. The full source-head refresh and all-525-file rerun remain outstanding because the SMC compare response was truncated at 300 changed files.
 - No canonical promotion, training admission or scanner eligibility change is authorized.

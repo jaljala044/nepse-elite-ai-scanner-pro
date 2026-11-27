@@ -10,7 +10,7 @@ def source(**extra):
 
 class SourceRegistryTests(unittest.TestCase):
     def test_registry_rejects_duplicate_source_and_publisher_ids(self):
-        result=validate_source_registry([source(),source(source_id="src-2",publisher_id="pub-2")])
+        result=validate_source_registry([source(),source()])
         self.assertEqual(result["valid_count"],1)
         self.assertEqual(result["rejected_count"],1)
 

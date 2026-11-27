@@ -25,13 +25,17 @@ def round_trip(entry, exit, quantity, *, assumptions=None):
     if buy<=0 or sell<=0 or qty<=0 or qty!=qty.to_integral_value():
         raise ValueError("positive prices and whole-share quantity required")
     a = {k:_number(assumptions[k]) for k in keys}
-    if any(a[k]>1 for k in ("buy_broker_rate","sell_broker_rate","regulatory_rate","capital_gain_tax_rate")) or a["slippage_bps"]>=10000:
+    for side in ("buy", "sell"):
+        for field in ("regulatory_rate", "min_broker_fee"):
+            key = side + "_" + field
+            a[key] = _number(assumptions.get(key, a[field]))
+    if any(a[k]>1 for k in ("buy_broker_rate","sell_broker_rate","regulatory_rate","capital_gain_tax_rate","buy_regulatory_rate","sell_regulatory_rate")) or a["slippage_bps"]>=10000:
         raise ValueError("invalid rate")
     slip = a["slippage_bps"]/10000
     buy_value = buy*(1+slip)*qty
     sell_value = sell*(1-slip)*qty
-    buy_fee = max(buy_value*a["buy_broker_rate"],a["min_broker_fee"])+buy_value*a["regulatory_rate"]
-    sell_fee = max(sell_value*a["sell_broker_rate"],a["min_broker_fee"])+sell_value*a["regulatory_rate"]+a["sell_dp_charge"]
+    buy_fee = max(buy_value*a["buy_broker_rate"],a["buy_min_broker_fee"])+buy_value*a["buy_regulatory_rate"]
+    sell_fee = max(sell_value*a["sell_broker_rate"],a["sell_min_broker_fee"])+sell_value*a["sell_regulatory_rate"]+a["sell_dp_charge"]
     invested=buy_value+buy_fee
     pre_tax=sell_value-sell_fee-invested
     tax=max(pre_tax,Decimal(0))*a["capital_gain_tax_rate"]

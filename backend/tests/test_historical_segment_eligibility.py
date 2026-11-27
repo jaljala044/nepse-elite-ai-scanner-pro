@@ -205,5 +205,18 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("session_evidence_lookahead:" + self.sessions[0], result["reasons"])
 
 
+    def test_expected_sessions_must_be_an_explicit_date_list(self):
+        with self.assertRaisesRegex(ValueError, "expected_sessions must be a verified date list"):
+            self.evaluate(expected_sessions={"2025-01-01": True})
+
+    def test_session_evidence_url_requires_https_authority(self):
+        for bad_url in ("http://example.invalid/calendar", "https:///calendar", "https://[broken"):
+            with self.subTest(url=bad_url):
+                evidence = dict(self.session_evidence)
+                evidence[self.sessions[0]] = dict(evidence[self.sessions[0]], source_url=bad_url)
+                result = self.evaluate(session_evidence=evidence)
+                self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+
+
 if __name__ == "__main__":
     unittest.main()

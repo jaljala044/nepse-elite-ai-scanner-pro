@@ -61,7 +61,7 @@ def _valid_ohlcv(row):
 
 
 def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
-                                records, required_sessions=120,
+                                session_evidence, records, required_sessions=120,
                                 available_warmup_sessions=0, decision_cutoff):
     """Evaluate a point-in-time segment without imputing missing or inactive dates.
 
@@ -74,6 +74,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         raise ValueError("segment must be a mapping")
     if not isinstance(session_statuses, dict):
         raise ValueError("session_statuses must be a date-to-status mapping")
+    if not isinstance(session_evidence, dict):
+        raise ValueError("session_evidence must be a date-to-provenance mapping")
     if not isinstance(records, list):
         raise ValueError("records must be a list")
     if not isinstance(required_sessions, int) or isinstance(required_sessions, bool) or required_sessions < 1:
@@ -142,9 +144,22 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"duplicate_session_status:{day.isoformat()}")
         normalized_statuses[day] = state
 
+    normalized_evidence = {}
+    for raw_day, evidence in session_evidence.items():
+        try:
+            day = _iso_date(raw_day, "session evidence date")
+        except ValueError:
+            reasons.append("invalid_session_evidence_date")
+            continue
+        if day in normalized_evidence:
+            reasons.append(f"duplicate_session_evidence:{day.isoformat()}")
+        normalized_evidence[day] = evidence
+
     expected_set = set(expected)
     for extra_day in sorted(set(normalized_statuses) - expected_set):
         reasons.append(f"unexpected_session_status:{extra_day.isoformat()}")
+    for extra_day in sorted(set(normalized_evidence) - expected_set):
+        reasons.append(f"unexpected_session_evidence:{extra_day.isoformat()}")
     for day in expected:
         if ((effective_from is not None and day < effective_from)
                 or (effective_to is not None and day > effective_to)):
@@ -175,6 +190,40 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         state = normalized_statuses.get(day)
         if state not in _ALLOWED_SESSION_STATES:
             reasons.append(f"session_status_unverified:{day_text}")
+            unknown += 1
+            continue
+        evidence = normalized_evidence.get(day)
+        evidence_valid = isinstance(evidence, dict)
+        if not evidence_valid:
+            reasons.append(f"session_evidence_missing:{day_text}")
+        else:
+            if evidence.get("status") != state:
+                reasons.append(f"session_evidence_status_mismatch:{day_text}")
+                evidence_valid = False
+            if not isinstance(evidence.get("source_id"), str) or not evidence["source_id"].strip():
+                evidence_valid = False
+            if not isinstance(evidence.get("source_record_ref"), str) or not evidence["source_record_ref"].strip():
+                evidence_valid = False
+            if not isinstance(evidence.get("source_url"), str) or not evidence["source_url"].startswith("https://"):
+                evidence_valid = False
+            if not _SHA256.fullmatch(str(evidence.get("evidence_sha256") or "").lower()):
+                evidence_valid = False
+            if evidence.get("rights_status") not in _ALLOWED_RIGHTS:
+                evidence_valid = False
+            try:
+                evidence_available_at = _aware_datetime(evidence.get("available_at"), "session evidence available_at")
+                if evidence_available_at > cutoff:
+                    reasons.append(f"session_evidence_lookahead:{day_text}")
+                    evidence_valid = False
+            except ValueError:
+                evidence_valid = False
+            try:
+                _aware_datetime(evidence.get("retrieved_at"), "session evidence retrieved_at")
+            except ValueError:
+                evidence_valid = False
+            if not evidence_valid:
+                reasons.append(f"session_evidence_unverified:{day_text}")
+        if not evidence_valid:
             unknown += 1
             continue
         rows = by_day.get(day, [])

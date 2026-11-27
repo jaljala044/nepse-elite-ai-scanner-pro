@@ -4,7 +4,7 @@ from app.scanner_portfolio_outcome_orchestrator import run_portfolio_outcome_com
 class PortfolioOutcomeOrchestratorTests(unittest.TestCase):
     def test_runs_independent_strategy_horizon_portfolios_and_oos_ledger(self):
         trade={"source_signal_id":"SIG1","symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing",
-            "entry_date":"2026-01-02","exit_date":"2026-01-05","entry_price":"100","stop_price":"90",
+            "entry_date":"2026-01-02","exit_date":"2026-01-05","decision_time":"2026-01-02T00:00:00+00:00",\n            "feature_snapshot_sha256":"a"*64,"replay_policy_sha256":"d"*64,"entry_price":"100","stop_price":"90",
             "target_price":"120","exit_price":"110","exit_reason":"target","net_return_pct":"9.2","liquidity_quantity_cap":100}
         bundle={"runs":[{"strategy_id":"trend_momentum","horizon":"swing","partition":"out_of_sample",
             "trades":[trade],"pending_exits":[],"metrics":{}},
@@ -13,7 +13,7 @@ class PortfolioOutcomeOrchestratorTests(unittest.TestCase):
             {"strategy_id":"trend_momentum","horizon":"swing","partition":"train",
             "trades":[],"pending_exits":[],"metrics":{}}]}
         signals=[{"signal_id":"SIG1","symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing",
-            "action":"RESEARCH_BUY_FOR_HUMAN_REVIEW","sample_partition":"out_of_sample"}]
+            "decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"a"*64,\n            "action":"RESEARCH_BUY_FOR_HUMAN_REVIEW","sample_partition":"out_of_sample"}]
         out=run_portfolio_outcome_comparison(replay_bundle=bundle,signals=signals,
             portfolio_config={"initial_equity":"100000"})
         self.assertEqual(out["portfolio_run_count"],2)

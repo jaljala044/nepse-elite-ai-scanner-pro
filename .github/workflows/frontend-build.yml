@@ -21,10 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install pinned chart dependency
-        working-directory: frontend
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Install exact generated dependency graph
+      - name: Install exact locked chart dependencies
         working-directory: frontend
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Syntax checks and isolated build

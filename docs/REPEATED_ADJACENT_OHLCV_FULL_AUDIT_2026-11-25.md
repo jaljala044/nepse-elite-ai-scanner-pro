@@ -106,3 +106,27 @@ The 196,542 consecutive-calendar-date candidates remain review-only, not exchang
 The previous requirement to obtain a first-party NEPSE confirmation for every historical open date has been removed for project-level session joins. The canonical working calendar now contains 3,630 unique `project_accepted_open` dates from the ShareSansar-derived `srijankarki07/nepse-data` yearly close indexes (2011–2026), plus 41 explicit NEPSE holiday API closure dates. No date overlap was found between these sets. The 2020-05-12 and 2020-05-13 exceptional sessions are included in the archive baseline.
 
 The session join may now classify candidate date pairs against this calendar. Keep the provenance tier attached to every result: project-accepted dates are not NEPSE-certified. The 196,784 rows remain review candidates until duplicate-key, date ordering, OHLC bounds, source-lineage and per-security checks complete. Calendar acquisition is no longer a blocker; no raw OHLCV row is repaired or promoted by this decision.
+
+
+## Project calendar session join implementation — 2026-11-27
+
+The read-only repeated-row extractor now accepts the canonical
+`data/reference/nepse_session_calendar.csv` via `--calendar` and writes
+four additional fields for every candidate: prior/current calendar status,
+the signed project-session index gap, and a session-join classification.
+
+Classification rules:
+- `adjacent_project_sessions_review`: both dates are open in the project calendar and are consecutive entries in its ordered open-date index.
+- `intervening_project_sessions_missing_from_source_review`: both dates are open, but one or more project-calendar sessions fall between the adjacent CSV rows.
+- `explicit_closure_date_conflict_review`: either candidate date is an explicitly listed closure.
+- `date_not_in_project_calendar_review`: at least one date is not listed; it is not inferred to be open or closed.
+- `non_increasing_or_duplicate_session_order_review`: both dates are open but their project-calendar order is not increasing.
+
+This join is deliberately a review classification only. It does not validate individual OHLCV values beyond the existing bounds flag, prove a source row is genuine, or promote/reject/repair any record. The summary records the exact calendar SHA-256 and per-source join counts. The workflow now runs this join after the existing pinned-source extraction and uploads the enriched candidate ledger.
+
+Implementation commits:
+- Extractor/calendar join: `e8077fcb98f82589a79d68fc797c4976c237b3c6`
+- Join tests: `d41765de7b435c3f1ed59179950fe1bf7885b8e7`
+- Calendar-enabled workflow: `3f4370f3e23cafde914e9f1b4a7dd737091f56c9`
+
+**Execution status:** code and workflow are committed; a successful Actions run and enriched artifact have not yet been confirmed. Do not treat the candidate classification totals as complete until that run finishes and the artifact is inspected.

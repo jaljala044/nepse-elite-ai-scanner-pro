@@ -13,6 +13,7 @@ from typing import Any, Mapping
 
 from app.broker_aggregation import aggregate_broker_observations, reconcile_source_control_totals
 from app.broker_ingestion import payload_hash, reconcile_broker_batch
+from app.historical_quarantine import configured_holds, reject_held
 
 
 class FloorsheetBrokerAdapterError(ValueError):
@@ -115,11 +116,16 @@ def adapt_floorsheet_parties_to_broker_batch(
         raise FloorsheetBrokerAdapterError("each_contract_must_have_buy_and_sell_party_rows")
 
     # A source contract must appear once per source/date/contract and have one row per side.
+    holds = configured_holds()
     contracts: dict[tuple, list[dict]] = defaultdict(list)
     for row in rows:
         if not isinstance(row, dict):
             raise FloorsheetBrokerAdapterError("party_row_must_be_an_object")
         _enforce_p443_quarantine(row)
+        try:
+            reject_held(row.get("symbol", ""), row["trade_date"], holds)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise FloorsheetBrokerAdapterError("p443_historical_hold:" + str(exc)) from exc
         key = (row.get("source_id"), row.get("trade_date"), row.get("contract_id"))
         contracts[key].append(row)
     for key, parties in contracts.items():
@@ -219,6 +225,7 @@ def adapt_floorsheet_parties_to_broker_batch(
         expected_source_ids=expected_ids, received_source_ids=received_ids,
         available_at=available_at,
         verified_session_finality=verified_session_finality,
+        security_registry=security_registry,
     )
 
     adapter_failures = []

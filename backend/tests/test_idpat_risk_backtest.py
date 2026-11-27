@@ -8,7 +8,7 @@ from app.idpat_backtest import replay_idpat_signals, walk_forward_split
 class RiskTests(unittest.TestCase):
     def plan(self, **changes):
         args = dict(symbol="TEST", entry="100", stop="95",
-                    targets={"T1": "110", "T2": "115", "T3": "120"},
+                    targets={"T1": "112", "T2": "115", "T3": "120"},
                     capital="100000", risk_pct="1", round_trip_cost_pct="0.2",
                     slippage_pct="0.1")
         args.update(changes)

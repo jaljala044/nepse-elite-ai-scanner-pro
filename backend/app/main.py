@@ -52,7 +52,6 @@ class IDPATResearchRequest(BaseModel):
     as_of_timestamp: str
     snapshot: dict
     session_calendar: dict | None = None
-    gate_evidence: dict = Field(default_factory=dict)
     risk_inputs: dict | None = None
     persist_signal: bool = False
     horizon: str = "swing"
@@ -163,20 +162,20 @@ def early_signals(request: EarlySignalRequest):
 @app.post("/v1/research/idpat")
 def idpat_research(request: IDPATResearchRequest):
     """Research-only IDPAT bundle; missing independent gates force NO_TRADE."""
+    if request.persist_signal:
+        raise HTTPException(503, "server_side_source_evidence_adapters_not_configured")
     try:
-        result = build_idpat_scanner_bundle(
+        # Client-submitted attestations are deliberately not accepted as proof.
+        # Until trusted server adapters are wired to verified source stores, all
+        # seven independent gates remain blocked and the route returns NO_TRADE.
+        return build_idpat_scanner_bundle(
             snapshot=request.snapshot,
             as_of_date=request.as_of_date.isoformat(),
             as_of_timestamp=request.as_of_timestamp,
             session_calendar=request.session_calendar,
-            gate_evidence=request.gate_evidence,
+            gate_evidence={},
             risk_inputs=request.risk_inputs,
         )
-        if request.persist_signal:
-            result["signal_ledger"] = persist_idpat_bundle(
-                result, gate_evidence=request.gate_evidence, horizon=request.horizon
-            )
-        return result
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
 

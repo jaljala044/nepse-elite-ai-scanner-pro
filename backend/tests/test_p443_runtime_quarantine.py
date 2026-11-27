@@ -34,4 +34,39 @@ class QuarantineTests(unittest.TestCase):
         r=replay(symbol,[bar(day)],reviewed={},verified_sessions=[day])
         self.assertEqual(r["observations"],[])
         self.assertIn("historical_quarantine:"+day,r["excluded"][0]["reasons"])
+    def test_broker_detector_blocks_every_quarantine_key(self):
+        from app.broker_pattern_detector import detect_broker_patterns
+        for symbol, day in sorted(QUARANTINE):
+            d = date.fromisoformat(day)
+            sessions = [str(d + timedelta(days=i)) for i in (-2,-1,1,2,3)]
+            with self.subTest(symbol=symbol,day=day):
+                result = detect_broker_patterns(symbol, [], [], [],
+                    expected_sessions=sessions, complete_broker_sessions=sessions,
+                    decision_at=sessions[-1]+"T23:59:59+05:45")
+                self.assertEqual(result["status"],"INSUFFICIENT_EVIDENCE")
+                self.assertIn("historical_quarantine:"+day,result["missing_features"])
+                self.assertFalse(result["production_eligible"])
+
+    def test_broker_api_rejects_client_calendar_mismatch(self):
+        from unittest.mock import patch
+        from fastapi import HTTPException
+        from app.main import BrokerPatternRequest, broker_patterns
+        days=["2025-01-01","2025-01-02","2025-01-03","2025-01-04","2025-01-05"]
+        request=BrokerPatternRequest(symbol="TEST",broker_rows=[],price_rows=[],
+            market_context=[],expected_sessions=days,complete_broker_sessions=days,
+            decision_at="2025-01-06T23:59:59+05:45")
+        with patch("app.main.trusted_sessions",return_value=days+["2025-01-06"]), \
+             patch("app.main.detect_broker_patterns") as detector:
+            with self.assertRaises(HTTPException) as exc:
+                broker_patterns(request)
+            self.assertEqual(exc.exception.status_code,422)
+            detector.assert_not_called()
+        with patch("app.main.trusted_sessions",return_value=None):
+            with self.assertRaises(HTTPException):
+                broker_patterns(request)
+        with patch("app.main.trusted_sessions",return_value=days), \
+             patch("app.main.detect_broker_patterns",return_value={"status":"test"}) as detector:
+            self.assertEqual(broker_patterns(request),{"status":"test"})
+            self.assertEqual(detector.call_args.kwargs["expected_sessions"],days)
+
 if __name__=="__main__":unittest.main()

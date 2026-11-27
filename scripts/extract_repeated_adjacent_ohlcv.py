@@ -171,6 +171,7 @@ def main() -> int:
         "method": "identical OHLCV signatures on consecutive CSV rows; date gap and OHLC bounds reported separately",
         "source_counts": per_source,
         "total_candidates": len(all_rows),
+        "candidate_csv_sha256": sha256(csv_path),
         "baseline_metric_eligible_total": sum(r["baseline_metric_eligible"] for r in all_rows),
         **calendar_summary,
         "calendar_status": "project_accepted_research_baseline_with_explicit_closures_not_exchange_certified",

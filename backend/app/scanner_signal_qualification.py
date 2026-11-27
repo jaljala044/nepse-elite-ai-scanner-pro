@@ -23,7 +23,7 @@ def _num(value):
     except (InvalidOperation,TypeError,ValueError): return None
 
 def qualify_scanner_signal(*, symbol, decision_time, horizon, component_evidence,
-    gates, trade_plan, minimum_coverage=Decimal("0.80"), minimum_score=Decimal("80")):
+    gates, trade_plan, minimum_coverage=Decimal("0.95"), minimum_score=Decimal("80")):
     if horizon not in HORIZONS: raise ValueError("unsupported_horizon")
     cutoff=_time(decision_time)
     if cutoff is None: raise ValueError("decision_time_must_be_timezone_aware")

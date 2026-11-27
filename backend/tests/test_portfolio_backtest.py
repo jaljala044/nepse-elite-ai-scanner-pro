@@ -144,6 +144,30 @@ class PortfolioBacktestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "risk_budget_cannot_exceed_position_cap"):
             self.run_portfolio(risk_per_trade_pct=0.5)
 
+    def test_noncanonical_portfolio_and_signal_dates_are_rejected(self):
+        for day in ("20250101", "2025-1-01", "2025-01-01T00:00:00"):
+            with self.subTest(day=day), self.assertRaisesRegex(ValueError, "canonical_iso_date"):
+                self.run_portfolio(portfolio_sessions=[day, *self.days[1:]])
+        with self.assertRaisesRegex(ValueError, "canonical_iso_date"):
+            self.run_portfolio(evaluation_date="20250110")
+        malformed_signal = dict(self.signal, details={
+            "decision_date": "20250101",
+            "plan": {"entry": "100", "stop": "90", "targets": ["110"]}
+        })
+        with self.assertRaisesRegex(ValueError, "canonical_iso_date"):
+            self.run_portfolio(signals=[malformed_signal])
+
+    def test_naive_signal_decision_timestamp_is_rejected(self):
+        malformed_signal = dict(self.signal, decision_time=self.days[0] + "T15:00:00")
+        with self.assertRaisesRegex(ValueError, "timezone_aware"):
+            self.run_portfolio(signals=[malformed_signal])
+
+    def test_boolean_risk_parameters_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "invalid_initial_capital"):
+            self.run_portfolio(initial_capital=True)
+        with self.assertRaisesRegex(ValueError, "invalid_max_drawdown_pct"):
+            self.run_portfolio(max_drawdown_pct=True)
+
 
 if __name__ == "__main__":
     unittest.main()

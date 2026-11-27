@@ -27,9 +27,9 @@ class ReplayTests(unittest.TestCase):
         r=self.replay([bar("2026-01-01",100,101,99,100),bar("2026-01-02",100,121,89,100)])
         self.assertEqual(r["trades"][0]["exit_reason"],"stop")
     def test_settlement_lock_delays_stop_exit_until_sellable(self):
-        r=self.replay([bar("2026-01-01",100,101,99,100),bar("2026-01-02",100,110,89,95),bar("2026-01-03",92,100,91,96)],delay=2)
+        r=self.replay([bar("2026-01-01",100,101,99,100),bar("2026-01-02",100,110,89,95),bar("2026-01-03",92,100,91,96),bar("2026-01-04",93,100,92,98)],delay=2)
         self.assertEqual(r["trades"][0]["exit_reason"],"stop_exit_after_settlement_lock")
-        self.assertEqual(r["trades"][0]["exit_date"],"2026-01-03")
+        self.assertEqual(r["trades"][0]["exit_date"],"2026-01-04")
     def test_future_signal_evidence_is_rejected(self):
         s=signal(); s["stop"]["available_at"]="2026-01-02T15:00:00+05:45"
         r=replay_strategy_horizon(strategy_id="trend_momentum",horizon="swing",signals=[s],

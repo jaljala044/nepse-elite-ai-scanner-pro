@@ -90,13 +90,13 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
                 output = root / "joined.csv"
                 summary = root / "summary.json"
                 candidates.write_text(
-                    "repository,commit_sha,path,file_sha256,symbol,previous_date,current_date,previous_csv_line,current_csv_line\\n"
+                    "repository,commit_sha,path,file_sha256,symbol,previous_date,current_date,previous_csv_line,current_csv_line\n"
                     "source/a," + "a" * 40 + ",ABC.csv," + "b" * 64 +
-                    ",ABC," + invalid + ",2026-11-06,2,3\\n",
+                    ",ABC," + invalid + ",2026-11-06,2,3\n",
                     encoding="utf-8",
                 )
                 calendar.write_text(
-                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\\n",
+                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\n",
                     encoding="utf-8",
                 )
                 with self.assertRaisesRegex(ValueError, "previous_date must be canonical YYYY-MM-DD"):

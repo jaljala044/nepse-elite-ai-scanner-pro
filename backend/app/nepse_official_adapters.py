@@ -5,6 +5,7 @@ or authenticate publishers. All outputs are research-only.
 """
 from __future__ import annotations
 from datetime import datetime, date, timezone
+from zoneinfo import ZoneInfo
 from decimal import Decimal, InvalidOperation
 
 SCHEMAS = {
@@ -31,6 +32,20 @@ def _date(value):
     try: return date.fromisoformat(str(value)).isoformat()
     except (TypeError,ValueError): return None
 
+def _row_date_field(dataset_kind):
+    return {
+        "ohlcv": "session_date",
+        "session_calendar": "session_date",
+        "floorsheet": "session_date",
+        "broker_summary": "session_date",
+        "sector_index": "session_date",
+        "instrument_universe": "effective_from",
+        "sector_membership": "effective_from",
+        "corporate_actions": "announcement_date",
+        "fundamentals": "period_end",
+    }[dataset_kind]
+
+
 def validate_nepse_dataset(*, dataset_kind, rows, source_envelope, decision_cutoff):
     """Validate schema, provenance, point-in-time availability and row semantics."""
     if dataset_kind not in SCHEMAS: raise ValueError("unsupported_dataset_kind")
@@ -42,6 +57,7 @@ def validate_nepse_dataset(*, dataset_kind, rows, source_envelope, decision_cuto
         if not env.get(field): errors.append("source_envelope_missing:"+field)
     digest=str(env.get("raw_sha256","")).lower()
     if len(digest)!=64 or any(c not in "0123456789abcdef" for c in digest): errors.append("raw_sha256_invalid")
+    cutoff_local_date=cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
     available=_timestamp(env.get("available_at"))
     if available is None: errors.append("available_at_must_be_timezone_aware")
     elif available>cutoff: errors.append("source_available_after_decision_cutoff")
@@ -56,10 +72,12 @@ def validate_nepse_dataset(*, dataset_kind, rows, source_envelope, decision_cuto
         else:
             for field in SCHEMAS[dataset_kind]:
                 if field not in row or row[field] is None or row[field]=="": why.append("missing:"+field)
-            if dataset_kind in {"ohlcv","floorsheet","broker_summary","sector_index"}:
-                d=_date(row.get("session_date"))
-                if d is None: why.append("invalid_session_date")
-                elif available and available>cutoff: why.append("row_not_point_in_time")
+            date_field = _row_date_field(dataset_kind)
+            row_day = _date(row.get(date_field))
+            if row_day is None:
+                why.append("invalid_" + date_field)
+            elif date.fromisoformat(row_day) > cutoff_local_date:
+                why.append("row_effective_after_decision_cutoff")
             if dataset_kind=="ohlcv" and not why:
                 try:
                     o,h,l,c,v,t=[Decimal(str(row[k])) for k in ("open","high","low","close","volume","turnover")]

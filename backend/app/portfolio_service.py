@@ -29,7 +29,17 @@ def _decimal(value, field: str, *, allow_zero: bool = False) -> Decimal:
 
 def _connect():
     path = Path(os.getenv("NEPSE_PORTFOLIO_DB", "private/portfolios.sqlite3"))
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    # Portfolio rows contain private financial information. Create the database
+    # with restrictive permissions before SQLite opens it, and tighten existing
+    # paths on every connection. O_NOFOLLOW prevents silently opening a symlink.
+    os.chmod(path.parent, 0o700)
+    flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(path, flags, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+    finally:
+        os.close(fd)
     con = sqlite3.connect(path)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA foreign_keys=ON")

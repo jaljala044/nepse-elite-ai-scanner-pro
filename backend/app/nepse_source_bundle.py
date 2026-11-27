@@ -10,7 +10,8 @@ from app.nepse_official_adapters import SCHEMAS
 
 def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
     start_date, end_date, minimum_session_coverage_pct="100",
-    require_optional=(), transport_by_source=None, fail_fast=False):
+    require_optional=(), transport_by_source=None, fail_fast=False,
+    corporate_action_reconciliation=None):
     """Acquire explicitly enumerated CSV snapshots and run the dataset readiness gate.
 
     One request is one bounded CSV object. Pagination/archives must be enumerated
@@ -77,18 +78,24 @@ def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
         start_date=start_date,end_date=end_date,decision_cutoff=decision_cutoff,
         minimum_session_coverage_pct=minimum_session_coverage_pct,
         require_optional=require_optional)
+    action_gate_ok=(isinstance(corporate_action_reconciliation,dict)
+        and corporate_action_reconciliation.get("status")=="validated_for_research"
+        and isinstance(corporate_action_reconciliation.get("reconciled_events"),list)
+        and not corporate_action_reconciliation.get("withheld_events")
+        and not corporate_action_reconciliation.get("rejected_records"))
     manifest_payload={"decision_cutoff":decision_cutoff,"start_date":start_date,
         "end_date":end_date,"captures":captures,"failures":failures,
-        "readiness_status":readiness["status"]}
+        "readiness_status":readiness["status"],"corporate_action_gate_passed":action_gate_ok}
     manifest_hash=sha256(json.dumps(manifest_payload,sort_keys=True,separators=(",",":")).encode()).hexdigest()
     return {"schema_version":"nepse-historical-bundle-1.0.0",
         "manifest":{**manifest_payload,"manifest_sha256":manifest_hash},
         "intake_reports":intake,"readiness":readiness,
         "capture_count":len(captures),"failure_count":len(failures),
-        "historical_panel_promotion_allowed":False,
+        "historical_panel_promotion_allowed":readiness["status"]=="READY" and not failures and action_gate_ok,
         "corporate_action_reconciliation_required":True,
+        "corporate_action_gate_passed":action_gate_ok,
         "network_retrieval_count":network_count,"capture_payload_count":len(captures),
-        "promotion_block_reason":"independent corporate-action reconciliation evidence must be supplied and verified separately",
+        "promotion_block_reason":None if readiness["status"]=="READY" and not failures and action_gate_ok else ("independent corporate-action reconciliation evidence must be supplied and verified separately" if not action_gate_ok else "dataset readiness is not READY or acquisition failures remain"),
         "production_enabled":False,
         "limitations":[
             "Only explicitly enumerated endpoint URLs are fetched; no endpoint discovery or implicit pagination occurs.",

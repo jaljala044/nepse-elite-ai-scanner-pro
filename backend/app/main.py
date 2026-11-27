@@ -603,5 +603,12 @@ if (_public_frontend / "index.html").is_file():
 
 
 # Private portfolio accounting is isolated from market-data and signal routes.
-from .portfolio_routes import router as portfolio_router
-app.include_router(portfolio_router)
+from . import portfolio_routes as _portfolio_routes
+app.add_api_route("/v1/portfolios", _portfolio_routes.portfolios, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios", _portfolio_routes.create_portfolio, methods=["POST"], status_code=201, tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.get_portfolio, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.update_portfolio, methods=["PATCH"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.delete_portfolio, methods=["DELETE"], status_code=204, tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/positions", _portfolio_routes.positions, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/transactions", _portfolio_routes.transactions, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/transactions", _portfolio_routes.add_transaction, methods=["POST"], status_code=201, tags=["private-portfolios"])

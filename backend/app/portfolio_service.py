@@ -245,7 +245,7 @@ def _calculate_positions(con, owner: str, portfolio_id: str) -> dict[str, dict]:
 
 def portfolio_positions(owner: str, portfolio_id: str) -> list[dict] | None:
     with _connect() as con:
-        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL AND deleted_at IS NULL",
                              (portfolio_id, owner)).fetchone()
         if not exists:
             return None
@@ -254,7 +254,7 @@ def portfolio_positions(owner: str, portfolio_id: str) -> list[dict] | None:
 
 def portfolio_transactions(owner: str, portfolio_id: str) -> list[dict] | None:
     with _connect() as con:
-        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=?",
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
                              (portfolio_id, owner)).fetchone()
         if not exists:
             return None

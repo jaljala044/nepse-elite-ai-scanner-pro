@@ -306,7 +306,24 @@ def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_a
     """
     from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
     if corporate_actions:
-        raise ValueError("corporate_action_aware_signal_sizing_not_available")
+        # Exclude affected symbols before sizing, not after portfolio allocation.
+        # This is a conservative retrospective exclusion, not a PIT strategy.
+        from .unified_portfolio_event_engine import _available
+        from datetime import datetime
+        cutoff = datetime.fromisoformat(str(evidence_cutoff).replace("Z", "+00:00"))
+        if cutoff.tzinfo is None:
+            raise ValueError("evidence_cutoff_timezone_required")
+        affected = set()
+        for action in corporate_actions:
+            if not isinstance(action, dict) or not action.get("symbol"):
+                raise ValueError("corporate_action_aware_signal_sizing_not_available")
+            _available(action, cutoff, "corporate_action")
+            affected.add(action["symbol"])
+        excluded = [s for s in portfolio_inputs["signals"] if s.get("symbol") in affected]
+        portfolio_inputs = {**portfolio_inputs, "signals": [
+            s for s in portfolio_inputs["signals"] if s.get("symbol") not in affected]}
+    else:
+        excluded = []
     result = run_portfolio_backtest(**portfolio_inputs)
     days = [x["date"] for x in result["equity_curve"]]
     trades = []
@@ -339,5 +356,6 @@ def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_a
             raise ValueError("signal_portfolio_ledger_mismatch:"+original["date"])
     return {"classification":"hypothetical_signal_replay_reconciliation",
             "portfolio":result, "ledger":ledger, "production_eligible":False,
-            "limitations":["No corporate-action-aware sizing; action inputs rejected.",
+            "corporate_action_excluded_signals": excluded,
+            "limitations":["Corporate-action-affected symbols excluded retrospectively before allocation; selection bias possible. No corporate-action-aware sizing.",
                            "Scenario evidence is not actual exchange trade evidence."]}

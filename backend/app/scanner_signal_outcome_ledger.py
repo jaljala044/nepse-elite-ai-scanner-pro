@@ -50,6 +50,7 @@ def build_signal_outcome_ledger(*,signals,replay_results):
                 rejected.append({"signal_id": sid, "reason": "replay_trade_signal_metadata_mismatch"})
                 trades.pop(sid, None)
                 trade = None
+        if trade:
             reason=trade.get("exit_reason","unknown")
             if reason=="target": label="target_hit"
             elif str(reason).startswith("stop"): label="stop_hit"
@@ -60,7 +61,9 @@ def build_signal_outcome_ledger(*,signals,replay_results):
                 "net_return_pct":trade.get("net_return_pct"),
                 "max_favorable_excursion_pct":trade.get("max_favorable_excursion_pct"),
                 "max_adverse_excursion_pct":trade.get("max_adverse_excursion_pct"),
-                "holding_sessions":trade.get("holding_sessions")}
+                "holding_sessions":trade.get("holding_sessions"),
+                "feature_snapshot_sha256":trade.get("feature_snapshot_sha256"),
+                "replay_policy_sha256":trade.get("replay_policy_sha256")}
         elif s.get("action")=="NO_TRADE":
             outcome={"signal_id":sid,"outcome":"not_executed","reason":"scanner_action_no_trade"}
         elif sid in pending:

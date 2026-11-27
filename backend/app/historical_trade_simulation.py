@@ -4,15 +4,21 @@ from zoneinfo import ZoneInfo
 from math import isfinite
 from .scanner_eligibility import assess
 from .execution_constraints import settlement_date, price_band, exit_scenario
-from .execution_costs import round_trip
+from .execution_costs import round_trip, _number
+from .dated_execution_costs import dated_round_trip
+from .historical_fee_reference import brokerage_cap
 from .strategy_research import HORIZONS
 from .performance_statistics import summarize
 
 def simulate(symbol, rows, observations, *, reviewed, sessions, settlement_days,
              session_controls, costs, horizon, holding_sessions, quantity,
-             initial_capital, max_participation, stop_fraction, target_fraction):
+             initial_capital, max_participation, stop_fraction, target_fraction,
+             cost_mode="flat_scenario"):
     base={"classification":"hypothetical_research_only","production_approved":False,
           "action":"NO TRADE","trades":[],"excluded":[],"statistics":None}
+    if cost_mode not in ("flat_scenario","dated_reference"):
+        raise ValueError("invalid cost mode")
+    base["cost_mode"]=cost_mode
     if horizon not in HORIZONS or type(holding_sessions) is not int or not HORIZONS[horizon][0]<=holding_sessions<=HORIZONS[horizon][1]:
         raise ValueError("invalid horizon")
     if type(quantity) is not int or quantity<=0:
@@ -76,7 +82,20 @@ def simulate(symbol, rows, observations, *, reviewed, sessions, settlement_days,
         if entry is None or float(entry["open"])>=band["upper"]-1e-8:
             reject(d,"entry_liquidity_or_band_unverified");continue
         buy=float(entry["open"])
-        sizing=round_trip(buy,buy,quantity,assumptions=costs)
+        if cost_mode=="dated_reference":
+            required=("regulatory_rate","sell_dp_charge","slippage_bps","min_broker_fee")
+            if any(k not in costs for k in required):
+                reject(d,"historical_entry_cost_missing");continue
+            notional=_number(buy)*(1+_number(costs["slippage_bps"])/10000)*quantity
+            ref=brokerage_cap(entry_day,notional)
+            if ref.get("rate") is None:
+                reject(d,"historical_entry_cost_missing");continue
+            # Entry sizing does not depend on future sale tax or commission.
+            sizing=round_trip(buy,buy,quantity,assumptions={**costs,
+                "buy_broker_rate":ref["rate"],"sell_broker_rate":ref["rate"],
+                "capital_gain_tax_rate":0})
+        else:
+            sizing=round_trip(buy,buy,quantity,assumptions=costs)
         if sizing["status"]!="scenario_only" or sizing["buy_cash"]>capital:
             reject(d,"costs_or_capital_unavailable");continue
         settled=settlement_date(entry_day,settlement_days)
@@ -101,7 +120,11 @@ def simulate(symbol, rows, observations, *, reviewed, sessions, settlement_days,
                 price=float(bar["close"])
                 exit["status"]="time_exit_scenario"
             if price is not None:
-                result=round_trip(buy,price,quantity,assumptions=costs)
+                result=(dated_round_trip(buy,price,quantity,buy_date=entry_day,sell_date=day,assumptions=costs)
+                        if cost_mode=="dated_reference" else round_trip(buy,price,quantity,assumptions=costs))
+                if result["status"]!="scenario_only":
+                    trade.update(unresolved_reason="historical_exit_cost_missing", attempted_exit_date=str(day))
+                    break
                 trade.update(status="closed_scenario",exit_date=str(day),exit_price=price,exit_reason=exit["status"],net_pnl=result["net_pnl"],costs=result)
                 capital+=result["net_pnl"];busy_until=day;break
         base["trades"].append(trade)

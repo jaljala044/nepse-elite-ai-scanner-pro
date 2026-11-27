@@ -1,9 +1,7 @@
 """Effective-dated NEPSE instrument status timeline.
 
-Rows are point-in-time status events keyed by permanent security_id. A later
-status event supersedes an earlier one; optional effective_to is inclusive.
-Delisted and suspended names remain in the historical universe but are not
-expected to print OHLCV while their status is inactive.
+Permanent security IDs are authoritative. Unknown intervals and simultaneous
+ticker reuse are surfaced rather than silently treated as valid membership.
 """
 from __future__ import annotations
 from datetime import date
@@ -42,15 +40,15 @@ def build_effective_universe(*, universe_rows, session_dates):
         dates=[x[0] for x in items]
         if len(dates)!=len(set(dates)):
             errors.append("duplicate_universe_effective_date:"+sid); continue
-        # Explicit intervals may not overlap a later status event.
         for current,nxt in zip(items,items[1:]):
             if current[1] is not None and current[1]>=nxt[0]:
                 errors.append("overlapping_universe_intervals:"+sid)
+            if current[1] is not None and current[1]+__import__("datetime").timedelta(days=1)<nxt[0]:
+                errors.append("uncovered_universe_interval:"+sid)
         for session in sessions:
             eligible=[x for x in items if x[0]<=session and (x[1] is None or session<=x[1])]
             if not eligible: continue
             event=max(eligible,key=lambda x:x[0])
-            # If a later event has started, it always supersedes the earlier event.
             latest=max((x for x in items if x[0]<=session),key=lambda x:x[0])
             if latest is not event: event=latest
             if event[1] is not None and session>event[1]: continue
@@ -58,9 +56,17 @@ def build_effective_universe(*, universe_rows, session_dates):
                 active_by_session.setdefault(session.isoformat(),{})[sid]=event[3]
             else:
                 inactive_history.append({"security_id":sid,"symbol":event[3],"session_date":session.isoformat(),"status":event[2]})
-    return {"status":"validated_for_research" if not errors and active_by_session else "blocked",
+    # A ticker may change owners over time, but cannot identify two active securities
+    # on the same session. Keep permanent IDs as keys in the canonical membership map.
+    for day,members in active_by_session.items():
+        owners={}
+        for sid,symbol in members.items():
+            owners.setdefault(symbol,[]).append(sid)
+        for symbol,ids in owners.items():
+            if len(ids)>1: errors.append("simultaneous_symbol_collision:"+day+":"+symbol)
+    return {"status":"validated_for_research" if not errors and any(active_by_session.values()) else "blocked",
         "errors":sorted(set(errors)),"security_ids":sorted(events),
         "symbols_by_security":{k:sorted(v) for k,v in symbols.items()},
         "active_by_session":active_by_session,"inactive_history":inactive_history,
         "inactive_security_count":sum(1 for sid,items in events.items() if any(x[2] in INACTIVE for x in items)),
-        "policy":"permanent security IDs; status events apply from effective_from; effective_to is inclusive; delisted/suspended securities retained in historical inventory"}
+        "policy":"permanent security IDs; status events apply from effective_from; effective_to is inclusive; delisted/suspended securities retained; gaps and simultaneous symbol collisions are errors"}

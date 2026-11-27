@@ -1,8 +1,7 @@
 """Governed source registry and reproducible capture receipts.
 
-The registry validates configured source metadata; it does not authenticate publishers
-or perform network requests. Connector/browser acquisition must supply exact bytes
-and an independently reviewed source record.
+Validates configured source metadata and caller-supplied captured bytes. It does
+not authenticate publishers or perform network requests.
 """
 from __future__ import annotations
 from datetime import datetime, timezone
@@ -26,11 +25,12 @@ def _host(uri):
         parsed=urlparse(uri)
         if parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password: return None
         return parsed.hostname.lower().rstrip(".")
-    except (TypeError,ValueError): return None
+    except (TypeError,ValueError):
+        return None
 
 def validate_source_registry(records):
     if not isinstance(records,list): raise ValueError("source_registry_list_required")
-    seen=set(); output=[]; errors=[]
+    seen_source=set(); seen_publisher=set(); output=[]; errors=[]
     for index,record in enumerate(records):
         if not isinstance(record,dict):
             errors.append({"index":index,"reason":"record_not_object"}); continue
@@ -49,10 +49,12 @@ def validate_source_registry(records):
             why.append("dataset_kinds_invalid")
         reviewed=_time(record.get("reviewed_at"))
         if reviewed is None: why.append("reviewed_at_must_be_timezone_aware")
-        if (isinstance(sid,str) and sid in seen) or (isinstance(publisher,str) and publisher in seen): why.append("duplicate_source_or_publisher_id")
-        if sid: seen.add(sid)
-        if publisher: seen.add(publisher)
-        if why: errors.append({"index":index,"reason":why}); continue
+        if isinstance(sid,str) and sid in seen_source: why.append("duplicate_source_id")
+        if isinstance(publisher,str) and publisher in seen_publisher: why.append("duplicate_publisher_id")
+        if isinstance(sid,str) and sid.strip(): seen_source.add(sid)
+        if isinstance(publisher,str) and publisher.strip(): seen_publisher.add(publisher)
+        if why:
+            errors.append({"index":index,"reason":why}); continue
         output.append({**record,"canonical_host":host,"reviewed_at":reviewed.isoformat(),
             "registry_valid":True,"publisher_authentication":"not_performed"})
     return {"schema_version":"nepse-source-registry-1.0.0","sources":output,
@@ -73,9 +75,13 @@ def build_source_capture_run(*, registry, captures, decision_cutoff):
     for index,item in enumerate(captures):
         if not isinstance(item,dict):
             rejected.append({"index":index,"reason":"capture_not_object"}); continue
-        source_key=item.get("source_id")\n        source=by_id.get(source_key) if isinstance(source_key,str) else None
+        source_key=item.get("source_id")
+        source=by_id.get(source_key) if isinstance(source_key,str) else None
         if source is None or source["status"]!="approved":
             rejected.append({"index":index,"reason":"source_not_approved"}); continue
+        reviewed=_time(source.get("reviewed_at"))
+        if reviewed is None or reviewed>cutoff:
+            rejected.append({"index":index,"reason":"source_review_not_available_by_cutoff"}); continue
         dataset=item.get("dataset_kind")
         if dataset not in source["dataset_kinds"]:
             rejected.append({"index":index,"reason":"dataset_not_authorized_for_source"}); continue
@@ -92,7 +98,8 @@ def build_source_capture_run(*, registry, captures, decision_cutoff):
         if digest in hashes:
             prior=hashes[digest]
             rejected.append({"index":index,"reason":"duplicate_payload_hash",
-                "prior_source_id":prior["source_id"],"cross_publisher_duplicate":prior["publisher_id"]!=source["publisher_id"]})
+                "prior_source_id":prior["source_id"],
+                "cross_publisher_duplicate":prior["publisher_id"]!=source["publisher_id"]})
             continue
         try:
             intake=ingest_captured_csv(raw_bytes=raw,dataset_kind=dataset,
@@ -119,5 +126,5 @@ def build_source_capture_run(*, registry, captures, decision_cutoff):
         "capture_count":len(receipts),"rejected_count":len(rejected),
         "research_only":True,"production_enabled":False,
         "limitations":["The capture caller supplies bytes; no live official-source connection is implemented.",
-            "HTTPS host matching and SHA-256 provide transport/configuration and byte-integrity checks only.",
+            "HTTPS host matching and SHA-256 provide host/configuration and byte-integrity checks only.",
             "A source receipt does not establish publisher authenticity, completeness, finality or independent corroboration."]}

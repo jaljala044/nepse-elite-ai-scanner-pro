@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from app.feature_pipeline import build_feature_snapshot
-from app.quarantine_guard import is_quarantined
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys, ledger_blocked
 from app.temporal_registry import security_as_of, corporate_actions_as_of
 
 
@@ -78,9 +78,10 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
             "corporate_action_source_universe_completeness_verified": action_result["source_universe_completeness_verified"],
             "corporate_action_evidence_ids": sorted({a.evidence_id for a in action_result["actions"]}),
         }
+    keys = runtime_quarantine_keys()
     included_records = [
         row for row in records
-        if not is_quarantined(row) and row.get("available_at") and datetime.fromisoformat(row["available_at"].replace("Z", "+00:00")) <= cutoff
+        if not is_quarantined(row) and not (row.get("record_type") in {"ohlcv", "broker"} and ledger_blocked(row, keys)) and row.get("available_at") and datetime.fromisoformat(row["available_at"].replace("Z", "+00:00")) <= cutoff
     ]
     input_lineage = []
     for row in included_records:

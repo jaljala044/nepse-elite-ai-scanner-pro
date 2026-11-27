@@ -22,7 +22,7 @@ class HistoricalFeatureReplayTests(unittest.TestCase):
         for day in ("20250102", "2025-02-30", "2025-1-2"):
             with self.subTest(day=day), self.assertRaisesRegex(ValueError, "canonical"):
                 build_historical_feature_series(records=[{}], expected_symbols=["ABC"],
-                    evidence_manifests={}, decision_points=[point(day, sessions=[day])])
+                    evidence_manifests={}, decision_points=[point("2025-03-01", sessions=[day])])
 
     def test_future_session_after_cutoff_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "future_session_after_decision_cutoff"):

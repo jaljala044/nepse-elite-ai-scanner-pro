@@ -2320,3 +2320,10 @@ Build and validate the effective-dated security identity and corporate-action re
 - Consolidated JSON SHA-256: 8e6195c7be36313dcdcd398e0e70ec731cfc8edfec80ae57802a7a07f380b9b2. Local runtime-loader-contract validation passed: schema, exact count, identity fields, canonical dates, unique IDs and all-blocked dispositions.
 - Artifacts: /mnt/data/2026-11-27-consolidated-runtime-quarantine-ledger.json and .csv. This ledger is conservative and review-only; no production installation or independent authorization is implied.
 - Remaining: test actual ledger with backend runtime integration in CI/private deployment, classify repeated adjacent-calendar-row flags, independently review invalid OHLC records and RHGCL conflict, and keep PR #188 draft until acceptance.
+
+
+## 2026-11-27 — actual refresh ledger guard CI acceptance
+
+- Full refresh run [46006649576](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/46006649576) succeeded at commit 0b1bb5b299bd026f032f5cf06ef61bd4b287cc65. Step 9 exercised actual refreshed ledger keys plus seven retained historical conflict keys against historical input rejection and feature filtering. Artifact 15201087766; registered ZIP digest 45d5720610693543b8ad9a8d0ecf25f36c67a9732e7e2fc698eeaf89d90334dc.
+- Backend run 46006649250 and contract run 46006649374 succeeded. This is guard-level acceptance, not actual database, broker-memory or private deployment acceptance. No release or canonical promotion.
+- Twelve unresolved alternative records remain: HIDCL 2016-07-21; API 2016-09-03 and 2016-09-12; AHPC and HIDCL 2016-11-13; MERO 2017-03-20 and 2017-04-09; SPDL 2017-06-18; AHPC, API and HIDCL 2018-11-06; UNHPL 2020-06-29. Obtain dated session and independent OHLCV evidence before repair. No AI trade recommendations or approved production backtesting.

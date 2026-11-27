@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from math import log, isfinite
 from datetime import date
-from app.quarantine_guard import runtime_quarantine_keys, is_quarantined
+from app.quarantine_guard import runtime_quarantine_keys, is_quarantined, quarantine_gap_symbols
 
 
 def validate_binary_forecasts(actual: list[int], probability: list[float], *, lineage=None, require_ledger=False) -> dict:
@@ -21,7 +21,7 @@ def validate_binary_forecasts(actual: list[int], probability: list[float], *, li
             normalized = [date.fromisoformat(day).isoformat() for day in days]
             if normalized != days or len(set(days)) != len(days):
                 raise ValueError("invalid forecast constituent dates")
-            if keys is not None and any((symbol.strip().upper(), day) in keys for day in days):
+            if quarantine_gap_symbols(((symbol, day) for day in days), keys):
                 raise ValueError("quarantined forecast constituent session")
     if len(actual) != len(probability):
         raise ValueError("actual and probability lengths differ")

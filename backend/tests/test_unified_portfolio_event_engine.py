@@ -118,3 +118,24 @@ class UnifiedPortfolioEventTests(unittest.TestCase):
         self.assertEqual([t["quantity"] for t in result["executed_trade_scenarios"]], [2, 2])
         self.assertEqual(result["equity_curve"][-1]["holdings"], {})
         self.assertEqual(result["ending_equity"], 998)
+
+
+    def test_bonus_adjusted_linked_exit(self):
+        days = DAYS + ["2025-01-12", "2025-01-13"]
+        buy = trade("BUY", 0, 2)
+        sell = dict(trade("SELL", 4, 4), settlement_date=days[6],
+                    exit_entry_id="BUY", price=50)
+        action = dict(action_id="B", symbol="ABC", action_type="bonus",
+                      record_date=days[2], listing_date=days[3], ratio=1,
+                      status="verified", source_id="synthetic-test",
+                      available_at="2025-01-05T00:00:00+00:00")
+        result = run_unified_portfolio_event_ledger(
+            initial_cash=1000, initial_holdings={}, trades=[buy,sell],
+            corporate_actions=[action],
+            price_rows_by_symbol={"ABC": [{"date": d, "close": 100 if i < 3 else 50}
+                                         for i,d in enumerate(days)]},
+            portfolio_sessions=days, as_of_date=days[-1],
+            evidence_cutoff="2025-01-14T00:00:00+00:00")
+        self.assertEqual(result["executed_trade_scenarios"][-1]["quantity"], 10)
+        self.assertEqual(result["ending_equity"], 1000)
+        self.assertEqual(result["equity_curve"][-1]["holdings"], {})

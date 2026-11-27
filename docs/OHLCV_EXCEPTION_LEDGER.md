@@ -47,6 +47,10 @@ available as corroboration only. SocrateAI is not an exchange-origin truth sourc
 No source wins automatically, and no raw CSV is modified, repaired, merged or
 promoted.
 
+## Retained generated output
+
+The pull-request workflow rebuilds the ledger from the pinned source artifact, verifies the archive SHA-256, checks the 1,339 unique JSON/CSV IDs and unresolved dispositions, and uploads the generated JSON/CSV package as a 90-day GitHub Actions artifact. The first retained artifact is [run 45929360486, artifact 15167354458](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45929360486). Its downloaded outer ZIP SHA-256 is `125f786aadff0dda295f153f51caa097d383fd1331138b2126c668f3d8e2d8e9`; the inner generated ZIP SHA-256 is `6e8a3ee7f202af6386bc39a1b72c100ea6af27ef3978d40a6a05836e43e4d66c`.
+
 ## Validation
 
 `scripts/validate_ohlcv_exception_ledger.py` validates the generated JSON/CSV pair.

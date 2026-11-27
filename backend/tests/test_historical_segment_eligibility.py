@@ -243,5 +243,28 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
                 self.assertEqual(result["unknown_session_count"], 1)
 
 
+    def test_verified_suspension_is_distinct_and_blocks_segment(self):
+        day = self.sessions[-1]
+        statuses = dict(self.statuses, **{day: "suspended_verified"})
+        result = self.evaluate(session_statuses=statuses, records=self.records[:-1])
+        self.assertEqual(result["verified_suspended_session_count"], 1)
+        self.assertEqual(result["verified_no_trade_count"], 0)
+        self.assertIn("suspended_session_in_segment:" + day, result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_bar_during_verified_suspension_is_a_conflict(self):
+        day = self.sessions[-1]
+        statuses = dict(self.statuses, **{day: "suspended_verified"})
+        result = self.evaluate(session_statuses=statuses)
+        self.assertIn("bar_on_suspended_session:" + day, result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_unresolved_suspension_overlap_blocks_segment_identity(self):
+        segment = dict(self.segment, suspension_overlap=None)
+        result = self.evaluate(segment=segment)
+        self.assertIn("suspension_overlap_or_unknown", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+
 if __name__ == "__main__":
     unittest.main()

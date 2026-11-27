@@ -101,3 +101,33 @@ Current evidence state:
 - 2022-06-16 weekly regime change: primary NEPSE notice located and visually reviewed; raw PDF hash still absent.
 - 2026-04-06 weekly regime change: secondary reports corroborate; original NEPSE notice/raw hash still absent.
 - Daily market-open/closed date list: not yet acquired from NEPSE.
+
+
+## Work-session update — 2026-11-27 (official NEPSE endpoint refresh)
+
+### First-party pages rechecked
+- Official NEPSE homepage: https://nepalstock.com.np/
+  - Search-indexed page content exposed a dated market summary for 2026-11-26, including a market-closed status at 15:00 and aggregate index/turnover figures.
+  - This is useful evidence that the exchange homepage publishes dated daily market observations. It is **not** a historical date-level calendar, and the search-indexed representation is not a preserved raw HTTP response.
+- Official NEPSE notice/file endpoint: https://www.nepalstock.com.np/nots/fetchFiles
+  - The page is discoverable, but the available retrieval returned no readable lines. No notice list, pagination contract, date filters, raw response or response hash was obtained.
+- Official NEPSE site search results also expose dated notice records, but the retrieved results do not establish a complete sequence of open/closed sessions.
+
+### Findings and limits
+1. The first-party site is demonstrably publishing dated market status/summary observations, so a historical market-summary or index-history endpoint remains a promising acquisition route.
+2. The public notice archive route is not yet machine-readable through the current retrieval path. Do not infer the archive is empty or that notices do not exist.
+3. No exact endpoint request contract, raw bytes, HTTP status, content type, TLS capture, response hash, historical coverage range or pagination behavior has been captured in this session.
+4. No dates have been added to the verified-open or verified-closed calendar. The 196,784 repeated-row candidates remain unclassified and review-only.
+
+### Next acquisition actions
+- Inspect the official NEPSE site's own frontend/network calls for daily market summary, historical index graph and notice listing; capture method, URL, non-secret headers, request body/query and response schema.
+- Obtain representative official responses for several known dates across each historical schedule regime, preserve original bytes and SHA-256, and validate date semantics.
+- Determine whether daily market summary/index observations prove an exchange session for the relevant market segment; do not equate a missing observation with a closure.
+- Retrieve the original NEPSE notice for the Monday–Friday schedule effective 2026-04-06 and the official historical schedule notice PDFs, preserving original files and hashes.
+- Build a date-level evidence table only after the response semantics and source authority are established.
+
+### Status after this refresh
+- 2022-06-16 schedule transition: primary NEPSE-hosted notice located and visually reviewed; immutable raw PDF/hash still outstanding.
+- 2026-04-06 schedule transition: secondary corroboration only; original NEPSE notice/raw hash outstanding.
+- Daily open/closed calendar: not acquired.
+- Priority 1: **in progress; acceptance not met**.

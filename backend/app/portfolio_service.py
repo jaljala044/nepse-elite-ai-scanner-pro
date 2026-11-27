@@ -138,8 +138,11 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
     qty = _decimal(quantity, "quantity")
     unit_price = _decimal(price, "price")
     fee = _decimal(fees, "fees", allow_zero=True)
+    date_text = str(trade_date)
+    if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", date_text):
+        raise ValueError("trade_date must be YYYY-MM-DD")
     try:
-        normalized_date = date.fromisoformat(str(trade_date)).isoformat()
+        normalized_date = date.fromisoformat(date_text).isoformat()
     except ValueError as exc:
         raise ValueError("trade_date must be YYYY-MM-DD") from exc
     if idempotency_key is not None:
@@ -149,6 +152,10 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
     transaction_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
     with _connect() as con:
+        # Serialize the idempotency lookup + insert so concurrent replays cannot
+        # race past the pre-insert check. SQLite grants the write reservation
+        # before either request reads the idempotency key.
+        con.execute("BEGIN IMMEDIATE")
         portfolio = con.execute("SELECT id FROM portfolios WHERE id=? AND owner=?",
                                 (portfolio_id, owner)).fetchone()
         if portfolio is None:

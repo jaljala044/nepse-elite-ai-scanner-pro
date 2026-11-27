@@ -310,8 +310,19 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         if not _valid_primary_evidence(row.get("source_evidence"), cutoff):
             reasons.append(f"bar_source_evidence_unverified:{day_text}")
         digest = str(row.get("evidence_sha256") or "").lower()
+        source_evidence = row.get("source_evidence")
+        source_digest = (
+            str(source_evidence.get("evidence_sha256") or "").lower()
+            if isinstance(source_evidence, dict) else ""
+        )
+        payload_digest = (
+            str(source_evidence.get("payload_sha256") or "").lower()
+            if isinstance(source_evidence, dict) else ""
+        )
         if not _SHA256.fullmatch(digest):
             reasons.append(f"evidence_hash_missing_or_invalid:{day_text}")
+        elif digest != source_digest or digest != payload_digest:
+            reasons.append(f"evidence_hash_binding_mismatch:{day_text}")
 
     if verified_traded < required_sessions:
         reasons.append("insufficient_traded_sessions")

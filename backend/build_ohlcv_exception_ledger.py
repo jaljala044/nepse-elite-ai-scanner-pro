@@ -53,6 +53,21 @@ FIELD_SCOPED_NEPSE_RESOLUTIONS = {
     },
 }
 
+# HRL's retained project value is user-designated context, not a resolution.
+# Keep it beside the independently captured exchange/ShareHub observation so
+# reviewers can see the discrepancy without either value being overwritten.
+HRL_PROJECT_DISCREPANCY = {
+    ("HRL", "2026-11-19"): {
+        "project_designated": {"open": "483.00", "low": "483.90"},
+        "exchange_observed": {"low": "480.00"},
+        "sharehub_observed": {"low": "480.00"},
+        "geometry_issue": "project_designated_low_above_open",
+        "disposition": "quarantined_unresolved",
+        "canonical_promotion_allowed": False,
+        "raw_source_rows_modified": False,
+    },
+}
+
 
 def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | None = None,
                  expected_invalid_rows: int = 1331, expected_conflicts: int = 8) -> dict[str, Any]:
@@ -162,6 +177,14 @@ def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | No
                 )
             ),
         }
+        project_discrepancy = HRL_PROJECT_DISCREPANCY.get((symbol, day))
+        if project_discrepancy:
+            record["project_owner_context"] = project_discrepancy
+            record["reviewer_rationale"] = (
+                "HRL project-designated low 483.90 is retained as user-final project context; "
+                "NEPSE and ShareHub observations both report 480.00. The designated open is 483.00, "
+                "so the project low violates OHLC geometry. Preserve both values and keep the conflict unresolved."
+            )
         if field_resolution:
             record["resolution_evidence"] = {
                 "authority": "captured_nepse_source_field_scoped",

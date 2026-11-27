@@ -17,7 +17,11 @@ def is_quarantined(row: Mapping) -> bool:
 
 
 def _canonical_day(value):
-    """Accept only the exact YYYY-MM-DD representation used by evidence ledgers."""
+    """Accept canonical evidence strings or native date values from database rows."""
+    # DuckDB returns DATE columns as datetime.date objects; preserve that typed
+    # internal representation while rejecting datetime and noncanonical strings.
+    if type(value) is date:
+        return value.isoformat()
     if not isinstance(value, str):
         raise ValueError("date must be canonical YYYY-MM-DD")
     try:

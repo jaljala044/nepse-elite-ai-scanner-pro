@@ -8,7 +8,9 @@ Private, research-oriented NEPSE market analysis platform. This repository start
 - Public datasets: Hugging Face inventory, bounded/resumable downloader, daily floorsheet and sector-index normalizers, and independent audit reports
 - Kaggle: safe local download/staging helper (requires your locally configured Kaggle CLI)
 - Scanner: transparent, rule-based technical feature extraction (not an institutional-flow detector)
-- Live API feeds, paid broker integrations, web UI, Android app, authentication, deployment and scheduled automation: not yet connected or verified
+- Web research terminal: static dashboard, charting and evidence panels exist under `frontend/` and are mounted at `/terminal` when the public build is present; research API routes are wired, but live-source quality, full browser acceptance and production deployment are not certified.
+- Android: a separate Expo research-preview shell is in draft PR [#240](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/240); mobile CI typecheck and Android JavaScript bundle export pass on its current branch, but a committed dependency lockfile and native APK/AAB/device acceptance remain outstanding.
+- Authentication, private deployment, backups, monitoring, scheduled automation and licensed live provider integrations: not yet accepted or enabled.
 
 ## Quick start
 ```bash

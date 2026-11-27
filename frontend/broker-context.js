@@ -14,17 +14,27 @@ function table(headers,rows){
 async function run(){
  const id=++generation;host.replaceChildren();status.textContent="Checking supplied research evidence…";
  try{
- const f=el("broker-context-file").files[0];if(!f||f.size>5*1024*1024)throw Error("Choose a JSON evidence file under 5 MiB");
- const body=JSON.parse(await f.text());
  const mode=el("broker-context-mode").value;
- const path={context:"broker-context",concentration:"broker-concentration",rotation:"broker-context-rotation"}[mode];
+ let body;
+ if(mode==="ledger"){
+ const day=el("broker-ledger-date").value;
+ if(!day)throw Error("Choose a historical decision date");
+ body={as_of_date:day,decision_time:day+"T23:59:59+05:45",window:el("broker-ledger-window").value};
+ }else{
+ const f=el("broker-context-file").files[0];if(!f||f.size>5*1024*1024)throw Error("Choose a JSON evidence file under 5 MiB");
+ body=JSON.parse(await f.text());
+ }
+ const path={context:"broker-context",concentration:"broker-concentration",rotation:"broker-context-rotation",ledger:"broker-ledger-profiles"}[mode];
  const response=await fetch("/v1/research/"+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+el("broker-context-token").value},body:JSON.stringify(body),cache:"no-store",signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error(response.status===401?"Research credential rejected":response.status===503?"Research access not configured":response.status===429?"Request budget exceeded":"Evidence rejected or API unavailable");
  const d=await response.json();if(id!==generation)return;
  if(d.production_eligible!==false||d.signals_enabled!==false)throw Error("Unexpected research safety contract");
  if(d.status==="insufficient_evidence"){status.textContent="UNKNOWN — "+(d.reason||"Incomplete evidence");return;}
  status.textContent="Research only — supplied sources not independently authenticated";
- if(mode==="context"){
+ if(mode==="ledger"){
+ status.textContent="Research coverage only — security-level profiles withheld pending historical identity verification";
+ table(["Window","Complete sessions","Observations","Profiles evaluated","Quarantine blocked","Identity unmapped","Snapshot crosswalk clear"],[[d.window,d.complete_sessions,d.observation_count,d.profile_count,d.quarantine_blocked_profiles,d.identity_unmapped_profiles,d.snapshot_crosswalk_clear_profiles]]);
+ }else if(mode==="context"){
  if(!Array.isArray(d.profiles))throw Error("Invalid response");
  const symbol=el("broker-context-symbol").value.trim();
  const rows=d.profiles.filter(r=>!symbol||String(r.security_id)===symbol||String(r.symbol||"").toUpperCase()===symbol.toUpperCase());
@@ -40,5 +50,5 @@ async function run(){
 }
 el("broker-context-run").addEventListener("click",run);
 el("chart-broker-context").addEventListener("click",()=>{const s=el("chart-symbol").value.trim().toUpperCase();if(!/^[A-Z0-9]{1,20}$/.test(s))return;el("broker-context-symbol").value=s;el("broker-context-symbol").dispatchEvent(new Event("change"));el("broker-context").scrollIntoView();});
-for(const key of ["broker-context-file","broker-context-mode","broker-context-symbol"]){el(key).addEventListener("change",()=>{generation++;host.replaceChildren();status.textContent="Evidence changed; run again.";});}
+for(const key of ["broker-context-file","broker-context-mode","broker-context-symbol","broker-ledger-date","broker-ledger-window"]){el(key).addEventListener("change",()=>{generation++;host.replaceChildren();status.textContent="Evidence changed; run again.";});}
 })();

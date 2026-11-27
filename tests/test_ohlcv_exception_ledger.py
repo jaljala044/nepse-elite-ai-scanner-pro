@@ -52,4 +52,27 @@ class LedgerValidationTests(unittest.TestCase):
             jp,cp=write_fixture(Path(tmp),records)
             self.assertTrue(any("outside approved" in e for e in validate(jp,cp)))
 
+    def test_csv_identity_fields_must_match_json_for_each_exception_id(self):
+        records=self.fixture()
+        with tempfile.TemporaryDirectory() as tmp:
+            jp,cp=write_fixture(Path(tmp),records)
+            with cp.open(encoding="utf-8",newline="") as stream:
+                rows=list(csv.DictReader(stream)); fields=rows[0].keys()
+            rows[0]["symbol"]="ALTERED"
+            with cp.open("w",encoding="utf-8",newline="") as stream:
+                writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader();writer.writerows(rows)
+            self.assertTrue(any("JSON/CSV field mismatch" in e and ".symbol" in e for e in validate(jp,cp)))
+
+    def test_csv_nested_source_evidence_must_match_json(self):
+        records=self.fixture()
+        with tempfile.TemporaryDirectory() as tmp:
+            jp,cp=write_fixture(Path(tmp),records)
+            with cp.open(encoding="utf-8",newline="") as stream:
+                rows=list(csv.DictReader(stream)); fields=rows[0].keys()
+            conflict_row=next(row for row in rows if row["exception_type"]=="cross_source_ohlcv_conflict")
+            conflict_row["source_evidence"]=conflict_row["source_evidence"].replace('"close": "10"','"close": "999"')
+            with cp.open("w",encoding="utf-8",newline="") as stream:
+                writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader();writer.writerows(rows)
+            self.assertTrue(any("JSON/CSV field mismatch" in e and ".source_evidence" in e for e in validate(jp,cp)))
+
 if __name__=="__main__": unittest.main()

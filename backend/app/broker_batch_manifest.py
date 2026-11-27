@@ -15,6 +15,7 @@ import sqlite3
 import tempfile
 from contextlib import contextmanager
 from typing import Any, Iterator, Mapping
+from urllib.parse import urlsplit
 
 from app.broker_ingestion import IngestionReport
 
@@ -62,14 +63,15 @@ class SourceRightsEvidence:
     expires_at: str | None = None
 
     def validate(self, *, manifest_source_id: str, manifest_evidence_id: str,
-                 captured_at: datetime) -> dict[str, Any]:
+                 captured_at: datetime, available_at: datetime) -> dict[str, Any]:
         if self.source_id != manifest_source_id:
             raise CaptureRejected("rights_evidence_source_mismatch")
         if self.evidence_id != manifest_evidence_id:
             raise CaptureRejected("rights_evidence_id_mismatch")
         if self.decision not in {"cleared", "denied", "unknown"}:
             raise CaptureRejected("invalid_rights_evidence_decision")
-        if not isinstance(self.terms_url, str) or not self.terms_url.startswith("https://"):
+        parsed_terms_url = urlsplit(self.terms_url) if isinstance(self.terms_url, str) else None
+        if (parsed_terms_url is None or parsed_terms_url.scheme != "https" or not parsed_terms_url.hostname or parsed_terms_url.username or parsed_terms_url.password):
             raise CaptureRejected("rights_terms_url_must_be_https")
         digest = self.terms_sha256
         if (not isinstance(digest, str) or len(digest) != 64
@@ -90,6 +92,8 @@ class SourceRightsEvidence:
                 raise CaptureRejected("invalid_rights_expiry")
             if captured_at > expires:
                 raise CaptureRejected("rights_evidence_expired_at_capture")
+            if available_at > expires:
+                raise CaptureRejected("rights_evidence_expired_at_availability")
         if self.decision == "cleared" and "broker_aggregation" not in self.permitted_uses:
             raise CaptureRejected("broker_aggregation_not_permitted")
         return {
@@ -154,6 +158,7 @@ class RawCaptureManifest:
             manifest_source_id=self.source_id,
             manifest_evidence_id=self.source_rights_evidence_id,
             captured_at=captured,
+            available_at=available,
         )
         if rights["decision"] != self.source_rights_status:
             raise CaptureRejected("rights_decision_manifest_mismatch")

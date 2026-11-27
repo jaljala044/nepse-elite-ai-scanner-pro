@@ -9,6 +9,14 @@ class LedgerGuardTests(unittest.TestCase):
     def _ledger(self, day):
         return json.dumps({
             "schema_version": "1.0",
+            "source_audit": {
+                "generated_at_utc": "2026-11-27T00:00:00Z",
+                "source_audit_report_sha256": "c" * 64,
+                "repositories": {
+                    "jaljala044/nepse-smc-data": {"commit_sha": "a" * 40},
+                    "jaljala044/nepse-history-starter": {"commit_sha": "b" * 40},
+                },
+            },
             "counts": {"total_exception_records": 1},
             "exceptions": [{
                 "exception_id": "e1", "symbol": "AAA",
@@ -58,7 +66,7 @@ class LedgerGuardTests(unittest.TestCase):
             path = Path(tmp) / "ledger.json"
             raw = self._ledger("2025-07-28")
             path.write_bytes(raw)
-            env = {"NEPSE_QUARANTINE_LEDGER": str(path), "NEPSE_QUARANTINE_LEDGER_SHA256": hashlib.sha256(raw).hexdigest()}
+            env = {"NEPSE_QUARANTINE_LEDGER": str(path), "NEPSE_QUARANTINE_LEDGER_SHA256": hashlib.sha256(raw).hexdigest(), "NEPSE_QUARANTINE_SOURCE_COMMITS": json.dumps({"jaljala044/nepse-smc-data":"a"*40,"jaljala044/nepse-history-starter":"b"*40})}
             row = {"symbol": "AAA", "constituent_sessions": ["2025-07-28"], "observation_date": "2025-07-28", "actual": 1, "probability": 0.8}
             with patch.dict(os.environ, env, clear=True):
                 self.assertEqual(runtime_quarantine_keys(required=True), frozenset({("AAA", "2025-07-28")}))
@@ -102,12 +110,68 @@ class LedgerGuardTests(unittest.TestCase):
                 path = Path(tmp) / "ledger.json"
                 raw = self._ledger("2025-07-28")
                 path.write_bytes(raw)
-                with patch.dict(os.environ, {"NEPSE_QUARANTINE_LEDGER": str(path), "NEPSE_QUARANTINE_LEDGER_SHA256": hashlib.sha256(raw).hexdigest()}):
+                with patch.dict(os.environ, {"NEPSE_QUARANTINE_LEDGER": str(path), "NEPSE_QUARANTINE_LEDGER_SHA256": hashlib.sha256(raw).hexdigest(), "NEPSE_QUARANTINE_SOURCE_COMMITS": json.dumps({"jaljala044/nepse-smc-data":"a"*40,"jaljala044/nepse-history-starter":"b"*40})}):
                     self.assertEqual(runtime_quarantine_keys(), frozenset({("AAA", "2025-07-28")}))
                     path.write_bytes(raw + b" ")
                     with self.assertRaisesRegex(ValueError, "invalid runtime quarantine ledger"):
                         runtime_quarantine_keys()
 
+
+    def test_valid_empty_ledger_is_distinct_from_missing_ledger(self):
+        import os
+        from unittest.mock import patch
+        from app.quarantine_guard import runtime_quarantine_keys
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "empty.json"
+            empty = {
+                "schema_version":"1.0",
+                "source_audit":{"generated_at_utc":"2026-11-27T00:00:00Z",
+                    "source_audit_report_sha256":"c"*64,
+                    "repositories":{"jaljala044/nepse-smc-data":{"commit_sha":"a"*40},
+                                    "jaljala044/nepse-history-starter":{"commit_sha":"b"*40}}},
+                "counts":{"total_exception_records":0},"exceptions":[],
+            }
+            raw = json.dumps(empty).encode()
+            path.write_bytes(raw)
+            env = {"NEPSE_REQUIRE_QUARANTINE_LEDGER":"1","NEPSE_QUARANTINE_LEDGER":str(path),
+                "NEPSE_QUARANTINE_LEDGER_SHA256":hashlib.sha256(raw).hexdigest(),
+                "NEPSE_QUARANTINE_SOURCE_COMMITS":json.dumps({"jaljala044/nepse-smc-data":"a"*40,
+                    "jaljala044/nepse-history-starter":"b"*40})}
+            with patch.dict(os.environ,env,clear=True):
+                self.assertEqual(runtime_quarantine_keys(),frozenset())
+                path.write_bytes(raw+b" ")
+                with self.assertRaisesRegex(ValueError,"invalid runtime quarantine ledger"):
+                    runtime_quarantine_keys()
+
+    def test_required_runtime_rejects_missing_partial_and_stale_source_pins(self):
+        import os
+        from unittest.mock import patch
+        from app.quarantine_guard import runtime_quarantine_keys
+        with patch.dict(os.environ,{"NEPSE_REQUIRE_QUARANTINE_LEDGER":"1"},clear=True):
+            with self.assertRaisesRegex(ValueError,"pinned quarantine ledger required"):
+                runtime_quarantine_keys()
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"ledger.json"
+            raw=self._ledger("2025-07-28")
+            path.write_bytes(raw)
+            base={"NEPSE_REQUIRE_QUARANTINE_LEDGER":"1","NEPSE_QUARANTINE_LEDGER":str(path),
+                "NEPSE_QUARANTINE_LEDGER_SHA256":hashlib.sha256(raw).hexdigest()}
+            with patch.dict(os.environ,base,clear=True):
+                with self.assertRaisesRegex(ValueError,"pinned quarantine source commits required"):
+                    runtime_quarantine_keys()
+            stale={"NEPSE_QUARANTINE_SOURCE_COMMITS":json.dumps({"jaljala044/nepse-smc-data":"d"*40,
+                "jaljala044/nepse-history-starter":"b"*40})}
+            with patch.dict(os.environ,{**base,**stale},clear=True):
+                with self.assertRaisesRegex(ValueError,"invalid runtime quarantine ledger"):
+                    runtime_quarantine_keys()
+
+    def test_startup_validation_blocks_missing_ledger(self):
+        import os
+        from unittest.mock import patch
+        from app.main import validate_quarantine_configuration
+        with patch.dict(os.environ,{"NEPSE_REQUIRE_QUARANTINE_LEDGER":"1"},clear=True):
+            with self.assertRaisesRegex(ValueError,"pinned quarantine ledger required"):
+                validate_quarantine_configuration()
 
     def test_missing_blocked_candle_inside_window(self):
         from app.quarantine_guard import filter_quarantined_feature_rows

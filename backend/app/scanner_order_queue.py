@@ -33,7 +33,8 @@ def replay_passive_order_queue(*, order, initial_queue_ahead, events):
     if isinstance(qty,bool) or not isinstance(qty,int) or qty<1: raise ValueError("positive_integer_quantity_required")
     submitted=_time(order.get("submitted_at")); limit=_d(order.get("limit_price"))
     ahead=_d(initial_queue_ahead.get("quantity") if isinstance(initial_queue_ahead,dict) else None)
-    if submitted is None or limit is None or limit<=0 or ahead is None or ahead<0:
+    better_ahead=_d(initial_queue_ahead.get("better_price_quantity","0") if isinstance(initial_queue_ahead,dict) else None)
+    if submitted is None or limit is None or limit<=0 or ahead is None or ahead<0 or better_ahead is None or better_ahead<0:
         raise ValueError("order_or_initial_queue_invalid")
     if not _verified(order,submitted) or not _verified(initial_queue_ahead,submitted):
         raise ValueError("verified_order_and_initial_queue_required")
@@ -58,25 +59,49 @@ def replay_passive_order_queue(*, order, initial_queue_ahead, events):
             audit.append({"index":index,"status":"withheld","reason":"queue_position_unknown_after_reset"}); continue
         if kind=="CANCEL":
             cancelled=_d(event.get("quantity")); attribution=event.get("queue_attribution")
-            if cancelled is None or cancelled<0: raise ValueError("cancel_quantity_invalid")
+            cancel_price=_d(event.get("price",limit))
+            if cancelled is None or cancelled<0 or cancel_price is None: raise ValueError("cancel_quantity_invalid")
             if attribution=="AHEAD":
-                ahead=max(Decimal("0"),ahead-cancelled)
-                audit.append({"index":index,"status":"ahead_reduced","queue_ahead":str(ahead)})
+                if (side=="buy" and cancel_price>limit) or (side=="sell" and cancel_price<limit):
+                    better_ahead=max(Decimal("0"),better_ahead-cancelled)
+                elif cancel_price==limit:
+                    ahead=max(Decimal("0"),ahead-cancelled)
+                audit.append({"index":index,"status":"ahead_reduced",
+                    "queue_ahead":str(ahead),"better_price_ahead":str(better_ahead)})
             elif attribution=="BEHIND":
                 audit.append({"index":index,"status":"no_queue_change"})
             else:
                 audit.append({"index":index,"status":"ignored","reason":"cancellation_priority_unknown"})
             continue
         if kind=="ADD":
-            # Orders arriving after ours at the same price are behind by price-time priority.
-            audit.append({"index":index,"status":"behind_our_order"})
+            added=_d(event.get("quantity")); added_price=_d(event.get("price")); order_side=event.get("order_side")
+            if added is None or added<=0 or added_price is None or added_price<=0 or order_side not in {"buy","sell"}:
+                raise ValueError("add_order_fields_invalid")
+            if order_side!=side:
+                audit.append({"index":index,"status":"other_side_no_queue_change"})
+            elif (side=="buy" and added_price>limit) or (side=="sell" and added_price<limit):
+                better_ahead+=added
+                audit.append({"index":index,"status":"better_price_ahead_added","better_price_ahead":str(better_ahead)})
+            else:
+                audit.append({"index":index,"status":"behind_or_worse_price"})
             continue
         if kind!="TRADE": raise ValueError("unsupported_event_type")
         price=_d(event.get("price")); traded=_d(event.get("quantity"))
         if price is None or traded is None or price<=0 or traded<=0:
             raise ValueError("trade_price_or_quantity_invalid")
-        if price!=limit or event.get("aggressor_side")!=aggressor:
+        if event.get("aggressor_side")!=aggressor:
+            audit.append({"index":index,"status":"aggressor_side_not_executable"}); continue
+        is_better_trade=(side=="buy" and price>limit) or (side=="sell" and price<limit)
+        if is_better_trade:
+            consumed=min(better_ahead,traded); better_ahead-=consumed
+            audit.append({"index":index,"status":"better_price_queue_consumed",
+                "better_price_ahead":str(better_ahead),"consumed":str(consumed)})
+            continue
+        if price!=limit:
             audit.append({"index":index,"status":"not_executable_at_our_price"}); continue
+        if better_ahead>0:
+            audit.append({"index":index,"status":"blocked_by_better_price_queue",
+                "better_price_ahead":str(better_ahead)}); continue
         consumed=min(ahead,traded); ahead-=consumed; residual=traded-consumed
         filled=min(Decimal(remaining),residual)
         if filled>0:
@@ -90,10 +115,10 @@ def replay_passive_order_queue(*, order, initial_queue_ahead, events):
     return {"schema_version":"nepse-order-queue-replay-1.0.0",
         "status":"filled" if remaining==0 else ("partially_filled" if remaining<qty else "unfilled"),
         "side":side,"requested_quantity":qty,"filled_quantity":qty-remaining,
-        "remaining_quantity":remaining,"queue_ahead_remaining":str(ahead),
+        "remaining_quantity":remaining,"queue_ahead_remaining":str(ahead),"better_price_ahead_remaining":str(better_ahead),
         "queue_position_valid":queue_valid,"fills":fills,"audit":audit,
         "assumptions":{"price_time_priority":True,"unknown_cancellations_reduce_queue":False,
-            "new_same_price_orders_are_behind":True,"fills_require_verified_aggressor_trade_at_limit":True},
+            "new_same_price_orders_are_behind":True,"better_price_orders_take_priority":True,"fills_require_verified_aggressor_trade_at_limit":True},
         "limitations":["Queue ahead is only as reliable as the supplied initial snapshot and event attribution.",
             "Hidden orders, iceberg refresh, auction matching, cross-price routing and exchange-specific priority rules are not modeled.",
             "A book reset invalidates queue position until a fresh snapshot is supplied; no optimistic reinitialization occurs.",

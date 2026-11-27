@@ -33,7 +33,7 @@ class VersionedFeatureStoreTests(unittest.TestCase):
         self.assertEqual(joined["corporate_action_adjustment_eligible_count"], 1)
         self.assertEqual(len(joined["corporate_action_adjustment_actions"]), 1)
         self.assertFalse(joined["corporate_action_source_universe_completeness_verified"])
-        self.assertEqual(snapshot["features"]["trend_features"]["AAA"]["status"], "insufficient_evidence")
+        self.assertEqual(snapshot["features"]["trend_features"]["AAA"]["status"], "input_contract_unverified")
         self.assertIsNone(snapshot["features"]["trend_features"]["AAA"]["score"])
         self.assertFalse(snapshot["ohlcv_adjustment_applied"])
         with tempfile.TemporaryDirectory() as tmp:

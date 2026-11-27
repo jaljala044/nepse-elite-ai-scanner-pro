@@ -20,7 +20,7 @@ def record(kind, number):
 
 def write_fixture(root, records):
     jp,cp=root/"ledger.json",root/"ledger.csv"
-    counts={"total_exception_records":1339,"invalid_ohlc_rows":1331,"cross_source_conflict_keys":8}
+    counts={"total_exception_records":1339,"invalid_ohlc_rows":1331,"cross_source_conflict_keys":8,"unresolved":1334,"resolved_with_user_authoritative_evidence":5}
     jp.write_text(json.dumps({"counts":counts,"exceptions":records}),encoding="utf-8")
     fields=sorted({k for row in records for k in row})
     with cp.open("w",encoding="utf-8",newline="") as stream:

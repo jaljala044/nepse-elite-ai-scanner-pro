@@ -67,8 +67,11 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
 
     expected_sessions must be a verified exchange-session list, not weekdays
     generated from a schedule. session_statuses must explicitly classify each
-    date. A verified no-trade session is distinct from a missing bar, a closed
-    exchange date, suspension, and unknown status.
+    date, and session_evidence must provide a point-in-time, rights-approved,
+    hash-addressed source record for every expected date. A verified no-trade
+    session is distinct from a missing bar, a closed exchange date, suspension,
+    and unknown status. Synthetic fixtures test the contract; they do not
+    establish real NEPSE calendar evidence.
     """
     if not isinstance(segment, dict):
         raise ValueError("segment must be a mapping")

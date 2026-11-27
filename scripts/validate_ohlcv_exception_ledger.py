@@ -58,12 +58,27 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
     actual_resolved=sum(r.get("disposition")=="resolved_with_user_authoritative_evidence" for r in records)
     if actual_unresolved!=expected_unresolved: errors.append(f"actual unresolved count must equal {expected_unresolved}, got {actual_unresolved}")
     if actual_resolved!=5: errors.append(f"actual user-authoritative resolution count must equal five, got {actual_resolved}")
+    csv_ids=[r.get("exception_id") for r in rows]
+    if len(csv_ids)!=len(set(csv_ids)):
+        errors.append("duplicate CSV exception_id values")
     csv_by_id={r.get("exception_id"):r for r in rows}
-    if set(csv_by_id)!=set(ids): errors.append("JSON and CSV exception_id sets differ")
+    if set(csv_by_id)!=set(ids):
+        errors.append("JSON and CSV exception_id sets differ")
     else:
-        for r in records:
-            if csv_by_id[r["exception_id"]].get("disposition")!=r.get("disposition"):
-                errors.append(f"JSON/CSV disposition mismatch for {r['exception_id']}")
+        for record in records:
+            exception_id=record["exception_id"]
+            csv_record=csv_by_id[exception_id]
+            for field in set(record) | set(csv_record):
+                value=record.get(field)
+                if value is None:
+                    expected=""
+                elif isinstance(value,(dict,list)):
+                    expected=json.dumps(value,ensure_ascii=False,sort_keys=True)
+                else:
+                    expected=str(value)
+                actual=csv_record.get(field,"")
+                if actual!=expected:
+                    errors.append(f"JSON/CSV field mismatch for {exception_id}.{field}")
     return errors
 
 def main()->int:

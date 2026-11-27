@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from app.feature_pipeline import build_feature_snapshot
+from app.historical_quarantine import QUARANTINE
 from app.temporal_registry import security_as_of, corporate_actions_as_of
 
 
@@ -85,6 +86,9 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
     for row in included_records:
         payload_hash = str(row.get("source_payload_sha256") or row.get("payload_sha256") or "").lower()
         input_lineage.append({
+            "record_type": row.get("record_type"),
+            "symbol": row.get("symbol"),
+            "session_date": row.get("trade_date") if row.get("record_type") == "broker" else row.get("session_date"),
             "record_id": row.get("record_id"),
             "source_id": row.get("source_id"),
             "payload_sha256": payload_hash if re.fullmatch(r"[0-9a-f]{64}", payload_hash) else None,
@@ -96,7 +100,7 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
         and isinstance(item["source_row_number"], int) and item["source_row_number"] > 0
         for item in input_lineage
     )
-    body = {"schema_version": 1, "decision_time": features["decision_time"],
+    body = {"schema_version": 2, "decision_time": features["decision_time"],
             "features": features, "security_and_action_joins": joins,
             "input_lineage": input_lineage,
             "input_lineage_status": "complete" if lineage_complete else "incomplete",
@@ -104,6 +108,36 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
     canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), default=_json_default)
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     return {**body, "snapshot_sha256": digest}
+
+
+def _validate_quarantine_lineage(snapshot: dict) -> None:
+    """Refuse legacy or contaminated analytical snapshots; retain raw evidence elsewhere."""
+    if snapshot.get("schema_version") != 2:
+        raise ValueError("quarantine_lineage_version_required")
+    lineage = snapshot.get("input_lineage")
+    features = snapshot.get("features")
+    if not isinstance(lineage, list) or not isinstance(features, dict):
+        raise ValueError("quarantine_lineage_required")
+    if features.get("included_input_count") != len(lineage):
+        raise ValueError("quarantine_lineage_count_mismatch")
+    windows = {}
+    for item in lineage:
+        if not isinstance(item, dict) or not item.get("record_type"):
+            raise ValueError("quarantine_lineage_required")
+        if item["record_type"] not in ("ohlcv", "broker"):
+            continue
+        symbol = str(item.get("symbol") or "").strip().upper()
+        try:
+            day = date.fromisoformat(item["session_date"]).isoformat()
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("quarantine_lineage_date_required") from exc
+        if not symbol:
+            raise ValueError("quarantine_lineage_symbol_required")
+        windows.setdefault(symbol, []).append(day)
+    for symbol, days in windows.items():
+        if any(ticker == symbol and min(days) <= day <= max(days)
+               for ticker, day in QUARANTINE):
+            raise ValueError("historical_quarantine:" + symbol)
 
 
 def persist_versioned_snapshot(root: str | Path, snapshot: dict) -> dict:
@@ -114,6 +148,7 @@ def persist_versioned_snapshot(root: str | Path, snapshot: dict) -> dict:
     actual = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     if not digest or digest != actual:
         raise ValueError("snapshot hash mismatch")
+    _validate_quarantine_lineage(snapshot)
     directory = Path(root) / "feature-snapshots" / digest
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / "snapshot.json"

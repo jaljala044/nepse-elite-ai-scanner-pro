@@ -968,3 +968,30 @@ def research_portfolio_dashboard(request: PortfolioDashboardRequest):
         return portfolio_dashboard_review(**request.model_dump())
     except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .automatic_portfolio_dashboard import automatic_portfolio_dashboard
+
+class AutomaticPortfolioDashboardRequest(BaseModel):
+    holding: dict
+    quote: dict
+    snapshot: dict
+    limits: dict
+    market: dict
+    sector: dict
+    assessment_time: str
+    reduction_fraction: float
+    rows: list[dict]
+    benchmark_rows: list[dict]
+    sessions: list[str]
+    broker_records: list[dict]
+    broker_numbers: list[int]
+    cost_assumptions: dict | None = None
+    trailing_config: dict | None = None
+
+@app.post("/v1/research/portfolio/automatic-dashboard")
+def research_automatic_portfolio_dashboard(request: AutomaticPortfolioDashboardRequest):
+    try:
+        return automatic_portfolio_dashboard(**request.model_dump())
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

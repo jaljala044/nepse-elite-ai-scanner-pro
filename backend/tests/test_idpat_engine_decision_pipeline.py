@@ -9,7 +9,7 @@ class IdpatEngineTests(unittest.TestCase):
         self.assertIsNone(out["score"])
     def test_detects_spring_candidate_without_claiming_confirmed_spring(self):
         rows=[]
-        closes=[10,10.2,10.1,10.3,10.2,9.8,10.4]
+        closes=[10,10.2,10.1,10.3,10.2,10.0,10.4]
         for i,c in enumerate(closes):
             low=9.5 if i==5 else c-.1
             high=c+.2

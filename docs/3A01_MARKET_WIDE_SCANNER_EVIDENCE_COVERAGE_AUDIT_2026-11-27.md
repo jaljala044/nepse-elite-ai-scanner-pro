@@ -55,7 +55,7 @@ The derived v2 manifest was independently parsed from the pinned branch:
 - Per-symbol row counts range from 17 to 3,780; median 936. Different history lengths are material and must not be represented as uniform coverage.
 - All 281 raw source Git blob hashes are recorded and verified by the release integrity audit.
 - 599 official NEPSE EOD rows were applied across 254 symbols and six business dates.
-- Derived-only corrections: 490 date shifts, 109 inserted rows and 112 field corrections. Raw source files were not modified.
+- Derived-v2 operations: 490 date shifts, 109 inserted rows and 112 field corrections (109 Open + 3 Close) = 711 v2 ledger rows. The complete 713-row correction ledger also retains 2 earlier RHGCL field corrections applied in v1 (1 Close + 1 Volume). The ledger status field confirms 711 `applied_in_derived_v2` rows and 2 `applied_in_derived_v1` rows; all 713 symbol/date/field keys are unique. This resolves the previously reported two-count discrepancy. Raw source files were not modified.
 - This is a derived release, not a fully session-clean canonical dataset.
 
 ### Integrity and contamination evidence

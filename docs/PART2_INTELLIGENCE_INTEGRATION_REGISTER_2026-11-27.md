@@ -170,3 +170,13 @@ PR #162 adds `backend/app/sebon_security_reconciliation.py` and standard-library
 The initial PR test run failed because the test file imported `pytest`, which is not installed in the repository's standard-library unittest runner. The test suite was converted to `unittest`. On corrected exact head `80ccd06d18ee530e7679133c2889b422367350fd`, all four reported GitHub Actions checks completed successfully (backend-unit-tests x2, unit-tests, tests-and-inventory). Squash merge commit: `09a26040953a4fb3728c9e306f1fc512cf94edd0`.
 
 **Next P2.03 gate:** obtain and pin an independently validated official NEPSE security-list snapshot (raw response bytes, URL, retrieval timestamp, TLS/hostname evidence, content type, byte count, SHA-256 and snapshot semantics), then run this reconciliation against it. Do not promote candidate identities or sector membership without human review and primary evidence for classification effective dates.
+
+### P2.03 SEBON company-to-security reconciliation — PR #162 merged 2026-11-27
+
+PR #162 (`09a26040953a4fb3728c9e306f1fc512cf94edd0`) adds `backend/app/sebon_security_reconciliation.py` and nine tests. It performs Unicode-normalized exact-name matching against a separately supplied official NEPSE security snapshot. Unique matches are proposals only; duplicate normalized official names are marked ambiguous; unmatched candidates remain unmatched. It preserves the SEBON source-row reference and official security source-record reference. Classification effective dates remain `None`; identity and membership remain unverified; membership admission and production sector signals remain disabled.
+
+Both required GitHub Actions workflows passed on exact PR head `80ccd06d18ee530e7679133c2889b422367350fd`:
+- `backend-tests` — run 45928317655, success.
+- `Backend contract tests` — run 45928317656, success.
+
+**Important boundary:** this reconciliation utility does not itself authenticate or load the official NEPSE security snapshot. Caller-supplied official records must already have independent source validation and point-in-time provenance. No real SEBON candidate rows were reconciled or promoted in this task; the PR tests use synthetic fixtures. Historical identity and effective-date mapping remain unresolved.

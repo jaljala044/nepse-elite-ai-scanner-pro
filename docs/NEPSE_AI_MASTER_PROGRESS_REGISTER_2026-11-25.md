@@ -3,6 +3,42 @@
 # NEPSE AI — Master Progress, Evidence and Roadmap Register
 **Report date:** 2026-11-25  
 
+## Latest execution refresh — 2026-11-28 (after Priority-5 recheck)
+
+This refresh supersedes earlier status lines below where they conflict. All statuses were re-fetched from GitHub during this work session.
+
+### Current ten active issues
+
+| Priority | Issue | Verified state after this refresh |
+|---:|---|---|
+| 1 | [#5 repeated-OHLCV session join](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/5) | PR #198 head `fc4e7b1fd689769c2efd99b81251264807e4dc0f`; exact-head session join, backend and contract workflows pass. Full 196,784-row artifact `15230486904` is confirmed present and was downloaded/inspected. ZIP SHA-256 `85a0b5750ab1b772aab12f4e55861106106ca76f9c49263c8c45bb6cfd3d8157`; CSV SHA-256 `a343c1a4c87fb305415b0ce2b62427753250152e74d69cdbb0558b13153cbef1`. Mechanical integrity complete; independent row-level dispositions remain open. |
+| 2 | [#4 OHLCV exception ledger](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/4) | PR #179 head `64c89570521f89b0f36d20ac13e1f66834541c6d`; ledger, backend and contract workflows pass (`46065613900`, `46065613854`, `46065613859`). Artifact `15230269033` independently inspected: 1,339 JSON/CSV rows, matching unique IDs, zero field mismatches; ZIP SHA-256 `c93ead6a5c6e605d7dbc0011e937e699a7bbae58ab692990076f09f207ef3685`. Five user-authoritative July keys + two field-scoped NEPSE keys are resolved within their stated scope; HRL 2026-11-19 remains unresolved with project 483.00/483.90 and observed 480.00 lows preserved side by side. No independent PR review. |
+| 3 | [#20 historical continuity/eligibility](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/20) | PR #177 head `86ad9200aa1a427bab3d03b2e25ddb8381ee81ea`; backend and contract runs `45985035911` and `45985036013` pass. PR remains draft, mergeable=false and unreviewed. PR #175 current head `7023664296fa3e9fa920c6cd94452c0408ea3eee` has no exact-head workflow runs; earlier success cited in its body is on a different SHA. Primary 616-date calendar and per-instrument evidence remain incomplete. |
+| 4 | [#90 broker ingestion](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/90) | PR #196 head `2c913c45835bada4b11f297d2e1dbc883ab78c31`; capture regression, backend and contract workflows pass (`46040600783`, `46040600780`, `46040600691`). Draft/unmerged/unreviewed. Written NEPSE source permission and authorized real capture remain blocking. |
+| 5 | [#106 broker price-volume context](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/106) | PR #216 head `c5f1be4b8241475cc35982051437a97666a7d3e1`; backend and contract workflows pass (`46046656739`, `46046656786`). Draft/unmerged/unreviewed; descriptive research-only. Rights, complete session evidence, effective-dated sector mapping and independent replay remain open. |
+| 6 | [#134 historical index endpoint](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/134) | Candidate routes and official datewise-index page schema documented; no reproducible authorized first-party historical response/schema or verified coverage. No index promotion. |
+| 7 | [#146 sector membership](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/146) | New official NEPSE-hosted eight-page classification PDF found for end of Poush 2080 (2024-02-15): 271 listed-company class rows (A 31, B 35, G 70, Z 135). It is historical class evidence, not sector membership or a current/effective-dated registry. Original bytes/hash still need repository preservation; no sector promotion. |
+| 8 | [#6 active equity universe](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/6) | Current 281-symbol snapshot and observed coverage audit remain the current basis. Historical identity/lifecycle, complete rights and per-security eligibility remain separate; supplementary mutual-fund/debenture count checks are not equity-scope blockers. |
+| 9 | [#85 Portfolio Intelligence](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/85) | PR #194 head `b086b87b7d672e318e55c915eed511dd0159e0b5`: portfolio slice A, backend, contract all pass (3/3), draft/unreviewed. PR #219 head `eb382425c52b96fe0138ab5ee5d225d73c5e47c8`: focused slice test passes; backend and contract fail (2 failures), draft/unreviewed. |
+| 10 | [#86 product roadmap/privacy](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/86) | PR #203 head `755a5cee80ef8c0851be8d1a1882a93f2ed64838`; backend workflow passes. Draft/unreviewed; web/mobile parity, full security/legal review and operational readiness remain. |
+
+### Secondary open PR recheck
+
+- PR #143 market-summary finality gate: current head `e6313969e67201937df0720714bee70ce08a62bf`; backend and contract workflows fail. Do not treat finality gate as accepted.
+- PR #190 holiday closure-candidate ledger: current head `90d1239fc9d716eb8211302674b5e917060b439d`; ledger, backend and contract workflows pass. Still draft/unreviewed; original 2022/2026 schedule circulars and complete primary session evidence remain.
+- PR #233 official positive-activity overlap: current head `cca72bb96a33402b307451f6e4be112fc507c7b5`; backend workflow passes. It supports 225/616 positive-activity matches in the rolling capture; 391 outside that capture remain unknown.
+- PR #177/#179, #190, #198, #196, #216, #194, #219 and #203 have no submitted GitHub approvals in the live review queries. Passing CI is not independent acceptance.
+
+### Next five active execution priorities (unchanged order)
+
+1. **#5:** independently disposition 196,784 candidates; review explicit closure, unlisted-calendar, omitted-session and data-quality partitions. Do not equate identical candles with carry-forward.
+2. **#4:** keep 1,331 invalid rows quarantined; retain HRL discrepancy; obtain independent review and dependency-safe integration of PR #179.
+3. **#20:** verify first-party session dates and per-instrument lifecycle/120-traded-session evidence; complete costs, liquidity, T+2 and out-of-sample gates.
+4. **#90:** obtain written source permission and an authorized real capture before any broker ingestion/admission.
+5. **#106:** complete source-rights, effective-dated sector mapping, verified OHLCV/session inputs and independent replay before broker-price confluence or scanner use.
+
+No raw OHLCV edits, forward-fills, canonical/training admissions, production broker signals, historical backtest promotions or AI recommendation enablement are authorized by this refresh.
+ 
 ## Latest live recheck — 2026-11-28
 
 This section supersedes earlier status statements below where they conflict. It records a live GitHub recheck and the latest exact-head workflow evidence; historical audit facts below remain preserved.

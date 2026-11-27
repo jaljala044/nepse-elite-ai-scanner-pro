@@ -20,7 +20,8 @@ class SourceConnectorTests(unittest.TestCase):
             evidence_id="e1",captured_at="2025-01-03T00:00:00+05:45",
             decision_cutoff="2025-01-04T00:00:00+05:45",rights_status="approved",
             transport=transport())
-        self.assertTrue(result["network_retrieval_performed"])
+        self.assertFalse(result["network_retrieval_performed"])
+        self.assertTrue(result["transport_injected"])
         self.assertEqual(result["receipt"]["row_count"],1)
         self.assertEqual(result["receipt"]["raw_byte_count"],len(result["raw_bytes"]))
 

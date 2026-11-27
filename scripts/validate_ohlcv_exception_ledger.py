@@ -51,6 +51,13 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
                     if item.get(field) in (None,""): errors.append(f"conflict record {i} evidence {repository} missing {field}")
                 if not SHA256.fullmatch(str(item.get("file_sha256",""))): errors.append(f"conflict record {i} evidence {repository} has invalid SHA-256")
     if resolved!=USER_FINAL_KEYS: errors.append(f"user-authoritative conflict keys differ: {sorted(resolved)}")
+    expected_unresolved=1334
+    if summary.get("unresolved")!=expected_unresolved: errors.append(f"summary unresolved count must equal {expected_unresolved}")
+    if summary.get("resolved_with_user_authoritative_evidence")!=5: errors.append("summary user-authoritative resolution count must equal five")
+    actual_unresolved=sum(r.get("disposition")=="quarantined_unresolved" for r in records)
+    actual_resolved=sum(r.get("disposition")=="resolved_with_user_authoritative_evidence" for r in records)
+    if actual_unresolved!=expected_unresolved: errors.append(f"actual unresolved count must equal {expected_unresolved}, got {actual_unresolved}")
+    if actual_resolved!=5: errors.append(f"actual user-authoritative resolution count must equal five, got {actual_resolved}")
     csv_by_id={r.get("exception_id"):r for r in rows}
     if set(csv_by_id)!=set(ids): errors.append("JSON and CSV exception_id sets differ")
     else:

@@ -31,11 +31,11 @@ class PortfolioReplayTests(unittest.TestCase):
 
 class SignalLedgerTests(unittest.TestCase):
     def test_append_only_signal_outcome_events_and_horizon_metrics(self):
-        signals=[{"signal_id":"A","symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing","action":"RESEARCH_BUY_FOR_HUMAN_REVIEW"},
-            {"signal_id":"B","symbol":"BBB","strategy_id":"trend_momentum","horizon":"swing","action":"NO_TRADE"},
-            {"signal_id":"C","symbol":"CCC","strategy_id":"idpat_smart_money","horizon":"t_plus_2","action":"RESEARCH_BUY_FOR_HUMAN_REVIEW"}]
+        signals=[{"signal_id":"A","symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing","decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"a"*64,"action":"RESEARCH_BUY_FOR_HUMAN_REVIEW"},
+            {"signal_id":"B","symbol":"BBB","strategy_id":"trend_momentum","horizon":"swing","decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"b"*64,"action":"NO_TRADE"},
+            {"signal_id":"C","symbol":"CCC","strategy_id":"idpat_smart_money","horizon":"t_plus_2","decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"c"*64,"action":"RESEARCH_BUY_FOR_HUMAN_REVIEW"}]
         replay=[{"trades":[{"source_signal_id":"A","exit_reason":"target","entry_date":"2026-01-02","exit_date":"2026-01-04",
-            "net_return_pct":"4.5","max_favorable_excursion_pct":"7","max_adverse_excursion_pct":"-1.2","holding_sessions":3}],
+            "net_return_pct":"4.5","max_favorable_excursion_pct":"7","max_adverse_excursion_pct":"-1.2","holding_sessions":3,\n            "symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing","decision_time":"2026-01-02T00:00:00+00:00",\n            "feature_snapshot_sha256":"a"*64,"replay_policy_sha256":"d"*64}],
             "pending_exits":[{"source_signal_id":"C"}]}]
         out=build_signal_outcome_ledger(signals=signals,replay_results=replay)
         self.assertEqual(out["signal_event_count"],3)
@@ -45,6 +45,22 @@ class SignalLedgerTests(unittest.TestCase):
         self.assertEqual(out["outcomes"][2]["outcome"],"settlement_or_horizon_pending")
         self.assertEqual(out["strategy_horizon_summaries"][0]["target_hit_count"],1)
         self.assertEqual(len(out["events"]),6)
+    def test_mismatched_replay_metadata_is_not_attached(self):
+        signal = {"signal_id":"A","symbol":"AAA","strategy_id":"trend_momentum","horizon":"swing",
+            "decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"a"*64,
+            "action":"RESEARCH_BUY_FOR_HUMAN_REVIEW"}
+        replay_trade = {"source_signal_id":"A","symbol":"BBB","strategy_id":"trend_momentum","horizon":"swing",
+            "decision_time":"2026-01-02T00:00:00+00:00","feature_snapshot_sha256":"a"*64,
+            "replay_policy_sha256":"d"*64,"exit_reason":"target"}
+        out = build_signal_outcome_ledger(signals=[signal], replay_results=[{"trades":[replay_trade]}])
+        self.assertEqual(out["outcomes"][0]["outcome"], "unmatched_or_rejected")
+        self.assertEqual(out["rejected_signal_records"][0]["reason"], "replay_trade_signal_metadata_mismatch")
+
+    def test_orphan_replay_trade_is_reported(self):
+        trade = {"source_signal_id":"ORPHAN","exit_reason":"target"}
+        out = build_signal_outcome_ledger(signals=[], replay_results=[{"trades":[trade]}])
+        self.assertEqual(out["orphaned_replay_trades"][0]["reason"], "replay_trade_without_matching_signal")
+
     def test_duplicate_replay_outcome_is_rejected(self):
         trade={"source_signal_id":"A","exit_reason":"target"}
         with self.assertRaisesRegex(ValueError,"duplicate_replay_outcome_for_signal"):

@@ -72,7 +72,7 @@ def replay_portfolio(*, trades, initial_equity=Decimal("100000"),
             proceeds=pos["notional"]*(Decimal("1")+pos["trade"]["_net"]/100)
             cash+=proceeds; invested-=pos["notional"]
             pnl=proceeds-pos["notional"]
-            realized.append({"source_signal_id":sid,"symbol":pos["trade"].get("symbol"),
+            realized.append({"source_signal_id":sid,"symbol":pos["trade"].get("symbol"),"sector":pos["trade"].get("sector"),
                 "exit_date":day.isoformat(),"quantity":pos["quantity"],
                 "allocated_notional":str(pos["notional"]),"net_pnl":str(pnl),
                 "net_return_pct":str(pos["trade"]["_net"])})
@@ -103,8 +103,8 @@ def replay_portfolio(*, trades, initial_equity=Decimal("100000"),
             cash-=notional; invested+=notional
             open_positions[sid]={"trade":t,"quantity":int(qty),"notional":notional}
             accepted.append({"source_signal_id":sid,"symbol":t.get("symbol"),
-                "strategy_id":t.get("strategy_id"),"horizon":t.get("horizon"),
-                "entry_date":day.isoformat(),"quantity":int(qty),"allocated_notional":str(notional),
+                "strategy_id":t.get("strategy_id"),"horizon":t.get("horizon"),"sector":t.get("sector"),
+                "entry_date":day.isoformat(),"scheduled_exit_date":t["exit_date"],"quantity":int(qty),"allocated_notional":str(notional),
                 "risk_budget":str(equity*v["risk_pct"]/100),
                 "limiting_cap":"risk" if qty==risk_qty else "cash/allocation/exposure/liquidity",
                 "liquidity_quantity_cap":t["_cap"]})

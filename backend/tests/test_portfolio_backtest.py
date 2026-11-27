@@ -171,5 +171,26 @@ class PortfolioBacktestTests(unittest.TestCase):
         self.assertEqual(result["ledger"]["equity_curve"][3]["sale_receivables"], 2194)
         self.assertEqual(result["ledger"]["equity_curve"][5]["sale_receivables"], 0)
 
+    def test_action_affected_symbol_excluded_before_allocation(self):
+        from app.portfolio_backtest import reconcile_signal_portfolio
+        inputs = dict(signals=[self.signal, dict(self.signal, symbol="BBB")],
+                      rows_by_symbol=dict(self.rows, BBB=self.rows["AAA"]),
+                      verified_sessions_by_symbol={"AAA":self.days,"BBB":self.days},
+                      evaluation_date=self.days[-1], portfolio_sessions=self.days,
+                      sector_by_symbol={"AAA":"Hydropower","BBB":"Banking"},
+                      initial_capital=10000, max_positions=3, max_position_pct=0.2,
+                      max_sector_pct=0.4, risk_per_trade_pct=0.01,
+                      cost_assumptions_by_symbol={"AAA":{},"BBB":{}},
+                      execution_config_by_symbol={"AAA":{},"BBB":{}},
+                      scenario_runner=self.runner)
+        action = dict(symbol="AAA", status="verified", source_id="synthetic",
+                      available_at="2025-01-02T00:00:00+00:00")
+        result = reconcile_signal_portfolio(portfolio_inputs=inputs,
+            evidence_cutoff="2025-01-11T00:00:00+00:00", corporate_actions=[action])
+        self.assertEqual(result["portfolio"]["trade_count"], 1)
+        self.assertEqual(result["portfolio"]["trades"][0]["symbol"], "BBB")
+        self.assertEqual(result["corporate_action_excluded_signals"], [self.signal])
+        self.assertAlmostEqual(result["ledger"]["ending_equity"], 10100)
+
 if __name__ == "__main__":
     unittest.main()

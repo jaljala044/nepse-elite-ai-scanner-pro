@@ -192,3 +192,39 @@ record correctness require independent evidence review.
 New exact-head CI is required for the latest implementation and regression
 tests. No calendar dates, security identities, lifecycle intervals, OHLCV
 records or corporate-action factors were promoted by these code changes.
+
+
+## Corporate-action feed discovery — PFL and NLO — 2026-11-27
+
+A structured third-party mirror of NEPSE exchange-message records was inspected at
+`https://raw.githubusercontent.com/Shubhamnpk/yonepse/main/data/notify/exchange_messages.json`.
+This is a discovery lead, not a primary-source capture; the mirror's records
+must not be treated as authoritative exchange evidence.
+
+- PFL record ID `208780`, symbol `PFL`, title “Listing Shares of Pokhara
+  Finance Limited (PFL) after merger.”, published `2026-09-15T15:37:00.507`.
+  The mirror says the first-transaction open-price range is NPR 366.58 and
+  links the purported NEPSE letter:
+  `https://www.nepalstock.com.np/api/nots/security/fetchFiles?fileLocation=nabaraj_listing/2026-09-15/PFL%20p_1789465894643.pdf`.
+  A direct content-extraction attempt against that URL returned an empty text
+  body (no PDF bytes, parsed text, or independently computed digest). Thus
+  the date and notice details remain a secondary-mirror lead; no lifecycle
+  boundary or merger factor is promoted by this capture.
+- NLO record ID `208846`, symbol `NLO`, title “Listing 20% Bonus Shares of
+  Nepal Lube Oil Limited”, published `2026-11-25T11:26:07.24`, reports
+  145,725.36 bonus units. A separate NLO price-adjustment record ID
+  `208784` reports a 15% bonus adjustment (NPR 241.22 from NPR 277.40),
+  published `2026-09-18T15:38:18.423`. These are different event dates and
+  potentially different corporate actions; the mirror alone does not resolve
+  the 15% versus 20% notices or the quantity/ratio basis. No adjustment factor
+  or historical price is accepted from this feed.
+
+The official-host PDF URL is a useful acquisition target, but the attempted
+fetch did not retrieve its bytes. Required next evidence is the actual NEPSE
+PDF response, response headers, retrieval timestamp, SHA-256 recomputed from
+retained bytes, and independent extraction/review of the notice fields. Keep
+PFL's 2026-07-10 to 2026-09-15 suspension/relisting interval and NLO's bonus
+share treatment in review-only status until those artifacts and the relevant
+security-master identity records are verified. This discovery does not
+recover the 616-date open-session calendar or any per-instrument 120-session
+manifest.

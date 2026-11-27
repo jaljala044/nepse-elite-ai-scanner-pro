@@ -262,6 +262,8 @@ class BrokerRawCaptureRegistry:
         now = datetime.now(timezone.utc).isoformat()
         state = ("rejected" if normalized["source_rights_status"] != "cleared"
                  or not normalized["session_complete"] else "staged")
+        result = None
+        conflict = None
         with self._connect() as con:
             old = con.execute(
                 "SELECT batch_id, manifest_json, state FROM captures WHERE identity_key=?",
@@ -269,22 +271,42 @@ class BrokerRawCaptureRegistry:
             ).fetchone()
             if old:
                 if old[1] != manifest_json:
-                    raise CaptureConflict("capture_identity_reused_with_changed_evidence")
-                return {"batch_id": old[0], "state": old[2], "idempotent_replay": True,
-                        "raw_sha256": normalized["raw_sha256"]}
-            con.execute(
-                "INSERT INTO captures VALUES(?,?,?,?,?,?,?,?,?)",
-                [batch_id, identity_key, manifest_json, str(object_path), state,
-                 None, None, now, now],
-            )
-            self._event(con, batch_id, state, {
-                "raw_sha256": normalized["raw_sha256"],
-                "raw_byte_count": normalized["raw_byte_count"],
-                "reason": ("rights_not_cleared" if normalized["source_rights_status"] != "cleared"
-                           else "session_incomplete" if not normalized["session_complete"] else None),
-            })
-        return {"batch_id": batch_id, "state": state, "idempotent_replay": False,
-                "raw_sha256": normalized["raw_sha256"], "raw_object_path": str(object_path)}
+                    # Persist the conflict against the original batch before raising.
+                    # The proposed raw bytes are already retained by content hash above.
+                    proposed_manifest_sha256 = hashlib.sha256(
+                        manifest_json.encode("utf-8")).hexdigest()
+                    self._event(con, old[0], "capture_identity_conflict", {
+                        "identity_key": identity_key,
+                        "existing_batch_id": old[0],
+                        "existing_manifest_sha256": hashlib.sha256(
+                            old[1].encode("utf-8")).hexdigest(),
+                        "proposed_manifest_sha256": proposed_manifest_sha256,
+                        "proposed_raw_sha256": normalized["raw_sha256"],
+                        "proposed_raw_byte_count": normalized["raw_byte_count"],
+                        "proposed_parser_name": normalized["parser_name"],
+                        "proposed_parser_version": normalized["parser_version"],
+                    })
+                    conflict = "capture_identity_reused_with_changed_evidence"
+                else:
+                    result = {"batch_id": old[0], "state": old[2], "idempotent_replay": True,
+                              "raw_sha256": normalized["raw_sha256"]}
+            else:
+                con.execute(
+                    "INSERT INTO captures VALUES(?,?,?,?,?,?,?,?,?)",
+                    [batch_id, identity_key, manifest_json, str(object_path), state,
+                     None, None, now, now],
+                )
+                self._event(con, batch_id, state, {
+                    "raw_sha256": normalized["raw_sha256"],
+                    "raw_byte_count": normalized["raw_byte_count"],
+                    "reason": ("rights_not_cleared" if normalized["source_rights_status"] != "cleared"
+                               else "session_incomplete" if not normalized["session_complete"] else None),
+                })
+                result = {"batch_id": batch_id, "state": state, "idempotent_replay": False,
+                          "raw_sha256": normalized["raw_sha256"], "raw_object_path": str(object_path)}
+        if conflict:
+            raise CaptureConflict(conflict)
+        return result
 
     @staticmethod
     def _reconciliation_payload(report: IngestionReport) -> dict[str, Any]:

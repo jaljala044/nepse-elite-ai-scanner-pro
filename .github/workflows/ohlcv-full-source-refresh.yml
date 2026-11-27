@@ -43,6 +43,25 @@ jobs:
           (root/"REVIEW-ONLY.txt").write_text("Candidate only. No baseline exceptions released. Independent review and source coverage approval required.\n")
           PY
           sha256sum refresh/current-audit.json refresh/candidate-ledger.json refresh/candidate-ledger.csv > refresh/SHA256SUMS
+      - name: Crosscheck current exception rows against external EOD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python backend/crosscheck_ohlcv_socrateai.py --input refresh/current-audit.json --output refresh/external-crosscheck.json --workers 8
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+          p = Path("refresh")
+          report = json.loads((p/"external-crosscheck.json").read_text())
+          targets = ("AHPC", "SKBBL", "API", "MERO")
+          summary = {}
+          for symbol in targets:
+              rows = [r for r in report["records"] if r["symbol"] == symbol and any(x != "cross_source_conflict" for x in r["reasons"])]
+              summary[symbol] = {"rows": len(rows), "classifications": dict(Counter(r["classification"] for r in rows)), "records": rows}
+          (p/"priority-reconciliation.json").write_text(json.dumps({"source_commit":report["external_commit_sha"],"promotion_allowed":False,"symbols":summary}, indent=2))
+          PY
+          sha256sum refresh/external-crosscheck.json refresh/priority-reconciliation.json >> refresh/SHA256SUMS
       - uses: actions/upload-artifact@v4
         if: always()
         with:

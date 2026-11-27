@@ -1,5 +1,9 @@
 name: Pinned floorsheet reconciliation November 25-26
 on:
+  push:
+    branches: [fix/downstream-quarantine-gates]
+    paths:
+      - ".github/workflows/floorsheet-reconcile-nov25-26.yml"
   pull_request:
     paths:
       - ".github/workflows/floorsheet-reconcile-nov25-26.yml"
@@ -21,11 +25,9 @@ jobs:
         run: |
           mkdir -p review
           PYTHONPATH=backend python - <<'PY'
-          import hashlib, json, urllib.request, tempfile, os
+          import hashlib, json, urllib.request, tempfile, os, base64
           from pathlib import Path
           from audit_official_market_summary_reconciliation import load_official_summary, _aggregate_floorsheet
-          from app.floorsheet_archive_pair_audit import audit_floorsheet_archive_pair
-          from app.floorsheet_source_profiles import *
           import subprocess
           pins = {
               "2026-11-25": {"samir":"ceb3e5227770b3f793e6fc26d7d49afc296237cb","socrateai":"3a81eca1cd4b5ee246341831aa203e1efb46095a"},
@@ -34,9 +36,12 @@ jobs:
           repos = {"samir":"SamirWagle/Nepse-All-Scraper","socrateai":"socrateai-official/nepse-open-data"}
           def fetch_blob(repo, sha):
               url = f"https://api.github.com/repos/{repo}/git/blobs/{sha}"
-              req = urllib.request.Request(url, headers={"Accept":"application/vnd.github.raw+json","User-Agent":"nepse-review"})
+              req = urllib.request.Request(url, headers={"Accept":"application/vnd.github+json","User-Agent":"nepse-review","Authorization":"Bearer "+os.environ["GITHUB_TOKEN"]})
               with urllib.request.urlopen(req, timeout=90) as response:
-                  data = response.read()
+                  blob = json.load(response)
+              if blob.get("encoding") != "base64" or blob.get("sha") != sha:
+                  raise ValueError("unexpected Git blob response")
+              data = base64.b64decode(blob["content"])
               if hashlib.sha1(f"blob {len(data)}\0".encode()+data).hexdigest()!=sha:
                   raise ValueError("Git blob identity mismatch")
               return data

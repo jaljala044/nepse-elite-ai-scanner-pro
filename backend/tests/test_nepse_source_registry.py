@@ -14,6 +14,11 @@ class SourceRegistryTests(unittest.TestCase):
         self.assertEqual(result["valid_count"],1)
         self.assertEqual(result["rejected_count"],1)
 
+    def test_malformed_unhashable_ids_are_rejected_not_raised(self):
+        result=validate_source_registry([source(source_id=["bad"],publisher_id={"bad":1})])
+        self.assertEqual(result["valid_count"],0)
+        self.assertEqual(result["rejected_count"],1)
+
     def test_capture_requires_approved_matching_host_and_validated_bytes(self):
         raw=b"session_date,session_status\n2025-01-02,OPEN\n"
         result=build_source_capture_run(registry=[source()],captures=[{
@@ -37,5 +42,15 @@ class SourceRegistryTests(unittest.TestCase):
         self.assertEqual(result["capture_count"],1)
         self.assertEqual(result["rejected_count"],2)
         self.assertTrue(any(x.get("cross_publisher_duplicate") for x in result["rejected"]))
+
+    def test_registry_review_after_decision_cutoff_is_rejected(self):
+        raw=b"session_date,session_status\n2025-01-02,OPEN\n"
+        result=build_source_capture_run(registry=[source(reviewed_at="2025-01-05T00:00:00+05:45")],
+            captures=[{"source_id":"src-1","dataset_kind":"session_calendar",
+                "source_uri":"https://data.example.org/calendar.csv","raw_bytes":raw,
+                "evidence_id":"cal-1","captured_at":"2025-01-03T00:00:00+05:45","rights_status":"approved"}],
+            decision_cutoff="2025-01-04T00:00:00+05:45")
+        self.assertEqual(result["capture_count"],0)
+        self.assertEqual(result["rejected"][0]["reason"],"source_review_not_available_by_cutoff")
 
 if __name__=="__main__": unittest.main()

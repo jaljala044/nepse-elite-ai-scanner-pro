@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ConfigDict
 from .broker_context_server import server_context
+from .broker_research_security import protect_broker_research
 from .broker_context_metrics import concentration, sector_rotation
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
@@ -22,6 +23,8 @@ from .sector_intelligence_confluence import build_sector_intelligence_confluence
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
+
+app.middleware("http")(protect_broker_research)
 
 _UNIVERSE_PATH = Path(__file__).resolve().parents[2] / "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
 try:

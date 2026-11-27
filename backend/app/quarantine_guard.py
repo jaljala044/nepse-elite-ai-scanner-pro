@@ -67,9 +67,31 @@ def quarantine_keys(path, expected_sha256):
     return frozenset(keys)
 
 
+def quarantine_gap_symbols(rows, keys):
+    """Return symbols whose observed date span intersects a blocked session.
+
+    A missing blocked candle must not silently bridge an indicator window.
+    Only dates inside the observed inclusive span count; this does not certify
+    the completeness of other sessions.
+    """
+    if not keys:
+        return set()
+    spans = {}
+    for symbol, day in rows:
+        symbol = symbol.strip().upper()
+        day = _canonical_day(day)
+        lo, hi = spans.get(symbol, (day, day))
+        spans[symbol] = (min(lo, day), max(hi, day))
+    return {symbol for symbol, day in keys if symbol in spans
+            and spans[symbol][0] <= day <= spans[symbol][1]}
+
+
 def reject_quarantined_history(rows, symbol, keys):
     """Reject entire history rather than bridging a missing candle."""
     symbol = symbol.strip().upper()
+    rows = list(rows)
+    if quarantine_gap_symbols(((symbol, row.get("session_date", row.get("trade_date", row.get("date")))) for row in rows), keys):
+        raise ValueError("quarantined historical input or missing blocked session")
     for row in rows:
         day = row.get("session_date", row.get("trade_date", row.get("date")))
         if is_quarantined(row) or (symbol, _canonical_day(day)) in keys:
@@ -117,5 +139,8 @@ def filter_quarantined_feature_rows(rows, keys):
 
     affected = {symbol(row) for row in rows
                 if row.get("record_type") in market_types and blocked(row)}
+    affected.update(quarantine_gap_symbols(
+        ((symbol(row), row.get("session_date", row.get("trade_date", row.get("date"))))
+         for row in rows if row.get("record_type") in market_types and not is_quarantined(row)), keys))
     return [row for row in rows if not blocked(row) and not (
         row.get("record_type") in market_types and symbol(row) in affected)]

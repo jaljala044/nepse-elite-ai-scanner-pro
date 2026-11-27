@@ -17,6 +17,8 @@ from typing import Any, Mapping
 
 from .market_intelligence_snapshot import REQUIRED_MODULES
 
+_SUPPORTS_DIR_FD_OPEN = os.open in getattr(os, "supports_dir_fd", set())
+
 
 class TrustedArtifactError(ValueError):
     """Raised when a deployment-pinned artifact cannot be safely admitted."""
@@ -66,7 +68,7 @@ def _read_payload_bytes(root: Path, relative: Any) -> bytes:
     # to Path.read_bytes() would reintroduce the TOCTOU vulnerability.
     nofollow = getattr(os, "O_NOFOLLOW", None)
     directory = getattr(os, "O_DIRECTORY", None)
-    if nofollow is None or directory is None or os.open not in getattr(os, "supports_dir_fd", set()):
+    if nofollow is None or directory is None or not _SUPPORTS_DIR_FD_OPEN:
         raise TrustedArtifactError("secure_payload_open_unsupported")
 
     cloexec = getattr(os, "O_CLOEXEC", 0)

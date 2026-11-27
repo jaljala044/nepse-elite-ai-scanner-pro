@@ -24,7 +24,7 @@ def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
     checked_registry=validate_source_registry(registry)
     if checked_registry["errors"]: raise ValueError("source_registry_contains_invalid_records")
     source_records={x["source_id"]:x for x in checked_registry["sources"]}
-    captures=[]; failures=[]; seen_request_ids=set(); seen_hashes=set()
+    captures=[]; failures=[]; seen_request_ids=set(); seen_hashes=set(); network_count=0
     for index,request in enumerate(requests):
         if not isinstance(request,dict):
             failures.append({"index":index,"reason":"request_not_object"})
@@ -48,6 +48,7 @@ def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
                 max_bytes=request.get("max_bytes",25_000_000),
                 transport=transport_by_source.get(source_id))
             receipt=result["receipt"]
+            if result["network_retrieval_performed"]: network_count+=1
             if receipt["raw_sha256"] in seen_hashes:
                 failures.append({"request_id":request_id,"reason":"duplicate_raw_payload_across_bundle"})
                 if fail_fast: break
@@ -84,9 +85,11 @@ def acquire_historical_dataset_bundle(*, registry, requests, decision_cutoff,
         "manifest":{**manifest_payload,"manifest_sha256":manifest_hash},
         "intake_reports":intake,"readiness":readiness,
         "capture_count":len(captures),"failure_count":len(failures),
-        "historical_panel_promotion_allowed":readiness["status"]=="READY" and not failures,
+        "historical_panel_promotion_allowed":False,
         "corporate_action_reconciliation_required":True,
-        "live_data_acquired":bool(captures),"production_enabled":False,
+        "network_retrieval_count":network_count,"capture_payload_count":len(captures),
+        "promotion_block_reason":"independent corporate-action reconciliation evidence must be supplied and verified separately",
+        "production_enabled":False,
         "limitations":[
             "Only explicitly enumerated endpoint URLs are fetched; no endpoint discovery or implicit pagination occurs.",
             "The operator must independently verify official publisher identity, licensing, completeness and finality.",

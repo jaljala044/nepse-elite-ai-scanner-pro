@@ -2,8 +2,8 @@ import csv, json, tempfile, unittest
 from pathlib import Path
 from scripts.validate_ohlcv_exception_ledger import validate
 
-USER_KEYS=[("BGWT","2025-07-28"),("MEHL","2025-07-28"),("RAWA","2025-07-28"),("RHGCL","2025-07-28"),("ULHC","2025-07-28")]
-OTHER_KEYS=[("API","2026-11-19"),("HRL","2026-11-19"),("RHGCL","2026-11-19")]
+USER_KEYS=[("BGWT","2025-07-28"),("MEHL","2025-07-28"),("RAWA","2025-07-28"),("RHGCL","2025-07-28"),("ULHC","2025-07-28"),("API","2026-11-19"),("HRL","2026-11-19")]
+OTHER_KEYS=[("RHGCL","2026-11-19")]
 
 def record(kind, number):
     common={"exception_id":f"{kind}:{number}","exception_type":kind,"symbol":f"S{number}","trade_date":"2026-01-01","source_repository":"jaljala044/nepse-smc-data","disposition":"quarantined_unresolved","reviewer_rationale":"Fixture only; retain unresolved.","evidence_pointer":"fixture://source"}
@@ -14,13 +14,22 @@ def record(kind, number):
         common.update({"symbol":symbol,"trade_date":day,"source_repository":"multiple_pinned_sources","source_evidence":{
             "jaljala044/nepse-smc-data":{"commit_sha":"a"*40,"path":"data/example.csv","file_sha256":"b"*64,"row":{"close":"10"}},
             "jaljala044/nepse-history-starter":{"commit_sha":"c"*40,"path":"data/example.csv","file_sha256":"d"*64,"row":{"close":"11"}}}})
-        if number<5:
-            common.update({"disposition":"resolved_with_user_authoritative_evidence","evidence_pointer":"conversation-memory://user-final-authoritative-2025-07-28-records"})
+        if number<7:
+            common.update({
+                "disposition":"resolved_with_user_authoritative_evidence",
+                "evidence_pointer":"conversation-memory://user-final-authoritative-2025-07-28-records" if number<5 else "https://github.com/jaljala044/nepse-smc-data/commit/e4d069c6ed292c127e7805b19f98e2837e999073",
+                "resolution_evidence":{
+                    "authority":"explicit_user_designation_as_final_and_authoritative",
+                    "authoritative_values":{"open":"1.00","high":"1.00","low":"1.00","close":"1.00","volume":"1","turnover_npr":"1"},
+                    "canonical_promotion_allowed":False,
+                    "raw_source_rows_modified":False
+                }
+            })
     return common
 
 def write_fixture(root, records):
     jp,cp=root/"ledger.json",root/"ledger.csv"
-    counts={"total_exception_records":1339,"invalid_ohlc_rows":1331,"cross_source_conflict_keys":8,"unresolved":1334,"resolved_with_user_authoritative_evidence":5}
+    counts={"total_exception_records":1339,"invalid_ohlc_rows":1331,"cross_source_conflict_keys":8,"unresolved":1332,"resolved_with_user_authoritative_evidence":7}
     jp.write_text(json.dumps({"counts":counts,"exceptions":records}),encoding="utf-8")
     fields=sorted({k for row in records for k in row})
     with cp.open("w",encoding="utf-8",newline="") as stream:

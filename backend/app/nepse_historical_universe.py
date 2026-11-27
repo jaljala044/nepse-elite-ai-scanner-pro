@@ -36,7 +36,7 @@ def build_effective_universe(*, universe_rows, session_dates):
             errors.append("universe_interval_invalid:"+sid); continue
         events.setdefault(sid,[]).append((effective,end,status,symbol))
         symbols.setdefault(sid,set()).add(symbol)
-    active_by_session={}; inactive_history=[]
+    active_by_session={d.isoformat():{} for d in sessions}; inactive_history=[]
     for sid,items in events.items():
         items.sort(key=lambda x:x[0])
         dates=[x[0] for x in items]

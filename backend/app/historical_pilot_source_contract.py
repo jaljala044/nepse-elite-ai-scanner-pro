@@ -6,7 +6,7 @@ approved-registry record for the existing raw-payload validator.
 """
 from __future__ import annotations
 from datetime import datetime
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 from typing import Mapping
 
 _DATASET_KINDS = {
@@ -61,8 +61,11 @@ def validate_historical_source_contract(*, contract: Mapping[str, object], decis
     if not source_id: errors.append({"reason":"source_id_missing"})
     if not publisher_id: errors.append({"reason":"publisher_id_missing"})
     if dataset_kind not in _DATASET_KINDS: errors.append({"reason":"dataset_kind_unsupported"})
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.hostname not in allowed_hosts:
-        errors.append({"reason":"endpoint_must_be_https_and_exactly_allowlisted"})
+    query_secret_keys = {key.lower() for key, _value in parse_qsl(parsed.query, keep_blank_values=True)}
+    if query_secret_keys.intersection(_SECRET_KEYS):
+        errors.append({"reason":"endpoint_query_must_not_contain_credentials"})
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.fragment or parsed.hostname not in allowed_hosts:
+        errors.append({"reason":"endpoint_must_be_https_and_exactly_allowlisted_without_userinfo_or_fragment"})
     if not isinstance(hosts,list) or not hosts or any(not isinstance(x,str) or not x.strip() for x in hosts):
         errors.append({"reason":"allowed_hosts_invalid"})
     content_types = contract.get("allowed_content_types")

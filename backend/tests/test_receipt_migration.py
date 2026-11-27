@@ -20,6 +20,7 @@ class ReceiptMigrationTests(unittest.TestCase):
             entitlement=dict(e,action_type="dividend",record_date="2024-05-01",due_date="2024-05-06",gross_amount=10000),
             confirmation=dict(e,event_type="cash_received",effective_date="2024-05-06",net_amount=amount))
     def migrate(self):
+        self.journal.retire_writer()
         return self.ledger.migrate_legacy(self.source,self.now,source_frozen=True)
     def test_repeat_and_reconcile(self):
         self.journal.record(**self.receipt())
@@ -52,3 +53,21 @@ class ReceiptMigrationTests(unittest.TestCase):
         result=self.ledger.reconcile("P",self.now)
         self.assertFalse(result["reconciled"])
         self.assertEqual(result["differences"]["cash:NPR"]["expected"],"9500")
+
+    def test_retirement_gate(self):
+        with self.assertRaisesRegex(ValueError,"legacy_writer_not_retired"):
+            self.ledger.migrate_legacy(self.source,self.now,source_frozen=True)
+    def test_cutover(self):
+        self.journal.record(**self.receipt())
+        self.journal.retire_writer()
+        with self.assertRaises(sqlite3.IntegrityError):
+            CorporateReceiptJournal(self.source).record(**self.receipt("NEW"))
+        with sqlite3.connect(self.source) as db:
+            for sql in ("UPDATE corporate_receipts SET payload='bad'","DELETE FROM corporate_receipts"):
+                with self.assertRaises(sqlite3.IntegrityError): db.execute(sql)
+        self.assertFalse(self.ledger.verify_cutover(self.source,self.now)["research_cutover_checks_passed"])
+        self.migrate()
+        self.assertTrue(self.ledger.verify_cutover(self.source,self.now)["research_cutover_checks_passed"])
+        with sqlite3.connect(self.target) as db:
+            db.execute("UPDATE receipt_balance_totals SET amount='1'")
+        self.assertFalse(self.ledger.verify_cutover(self.source,self.now)["research_cutover_checks_passed"])

@@ -5,6 +5,8 @@ trusted per-decision gate/level/execution evidence. It does not invent levels.
 """
 from __future__ import annotations
 from datetime import datetime,timezone
+import hashlib
+import json
 from decimal import Decimal,InvalidOperation
 from app.scanner_trade_plan import build_evidence_backed_trade_plan
 from app.scanner_risk_engine import calculate_risk_limited_position,evaluate_execution_constraints
@@ -31,6 +33,7 @@ def generate_historical_research_signals(*,feature_series,signal_contexts,minimu
     if min_score is None or min_cov is None or not 0<=min_score<=100 or not 0<=min_cov<=100: raise ValueError("invalid_thresholds")
     signals=[]; withheld=[]
     for snap in feature_series["snapshots"]:
+        snapshot_digest=hashlib.sha256(json.dumps(snap,sort_keys=True,separators=(",",":"),default=str).encode("utf-8")).hexdigest()
         cutoff=_time(snap.get("decision_time"))
         if cutoff is None: withheld.append({"reason":"snapshot_decision_time_invalid"}); continue
         for symbol,strategy_map in snap.get("feature_series",{}).items():
@@ -67,6 +70,7 @@ def generate_historical_research_signals(*,feature_series,signal_contexts,minimu
                             params.setdefault("round_trip_cost_pct",costs); params.setdefault("slippage_pct",slip)
                             sizing=calculate_risk_limited_position(**params)
                         if sizing.get("status")!="sized_for_human_review": failures.append("position_sizing_blocked")
-                    signal={"symbol":symbol,"strategy_id":strategy_id,"horizon":horizon,"decision_time":cutoff.isoformat(),"as_of_session":snap.get("as_of_session"),"strategy_score":str(score) if score is not None else None,"feature_coverage_pct":str(coverage) if coverage is not None else None,"plan":plan,"execution":execution,"position_sizing":sizing,"action":"RESEARCH_BUY_FOR_HUMAN_REVIEW" if not failures else "NO_TRADE","qualification_failures":failures,"evidence_clusters":q.get("accepted_evidence_clusters",{}),"production_enabled":False}
+                    signal_id=hashlib.sha256("|".join((symbol,strategy_id,horizon,cutoff.isoformat(),snapshot_digest)).encode("utf-8")).hexdigest()
+                    signal={"signal_id":signal_id,"feature_snapshot_sha256":snapshot_digest,"symbol":symbol,"strategy_id":strategy_id,"horizon":horizon,"decision_time":cutoff.isoformat(),"as_of_session":snap.get("as_of_session"),"strategy_score":str(score) if score is not None else None,"feature_coverage_pct":str(coverage) if coverage is not None else None,"plan":plan,"execution":execution,"position_sizing":sizing,"liquidity_quantity_cap":sizing.get("quantity_caps",{}).get("liquidity_adv"),"action":"RESEARCH_BUY_FOR_HUMAN_REVIEW" if not failures else "NO_TRADE","qualification_failures":failures,"evidence_clusters":q.get("accepted_evidence_clusters",{}),"production_enabled":False}
                     signals.append(signal)
     return {"schema_version":"nepse-historical-research-signals-1.0.0","status":"generated_with_withheld" if withheld else "generated","signal_count":len(signals),"research_buy_count":sum(s["action"]=="RESEARCH_BUY_FOR_HUMAN_REVIEW" for s in signals),"no_trade_count":sum(s["action"]=="NO_TRADE" for s in signals),"signals":signals,"withheld":withheld,"signal_tracking_log":[{"symbol":s["symbol"],"strategy_id":s["strategy_id"],"horizon":s["horizon"],"decision_time":s["decision_time"],"action":s["action"],"entry":s["plan"].get("entry"),"stop":s["plan"].get("stop"),"targets":s["plan"].get("targets"),"score":s["strategy_score"],"coverage_pct":s["feature_coverage_pct"],"invalidation":"verified structural stop; re-evaluate on each new as-of snapshot"} for s in signals],"performance_claimed":False,"production_enabled":False,"limitations":["Research BUY is not a live order or guaranteed fill.","Every context key must be built from trusted server-side point-in-time sources.","A passing execution snapshot is not a fill guarantee and must be refreshed at order time.","No portfolio overlap, position netting, circuit queue, partial-fill or exchange order simulation is included.","No live NEPSE history is bundled; performance metrics require licensed validated historical inputs."]}

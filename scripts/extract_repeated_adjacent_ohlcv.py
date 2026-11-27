@@ -66,10 +66,67 @@ def extract(repo: str, commit: str, root: Path) -> list[dict]:
                 previous_line = line
     return out
 
+
+def join_project_calendar(rows: list[dict], calendar_path: Path) -> tuple[list[dict], dict]:
+    """Join candidate date pairs to the explicit project calendar without promoting rows."""
+    calendar_sha = sha256(calendar_path)
+    status_by_date: dict[str, str] = {}
+    with calendar_path.open(encoding="utf-8-sig", newline="") as stream:
+        reader = csv.DictReader(stream)
+        if not {"date", "status"}.issubset(reader.fieldnames or []):
+            raise ValueError("project calendar must contain date and status columns")
+        for row in reader:
+            day = (row.get("date") or "").strip()
+            status = (row.get("status") or "").strip()
+            if not day or day in status_by_date:
+                raise ValueError(f"missing or duplicate project calendar date: {day!r}")
+            status_by_date[day] = status
+    open_statuses = {"project_accepted_open", "verified_open", "verified_exceptional_open"}
+    ordered_open = sorted(day for day, status in status_by_date.items() if status in open_statuses)
+    open_index = {day: i for i, day in enumerate(ordered_open)}
+    counts: dict[str, int] = {}
+    by_source: dict[str, dict[str, int]] = {}
+    for row in rows:
+        prior, current = row["previous_date"], row["current_date"]
+        prior_status = status_by_date.get(prior, "not_listed")
+        current_status = status_by_date.get(current, "not_listed")
+        gap = None
+        if prior in open_index and current in open_index:
+            gap = open_index[current] - open_index[prior]
+            if gap == 1:
+                classification = "adjacent_project_sessions_review"
+            elif gap > 1:
+                classification = "intervening_project_sessions_missing_from_source_review"
+            else:
+                classification = "non_increasing_or_duplicate_session_order_review"
+        elif prior_status.endswith("closed") or current_status.endswith("closed"):
+            classification = "explicit_closure_date_conflict_review"
+        else:
+            classification = "date_not_in_project_calendar_review"
+        row["previous_calendar_status"] = prior_status
+        row["current_calendar_status"] = current_status
+        row["project_session_gap"] = gap if gap is not None else ""
+        row["session_join_classification"] = classification
+        counts[classification] = counts.get(classification, 0) + 1
+        source_counts = by_source.setdefault(row["repository"], {})
+        source_counts[classification] = source_counts.get(classification, 0) + 1
+    summary = {
+        "calendar_file_sha256": calendar_sha,
+        "calendar_dates_total": len(status_by_date),
+        "project_accepted_open_dates": sum(v == "project_accepted_open" for v in status_by_date.values()),
+        "verified_open_dates": sum(v in {"verified_open", "verified_exceptional_open"} for v in status_by_date.values()),
+        "explicit_closure_dates": sum(v in {"verified_closed", "verified_exceptional_closed"} for v in status_by_date.values()),
+        "session_join_counts": counts,
+        "session_join_counts_by_source": by_source,
+        "classification_policy": "calendar join only; all repeated OHLCV records remain review-only and no source data is modified",
+    }
+    return rows, summary
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--source", action="append", nargs=3, metavar=("REPO", "COMMIT", "ROOT"), required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--calendar", type=Path, help="Project-accepted NEPSE session calendar CSV")
     args = p.parse_args()
     all_rows = []
     per_source = {}
@@ -83,11 +140,15 @@ def main() -> int:
         }
         all_rows.extend(rows)
     args.out.mkdir(parents=True, exist_ok=True)
+    calendar_summary = None
+    if args.calendar:
+        all_rows, calendar_summary = join_project_calendar(all_rows, args.calendar)
     csv_path = args.out / "repeated_adjacent_ohlcv_candidates.csv"
     fields = ["repository", "commit_sha", "path", "file_sha256", "symbol",
               "previous_date", "current_date", "previous_csv_line", "current_csv_line",
               "calendar_day_gap", "ohlc_bounds_valid", "baseline_metric_eligible",
-              "review_reason", "ohlcv", "classification"]
+              "review_reason", "ohlcv", "classification", "previous_calendar_status",
+              "current_calendar_status", "project_session_gap", "session_join_classification"]
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
@@ -102,6 +163,8 @@ def main() -> int:
         "classification": "review_only_not_invalid",
         "source_files_read_only": True,
     }
+    if calendar_summary:
+        summary["project_calendar_join"] = calendar_summary
     (args.out / "repeated_adjacent_ohlcv_summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))

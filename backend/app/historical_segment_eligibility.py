@@ -10,11 +10,15 @@ from decimal import Decimal, InvalidOperation
 import re
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_CANONICAL_DAY = re.compile(r"^\\d{4}-\\d{2}-\\d{2}$")
 _BAR_FIELDS = ("open", "high", "low", "close", "volume")
 
 def _iso_day(value: str, field: str) -> str:
+    raw = str(value)
+    if not _CANONICAL_DAY.fullmatch(raw):
+        raise ValueError(f"{field} must use canonical YYYY-MM-DD format")
     try:
-        return date.fromisoformat(str(value)).isoformat()
+        return date.fromisoformat(raw).isoformat()
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{field} must be an ISO date") from exc
 

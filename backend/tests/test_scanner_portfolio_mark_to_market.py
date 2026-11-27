@@ -26,6 +26,6 @@ class MarkToMarketTests(unittest.TestCase):
             "side":"sell","quantity":1,"price":"100","execution_at":"2025-01-02T11:00:00+05:45",**ev("fills","f1","2025-01-02T11:00:00+05:45")}]
         with self.assertRaisesRegex(ValueError,"sell_exceeds_portfolio_inventory"):
             build_mark_to_market_curve(initial_cash="500",executions=executions,
-                daily_marks=[{"symbol":"ABC","session_date":"2025-01-02","close":"100",**ev("eod","m1")}])
+                daily_marks=[{"symbol":"ABC","session_date":"2025-01-02","close":"100","decision_cutoff":"2025-01-02T16:00:00+05:45",**ev("eod","m1","2025-01-02T16:00:00+05:45")}])
 
 if __name__=="__main__": unittest.main()

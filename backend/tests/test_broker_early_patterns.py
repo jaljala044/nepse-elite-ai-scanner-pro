@@ -105,6 +105,24 @@ class BrokerEarlyPatternTests(unittest.TestCase):
         self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
         self.assertEqual(result["reason"], "insufficient_20_session_baseline")
 
+    def test_boolean_daily_ratio_is_not_accepted_as_numeric_evidence(self):
+        self.windows["1D"]["execution_channels"][0]["latest_buy_vs_prior_20_avg_ratio"] = True
+        result = self.evaluate()
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertEqual(result["reason"], "daily_flow_baseline_ratio_invalid")
+
+    def test_non_finite_daily_ratio_fails_closed(self):
+        self.windows["1D"]["execution_channels"][0]["latest_buy_vs_prior_20_avg_ratio"] = float("inf")
+        result = self.evaluate()
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertEqual(result["reason"], "daily_flow_baseline_ratio_invalid")
+
+    def test_negative_daily_ratio_fails_closed(self):
+        self.windows["1D"]["execution_channels"][0]["latest_buy_vs_prior_20_avg_ratio"] = -0.1
+        result = self.evaluate()
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertEqual(result["reason"], "daily_flow_baseline_ratio_invalid")
+
 
 if __name__ == "__main__":
     unittest.main()

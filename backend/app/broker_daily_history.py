@@ -183,13 +183,19 @@ class BrokerDailyHistoryStore:
             if not isinstance(reconciliation_sha256, str) or len(reconciliation_sha256) != 64 or any(
                     ch not in "0123456789abcdef" for ch in reconciliation_sha256.lower()):
                 raise DailyHistoryRejected("invalid_reconciliation_sha256")
+            capture_time = _aware_timestamp(
+                raw_capture_manifest["captured_at"], "raw_capture_captured_at")
+            capture_available = _aware_timestamp(
+                raw_capture_manifest["available_at"], "raw_capture_available_at")
+            if capture_available < capture_time:
+                raise DailyHistoryRejected("raw_capture_available_before_capture")
+            if available_at < capture_available:
+                raise DailyHistoryRejected("ledger_available_before_raw_capture")
             lineage = {
                 "raw_capture_sha256": raw_capture_manifest["raw_sha256"].lower(),
                 "raw_capture_batch_id": raw_capture_manifest["capture_id"],
-                "raw_capture_captured_at": _aware_timestamp(
-                    raw_capture_manifest["captured_at"], "raw_capture_captured_at").isoformat(),
-                "raw_capture_available_at": _aware_timestamp(
-                    raw_capture_manifest["available_at"], "raw_capture_available_at").isoformat(),
+                "raw_capture_captured_at": capture_time.isoformat(),
+                "raw_capture_available_at": capture_available.isoformat(),
                 "parser_name": raw_capture_manifest["parser_name"],
                 "parser_version": raw_capture_manifest["parser_version"],
                 "reconciliation_sha256": reconciliation_sha256.lower(),

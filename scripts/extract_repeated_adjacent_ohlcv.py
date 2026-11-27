@@ -127,6 +127,34 @@ def join_project_calendar(rows: list[dict], calendar_path: Path) -> tuple[list[d
     }
     return rows, summary
 
+def unlisted_date_queue(rows: list[dict]) -> list[dict]:
+    """Rank distinct missing calendar dates by affected pairs; never infer closure."""
+    pending = {}
+    for row in rows:
+        if row.get("session_join_classification") != "date_not_in_project_calendar_review":
+            continue
+        missing = {row[side + "_date"] for side, status in
+                   (("previous", "previous_calendar_status"), ("current", "current_calendar_status"))
+                   if row.get(status) == "not_listed"}
+        for day in missing:
+            item = pending.setdefault(day, {"pairs": 0, "symbols": set(), "repositories": set()})
+            item["pairs"] += 1
+            item["symbols"].add(row["symbol"])
+            item["repositories"].add(row["repository"])
+    result = []
+    for day, item in pending.items():
+        try:
+            canonical = date.fromisoformat(day).isoformat() == day
+        except ValueError:
+            canonical = False
+        result.append({"date": day, "valid_iso_date": canonical,
+                       "affected_pairs": item["pairs"],
+                       "distinct_symbols": len(item["symbols"]),
+                       "repositories": sorted(item["repositories"]),
+                       "disposition": "evidence_required" if canonical else "malformed_date_review",
+                       "canonical_promotion_allowed": False})
+    return sorted(result, key=lambda item: (-item["affected_pairs"], item["date"]))
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--source", action="append", nargs=3, metavar=("REPO", "COMMIT", "ROOT"), required=True)
@@ -171,6 +199,11 @@ def main() -> int:
     }
     if calendar_summary:
         summary["project_calendar_join"] = calendar_summary
+        queue = unlisted_date_queue(all_rows)
+        (args.out / "unlisted_date_evidence_queue.json").write_text(json.dumps(queue, indent=2) + "\n", encoding="utf-8")
+        summary["unlisted_date_queue"] = {"distinct_date_labels": len(queue),
+            "valid_iso_dates": sum(item["valid_iso_date"] for item in queue),
+            "top_10": queue[:10], "promotion_allowed": False}
     (args.out / "repeated_adjacent_ohlcv_summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))

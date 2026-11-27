@@ -149,14 +149,17 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
     for contract in broker_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
 
-    # Keep raw point-in-time prices for descriptive diagnostics; the contract
-    # gate below independently controls whether each symbol's component score is admitted.
-    prices = raw_prices
+    # Only complete, provenance-valid, unquarantined symbol histories reach feature
+    # engines. Raw rows remain represented in the input-contract diagnostics.
+    prices = [
+        row for row in raw_prices
+        if price_contract_by_symbol.get(str(row.get("symbol", "")).strip().upper(), {}).get("score_eligible")
+    ]
 
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
         "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(raw_prices) - len(price_contract_failures),
-                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and not price_contract_failures,
+                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and bool(price_contract_by_symbol) and all(item.get("score_eligible") for item in price_contract_by_symbol.values()),
                   "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
                   "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),

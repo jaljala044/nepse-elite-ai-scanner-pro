@@ -1,6 +1,6 @@
 import unittest
 from datetime import date, timedelta
-from app.historical_replay import replay
+from app.historical_replay import replay, calendar_as_of
 
 def fixture():
     rows=[]; reviewed={}
@@ -43,3 +43,49 @@ class ReplayTests(unittest.TestCase):
         rows,reviewed=fixture()
         rows[0]["high"]=1
         self.assertEqual(replay("TEST",rows,reviewed=reviewed)["status"],"unavailable")
+
+class CalendarReplayTests(unittest.TestCase):
+    def setUp(self):
+        self.rows,self.reviewed=fixture()
+        self.day=self.rows[-1]["date"]
+        self.cutoff=f"{self.day}T23:59:59+05:45"
+        start=date(2024,12,26)
+        self.calendar=[]
+        for i in range((self.day-start).days+1):
+            d=start+timedelta(days=i)
+            self.calendar.append(dict(date=str(d),status="verified_open" if d>=date(2025,1,1) else "verified_closed",evidence_id=f"synthetic-calendar-{i}",available_at=f"{d}T11:00:00Z"))
+    def evaluate(self, calendar):
+        return replay("TEST",self.rows,reviewed=self.reviewed,decision_dates=[self.day],calendar_records=calendar)["observations"][0]
+    def test_complete_calendar(self):
+        obs=self.evaluate(self.calendar)
+        self.assertEqual(obs["multitimeframe"]["status"],"research_only")
+        self.assertEqual(obs["multitimeframe"]["timeframes"]["daily"]["bars"],25)
+        self.assertEqual(obs["action"],"NO TRADE")
+        self.assertIsNone(obs["multitimeframe"]["production_score"])
+    def test_missing_calendar(self):
+        self.assertEqual(self.evaluate(None)["multitimeframe"]["status"],"unavailable")
+    def test_missing_civil_day(self):
+        self.assertEqual(self.evaluate(self.calendar[:8]+self.calendar[9:])["multitimeframe"]["status"],"unavailable")
+    def test_duplicate_calendar(self):
+        self.assertEqual(self.evaluate(self.calendar+[self.calendar[8]])["multitimeframe"]["status"],"unavailable")
+    def test_late_calendar_evidence(self):
+        rows=list(self.calendar)
+        rows[8]=dict(rows[8],available_at="2025-02-01T00:00:00Z")
+        self.assertEqual(self.evaluate(rows)["multitimeframe"]["status"],"unavailable")
+    def test_missing_calendar_evidence(self):
+        rows=list(self.calendar)
+        rows[8]=dict(rows[8],evidence_id="")
+        self.assertEqual(self.evaluate(rows)["multitimeframe"]["status"],"unavailable")
+    def test_future_calendar_invariance(self):
+        extra=dict(date="2025-01-26",status="verified_open",evidence_id="future",available_at="2025-01-26T11:00:00Z")
+        self.assertEqual(self.evaluate(self.calendar),self.evaluate(self.calendar+[extra]))
+    def test_incomplete_initial_calendar(self):
+        self.assertEqual(self.evaluate(self.calendar[1:])["multitimeframe"]["status"],"unavailable")
+    def test_exceptional_open(self):
+        rows=list(self.calendar)
+        rows[8]=dict(rows[8],status="verified_exceptional_open")
+        self.assertIn(date.fromisoformat(rows[8]["date"]),calendar_as_of(rows,self.day,self.cutoff))
+    def test_closed_day_with_bar(self):
+        rows=list(self.calendar)
+        rows[8]=dict(rows[8],status="verified_closed")
+        self.assertEqual(self.evaluate(rows)["multitimeframe"]["reason"],"non_calendar_rows")

@@ -65,11 +65,23 @@ class CaptureOfficialHarTests(unittest.TestCase):
 
     def test_rejects_non_official_or_non_https_url(self):
         for url in ("https://example.com/data", "http://www.nepalstock.com.np/data",
-                    "https://nepalstock.com.np:8443/data"):
+                    "https://nepalstock.com.np:8443/data",
+                    "https://nepalstock.com.evil.example/data"):
             with self.subTest(url=url), tempfile.TemporaryDirectory() as tmp:
                 har = self._write_har(tmp, make_har(b'{"x":1}', url=url))
                 with self.assertRaisesRegex(ValueError, "approved official"):
                     capture_har_entry(har, 0, "registry", Path(tmp) / "out")
+
+    def test_captures_observed_nepalstock_com_catalogue_host(self):
+        body = b'{"companies":[{"symbol":"NABIL"}]}'
+        for host in ("nepalstock.com", "www.nepalstock.com"):
+            with self.subTest(host=host), tempfile.TemporaryDirectory() as tmp:
+                har = self._write_har(tmp, make_har(body, url=f"https://{host}/company"))
+                result = capture_har_entry(har, 0, "nepse-company-catalogue", Path(tmp) / "out")
+                self.assertEqual(Path(result["raw_payload_path"]).read_bytes(), body)
+                self.assertEqual(result["raw_payload_sha256"], hashlib.sha256(body).hexdigest())
+                self.assertFalse(result["manifest_verified"])
+                self.assertFalse(result["membership_admission_allowed"])
 
     def test_rejects_credential_like_query_parameters(self):
         with tempfile.TemporaryDirectory() as tmp:

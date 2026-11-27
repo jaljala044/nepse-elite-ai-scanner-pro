@@ -157,6 +157,26 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertIn("evidence_ids_missing_or_duplicate",
                       result["index_intelligence"]["rejection_reason"])
 
+    def test_noncanonical_decision_and_artifact_dates_are_rejected(self):
+        for decision_date in ("20261127", "2026-1-27"):
+            with self.subTest(decision_date=decision_date):
+                with self.assertRaisesRegex(ValueError, "decision_date_must_be_iso_date"):
+                    self.store().load(
+                        decision_date=decision_date,
+                        decision_time="2026-11-27T16:00:00+05:45",
+                        required_modules=("index_intelligence",),
+                    )
+        for artifact_date in ("20261127", "2026-1-27", "2026-11-27T00:00:00"):
+            with self.subTest(artifact_date=artifact_date):
+                entry = dict(self.entry, as_of_date=artifact_date)
+                result = self.store(entry).load(
+                    decision_date="2026-11-27",
+                    decision_time="2026-11-27T16:00:00+05:45",
+                    required_modules=("index_intelligence",),
+                )
+                self.assertIn("artifact_as_of_date_must_be_iso_date",
+                              result["index_intelligence"]["rejection_reason"])
+
 
 if __name__ == "__main__":
     unittest.main()

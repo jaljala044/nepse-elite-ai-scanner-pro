@@ -302,8 +302,11 @@ class BrokerRawCaptureRegistry:
         if not report.memory_eligible:
             raise CaptureRejected("reconciler_batch_not_memory_eligible")
 
+        stored_capture = self.get(batch_id)
         receipt = history_store.append_validated_daily_batch(
-            report, coverage_manifest=dict(coverage_manifest))
+            report, coverage_manifest=dict(coverage_manifest),
+            raw_capture_manifest=stored_capture["manifest"],
+            reconciliation_sha256=report_hash)
         receipt_payload = dict(receipt)
         with self._connect() as con:
             current = con.execute("SELECT state FROM captures WHERE batch_id=?",

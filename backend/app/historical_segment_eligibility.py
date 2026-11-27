@@ -138,7 +138,17 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         except ValueError:
             reasons.append("invalid_session_status_date")
             continue
+        if day in normalized_statuses:
+            reasons.append(f"duplicate_session_status:{day.isoformat()}")
         normalized_statuses[day] = state
+
+    expected_set = set(expected)
+    for extra_day in sorted(set(normalized_statuses) - expected_set):
+        reasons.append(f"unexpected_session_status:{extra_day.isoformat()}")
+    for day in expected:
+        if ((effective_from is not None and day < effective_from)
+                or (effective_to is not None and day > effective_to)):
+            reasons.append(f"expected_session_outside_instrument_effective_interval:{day.isoformat()}")
 
     by_day = {}
     for index, row in enumerate(records):

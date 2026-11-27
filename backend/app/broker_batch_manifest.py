@@ -270,6 +270,8 @@ class BrokerRawCaptureRegistry:
 
     def record_dry_run(self, batch_id: str, report: IngestionReport) -> str:
         """Bind dry-run approval to the complete typed reconciler output."""
+        if not isinstance(report, IngestionReport):
+            raise CaptureRejected("typed_ingestion_report_required")
         if report.batch_id != batch_id:
             raise CaptureRejected("reconciliation_batch_id_mismatch")
         if not report.memory_eligible or report.coverage_status != "complete":

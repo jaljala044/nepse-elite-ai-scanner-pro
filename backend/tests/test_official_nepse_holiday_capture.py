@@ -31,17 +31,26 @@ class OfficialNepseHolidayCaptureTests(unittest.TestCase):
         self.assertEqual(result["conflict_count"], 0)
         self.assertFalse(result["calendar_population_allowed"])
 
-    def test_canonical_calendar_contains_only_explicit_api_closures(self):
+    def test_canonical_calendar_preserves_exact_official_api_closures(self):
         calendar = load_calendar(ROOT / "data/reference/nepse_session_calendar.csv")
-        self.assertEqual(len(calendar), 41)
-        self.assertEqual(
-            calendar[__import__("datetime").date.fromisoformat("2026-09-21")]["status"],
-            "verified_exceptional_closed",
-        )
-        self.assertEqual(
-            sum(row["status"] == "verified_closed" for row in calendar.values()),
-            40,
-        )
+        manifest = json.loads((ROOT / "data/evidence/acquired/calendar-evidence-manifest-2026.json").read_text(encoding="utf-8"))
+        capture = manifest["captures"][0]
+        expected = {claim["date"]: claim["status"] for claim in manifest["claims"]}
+        official = {day.isoformat(): row for day, row in calendar.items()
+                    if row["source_id"] == capture["source_id"]}
+        self.assertEqual(len(expected), 41)
+        self.assertEqual({day: row["status"] for day, row in official.items()}, expected)
+        for row in official.values():
+            self.assertEqual(row["raw_evidence_sha256"], capture["raw_evidence_sha256"])
+            self.assertEqual(row["scope"], "all_securities")
+            self.assertEqual(row["retrieved_at_utc"], capture["retrieved_at_utc"])
+        self.assertEqual(expected["2026-09-21"], "verified_exceptional_closed")
+        self.assertEqual(sum(status == "verified_closed" for status in expected.values()), 40)
+        for row in calendar.values():
+            if row["source_id"] == "SS_ARCHIVE":
+                self.assertEqual(row["status"], "project_accepted_open")
+                self.assertEqual(row["scope"], "project_baseline")
+
 
     def test_no_source_session_record_or_market_summary_conflicts_with_holiday_dates(self):
         manifest = json.loads(

@@ -1,0 +1,3 @@
+Issue #5 CI dependency
+
+This pull request is based on `research/issue-20-historical-segment-eligibility`, which contains the historical-segment eligibility module imported by the repository-wide backend test suite. The original full-suite failure was a missing module in the prior base snapshot, not a holiday-ledger assertion. The dedicated closure-candidate-ledger workflow and the other current checks passed. This documentation-only update requests fresh validation against the dependency-complete base. All 499 holiday API rows remain review-only candidates; no calendar promotion or source-data changes are made.

@@ -125,6 +125,8 @@ def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
     return dict(available_cash=None if cash is None else str(cash),sale_receivables=None if cash is None else str(sum((v for d,v in receivables),Decimal(0))),lots={k:dict(symbol=l["symbol"],quantity=l["quantity"],cost=str(l["cost"])) for k,l in lots.items()},
         realized=[dict(s,settlement=s["settlement"].isoformat()) for s in realized],
         dividend_receipts=str(cash_receipts),rights_payments=str(rights_paid),
+        record_entitlements={k:sum(a["quantities"].values()) for k,a in entitlements.items()},
+        pending_paid_rights=str(sum((sum(a["subscriptions"].values())*_amount(a["terms"]["subscription_price"]) for a in entitlements.values() if a["kind"]=="rights" and a["paid"] and not a["closed"]),Decimal(0))),
         pending_action_ids=[k for k,a in entitlements.items() if not a["closed"]],production_eligible=False,
         limitations=["Same-day events require strictly increasing evidence-backed timestamps; settlement-day cash and shares unavailable for intraday use. Overlapping share actions withheld.",
         "Caller-attested confirmed credits; optional simulated cash funding, no tax or independent custody verification."])

@@ -10,7 +10,7 @@ No NEPSE/CDSC endpoint is guessed or hardcoded. Operators must supply and review
 
 `backend/app/scanner_execution_aware_replay.py` groups orders independently by six-strategy ID, horizon and sample partition. Each order is passed through the verified event queue simulator. Only resulting queue fills become executions, and each execution inherits the event's source/evidence provenance. Those fills then flow into the daily mark-to-market engine, including cash, inventory, transaction costs and unrealized drawdown.
 
-Sell orders are rejected unless caller-supplied settlement/inventory evidence is verified, available by order time, and explicitly says the quantity was sellable by then. The module does not invent a T+2 calendar or infer sellable quantity. Every open position must have a verified daily mark; missing marks block valuation. Strategy/horizon/partition portfolios are isolated to avoid leakage and capital cross-contamination.
+Sell orders are rejected unless caller-supplied settlement/inventory evidence is verified, available by order time, and explicitly says the quantity was sellable by then. Opening holdings and cost basis must also be seeded from verified point-in-time inventory evidence so sell fills are accounted for correctly. The module does not invent a T+2 calendar or infer sellable quantity. Every open position must have a verified daily mark; missing marks block valuation. Strategy/horizon/partition portfolios are isolated to avoid leakage and capital cross-contamination.
 
 ## Validation and limits
 

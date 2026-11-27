@@ -70,3 +70,22 @@ Before acting, state briefly: **existing status; completed/passed scope; active 
 After acting, state: **what changed; what was deliberately left untouched; exact commit/PR/issue; exact-head checks; remaining pending/blocked scope**.
 
 **Default decision: PRESERVE. If work is not clearly pending or not started, do not touch it.**
+
+
+### Ownership claim record and conflict rule
+
+The canonical task record is the existing GitHub issue for the acceptance criteria, with its linked implementation PR(s). Use the issue/PR conversation as the authoritative coordination record; link the same task key from any project progress register. Do not create a second registry entry or duplicate issue merely to claim ownership.
+
+Before editing, publish one ownership claim in that canonical issue/PR thread with all of these fields, in UTC:
+
+- Task key / issue number and exact acceptance criteria claimed.
+- Claiming actor (stable agent or contributor handle).
+- Working branch and exact file paths or evidence scope.
+- Claim start time, lease expiry time and latest heartbeat time.
+- Dependencies, handoff/release status and next owner when known.
+
+Use a short-lived coordination lease (default: 30 minutes); while actively working, renew the expiry and post a heartbeat at least every 10 minutes. Release it when stopping or handing off. A lease is stale after expiry unless the owner has renewed it in the canonical thread.
+
+When claims overlap, the first valid, unexpired claim in the canonical thread is the incumbent. A later claimant must stop before editing overlapping files and coordinate with that owner. If claim order, expiry or scope is ambiguous, nobody edits the overlapping scope until the project owner resolves the conflict. Never resolve a collision by force-pushing, overwriting, retargeting or silently changing another branch.
+
+**Enforcement limit:** this Markdown protocol is a coordination rule, not a technical mutex. It does not prevent simultaneous writes or guarantee mutual exclusion. Do not describe it as an execution lock. A technical guarantee would require an atomic server-side lease/lock service plus an enforced check at the write/merge boundary; until such a mechanism exists, contributors must treat conflicting or stale claims as a stop-and-escalate condition.

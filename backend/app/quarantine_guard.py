@@ -6,6 +6,10 @@ import json
 import os
 from pathlib import Path
 
+EXPECTED_QUARANTINE_REPOSITORIES = frozenset({
+    "jaljala044/nepse-smc-data", "jaljala044/nepse-history-starter",
+})
+
 
 def is_quarantined(row: Mapping) -> bool:
     """Reject explicit quarantine markers, including unresolved ledger dispositions."""
@@ -47,7 +51,7 @@ def quarantine_keys(path, expected_sha256, *, expected_source_commits=None):
     report_digest = source_audit.get("source_audit_report_sha256") if isinstance(source_audit, dict) else None
     if ledger.get("schema_version") != "1.0" or not isinstance(rows, list):
         raise ValueError("invalid quarantine ledger schema")
-    if (not isinstance(repositories, dict) or len(repositories) != 2
+    if (not isinstance(repositories, dict) or set(repositories) != EXPECTED_QUARANTINE_REPOSITORIES
             or not isinstance(report_digest, str) or len(report_digest) != 64
             or any(ch not in "0123456789abcdef" for ch in report_digest.lower())):
         raise ValueError("invalid quarantine ledger source audit")
@@ -60,7 +64,7 @@ def quarantine_keys(path, expected_sha256, *, expected_source_commits=None):
     if expected_source_commits is not None and actual_source_commits != expected_source_commits:
         raise ValueError("quarantine ledger source commits stale")
     counts = ledger.get("counts")
-    if not isinstance(counts, dict) or counts.get("total_exception_records") != len(rows):
+    if (not isinstance(counts, dict) or type(counts.get("total_exception_records")) is not int\n            or counts.get("total_exception_records") != len(rows)):
         raise ValueError("quarantine ledger count mismatch")
     keys = set()
     ids = set()
@@ -134,7 +138,7 @@ def runtime_quarantine_keys(*, required=False):
             expected_source_commits = json.loads(source_commits_raw)
         except (TypeError, ValueError) as exc:
             raise ValueError("invalid quarantine source commit pin") from exc
-        if (not isinstance(expected_source_commits, dict) or len(expected_source_commits) != 2
+        if (not isinstance(expected_source_commits, dict) or set(expected_source_commits) != EXPECTED_QUARANTINE_REPOSITORIES
                 or any(not isinstance(repo, str) or not isinstance(commit, str) or len(commit) != 40
                        or any(ch not in "0123456789abcdef" for ch in commit.lower())
                        for repo, commit in expected_source_commits.items())):

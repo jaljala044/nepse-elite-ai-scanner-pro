@@ -129,7 +129,7 @@ A companion CSV matrix is published at [3A01_281_SYMBOL_OHLCV_IMPACT_MATRIX_2026
 - Derived row count and raw/derived Git blob hashes.
 - Official EOD rows applied and the manifest's per-symbol `correction_count` metric (renamed `manifest_correction_count` in this matrix; aggregate 713).
 - Per-symbol OHLCV invariant-flag counts (renamed `invalid_ohlcv_flags`); these are **flags, not unique invalid rows**. P4.30 reports 1,379 flags across 1,329 unique symbol/date rows. The per-symbol figures published in P4.30 sum to 1,379 flags; an exact per-symbol allocation of the 1,329 unique rows is not published, so the matrix does not claim one.
-- Correction-ledger reconciliation: the manifest totals 713 `correction_count`; the P4.30 detail lists 490 date shifts + 109 inserted rows + 112 field corrections = 711 component counts. The two-count difference is unresolved; these metrics are retained separately and must not be presented as an exact additive reconciliation.
+- Correction-ledger reconciliation: the 713-row ledger contains 711 v2 operations (490 Date + 109 Row insertions + 109 Open + 3 Close corrections) and 2 earlier v1 RHGCL corrections (1 Close + 1 Volume). The manifest's 713 `correction_count` includes both vintages; P4.30's 711 derived-v2 operation count excludes the two already-applied v1 rows. All 713 symbol/date/field keys are unique; the count difference is resolved.
 - Known corporate-action records and the four-symbol exception review (LBBL, DORDI, BNHC and the unverified NLIC split proposal).
 - The five open-session repeated-row pairs by symbol/date where explicitly reported.
 - An explicit research-only, non-canonical eligibility disposition for every symbol.

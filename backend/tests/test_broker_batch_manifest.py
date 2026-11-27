@@ -190,6 +190,27 @@ class BrokerRawCaptureTests(unittest.TestCase):
                 batch, changed, coverage_manifest=coverage_manifest(), history_store=history)
         self.assertEqual(history.count(), 0)
 
+    def test_daily_ledger_requires_matching_per_row_raw_capture_provenance(self):
+        for mutation in ("missing_locator", "wrong_capture_hash"):
+            root = self.root / mutation
+            registry = BrokerRawCaptureRegistry(root)
+            manifest, raw = fixture()
+            batch = registry.stage(manifest, raw)["batch_id"]
+            report = clean_report(batch)
+            report.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
+            if mutation == "missing_locator":
+                report.accepted[0].pop("raw_record_locator")
+            else:
+                report.accepted[0]["raw_capture_sha256"] = "0" * 64
+            digest = registry.record_dry_run(batch, report)
+            registry.approve(batch, operator_id="operator-1", dry_run_sha256=digest)
+            history = BrokerDailyHistoryStore(root / "daily.duckdb")
+            with self.assertRaises(DailyHistoryRejected):
+                registry.admit_to_daily_history(
+                    batch, report, coverage_manifest=coverage_manifest(),
+                    history_store=history)
+            self.assertEqual(history.count(), 0)
+
     def test_daily_ledger_cannot_precede_raw_source_availability(self):
         manifest, raw = fixture()
         batch = self.registry.stage(manifest, raw)["batch_id"]

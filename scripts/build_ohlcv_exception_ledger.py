@@ -11,12 +11,24 @@ from pathlib import Path
 
 EXPECTED = {"invalid_ohlc": 1331, "cross_source_ohlcv_conflict": 8}
 
-# These five 2025-07-28 records are explicitly user-designated authoritative.
+# These seven records are explicitly user-designated authoritative.
 # Values are transcribed from the user-provided NEPSE_Chart_Evidence.pdf, p. 1:
 # ShareHub daily OHLC plus reconciled ShareHub floorsheet shares/amount/trades.
 # This is a row-specific resolution only; it does not authorize source-file edits
 # or canonical dataset promotion.
 USER_AUTHORITATIVE_RESOLUTIONS = {
+    ("API", "2026-11-19"): {
+        "open": "331.00", "high": "334.20", "low": "330.00", "close": "331.80",
+        "volume": "105340", "turnover_npr": "34929701", "trades": None,
+        "calculated_vwap": "331.59",
+        "authority_reference": "nepse-smc-data commit e4d069c6ed292c127e7805b19f98e2837e999073; user-finalized reconciliation record",
+    },
+    ("HRL", "2026-11-19"): {
+        "open": "483.00", "high": "488.00", "low": "483.90", "close": "483.90",
+        "volume": "49184", "turnover_npr": "23836472", "trades": None,
+        "calculated_vwap": "484.64",
+        "authority_reference": "nepse-smc-data commit e4d069c6ed292c127e7805b19f98e2837e999073; user-finalized reconciliation record",
+    },
     ("BGWT", "2025-07-28"): {
         "open": "940.00", "high": "992.00", "low": "933.40", "close": "957.17",
         "volume": "14028", "turnover_npr": "13256345.00", "trades": 194,
@@ -132,7 +144,7 @@ def build(archive_audit: dict, external_audit: dict, artifact_id: int,
         "counts": {"total_exception_records": len(records),
                    "invalid_ohlc_rows": counts["invalid_ohlc"],
                    "cross_source_conflict_keys": counts["cross_source_ohlcv_conflict"]},
-        "disposition_policy": "Unresolved exceptions remain quarantined. Five explicitly user-authoritative 2025-07-28 conflicts are row-resolved with preserved source values; no source rows are modified and no canonical promotion is authorized.",
+        "disposition_policy": "Unresolved exceptions remain quarantined. Seven explicitly user-authoritative conflicts (five 2025-07-28 and API/HRL 2026-11-19) are row-resolved with preserved source values; no source rows are modified and no canonical promotion is authorized.",
         "exceptions": records,
     }
 

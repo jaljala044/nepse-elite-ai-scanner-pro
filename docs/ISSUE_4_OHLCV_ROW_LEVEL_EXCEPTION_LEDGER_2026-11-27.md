@@ -29,7 +29,7 @@ This produces 1,332 unresolved and seven user-authority-resolved records. The se
 
 - Every invalid row includes pinned repository commit/tree, ticker path, source-file SHA-256, original CSV line, raw row and normalized OHLCV.
 - Every source conflict includes both repositories' pinned commit/tree, path, file SHA-256 and original row values.
-- Conflict CSV line numbers were not present in the immutable audit artifact; they remain null rather than being inferred.
+- Every cross-source conflict retains both original source CSV line numbers inside each repository's `source_evidence` record; all 16 source-line references were verified against the exact pinned files.
 - SocrateAI external observations and file hashes are retained as third-party corroboration only, never treated as exchange-origin truth or an automatic repair.
 - All unresolved cases remain excluded from canonical ingestion and prediction training.
 - No raw CSV was modified, repaired, merged, clamped, interpolated or promoted.
@@ -42,7 +42,7 @@ The new `OHLCV exception ledger` workflow downloads the original immutable artif
 
 ## Current disposition
 
-Implementation and CI validation are pending in draft PR. This report does not authorize canonical OHLCV promotion, price repair, training, or predictive-signal promotion.
+Implementation and exact-head CI validation are complete in draft PR #179. This report does not authorize canonical OHLCV promotion, price repair, training, or predictive-signal promotion.
 
 ## CI result — latest exact PR head `58f0ed0828ca393fff839fd1a4ac17abbc0a114d`
 
@@ -110,4 +110,24 @@ The read-only builder test also asserts that the source audit JSON bytes remain 
 
 ## Closure status
 
-The ledger implementation, source-lineage, exact pinned rerun, corroboration attachment, deterministic JSON/CSV validation and regression tests are complete. The source-quality gate itself remains FAIL because 1,331 invalid rows and one non-user-authoritative conflict (RHGCL 2026-11-19) remain quarantined; this does not authorize canonical OHLCV promotion. PR #179 is stacked on PR #177 (Issue #20 evaluator) and remains draft pending review and integration of its base dependency. Do not close Issue #4 or merge this stacked PR until the PR base is integrated and the final review is complete.
+The ledger implementation, source-lineage, exact pinned rerun, corroboration attachment, deterministic JSON/CSV validation and regression tests are complete. The source-quality gate itself remains FAIL because 1,331 invalid rows and one non-user-authoritative conflict (RHGCL 2026-11-19) remain quarantined; this does not authorize canonical OHLCV promotion. PR #179 is stacked on PR #177 (Issue #20 evaluator), remains draft, and still requires independent review and integration of its base dependency. Do not close Issue #4 or merge this stacked PR until the PR base is integrated and the final review is complete.
+
+## Latest exact-head validation — 2026-11-27
+
+Current PR head: `ae4b9b28378fabadb00a72f9eb61b18235c1efa9`. All three workflows completed successfully on this exact head:
+
+- [OHLCV exception ledger — run 45934659355](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45934659355)
+- [Backend contract tests — run 45934659385](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45934659385)
+- [Backend unit tests — run 45934659415](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45934659415)
+
+The exact-head ledger run fetched and audited all 525 files from each pinned source repository (1,050/1,050; zero download errors), covering 314,712 SMC rows and 301,632 History Starter rows. It identified 25 differing blobs among 525 common paths in the complete pinned-tree comparison, 1,331 invalid OHLC rows, eight cross-source conflict keys, zero duplicate dates, zero out-of-order transitions, and 196,542 repeated-adjacent-calendar flags. The latter remain review flags, not automatic deletions. SocrateAI cross-check downloaded 994 daily files, with one date not published and zero download errors.
+
+- Artifact [15170257741](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45934659355/artifacts/15170257741)
+- Artifact ZIP SHA-256: `a427eba723b7acc1e76aa34ac30da125d656726050ee3416f2b64bf642cde2a9`
+- Audit JSON SHA-256: `99c50ddd994b6d5642b965952f707f71149a05f44051c1b73af3c9fd65aa3997`
+- SocrateAI cross-check JSON SHA-256: `c5f041321d07ff59316ebd7e9d19d69eaae8be83fe85239591cc72ce299450fc`
+- Ledger JSON SHA-256: `4c216f3f1e83e61c2047d2dd1cae10ba5ebf2e21f9faffcab0a9d51ad3534665`
+- Ledger CSV SHA-256: `43b19ba98703b32274064eedf55daf675d9c5cd31039315f97bb45aa0aff5afe`
+
+Downloaded-artifact inspection independently confirmed 1,339 JSON rows and 1,339 CSV rows, identical unique exception IDs, zero field or nested-evidence mismatches, 1,331 invalid rows each carrying a specific violated rule, all 16 conflict source-line references present, and seven resolution payloads with canonical promotion disabled. Dispositions: 1,332 unresolved; seven user-authoritatively resolved. The archive audit's integrity gate remains FAIL while unresolved source-quality exceptions exist; the ledger workflow succeeds because it preserves and validates those exceptions.
+

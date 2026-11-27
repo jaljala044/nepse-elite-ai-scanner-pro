@@ -1,0 +1,283 @@
+{
+  "workflow_run": 46003719859,
+  "artifact_id": 15199860497,
+  "records": [
+    {
+      "symbol": "MERO",
+      "date": "2026-04-24",
+      "primary_sha256": "83b3f29234e1a42fdc210d66fa2cfe58cd65966f5a294bfea3af40679e847db2",
+      "alternative_compressed_sha256": "e2f7c0bddd9dc9963696aa3b31d655e0cdbf9f3f566c00769312a6f317cc9113",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 34,
+        "unique_contracts": 34,
+        "quantity": "1671.0",
+        "turnover": "1212289.6"
+      },
+      "alternative": {
+        "rows": 34,
+        "unique_contracts": 34,
+        "quantity": "1671",
+        "turnover": "1212289.60"
+      },
+      "exact_matches": 34,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-24",
+      "primary_sha256": "83b3f29234e1a42fdc210d66fa2cfe58cd65966f5a294bfea3af40679e847db2",
+      "alternative_compressed_sha256": "e2f7c0bddd9dc9963696aa3b31d655e0cdbf9f3f566c00769312a6f317cc9113",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 52,
+        "unique_contracts": 52,
+        "quantity": "4553.0",
+        "turnover": "2022210.3"
+      },
+      "alternative": {
+        "rows": 52,
+        "unique_contracts": 52,
+        "quantity": "4553",
+        "turnover": "2022210.30"
+      },
+      "exact_matches": 52,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "API",
+      "date": "2026-04-27",
+      "primary_sha256": "002245dbc9caa2f9726c4997689ac2da93fbdaafb4a3875752490e079fbcd5e5",
+      "alternative_compressed_sha256": "71b33bcc3ace130dd209c3f178566f577e1d510864a2cd6c01591e2b9f3b9528",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 543,
+        "unique_contracts": 543,
+        "quantity": "206969.0",
+        "turnover": "70901168.8"
+      },
+      "alternative": {
+        "rows": 543,
+        "unique_contracts": 543,
+        "quantity": "206969",
+        "turnover": "70901168.80"
+      },
+      "exact_matches": 543,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-27",
+      "primary_sha256": "002245dbc9caa2f9726c4997689ac2da93fbdaafb4a3875752490e079fbcd5e5",
+      "alternative_compressed_sha256": "71b33bcc3ace130dd209c3f178566f577e1d510864a2cd6c01591e2b9f3b9528",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 42,
+        "unique_contracts": 42,
+        "quantity": "3747.0",
+        "turnover": "2357007.0"
+      },
+      "alternative": {
+        "rows": 42,
+        "unique_contracts": 42,
+        "quantity": "3747",
+        "turnover": "2357007.00"
+      },
+      "exact_matches": 42,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "SPDL",
+      "date": "2026-04-28",
+      "primary_sha256": "1daa9dce4732f61b4946269e7a93f96971c1f6e89dfa4996adef8c3a9bf75923",
+      "alternative_compressed_sha256": "2794b8b7da3a711679211830921a223ae4b2dd8d3d1393e86a2337863d8f434f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 212,
+        "unique_contracts": 212,
+        "quantity": "64356.0",
+        "turnover": "25724896.5"
+      },
+      "alternative": {
+        "rows": 212,
+        "unique_contracts": 212,
+        "quantity": "64356",
+        "turnover": "25724896.50"
+      },
+      "exact_matches": 212,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2026-04-29",
+      "primary_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "alternative_compressed_sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 32,
+        "unique_contracts": 32,
+        "quantity": "1573.0",
+        "turnover": "1133907.4"
+      },
+      "alternative": {
+        "rows": 32,
+        "unique_contracts": 32,
+        "quantity": "1573",
+        "turnover": "1133907.40"
+      },
+      "exact_matches": 32,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-04-29",
+      "primary_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "alternative_compressed_sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 900,
+        "unique_contracts": 900,
+        "quantity": "74867.0",
+        "turnover": "50842816.6"
+      },
+      "alternative": {
+        "rows": 900,
+        "unique_contracts": 900,
+        "quantity": "74867",
+        "turnover": "50842816.60"
+      },
+      "exact_matches": 900,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RADHI",
+      "date": "2026-04-29",
+      "primary_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "alternative_compressed_sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 276,
+        "unique_contracts": 276,
+        "quantity": "57510.0",
+        "turnover": "43931577.6"
+      },
+      "alternative": {
+        "rows": 276,
+        "unique_contracts": 276,
+        "quantity": "57510",
+        "turnover": "43931577.60"
+      },
+      "exact_matches": 276,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29",
+      "primary_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "alternative_compressed_sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 58,
+        "unique_contracts": 58,
+        "quantity": "2840.0",
+        "turnover": "1694525.4"
+      },
+      "alternative": {
+        "rows": 58,
+        "unique_contracts": 58,
+        "quantity": "2840",
+        "turnover": "1694525.40"
+      },
+      "exact_matches": 58,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-29",
+      "primary_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "alternative_compressed_sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 102,
+        "unique_contracts": 102,
+        "quantity": "9360.0",
+        "turnover": "4124579.2"
+      },
+      "alternative": {
+        "rows": 102,
+        "unique_contracts": 102,
+        "quantity": "9360",
+        "turnover": "4124579.20"
+      },
+      "exact_matches": 102,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UNHPL",
+      "date": "2026-04-29",
+      "primary_sha256": "bbc354b933dcd565bca0107cda02d07aa5f3e1da26c932745308120822ad8ec4",
+      "alternative_compressed_sha256": "2dc270d3bfbd17a8faf2989ff098d5fdc1a756beec46834771bc552625f48d4f",
+      "primary_errors": 0,
+      "alternative_errors": 0,
+      "primary": {
+        "rows": 150,
+        "unique_contracts": 150,
+        "quantity": "46481.0",
+        "turnover": "22184529.2"
+      },
+      "alternative": {
+        "rows": 150,
+        "unique_contracts": 150,
+        "quantity": "46481",
+        "turnover": "22184529.20"
+      },
+      "exact_matches": 150,
+      "primary_only": 0,
+      "alternative_only": 0,
+      "exact_nonempty_multiset_match": true,
+      "admission_allowed": false
+    }
+  ],
+  "approved_corrections": [],
+  "limitations": "shared lineage and execution order unverified; buyer/seller parity not tested"
+}

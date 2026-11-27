@@ -5,6 +5,11 @@ on:
       - 'frontend/**'
       - 'backend/app/main.py'
       - '.github/workflows/frontend-build.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'backend/app/main.py'
+      - '.github/workflows/frontend-build.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,7 +23,10 @@ jobs:
           node-version: '22'
       - name: Install pinned chart dependency
         working-directory: frontend
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Install exact generated dependency graph
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Syntax checks and isolated build
         working-directory: frontend
         run: |
@@ -32,3 +40,10 @@ jobs:
           name: nepse-research-terminal
           path: frontend/public-build/
           if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-package-lock
+          path: frontend/package-lock.json
+          if-no-files-found: error
+          retention-days: 7

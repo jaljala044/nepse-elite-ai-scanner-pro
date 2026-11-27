@@ -11,7 +11,7 @@ def _d(v):
 def build_signal_outcome_ledger(*,signals,replay_results):
     if not isinstance(signals,list) or not isinstance(replay_results,list):
         raise ValueError("signals_and_replay_results_must_be_lists")
-    trades={}; pending=set(); seen=set()
+    trades={}; pending=set(); seen=set(); orphaned_trades=[]
     for result in replay_results:
         if not isinstance(result,dict): continue
         for trade in result.get("trades",[]):
@@ -36,6 +36,15 @@ def build_signal_outcome_ledger(*,signals,replay_results):
         events.append({"event_type":"SIGNAL_RECORDED","event_id":sid,"payload":base})
         trade=trades.get(sid)
         if trade:
+            expected = {
+                "symbol": s.get("symbol"), "strategy_id": s.get("strategy_id"),
+                "horizon": s.get("horizon"), "decision_time": s.get("decision_time"),
+                "feature_snapshot_sha256": s.get("feature_snapshot_sha256"),
+            }
+            if any(not expected[key] or trade.get(key) != expected[key] for key in expected):
+                rejected.append({"signal_id": sid, "reason": "replay_trade_signal_metadata_mismatch"})
+                trades.pop(sid, None)
+                trade = None
             reason=trade.get("exit_reason","unknown")
             if reason=="target": label="target_hit"
             elif str(reason).startswith("stop"): label="stop_hit"
@@ -57,6 +66,11 @@ def build_signal_outcome_ledger(*,signals,replay_results):
         events.append({"event_type":"OUTCOME_ATTACHED","event_id":sid+"|OUTCOME","payload":outcome})
         if outcome["outcome"] in {"target_hit","stop_hit","time_exit","other_exit"}:
             grouped[(s.get("strategy_id"),s.get("horizon"))].append(outcome)
+    matched_ids = {item.get("signal_id") for item in outcomes}
+    orphaned_trades = [
+        {"source_signal_id": sid, "reason": "replay_trade_without_matching_signal"}
+        for sid in trades if sid not in matched_ids
+    ]
     summaries=[]
     for (strategy,horizon),items in sorted(grouped.items()):
         returns=[_d(x.get("net_return_pct")) for x in items]
@@ -80,7 +94,7 @@ def build_signal_outcome_ledger(*,signals,replay_results):
         "unresolved_count":sum(x["outcome"] in {"settlement_or_horizon_pending","unmatched_or_rejected"} for x in outcomes),
         "not_executed_count":sum(x["outcome"]=="not_executed" for x in outcomes),
         "events":events,"outcomes":outcomes,"strategy_horizon_summaries":summaries,
-        "rejected_signal_records":rejected,
+        "rejected_signal_records":rejected,"orphaned_replay_trades":orphaned_trades,
         "ledger_policy":"append-only event records; never overwrite original signal payload; outcome attachment is a separate event",
         "limitations":["NO_TRADE outcomes are not labelled as false negatives without a defined counterfactual policy.",
             "Unmatched research signals remain unresolved rather than being silently counted as losses.",

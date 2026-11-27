@@ -46,7 +46,7 @@ class CaptureOfficialHarTests(unittest.TestCase):
             self.assertFalse(result["production_sector_signals_allowed"])
             self.assertEqual(result["tls_verification_status"], "not_attested_by_har")
             self.assertEqual(result["hostname_verification_status"], "not_attested_by_har")
-            self.assertNotIn("SECRET", Path(result["har_archive_path"]).read_text(encoding="utf-8") if False else json.dumps(result))
+            self.assertNotIn("SECRET", json.dumps(result))
 
     def test_captures_pdf_bytes(self):
         body = b"%PDF-1.7\nfixture"

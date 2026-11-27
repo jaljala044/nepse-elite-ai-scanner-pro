@@ -149,6 +149,6 @@ The current scanner integration was re-applied onto the latest main snapshot aft
 - The orphan SEBON test was removed from main by commit `3ba03e1e2c5702eba18334799d2f09c17b61d913`, so the previous unrelated import blocker should no longer apply. Exact-head CI for PR #157 is currently running; no passing result is claimed yet.
 - Earlier scanner ports PR #142, #153 and #155 remain open but superseded. No merge or deployment is claimed.
 
-The evidence artifacts have been re-based onto current main in the companion audit PR (being opened separately). Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
+The evidence artifacts have been re-based onto current main in companion PR #158: [3A.01 evidence audit refresh](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/158). The audit branch currently compares 3 commits ahead and 0 behind current main. Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
 
 No pull request was merged. No deployment verification was performed.

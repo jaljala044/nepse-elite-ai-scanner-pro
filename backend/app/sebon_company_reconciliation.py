@@ -44,7 +44,8 @@ def _parse_crosswalk(
     raw_csv: bytes,
     *,
     expected_payload_sha256: str,
-    expected_git_blob_sha: str,
+    expected_artifact_git_blob_sha: str,
+    expected_source_snapshot_blob_sha: str,
     expected_snapshot_date: str,
 ) -> tuple[list[dict], str]:
     if not isinstance(raw_csv, bytes) or not raw_csv:
@@ -52,8 +53,10 @@ def _parse_crosswalk(
     digest = hashlib.sha256(raw_csv).hexdigest()
     if digest != expected_payload_sha256:
         raise ValueError("crosswalk_payload_sha256_mismatch")
-    if not isinstance(expected_git_blob_sha, str) or not _HEX40.fullmatch(expected_git_blob_sha):
-        raise ValueError("crosswalk_git_blob_sha_invalid")
+    if not isinstance(expected_artifact_git_blob_sha, str) or not _HEX40.fullmatch(expected_artifact_git_blob_sha):
+        raise ValueError("crosswalk_artifact_git_blob_sha_invalid")
+    if not isinstance(expected_source_snapshot_blob_sha, str) or not _HEX40.fullmatch(expected_source_snapshot_blob_sha):
+        raise ValueError("source_snapshot_blob_sha_invalid")
     if not isinstance(expected_snapshot_date, str) or not expected_snapshot_date:
         raise ValueError("crosswalk_snapshot_date_required")
     try:
@@ -96,7 +99,7 @@ def _parse_crosswalk(
             raise ValueError(f"crosswalk_row_{index}_snapshot_date_mismatch")
         if row.get("crosswalk_status") != f"snapshot_id_match_active_status_{status}":
             raise ValueError(f"crosswalk_row_{index}_crosswalk_status_mismatch")
-        if row.get("source_snapshot_blob_sha") != expected_git_blob_sha:
+        if row.get("source_snapshot_blob_sha") != expected_source_snapshot_blob_sha:
             raise ValueError(f"crosswalk_row_{index}_source_snapshot_blob_mismatch")
         normalized.append({
             "symbol": symbol,
@@ -115,7 +118,8 @@ def reconcile_sebon_company_candidates(
     crosswalk_csv: bytes,
     *,
     expected_crosswalk_payload_sha256: str,
-    expected_crosswalk_git_blob_sha: str,
+    expected_crosswalk_artifact_git_blob_sha: str,
+    expected_source_snapshot_blob_sha: str,
     expected_snapshot_date: str,
 ) -> dict[str, Any]:
     """Return exact-name identity proposals, ambiguity and unmatched queues.
@@ -128,7 +132,8 @@ def reconcile_sebon_company_candidates(
     securities, crosswalk_digest = _parse_crosswalk(
         crosswalk_csv,
         expected_payload_sha256=expected_crosswalk_payload_sha256,
-        expected_git_blob_sha=expected_crosswalk_git_blob_sha,
+        expected_artifact_git_blob_sha=expected_crosswalk_artifact_git_blob_sha,
+        expected_source_snapshot_blob_sha=expected_source_snapshot_blob_sha,
         expected_snapshot_date=expected_snapshot_date,
     )
     by_name: dict[str, list[dict]] = defaultdict(list)
@@ -159,7 +164,8 @@ def reconcile_sebon_company_candidates(
             "source_line_number": candidate.get("source_line_number"),
             "crosswalk_snapshot_date": expected_snapshot_date,
             "crosswalk_payload_sha256": crosswalk_digest,
-            "crosswalk_git_blob_sha": expected_crosswalk_git_blob_sha,
+            "crosswalk_artifact_git_blob_sha": expected_crosswalk_artifact_git_blob_sha,
+            "source_snapshot_blob_sha": expected_source_snapshot_blob_sha,
             "identity_confirmed": False,
             "security_id": None,
             "symbol": None,
@@ -211,7 +217,8 @@ def reconcile_sebon_company_candidates(
         "schema_version": 1,
         "source_crosswalk": {
             "path": _CROSSWALK_PATH,
-            "git_blob_sha": expected_crosswalk_git_blob_sha,
+            "artifact_git_blob_sha": expected_crosswalk_artifact_git_blob_sha,
+            "source_snapshot_blob_sha": expected_source_snapshot_blob_sha,
             "payload_sha256": crosswalk_digest,
             "snapshot_date": expected_snapshot_date,
             "security_record_count": len(securities),

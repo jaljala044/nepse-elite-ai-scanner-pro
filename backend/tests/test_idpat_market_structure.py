@@ -19,6 +19,7 @@ def make_snapshot(count=65):
             "volume": "1000",
         })
     return {
+        "as_of_date": bars[-1]["date"],
         "symbol": "TEST",
         "price_volume": {
             "status": "verified",
@@ -34,7 +35,7 @@ class IDPATMarketStructureTests(unittest.TestCase):
     def analyze(self, snapshot, calendar=None):
         return analyze_idpat_market_structure(
             snapshot,
-            as_of_date="2026-11-26",
+            as_of_date=snapshot["as_of_date"],
             as_of_timestamp="2026-11-26T16:00:00+05:45",
             session_calendar=calendar,
         )

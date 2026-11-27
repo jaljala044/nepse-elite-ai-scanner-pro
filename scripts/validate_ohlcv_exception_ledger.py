@@ -9,8 +9,8 @@ from pathlib import Path
 
 EXPECTED = {"invalid_ohlc": 1331, "cross_source_ohlcv_conflict": 8}
 EXPECTED_DISPOSITIONS = {
-    "quarantined_unresolved": 1334,
-    "resolved_with_user_authoritative_evidence": 5,
+    "quarantined_unresolved": 1332,
+    "resolved_with_user_authoritative_evidence": 7,
 }
 COMMON_REQUIRED = {"exception_id", "exception_type", "symbol", "trade_date",
                    "source_repository", "disposition", "reviewer_rationale"}
@@ -107,7 +107,7 @@ def main() -> int:
         for error in errors:
             print(f"- {error}")
         return 1
-    print("PASS: 1,339 unique exceptions; 1,334 quarantined and 5 user-authoritatively resolved; source evidence retained for both sides of all 8 conflicts.")
+    print("PASS: 1,339 unique exceptions; 1,332 quarantined and 7 user-authoritatively resolved; source evidence retained for both sides of all 8 conflicts.")
     return 0
 
 if __name__ == "__main__":

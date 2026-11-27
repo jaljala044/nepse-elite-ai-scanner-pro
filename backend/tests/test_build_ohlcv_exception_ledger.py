@@ -105,7 +105,7 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         self.assertFalse(conflict["resolution_evidence"]["canonical_promotion_allowed"])
         self.assertFalse(conflict["resolution_evidence"]["raw_source_rows_modified"])
 
-    def test_all_seven_user_authoritative_records_are_explicitly_allowlisted(self):
+    def test_five_user_records_and_two_nepse_field_scoped_records_are_allowlisted(self):
         expected = {
             ("BGWT", "2025-07-28"), ("MEHL", "2025-07-28"),
             ("RAWA", "2025-07-28"), ("RHGCL", "2025-07-28"),
@@ -144,6 +144,10 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         conflict = ledger["exceptions"][0]
         self.assertEqual(conflict["disposition"], "quarantined_unresolved")
         self.assertNotIn("resolution_evidence", conflict)
+        self.assertEqual(conflict["project_owner_context"]["project_designated"], {"open": "483.00", "low": "483.90"})
+        self.assertEqual(conflict["project_owner_context"]["exchange_observed"], {"low": "480.00"})
+        self.assertEqual(conflict["project_owner_context"]["sharehub_observed"], {"low": "480.00"})
+        self.assertFalse(conflict["project_owner_context"]["canonical_promotion_allowed"])
 
     def test_rhgcl_nepse_evidence_is_field_scoped_and_omits_open(self):
         report = report_fixture()

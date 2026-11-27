@@ -8,7 +8,7 @@ from .market_structure import detect_structure, add_event_evidence
 
 METHOD = "point_in_time_replay_v1"
 
-def replay(symbol, rows, *, reviewed=None, decision_dates=None):
+def replay(symbol, rows, *, reviewed=None, decision_dates=None, verified_sessions=None):
     reviewed = REVIEWED_ROWS if reviewed is None else reviewed
     errors = quality_errors(rows)
     result = {"method":METHOD,"symbol":symbol,"status":"unavailable",
@@ -20,7 +20,7 @@ def replay(symbol, rows, *, reviewed=None, decision_dates=None):
     for day in decisions:
         cutoff = datetime.combine(day,time.max,ZoneInfo("Asia/Kathmandu"))
         prefix = [r for r in ordered if date.fromisoformat(str(r["date"]))<=day]
-        issues = assess(symbol,prefix,cutoff.isoformat(),reviewed)
+        issues = assess(symbol,prefix,cutoff.isoformat(),reviewed, verified_sessions=verified_sessions)
         if issues:
             result["excluded"].append({"date":day.isoformat(),"reasons":issues})
             continue

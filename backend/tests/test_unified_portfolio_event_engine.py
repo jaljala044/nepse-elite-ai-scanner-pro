@@ -156,3 +156,11 @@ class UnifiedPortfolioEventTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "corporate_action_aware_signal_sizing"):
             reconcile_signal_portfolio(portfolio_inputs=inputs,
                 evidence_cutoff="2025-01-10T00:00:00+00:00", corporate_actions=[{}])
+
+    def test_malformed_portfolio_session_date_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "invalid_portfolio_session"):
+            run_unified_portfolio_event_ledger(
+                initial_cash=1000, initial_holdings={}, trades=[],
+                corporate_actions=[], price_rows_by_symbol={"ABC": [{"date": d, "close": 100} for d in DAYS]},
+                portfolio_sessions=["2025-01-05T00:00:00"] + DAYS[1:],
+                as_of_date=DAYS[-1], evidence_cutoff="2025-01-10T00:00:00+00:00")

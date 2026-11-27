@@ -147,11 +147,7 @@ def capture_har_entry(
     if not raw_path.exists():
         raw_path.write_bytes(raw)
 
-    har_archive_path = root / f"{source_id}-{har_sha256}.har"
-    if har_archive_path.exists() and har_archive_path.read_bytes() != har_raw:
-        raise RuntimeError("content-addressed HAR archive path contains different bytes")
-    if not har_archive_path.exists():
-        har_archive_path.write_bytes(har_raw)
+
 
     metadata = {
         "source_id": source_id,
@@ -166,7 +162,6 @@ def capture_har_entry(
         "raw_payload_sha256": digest,
         "raw_payload_path": str(raw_path),
         "har_sha256": har_sha256,
-        "har_archive_path": str(har_archive_path),
         "json_root_type": root_type,
         "tls_verification_status": "not_attested_by_har",
         "hostname_verification_status": "not_attested_by_har",

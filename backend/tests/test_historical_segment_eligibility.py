@@ -196,6 +196,25 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("instrument_identity_source_evidence_unverified", result["reasons"])
         self.assertIn("lifecycle_source_evidence_unverified", result["reasons"])
 
+    def test_adjusted_basis_requires_factor_and_effective_date_evidence(self):
+        segment = dict(self.segment, adjustment_basis="verified_adjusted")
+        result = self.evaluate(segment=segment)
+        self.assertIn("adjustment_factor_evidence_unverified", result["reasons"])
+
+    def test_source_payload_hash_must_match_evidence_hash(self):
+        records = list(self.records)
+        source = dict(records[0]["source_evidence"], payload_sha256="d" * 64)
+        records[0] = dict(records[0], source_evidence=source)
+        result = self.evaluate(records=records)
+        self.assertIn("bar_source_evidence_unverified:" + self.sessions[0], result["reasons"])
+
+    def test_source_retrieval_cannot_precede_source_availability(self):
+        records = list(self.records)
+        source = dict(records[0]["source_evidence"], retrieved_at="2025-12-29T00:00:00+05:45")
+        records[0] = dict(records[0], source_evidence=source)
+        result = self.evaluate(records=records)
+        self.assertIn("bar_source_evidence_unverified:" + self.sessions[0], result["reasons"])
+
     def test_expected_session_outside_lifecycle_fails_even_without_bar(self):
         segment = dict(self.segment, effective_to=self.sessions[-2])
         result = self.evaluate(segment=segment, records=self.records[:-1])

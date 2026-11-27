@@ -98,6 +98,21 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         )
         self.assertIn("payload_path_unsafe", result["index_intelligence"]["rejection_reason"])
 
+    def test_symlinked_payload_path_is_rejected_even_when_target_is_inside_store(self):
+        target = self.root / "index.json"
+        link = self.root / "index-alias.json"
+        try:
+            link.symlink_to(target.name)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"symlinks unavailable: {exc}")
+        entry = dict(self.entry, payload_path=link.name)
+        result = self.store(entry).load(
+            decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+            required_modules=("index_intelligence",),
+        )
+        self.assertIn("payload_path_symlink_not_allowed",
+                      result["index_intelligence"]["rejection_reason"])
+
     def test_missing_modules_remain_unknown_in_snapshot(self):
         snapshot = build_trusted_market_snapshot(
             self.store(), decision_date="2026-11-27",

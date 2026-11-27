@@ -5,11 +5,13 @@ from datetime import date
 from collections import defaultdict
 
 from .database import load_state, persist_import
+from .historical_quarantine import configured_holds, reject_held
 
 DATA, IMPORTS = load_state()
 REQUIRED = {"symbol", "date", "open", "high", "low", "close", "volume"}
 
 def store_rows(csv_text: str, source: str) -> dict:
+    holds = configured_holds()
     reader = csv.DictReader(io.StringIO(csv_text))
     if not reader.fieldnames:
         raise ValueError("CSV is empty or has no header")
@@ -25,6 +27,7 @@ def store_rows(csv_text: str, source: str) -> dict:
             if not symbol or len(symbol) > 20:
                 raise ValueError("invalid symbol")
             d = date.fromisoformat(row["date"])
+            reject_held(symbol, row["date"], holds)
             o, h, lo, c = (float(row[k]) for k in ("open", "high", "low", "close"))
             volume = Decimal(row["volume"])
             if not volume.is_finite() or volume < 0 or volume != volume.to_integral_value():
@@ -61,3 +64,11 @@ def store_rows(csv_text: str, source: str) -> dict:
 
 def snapshot():
     return {"symbols": len(DATA), "imports": len(IMPORTS)}
+
+def validated_history(symbol, *, as_of=None):
+    """Refuse an entire affected history rather than silently create candle gaps."""
+    holds = configured_holds()
+    rows = [r for r in DATA.get(symbol.upper(), []) if as_of is None or r["date"] <= as_of]
+    for row in rows:
+        reject_held(symbol, row["date"].isoformat(), holds)
+    return rows

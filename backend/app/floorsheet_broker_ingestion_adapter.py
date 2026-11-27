@@ -13,10 +13,41 @@ from typing import Any, Mapping
 
 from app.broker_aggregation import aggregate_broker_observations, reconcile_source_control_totals
 from app.broker_ingestion import payload_hash, reconcile_broker_batch
+from app.historical_quarantine import configured_holds, reject_held
 
 
 class FloorsheetBrokerAdapterError(ValueError):
     """Invalid source evidence or adapter configuration."""
+
+
+# P4.43: these sessions have unresolved archive-wide contract identity defects.
+# Conservative session-wide hold prevents transformed rows or renamed sources bypassing
+# the archive quarantine. Release requires a separately reviewed evidence-backed change.
+P443_HELD_SESSIONS = frozenset({"2024-08-14", "2024-08-18"})
+P443_HELD_ARCHIVE_HASHES = frozenset({
+    "205d9aaa6184efdf222102c856737a114fb060a4a9f19d7fb2c38d7ff8340142",
+    "7bf52ca5f7b029f9188b34dc5276e805eede2ce2b65c50edf8e45e251d264ffb",
+    "441f2b64106b48086a0326604ab92c40f2e02fa163bca97cfe17385c9f88ebc8",
+    "beee6326be30d364eb6b0c55a2c36d9aa847daeb0af1bf5ddb2e4d3b82850433",
+})
+
+
+def _enforce_p443_quarantine(row: Mapping[str, Any]) -> None:
+    day = row.get("trade_date")
+    if not isinstance(day, str):
+        raise FloorsheetBrokerAdapterError("missing_trade_date")
+    try:
+        parsed = date.fromisoformat(day)
+    except ValueError:
+        raise FloorsheetBrokerAdapterError("invalid_trade_date") from None
+    if parsed.isoformat() != day:
+        raise FloorsheetBrokerAdapterError("noncanonical_trade_date")
+    if day in P443_HELD_SESSIONS:
+        raise FloorsheetBrokerAdapterError("p443_session_quarantined:" + day)
+    for field in ("source_payload_sha256", "source_archive_sha256"):
+        value = row.get(field)
+        if isinstance(value, str) and value.strip().lower() in P443_HELD_ARCHIVE_HASHES:
+            raise FloorsheetBrokerAdapterError("p443_archive_quarantined")
 
 
 def _threshold(value: Any) -> Decimal:
@@ -85,10 +116,16 @@ def adapt_floorsheet_parties_to_broker_batch(
         raise FloorsheetBrokerAdapterError("each_contract_must_have_buy_and_sell_party_rows")
 
     # A source contract must appear once per source/date/contract and have one row per side.
+    holds = configured_holds()
     contracts: dict[tuple, list[dict]] = defaultdict(list)
     for row in rows:
         if not isinstance(row, dict):
             raise FloorsheetBrokerAdapterError("party_row_must_be_an_object")
+        _enforce_p443_quarantine(row)
+        try:
+            reject_held(row.get("symbol", ""), row["trade_date"], holds)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise FloorsheetBrokerAdapterError("p443_historical_hold:" + str(exc)) from exc
         key = (row.get("source_id"), row.get("trade_date"), row.get("contract_id"))
         contracts[key].append(row)
     for key, parties in contracts.items():
@@ -188,6 +225,7 @@ def adapt_floorsheet_parties_to_broker_batch(
         expected_source_ids=expected_ids, received_source_ids=received_ids,
         available_at=available_at,
         verified_session_finality=verified_session_finality,
+        security_registry=security_registry,
     )
 
     adapter_failures = []

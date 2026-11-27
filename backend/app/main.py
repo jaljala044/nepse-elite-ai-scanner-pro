@@ -10,7 +10,7 @@ from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
 from .scanner_eligibility import assess, REVIEWED_ROWS
 from .equity_universe_manifest import load_equity_universe_manifest
-from .storage import DATA, IMPORTS, store_rows, snapshot
+from .storage import DATA, IMPORTS, store_rows, snapshot, validated_history
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -174,9 +174,18 @@ def scan(request: ScanRequest):
                 ),
             })
             continue
-        rows = DATA.get(symbol.upper(), [])
-        if request.as_of:
-            rows = [r for r in rows if r["date"] <= request.as_of]
+        try:
+            rows = validated_history(symbol, as_of=request.as_of)
+        except ValueError:
+            results.append({
+                "symbol": symbol, "status": "unknown_result",
+                "result_bucket": "unknown_results",
+                "ranking_eligible": False, "buy_list_eligible": False,
+                "eligibility": {"eligible": False, "reasons": ["historical_quarantine_or_overlay_unavailable"]},
+                "signals": [], "metrics": {}, "overall_rating": "NOT_RATED",
+                "data_status": "UNKNOWN",
+            })
+            continue
         result = analyze(symbol.upper(), rows)
         cutoff = datetime.now(timezone.utc)
         if request.as_of:
@@ -299,4 +308,8 @@ def history(symbol: str):
     rows = DATA.get(symbol.upper())
     if rows is None:
         raise HTTPException(404, "Symbol not found")
+    try:
+        rows = validated_history(symbol)
+    except ValueError as exc:
+        raise HTTPException(409, "Historical quarantine or overlay unavailable") from exc
     return {"symbol": symbol.upper(), "rows": rows}

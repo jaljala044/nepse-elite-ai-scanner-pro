@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
+from app.historical_quarantine import configured_holds, reject_held
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
@@ -25,6 +26,17 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
     rows = snapshot["records"]
     raw_prices = [r for r in rows if r.get("record_type") == "ohlcv"]
     raw_broker_rows = [r for r in rows if r.get("record_type") == "broker"]
+    # Refuse the snapshot rather than introduce artificial gaps in a feature series.
+    holds = configured_holds()
+    for row in raw_prices:
+        reject_held(row["symbol"], row["session_date"], holds)
+    for row in raw_broker_rows:
+        reject_held(row["symbol"], row["trade_date"], holds)
+        if row["trade_date"] in {"2024-08-14", "2024-08-18"}:
+            raise ValueError("p443_archive_session_quarantined")
+    for row in rows:
+        if row.get("record_type") == "index_ohlcv" and row.get("session_date") == "2026-04-10":
+            raise ValueError("p443_session_completeness_hold")
 
     # Scoring requires canonical-session alignment and source/price-basis evidence.
     from datetime import date

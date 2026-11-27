@@ -15,7 +15,25 @@ from typing import Any
 
 import duckdb
 
-from app.broker_ingestion import IngestionReport
+from app.broker_ingestion import IngestionReport, _verified_symbol
+from app.historical_quarantine import configured_holds, reject_held, OVERLAY_SHA256
+
+ARCHIVE_SESSION_HOLDS = frozenset({'2024-08-14', '2024-08-18', '2026-04-10'})
+
+def _check_session(day, holds):
+    # A market-wide completeness assertion cannot survive an unresolved security hold.
+    if day in ARCHIVE_SESSION_HOLDS or any(k[1] == day for k in holds):
+        raise DailyHistoryRejected('historical_session_completeness_unverified:' + day)
+
+def _check_observation(security_id, day, registry, holds):
+    try:
+        symbol = _verified_symbol(security_id, date.fromisoformat(day), registry)
+        reject_held(symbol, day, holds)
+        _check_session(day, holds)
+        return symbol.strip().upper()
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise DailyHistoryRejected('historical_quarantine:' + str(exc)) from exc
+
 
 
 class DailyHistoryRejected(ValueError):
@@ -57,7 +75,8 @@ def _decimal(value: Any, field: str) -> Decimal:
 class BrokerDailyHistoryStore:
     """Append-only DuckDB ledger and complete-session evidence manifest."""
 
-    def __init__(self, database_path: str | Path):
+    def __init__(self, database_path: str | Path, *, security_registry: list[dict] | None = None):
+        self.security_registry = security_registry
         self.database_path = str(database_path)
         Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
         con = self._connect()
@@ -131,6 +150,10 @@ class BrokerDailyHistoryStore:
             session = date.fromisoformat(coverage_manifest["session_date"])
         except (TypeError, ValueError):
             raise DailyHistoryRejected("invalid_manifest_session_date") from None
+        holds = configured_holds()
+        if not self.security_registry:
+            raise DailyHistoryRejected("verified_security_registry_required")
+        _check_session(session.isoformat(), holds)
         if coverage_manifest["source_coverage_status"] != "complete":
             raise DailyHistoryRejected("source_coverage_not_complete")
         if coverage_manifest["identity_coverage_status"] != "complete":
@@ -171,6 +194,7 @@ class BrokerDailyHistoryStore:
                        for k in ("security_id", "broker_id", "source_id", "evidence_id",
                                  "source_payload_sha256", "batch_id")):
                 raise DailyHistoryRejected(f"missing_observation_identity:{index}")
+            symbol = _check_observation(row["security_id"], session.isoformat(), self.security_registry, holds)
             if row["batch_id"] != report.batch_id:
                 raise DailyHistoryRejected("batch_id_mismatch")
             side = str(row.get("side", "")).upper()
@@ -192,6 +216,7 @@ class BrokerDailyHistoryStore:
             natural_key = _canonical(key_obj)
             payload = {
                 "natural_key": key_obj, "amount": str(amount), "quantity": str(quantity),
+                "symbol": symbol, "quarantine_overlay_sha256": OVERLAY_SHA256,
                 "source_payload_sha256": digest, "source_row_count": row_count,
                 "coverage_ratio": str(coverage), "batch_id": report.batch_id,
                 "available_at": available_at.isoformat(), "status": "descriptive_only",
@@ -209,6 +234,7 @@ class BrokerDailyHistoryStore:
             "source_control_reconciled": True, "identity_coverage_status": "complete",
             "identity_coverage_rows": identity_rows, "identity_coverage_min": str(identity_min),
             "verified_session": True, "available_at": available_at.isoformat(),
+            "quarantine_overlay_sha256": OVERLAY_SHA256,
         }
         manifest_json = _canonical(manifest)
         manifest_hash = _sha(manifest_json)
@@ -284,7 +310,13 @@ class BrokerDailyHistoryStore:
         keys = ("security_id", "broker_id", "session_date", "side", "amount", "quantity",
                 "source_id", "evidence_id", "source_payload_sha256", "source_row_count",
                 "coverage_ratio", "batch_id", "available_at", "status")
-        return [dict(zip(keys, row)) for row in rows]
+        holds = configured_holds()
+        if not self.security_registry:
+            raise DailyHistoryRejected("verified_security_registry_required")
+        observations = [dict(zip(keys, row)) for row in rows]
+        for row in observations:
+            row["symbol"] = _check_observation(row["security_id"], row["session_date"], self.security_registry, holds)
+        return observations
 
     def complete_sessions_as_of(self, *, as_of_date: str, as_of_timestamp: str) -> list[str]:
         cutoff_date = date.fromisoformat(as_of_date)
@@ -302,6 +334,13 @@ class BrokerDailyHistoryStore:
             """, [cutoff_date, cutoff_time]).fetchall()
         finally:
             con.close()
+        holds = configured_holds()
+        if not self.security_registry:
+            raise DailyHistoryRejected("verified_security_registry_required")
+        # Revalidate all visible observations before asserting any zero-flow eligibility.
+        self.observations_as_of(as_of_date=as_of_date, as_of_timestamp=as_of_timestamp)
+        for row in rows:
+            _check_session(row[0], holds)
         return [row[0] for row in rows]
 
     def count(self) -> int:

@@ -18,9 +18,9 @@ class RepeatedAdjacentTests(unittest.TestCase):
             root = Path(tmp)
             calendar = root / "calendar.csv"
             calendar.write_text(
-                "date,status\\n2026-01-01,project_accepted_open\\n"
-                "2026-01-02,verified_closed\\n2026-01-04,project_accepted_open\\n"
-                "2026-01-05,project_accepted_open\\n", encoding="utf-8")
+                "date,status\n2026-01-01,project_accepted_open\n"
+                "2026-01-02,verified_closed\n2026-01-04,project_accepted_open\n"
+                "2026-01-05,project_accepted_open\n", encoding="utf-8")
             rows = [
                 {"repository": "example/repo", "previous_date": "2026-01-01", "current_date": "2026-01-04"},
                 {"repository": "example/repo", "previous_date": "2026-01-04", "current_date": "2026-01-05"},
@@ -40,8 +40,8 @@ class RepeatedAdjacentTests(unittest.TestCase):
             root = Path(tmp)
             calendar = root / "calendar.csv"
             calendar.write_text(
-                "date,status\\n2026-01-01,project_accepted_open\\n"
-                "2026-01-04,project_accepted_open\\n", encoding="utf-8")
+                "date,status\n2026-01-01,project_accepted_open\n"
+                "2026-01-04,project_accepted_open\n", encoding="utf-8")
             rows = [{"repository": "example/repo", "previous_date": "2026-01-01", "current_date": "2026-01-03"}]
             joined, _ = join_project_calendar(rows, calendar)
             self.assertEqual(joined[0]["session_join_classification"], "date_not_in_project_calendar_review")

@@ -104,6 +104,10 @@ def join_candidates(candidate_csv: str | Path, calendar_csv: str | Path,
                     "verified_open", "verified_exceptional_open"
                 }:
                     pair = "both_dates_verified_open"
+                elif prev_class in {"verified_open", "verified_exceptional_open", "project_accepted_open"} and curr_class in {
+                    "verified_open", "verified_exceptional_open", "project_accepted_open"
+                }:
+                    pair = "both_dates_project_accepted_or_verified_open"
                 else:
                     pair = "session_evidence_incomplete"
                 row.update({
@@ -125,7 +129,7 @@ def join_candidates(candidate_csv: str | Path, calendar_csv: str | Path,
         "calendar_csv_sha256": _sha256(calendar_path),
         "output_csv_sha256": _sha256(output_path),
         "verified_calendar_dates": len(evidence),
-        "policy": "no_weekday_or_missing-evidence inference; candidate rows remain review-only; this output does not authorize OHLCV repair, forward-fill, canonical admission, or training",
+        "policy": "project_accepted_open is secondary archive-derived research evidence, never exchange certification; verified_open remains distinct; no weekday or missing-evidence inference; candidate rows remain review-only; this output does not authorize OHLCV repair, forward-fill, canonical admission, or training",
     }
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")

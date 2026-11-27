@@ -13,7 +13,8 @@ import os
 from pathlib import Path
 import sqlite3
 import tempfile
-from typing import Any, Mapping
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping
 
 
 class CaptureRejected(ValueError):
@@ -135,10 +136,18 @@ class BrokerRawCaptureRegistry:
                 )
             """)
 
-    def _connect(self):
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         con = sqlite3.connect(self.database)
         con.execute("PRAGMA foreign_keys=ON")
-        return con
+        try:
+            yield con
+            con.commit()
+        except Exception:
+            con.rollback()
+            raise
+        finally:
+            con.close()
 
     def _event(self, con, batch_id: str, event: str, detail: Mapping[str, Any],
                actor_id: str | None = None) -> None:

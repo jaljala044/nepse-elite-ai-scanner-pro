@@ -121,6 +121,46 @@ class VersionedFeatureStoreTests(unittest.TestCase):
         self.assertFalse(joined["corporate_action_source_universe_completeness_verified"])
         self.assertFalse(snapshot["ohlcv_adjustment_applied"])
 
+    def test_quarantine_persistence_rejects_direct_and_omitted_dates(self):
+        from app.historical_quarantine import QUARANTINE
+        from datetime import timedelta
+        symbol, day = sorted(QUARANTINE)[0]
+        d = date.fromisoformat(day)
+        for kind in ("ohlcv", "broker"):
+            for days in ([day], [str(d-timedelta(days=1)), str(d+timedelta(days=1))]):
+                with self.subTest(kind=kind, days=days):
+                    records = [{"record_type": kind, "symbol": symbol,
+                                ("trade_date" if kind == "broker" else "session_date"): item,
+                                "available_at": "2026-11-23T16:00:00Z",
+                                "open": 100, "high": 102, "low": 99, "close": 101,
+                                "volume": 100, "side": "buy", "amount": 100}
+                               for item in days]
+                    snap = build_versioned_feature_snapshot(records, "2026-11-24T12:00:00Z", [], [])
+                    with tempfile.TemporaryDirectory() as tmp:
+                        with self.assertRaisesRegex(ValueError, "historical_quarantine"):
+                            persist_versioned_snapshot(tmp, snap)
+                        self.assertFalse((Path(tmp)/"feature-snapshots").exists())
+
+    def test_rehashed_legacy_or_incomplete_lineage_rejected(self):
+        import hashlib
+        base = build_versioned_feature_snapshot(
+            [{"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",
+              "available_at":"2026-11-23T16:00:00Z","close":11,"volume":100}],
+            "2026-11-24T12:00:00Z", [], [])
+        for changes, reason in [
+            ({"schema_version":1}, "quarantine_lineage_version_required"),
+            ({"input_lineage":[]}, "quarantine_lineage_count_mismatch"),
+            ({"input_lineage":[{**base["input_lineage"][0],"symbol":None}]}, "quarantine_lineage_symbol_required"),
+            ({"input_lineage":[{**base["input_lineage"][0],"session_date":None}]}, "quarantine_lineage_date_required"),
+        ]:
+            body = {k:v for k,v in base.items() if k != "snapshot_sha256"}
+            body.update(changes)
+            digest = hashlib.sha256(json.dumps(body,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+            with tempfile.TemporaryDirectory() as tmp:
+                with self.assertRaisesRegex(ValueError, reason):
+                    persist_versioned_snapshot(tmp, {**body,"snapshot_sha256":digest})
+                self.assertFalse((Path(tmp)/"feature-snapshots").exists())
+
     def test_hash_tampering_rejected(self):
         with self.assertRaises(ValueError):
             persist_versioned_snapshot(tempfile.gettempdir(), {"snapshot_sha256":"bad"})

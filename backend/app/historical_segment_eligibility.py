@@ -76,7 +76,10 @@ def _valid_primary_evidence(evidence, cutoff):
     try:
         parsed = urlsplit(evidence.get("source_url", ""))
         host = (parsed.hostname or "").lower()
-        if parsed.scheme != "https" or host not in {"nepalstock.com", "www.nepalstock.com"}:
+        if parsed.scheme != "https" or host not in {
+            "nepalstock.com", "www.nepalstock.com",
+            "nepalstock.com.np", "www.nepalstock.com.np",
+        }:
             return False
     except ValueError:
         return False

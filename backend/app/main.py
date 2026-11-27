@@ -600,3 +600,8 @@ import os
 _public_frontend = Path(os.environ.get("NEPSE_PUBLIC_FRONTEND", str(Path(__file__).resolve().parents[2] / "frontend" / "public-build")))
 if (_public_frontend / "index.html").is_file():
     app.mount("/terminal", StaticFiles(directory=str(_public_frontend), html=True), name="terminal")
+
+
+# Private portfolio accounting is isolated from market-data and signal routes.
+from .portfolio_routes import router as portfolio_router
+app.include_router(portfolio_router)

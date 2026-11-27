@@ -17,6 +17,7 @@ from .signal_tracking import freeze_signal, HORIZONS as TRACKED_HORIZONS
 from .signal_store import store_signal, store_outcome, get_signal, list_signals, list_signal_outcomes, list_all_outcomes
 from .signal_outcome_validation import evaluate_signal_path
 from .backtest import run_walk_forward_backtest
+from .execution_backtest import simulate_execution_scenario, aggregate_execution_scenarios
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -72,6 +73,24 @@ class WalkForwardBacktestRequest(BaseModel):
     calendar_evidence_by_symbol: dict[str, dict]
     train_ratio: float = 0.60
     validation_ratio: float = 0.20
+
+class ExecutionScenarioRequest(BaseModel):
+    signal_id: str
+    evaluation_date: date
+    quantity: int = Field(gt=0)
+    verified_sessions: list[date]
+    calendar_evidence: dict
+    cost_assumptions: dict
+    execution_config: dict
+
+class ExecutionBatchRequest(BaseModel):
+    signal_ids: list[str] = Field(min_length=1, max_length=5000)
+    evaluation_date: date
+    quantity_by_signal: dict[str, int]
+    verified_sessions_by_symbol: dict[str, list[date]]
+    calendar_evidence_by_symbol: dict[str, dict]
+    cost_assumptions_by_symbol: dict[str, dict]
+    execution_config_by_symbol: dict[str, dict]
 
 
 @app.get("/health")
@@ -332,6 +351,108 @@ def research_walk_forward_backtest(request: WalkForwardBacktestRequest):
         raise
     except (ValueError, TypeError, KeyError) as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+
+@app.post("/v1/research/backtest/execution-scenario")
+def research_execution_scenario(request: ExecutionScenarioRequest):
+    """Calculate a caller-configured execution/cost scenario, never a live fill."""
+    record = get_signal(request.signal_id)
+    if record is None:
+        raise HTTPException(404, "signal_not_found")
+    symbol = record.get("symbol")
+    calendar = request.calendar_evidence or {}
+    try:
+        coverage = float(calendar.get("coverage"))
+        available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        raise HTTPException(422, "calendar_evidence_malformed")
+    cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+    if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+            or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0
+            or available.tzinfo is None or available.utcoffset() is None or available > cutoff):
+        raise HTTPException(422, "verified_point_in_time_calendar_required")
+    if symbol not in DATA:
+        raise HTTPException(422, "ohlcv_missing")
+    try:
+        return simulate_execution_scenario(
+            signal=record,
+            rows=[row for row in DATA[symbol] if row["date"] <= request.evaluation_date],
+            verified_sessions=[day.isoformat() for day in request.verified_sessions],
+            evaluation_date=request.evaluation_date.isoformat(),
+            quantity=request.quantity, cost_assumptions=request.cost_assumptions,
+            execution_config=request.execution_config, reviewed=REVIEWED_ROWS,
+        )
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+
+@app.post("/v1/research/backtest/execution-batch")
+def research_execution_batch(request: ExecutionBatchRequest):
+    """Aggregate independent per-signal execution scenarios; not a portfolio backtest."""
+    if len(request.signal_ids) != len(set(request.signal_ids)):
+        raise HTTPException(422, "duplicate_signal_ids")
+    records = []
+    for signal_id in request.signal_ids:
+        record = get_signal(signal_id)
+        if record is None:
+            raise HTTPException(404, "signal_not_found:" + signal_id)
+        records.append((signal_id, record))
+    symbols = sorted({record.get("symbol") for _, record in records if record.get("action") == "BUY"})
+    for symbol in symbols:
+        calendar = request.calendar_evidence_by_symbol.get(symbol) or {}
+        try:
+            coverage = float(calendar.get("coverage"))
+            available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            raise HTTPException(422, "calendar_evidence_malformed:" + symbol)
+        cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+        if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+                or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0
+                or available.tzinfo is None or available.utcoffset() is None or available > cutoff):
+            raise HTTPException(422, "verified_point_in_time_calendar_required:" + symbol)
+        if (symbol not in DATA or symbol not in request.verified_sessions_by_symbol
+                or symbol not in request.cost_assumptions_by_symbol
+                or symbol not in request.execution_config_by_symbol):
+            raise HTTPException(422, "symbol_inputs_missing:" + symbol)
+    scenarios = []
+    for signal_id, record in records:
+        if record.get("action") != "BUY":
+            scenarios.append({"signal_id": signal_id, "status": "withheld",
+                              "reason": "only_buy_research_signals_supported"})
+            continue
+        symbol = record["symbol"]
+        if signal_id not in request.quantity_by_signal:
+            scenarios.append({"signal_id": signal_id, "status": "withheld",
+                              "reason": "quantity_missing"})
+            continue
+        try:
+            result = simulate_execution_scenario(
+                signal=record,
+                rows=[row for row in DATA[symbol] if row["date"] <= request.evaluation_date],
+                verified_sessions=[day.isoformat() for day in request.verified_sessions_by_symbol[symbol]],
+                evaluation_date=request.evaluation_date.isoformat(),
+                quantity=request.quantity_by_signal[signal_id],
+                cost_assumptions=request.cost_assumptions_by_symbol[symbol],
+                execution_config=request.execution_config_by_symbol[symbol],
+                reviewed=REVIEWED_ROWS,
+            )
+            result["signal_id"] = signal_id
+            scenarios.append(result)
+        except (ValueError, TypeError, KeyError) as exc:
+            scenarios.append({"signal_id": signal_id, "status": "withheld", "reason": str(exc)})
+    return {"status": "completed_with_limitations",
+            "classification": "research_execution_scenarios_not_exchange_fills",
+            "methodology_version": "p4.44_execution_scenario_v1",
+            "summary": aggregate_execution_scenarios(scenarios),
+            "scenarios": scenarios,
+            "limitations": [
+                "Independent trade-level scenarios are not a portfolio backtest; overlapping signals may represent overlapping capital.",
+                "No compounding, portfolio sizing, portfolio drawdown, Sharpe or Sortino is calculated.",
+                "Scenario prices and quantities are not verified fills.",
+                "All fee, tax, tick, price-band, turnover and participation inputs remain caller-supplied assumptions."
+            ]}
 
 
 @app.get("/v1/research/readiness")

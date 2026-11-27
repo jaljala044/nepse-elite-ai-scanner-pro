@@ -117,5 +117,15 @@ class SignalConfirmationTests(unittest.TestCase):
         self.assertEqual(result["classification"], "bullish_confirmation")
 
 
+    def test_noncanonical_session_date_strings_are_rejected(self):
+        for invalid in ("20250101", "2025-1-01", "2025-01-01T00:00:00"):
+            with self.subTest(invalid=invalid):
+                rows = rising_rows()
+                rows[0]["date"] = invalid
+                result = confirm_signal(rows, eligible=True)
+                self.assertEqual(result["classification"], "UNKNOWN")
+                self.assertEqual(result["status"], "unknown")
+
+
 if __name__ == "__main__":
     unittest.main()

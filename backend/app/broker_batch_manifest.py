@@ -231,23 +231,58 @@ class BrokerRawCaptureRegistry:
             "memory_eligible": report.memory_eligible,
         }
 
+    @staticmethod
+    def _bind_row_lineage(report: IngestionReport, manifest: Mapping[str, Any]) -> None:
+        """Bind P4.35 contract-row lineage to the immutable staged capture."""
+        raw_hash = manifest.get("raw_sha256")
+        if not isinstance(raw_hash, str) or len(raw_hash) != 64:
+            raise CaptureRejected("invalid_staged_capture_hash")
+        for index, row in enumerate(report.accepted):
+            if row.get("source_id") != manifest.get("source_id"):
+                raise CaptureRejected(f"row_source_capture_mismatch:{index}")
+            if row.get("session_date") != manifest.get("trade_date"):
+                raise CaptureRejected(f"row_trade_date_capture_mismatch:{index}")
+            lineage = row.get("raw_record_lineage")
+            if not isinstance(lineage, list) or not lineage:
+                raise CaptureRejected(f"raw_record_lineage_required:{index}")
+            normalized = []
+            for record_index, record in enumerate(lineage):
+                if not isinstance(record, Mapping):
+                    raise CaptureRejected(f"invalid_raw_record_lineage:{index}:{record_index}")
+                digest = record.get("raw_record_sha256")
+                locator = record.get("raw_record_locator")
+                if (not isinstance(digest, str) or len(digest) != 64
+                        or any(ch not in "0123456789abcdef" for ch in digest.lower())):
+                    raise CaptureRejected(f"invalid_raw_record_sha256:{index}:{record_index}")
+                if not isinstance(locator, str) or not locator.strip():
+                    raise CaptureRejected(f"missing_raw_record_locator:{index}:{record_index}")
+                normalized.append({
+                    "raw_record_sha256": digest.lower(),
+                    "raw_record_locator": locator.strip(),
+                    **({"contract_id": str(record["contract_id"])}
+                       if record.get("contract_id") is not None else {}),
+                })
+            row["raw_record_lineage"] = normalized
+            row["raw_capture_sha256"] = raw_hash.lower()
+
     def record_dry_run(self, batch_id: str, report: IngestionReport) -> str:
         """Bind dry-run approval to the complete typed reconciler output."""
-        payload = self._reconciliation_payload(report)
         if report.batch_id != batch_id:
             raise CaptureRejected("reconciliation_batch_id_mismatch")
         if not report.memory_eligible or report.coverage_status != "complete":
             raise CaptureRejected("reconciliation_not_memory_eligible")
         if report.quarantined or report.conflicts:
             raise CaptureRejected("reconciliation_contains_quarantine_or_conflicts")
-        report_json = _canonical(payload)
-        report_hash = hashlib.sha256(report_json.encode("utf-8")).hexdigest()
         with self._connect() as con:
-            row = con.execute("SELECT state FROM captures WHERE batch_id=?", [batch_id]).fetchone()
+            row = con.execute("SELECT state,manifest_json FROM captures WHERE batch_id=?", [batch_id]).fetchone()
             if not row:
                 raise CaptureRejected("unknown_batch")
             if row[0] != "staged":
                 raise CaptureRejected("dry_run_requires_staged_batch")
+            self._bind_row_lineage(report, json.loads(row[1]))
+            payload = self._reconciliation_payload(report)
+            report_json = _canonical(payload)
+            report_hash = hashlib.sha256(report_json.encode("utf-8")).hexdigest()
             con.execute("UPDATE captures SET state='dry_run_passed', dry_run_sha256=?, updated_at=? WHERE batch_id=?",
                         [report_hash, datetime.now(timezone.utc).isoformat(), batch_id])
             self._event(con, batch_id, "dry_run_passed", {
@@ -287,8 +322,6 @@ class BrokerRawCaptureRegistry:
         the registry update is interrupted, retrying is safe because the ledger is
         append-only/idempotent and the registry records the same receipt.
         """
-        payload = self._reconciliation_payload(report)
-        report_hash = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
         with self._connect() as con:
             row = con.execute(
                 "SELECT state,dry_run_sha256,operator_id FROM captures WHERE batch_id=?",
@@ -302,7 +335,6 @@ class BrokerRawCaptureRegistry:
         if not report.memory_eligible:
             raise CaptureRejected("reconciler_batch_not_memory_eligible")
 
-        stored_capture = self.get(batch_id)
         receipt = history_store.append_validated_daily_batch(
             report, coverage_manifest=dict(coverage_manifest),
             raw_capture_manifest=stored_capture["manifest"],

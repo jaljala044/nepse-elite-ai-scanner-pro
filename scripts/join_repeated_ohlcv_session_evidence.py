@@ -10,6 +10,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -33,6 +34,28 @@ def _canonical_date(value: str, *, line: int, field: str) -> date:
     if parsed.isoformat() != value:
         raise ValueError(f"line {line}: {field} must be canonical YYYY-MM-DD")
     return parsed
+
+
+def _validate_source_locator(row: dict[str, str], *, line: int) -> None:
+    """Reject malformed source locators before emitting hash-attributed evidence."""
+    for field in ("repository", "path", "symbol"):
+        value = row.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"line {line}: {field} must be non-empty")
+    commit = row.get("commit_sha", "")
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
+        raise ValueError(f"line {line}: commit_sha must be 40 hexadecimal characters")
+    digest = row.get("file_sha256", "")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+        raise ValueError(f"line {line}: file_sha256 must be 64 hexadecimal characters")
+    line_values = []
+    for field in ("previous_csv_line", "current_csv_line"):
+        value = row.get(field, "")
+        if not isinstance(value, str) or not re.fullmatch(r"[1-9][0-9]*", value):
+            raise ValueError(f"line {line}: {field} must be a positive integer")
+        line_values.append(int(value))
+    if line_values[1] <= line_values[0]:
+        raise ValueError(f"line {line}: current_csv_line must follow previous_csv_line")
 
 
 def _sha256(path: Path) -> str:
@@ -64,6 +87,7 @@ def join_candidates(candidate_csv: str | Path, calendar_csv: str | Path,
             writer = csv.DictWriter(target, fieldnames=fields)
             writer.writeheader()
             for line, row in enumerate(reader, 2):
+                _validate_source_locator(row, line=line)
                 previous = _canonical_date(row["previous_date"], line=line, field="previous_date")
                 current = _canonical_date(row["current_date"], line=line, field="current_date")
                 if current <= previous:

@@ -4,7 +4,7 @@ from pathlib import Path
 from hashlib import sha256
 from decimal import Decimal
 from zoneinfo import ZoneInfo
-import os,json,duckdb
+import os,json,csv,duckdb
 from .broker_context_integration import stamp
 from .session_calendar import load_calendar
 from .broker_rolling_profiles import build_rolling_broker_profiles,DEFAULT_WINDOWS
@@ -69,11 +69,30 @@ def ledger_profiles(*,as_of_date,decision_time,window):
         rows.append(r)
     if {r["session_date"] for r in rows}!=set(expected): return unavailable("missing_ledger_observations")
     result=build_rolling_broker_profiles(rows,verified_exchange_sessions=expected,complete_source_sessions=expected,as_of_date=as_of_date,as_of_timestamp=decision_time,windows={window:DEFAULT_WINDOWS[window]},min_coverage=Decimal(1))
+    with (ROOT/"data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv").open(newline="",encoding="utf-8-sig") as f:
+        mapping={}
+        for r in csv.DictReader(f):
+            mapping.setdefault(r["security_id"],set()).add(r["symbol"].strip().upper())
+    registry=json.loads((ROOT/"data/reference/p443_equity_quarantine.json").read_text())
+    q={(r["symbol"],date.fromisoformat(r["date"]).isoformat()) for r in registry["records"]}
+    if registry["schema_version"]!=1 or len(q)!=1329 or len(registry["records"])!=1329:
+        return unavailable("invalid_quarantine_registry")
+    blocked=unknown=clear=0
+    for p in result["profiles"]:
+        symbols=mapping.get(p["security_id"],set())
+        if len(symbols)!=1:
+            unknown+=1
+        elif any(s in symbols and expected[0]<=d<=expected[-1] for s,d in q):
+            blocked+=1
+        else:
+            clear+=1
+    # Snapshot identity is only a conservative exclusion aid, not historical certification.
     # No stock-price or historical identity clearance here: do not expose
     # per-security profiles until the P4.43 registry and identity joins are applied.
     return {"status":"descriptive_only","window":window,"expected_sessions":expected,
         "complete_sessions":len(expected),"observation_count":len(rows),
-        "profile_count":len(result["profiles"]),"profiles":[],"production_eligible":False,"signals_enabled":False,
+        "profile_count":len(result["profiles"]),
+        "quarantine_blocked_profiles":blocked,"identity_unmapped_profiles":unknown,"snapshot_crosswalk_clear_profiles":clear,"profiles":[],"production_eligible":False,"signals_enabled":False,
         "reason":"security_profiles_withheld_pending_identity_quarantine_join",
         "manifest_hashes":{d:h for d,raw,h in manifests},
         "source_authentication_performed":False}

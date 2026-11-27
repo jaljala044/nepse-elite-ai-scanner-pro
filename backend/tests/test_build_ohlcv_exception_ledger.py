@@ -71,9 +71,13 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
             root = Path(tmp)
             source = root / "audit.json"
             source.write_text(json.dumps(report_fixture()), encoding="utf-8")
+            original_source_bytes = source.read_bytes()
             jp, cp = root / "ledger.json", root / "ledger.csv"
             counts = write_ledger(source, jp, cp, expected_invalid_rows=1, expected_conflicts=1)
             saved = json.loads(jp.read_text(encoding="utf-8"))
+            import hashlib
+            self.assertEqual(saved["source_audit"]["source_audit_report_sha256"], hashlib.sha256(original_source_bytes).hexdigest())
+            self.assertEqual(source.read_bytes(), original_source_bytes)
             self.assertEqual(counts["total_exception_records"], 2)
             self.assertEqual(len(saved["source_audit"]["source_audit_report_sha256"]), 64)
             with cp.open(encoding="utf-8", newline="") as stream:

@@ -80,6 +80,18 @@ class IDPATMarketStructureTests(unittest.TestCase):
                 "NEPSE_SESSION_CALENDAR",
             )
 
+    def test_calendar_rejects_noncanonical_and_impossible_dates(self):
+        for invalid in ("20260701", "2026-7-01", "2026-02-30"):
+            with self.subTest(invalid=invalid):
+                calendar = {
+                    "status": "verified", "source_id": "CAL", "coverage": "1",
+                    "available_at": "2026-11-26T15:00:00+05:45",
+                    "sessions": [invalid],
+                }
+                with self.assertRaises(Exception) as caught:
+                    self.analyze(make_snapshot(), calendar)
+                self.assertIn("calendar_session", str(caught.exception))
+
     def test_calendar_future_session_is_withheld(self):
         calendar = {
             "status": "verified", "source_id": "CAL", "coverage": "1",

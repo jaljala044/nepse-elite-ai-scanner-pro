@@ -2,7 +2,7 @@
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import re
-from app.quarantine_guard import is_quarantined
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
 
 def _day(value):
     if not isinstance(value, str) or date.fromisoformat(value).isoformat() != value:
@@ -19,6 +19,11 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                                 records, required_sessions, available_warmup_sessions,
                                 decision_cutoff, blocked_keys=None):
     reasons = []
+    try:
+        configured = runtime_quarantine_keys()
+        blocked_keys = frozenset(blocked_keys or ()) | (configured or frozenset())
+    except ValueError:
+        reasons.append("runtime_quarantine_ledger_invalid")
     traded = no_trade = 0
     if segment.get("identity_verified") is not True or not segment.get("security_id") or not segment.get("symbol"):
         reasons.append("instrument_identity_not_verified")
@@ -99,3 +104,16 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     return {"reasons": reasons, "verified_traded_session_count": traded,
             "verified_no_trade_count": no_trade, "exploratory_replay_eligible": not reasons,
             "approved_backtest_eligible":False, "production_promotion_allowed":False}
+
+
+def evaluate_runtime_historical_segment(**kwargs):
+    """Runtime replay requires server-pinned ledger, never caller-only evidence."""
+    try:
+        keys = runtime_quarantine_keys(required=True)
+    except ValueError:
+        return {"reasons":["runtime_quarantine_ledger_missing_or_invalid"],
+                "verified_traded_session_count":0, "verified_no_trade_count":0,
+                "exploratory_replay_eligible":False, "approved_backtest_eligible":False,
+                "production_promotion_allowed":False}
+    kwargs["blocked_keys"] = keys | frozenset(kwargs.get("blocked_keys") or ())
+    return evaluate_historical_segment(**kwargs)

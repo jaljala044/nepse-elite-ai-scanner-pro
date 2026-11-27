@@ -11,7 +11,6 @@ import base64
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -161,7 +160,6 @@ def capture_har_entry(
         "url": request_url,
         "response_url": response_url,
         "retrieved_at_utc_from_har": retrieved,
-        "imported_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "http_status": response_status,
         "content_type": content_type,
         "raw_byte_count": len(raw),

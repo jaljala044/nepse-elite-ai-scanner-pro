@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "source_repository": "jaljala044/nepse-smc-data",
+  "quarantine_blob": "ecccab0b05c12d3a35d2cc4f35aee42d5bdfb3b5",
+  "records": [
+    {
+      "symbol": "AHPC",
+      "path": "reference/AHPC_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "0d662db6310d65116dc0e84ad5ed424ff1f7d26b",
+      "quarantine_count": 588,
+      "register_count": 588,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "register_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 578,
+        "OTHER_OHLC_INVARIANT": 10
+      },
+      "open_equals_previous_close": 570,
+      "open_outside_range": 588,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_open_price_evidence"
+    },
+    {
+      "symbol": "SKBBL",
+      "path": "reference/SKBBL_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "c899afa2499a7e1242d7a2fb0d3a6e3a33c8aafa",
+      "quarantine_count": 379,
+      "register_count": 379,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "register_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 378,
+        "OTHER_OHLC_INVARIANT": 1
+      },
+      "open_equals_previous_close": 374,
+      "open_outside_range": 379,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_open_price_evidence"
+    },
+    {
+      "symbol": "API",
+      "path": "reference/API_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "b743f07527baa4da4b32f14e7fbe96481799dc9c",
+      "quarantine_count": 122,
+      "register_count": 122,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "register_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 121,
+        "OTHER_OHLC_INVARIANT": 1
+      },
+      "open_equals_previous_close": 119,
+      "open_outside_range": 121,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_open_price_evidence"
+    },
+    {
+      "symbol": "MERO",
+      "path": "reference/MERO_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "5e6361b17b9fec14b0af099a9e84f90d84ea1d97",
+      "quarantine_count": 102,
+      "register_count": 102,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "register_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 100,
+        "OTHER_OHLC_INVARIANT": 2
+      },
+      "open_equals_previous_close": 97,
+      "open_outside_range": 101,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_open_price_evidence"
+    }
+  ]
+}

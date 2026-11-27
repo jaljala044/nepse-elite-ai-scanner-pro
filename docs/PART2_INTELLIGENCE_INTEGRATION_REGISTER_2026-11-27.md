@@ -158,3 +158,6 @@ This is capture infrastructure only. The two discovered SEBON PDFs have not been
 ### P2.03 SEBON page-referenced PDF extraction — PR #159 pending
 
 PR #159 adds `backend/app/sebon_pdf_extraction.py`, a bounded `pypdf` dependency and seven tests. It extracts selectable page text, per-page text hashes and stable payload-hash/page/line references. Conservative company-sector candidates are emitted only after a same-page `Name of Company` + `Sector` header and remain `candidate_review_required`; identity and effective date remain unresolved/unknown. It does not OCR scanned pages, certify table completeness, reconcile companies to NEPSE securities, or enable sector signals. CI is pending; do not merge until both required workflows pass.
+
+
+PR #159 validation note (2026-11-27): the first CI attempt exposed a detector/test mismatch because extracted PDF whitespace was normalized before a two-space column delimiter was matched. The parser was corrected to match the normalized line representation; current PR head is `b663bea851c4e88ca6d82743c2b809a353228ae5`. Both required workflows have been re-triggered and are still in progress. The failed first attempt is retained in workflow history; no merge until the rerun passes.

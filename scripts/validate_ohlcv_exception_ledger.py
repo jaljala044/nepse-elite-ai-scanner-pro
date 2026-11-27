@@ -58,7 +58,9 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
             for repository,item in evidence.items():
                 for field in ("commit_sha","path","file_sha256","source_csv_line","row"):
                     if item.get(field) in (None,""): errors.append(f"conflict record {i} evidence {repository} missing {field}")
-                if not SHA256.fullmatch(str(item.get("file_sha256",""))): errors.append(f"conflict record {i} evidence {repository} has invalid SHA-256")\n                if not isinstance(item.get("source_csv_line"), int) or item["source_csv_line"] < 2: errors.append(f"conflict record {i} evidence {repository} has invalid source CSV line")
+                if not SHA256.fullmatch(str(item.get("file_sha256",""))): errors.append(f"conflict record {i} evidence {repository} has invalid SHA-256")
+                if not isinstance(item.get("source_csv_line"), int) or item["source_csv_line"] < 2:
+                    errors.append(f"conflict record {i} evidence {repository} has invalid source CSV line")
     if resolved!=USER_FINAL_KEYS: errors.append(f"user-authoritative conflict keys differ: {sorted(resolved)}")
     expected_unresolved=1332
     if summary.get("unresolved")!=expected_unresolved: errors.append(f"summary unresolved count must equal {expected_unresolved}")

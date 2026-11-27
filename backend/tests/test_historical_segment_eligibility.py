@@ -136,6 +136,19 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(records=records)
         self.assertIn("available_at_unverified:" + self.sessions[0], result["reasons"])
 
+    def test_expected_session_outside_lifecycle_fails_even_without_bar(self):
+        segment = dict(self.segment, effective_to=self.sessions[-2])
+        result = self.evaluate(segment=segment, records=self.records[:-1])
+        self.assertIn(
+            "expected_session_outside_instrument_effective_interval:" + self.sessions[-1],
+            result["reasons"],
+        )
+
+    def test_status_for_date_outside_expected_grid_fails_closed(self):
+        statuses = dict(self.statuses, **{"2025-06-01": "traded"})
+        result = self.evaluate(session_statuses=statuses)
+        self.assertIn("unexpected_session_status:2025-06-01", result["reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()

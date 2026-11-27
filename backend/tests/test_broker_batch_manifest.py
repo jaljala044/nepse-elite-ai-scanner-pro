@@ -1,7 +1,9 @@
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
 import json
 import tempfile
 import unittest
+from threading import Barrier
 from pathlib import Path
 
 from app.broker_batch_manifest import (
@@ -309,6 +311,43 @@ class BrokerRawCaptureTests(unittest.TestCase):
                 batch, clean_report(batch), coverage_manifest=coverage_manifest(),
                 history_store=history)
         self.assertEqual(history.count(), 0)
+
+
+    def test_concurrent_identity_reuse_is_serialized_and_audited(self):
+        worker_count = 8
+        # Each registry owns a separate SQLite connection to the same database.
+        registries = [BrokerRawCaptureRegistry(self.root) for _ in range(worker_count)]
+        barrier = Barrier(worker_count)
+
+        def stage_candidate(index):
+            raw = f"concurrent-source-capture-{index}".encode("utf-8")
+            manifest, _ = fixture(raw)
+            barrier.wait(timeout=10)
+            try:
+                result = registries[index].stage(manifest, raw)
+                return ("staged", result)
+            except CaptureConflict:
+                return ("conflict", None)
+            except Exception as exc:  # surface unexpected SQLite/uniqueness failures
+                return ("error", f"{type(exc).__name__}: {exc}")
+
+        with ThreadPoolExecutor(max_workers=worker_count) as pool:
+            outcomes = list(pool.map(stage_candidate, range(worker_count)))
+
+        staged = [value for state, value in outcomes if state == "staged"]
+        conflicts = [value for state, value in outcomes if state == "conflict"]
+        errors = [value for state, value in outcomes if state == "error"]
+        self.assertEqual(errors, [])
+        self.assertEqual(len(staged), 1)
+        self.assertEqual(len(conflicts), worker_count - 1)
+
+        batch_id = staged[0]["batch_id"]
+        events = self.registry.events(batch_id)
+        self.assertEqual(
+            sum(event["event_type"] == "capture_identity_conflict" for event in events),
+            worker_count - 1,
+        )
+        self.assertEqual(events[0]["event_type"], "staged")
 
 
 if __name__ == "__main__":

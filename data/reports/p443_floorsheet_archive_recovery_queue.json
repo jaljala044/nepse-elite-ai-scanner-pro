@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "source_inventory_blob": "5598b98e4b14beeae9af6294cccf886fa75ac57b",
+  "candidate_blob": "a80d8792b8628c59df7906b2eea67d8dfb3fe487",
+  "archive_date_count": 226,
+  "quarantine_keys_with_archive_date": 11,
+  "quarantine_keys_without_archive_date": 1318,
+  "archive_overlap": [
+    {
+      "symbol": "API",
+      "date": "2026-04-27"
+    },
+    {
+      "symbol": "MERO",
+      "date": "2026-04-24"
+    },
+    {
+      "symbol": "SPDL",
+      "date": "2026-04-28"
+    },
+    {
+      "symbol": "RADHI",
+      "date": "2026-04-29"
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-27"
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29"
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-24"
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-29"
+    },
+    {
+      "symbol": "UNHPL",
+      "date": "2026-04-29"
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2026-04-29"
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-04-29"
+    }
+  ],
+  "april29_review": [
+    {
+      "symbol": "BGWT",
+      "original_low": "718.0",
+      "candidate_low": "700.4",
+      "opening_candidate": "720",
+      "other_fields_match": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "HRL",
+      "original_low": "676.1",
+      "candidate_low": "659.4",
+      "opening_candidate": "685",
+      "other_fields_match": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RADHI",
+      "original_low": "755.0",
+      "candidate_low": "749.9",
+      "opening_candidate": "775",
+      "other_fields_match": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "original_low": "587.0",
+      "candidate_low": "587",
+      "opening_candidate": "610",
+      "other_fields_match": true,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UAIL",
+      "original_low": "438.0",
+      "candidate_low": "424.9",
+      "opening_candidate": "442.6",
+      "other_fields_match": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UNHPL",
+      "original_low": "475.0",
+      "candidate_low": "475",
+      "opening_candidate": "480.2",
+      "other_fields_match": true,
+      "admission_allowed": false
+    }
+  ],
+  "policy": "archive date presence only; no trade or execution ordering proof; raw files unchanged"
+}

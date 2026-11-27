@@ -65,6 +65,11 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
         reasons.append("adjustment_basis_missing")
     if len(sessions) < required_sessions:
         reasons.append("insufficient_verified_sessions")
+    if set(session_statuses) - set(sessions):
+        reasons.append("unexpected_session_status_dates")
+    for day in sessions:
+        if day < start or (end and day > end):
+            reasons.append(f"session_outside_instrument_effective_interval:{day}")
     required_warmup_sessions = int(segment.get("minimum_warmup_sessions", 0))
     if available_warmup_sessions < required_warmup_sessions:
         reasons.append("insufficient_causal_warmup")
@@ -76,6 +81,7 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
             continue
         counts[day].append(row)
     no_trade_count = 0
+    traded_count = 0
     for day in sessions:
         status = session_statuses.get(day)
         rows = counts[day]
@@ -87,6 +93,7 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
             if rows:
                 reasons.append(f"bar_present_on_verified_no_trade_session:{day}")
             continue
+        traded_count += 1
         if len(rows) != 1:
             reason = "missing_bar" if not rows else "duplicate_bar"
             reasons.append(f"{reason}:{day}")
@@ -119,11 +126,14 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
                 raise ValueError
         except (KeyError, TypeError, InvalidOperation, ValueError):
             reasons.append(f"invalid_or_incomplete_ohlcv:{day}")
+    if traded_count < required_sessions:
+        reasons.append("insufficient_traded_sessions")
     reasons = sorted(set(reasons))
     return {
         "symbol": symbol, "security_id": security_id,
         "segment_start": start, "segment_end": end,
-        "verified_session_count": len(sessions), "verified_no_trade_count": no_trade_count,
+        "verified_session_count": len(sessions), "verified_traded_session_count": traded_count,
+        "verified_no_trade_count": no_trade_count,
         "required_session_count": required_sessions,
         "required_warmup_sessions": required_warmup_sessions,
         "available_warmup_sessions": available_warmup_sessions,

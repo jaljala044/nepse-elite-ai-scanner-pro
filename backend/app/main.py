@@ -996,3 +996,20 @@ def research_automatic_portfolio_dashboard(request: AutomaticPortfolioDashboardR
         return automatic_portfolio_dashboard(**request.model_dump())
     except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .scanner_portfolio_comparison import compare_portfolios
+
+class ScannerPortfolioComparisonRequest(BaseModel):
+    candidates: dict[str, list[dict]]
+    common_inputs: dict
+
+@app.post("/v1/research/scanners/portfolio-comparison")
+def research_scanner_portfolio_comparison(request: ScannerPortfolioComparisonRequest):
+    """Stateless hypothetical comparison, not a live recommendation."""
+    try:
+        result = compare_portfolios(**request.model_dump())
+        return {**result, "schema_version": "1", "data_quality": "CALLER_ATTESTED",
+                "live_trading_enabled": False}
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

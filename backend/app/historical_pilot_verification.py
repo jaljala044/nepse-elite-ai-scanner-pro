@@ -46,6 +46,7 @@ def validate_official_first_trade_evidence(cohort_rows: Iterable[Mapping[str, ob
                 elif available > cutoff or captured > cutoff: reason = "evidence_available_after_decision_cutoff"
                 elif row.get("finality") != "final": reason = "record_not_final"
                 elif row.get("record_status") != "verified": reason = "record_not_verified"
+                elif row.get("capture_complete") is not True: reason = "official_day_capture_not_certified_complete"
         if reason:
             rejected.append({"row": index, "symbol": symbol or None, "reason": reason})
         else:

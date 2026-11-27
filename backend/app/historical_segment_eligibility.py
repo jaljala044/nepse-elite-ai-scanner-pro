@@ -307,8 +307,21 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"adjustment_basis_mismatch:{day_text}")
         if row.get("rights_status") not in _ALLOWED_RIGHTS:
             reasons.append(f"source_rights_not_approved:{day_text}")
-        if not _valid_primary_evidence(row.get("source_evidence"), cutoff):
+        source_evidence = row.get("source_evidence")
+        if not _valid_primary_evidence(source_evidence, cutoff):
             reasons.append(f"bar_source_evidence_unverified:{day_text}")
+        try:
+            row_available_at = _aware_datetime(row.get("available_at"), "bar available_at")
+            if row_available_at > cutoff:
+                reasons.append(f"lookahead_available_after_cutoff:{day_text}")
+            if isinstance(source_evidence, dict):
+                source_available_at = _aware_datetime(
+                    source_evidence.get("available_at"), "source evidence available_at"
+                )
+                if row_available_at != source_available_at:
+                    reasons.append(f"bar_available_at_source_mismatch:{day_text}")
+        except ValueError:
+            reasons.append(f"available_at_unverified:{day_text}")
         digest = str(row.get("evidence_sha256") or "").lower()
         source_evidence = row.get("source_evidence")
         source_digest = (

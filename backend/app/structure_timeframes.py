@@ -4,6 +4,36 @@ from .scanner import quality_errors
 from .market_structure import detect_structure
 
 
+def completed_months(rows, verified_sessions):
+    """Return contiguous complete calendar months, excluding latest observed month."""
+    if verified_sessions is None or not rows:
+        return []
+    sessions = {date.fromisoformat(str(d)) for d in verified_sessions}
+    buckets = {}
+    for row in sorted(rows, key=lambda r: str(r["date"])):
+        day = date.fromisoformat(str(row["date"]))
+        buckets.setdefault(day.replace(day=1), []).append(row)
+    def next_month(day):
+        return date(day.year + (day.month == 12), day.month % 12 + 1, 1)
+    completed = []
+    previous = None
+    for start, group in sorted(buckets.items())[:-1]:
+        if previous is not None and next_month(previous) != start:
+            completed = []
+        previous = start
+        expected = {d for d in sessions if start <= d < next_month(start)}
+        actual = {date.fromisoformat(str(r["date"])) for r in group}
+        if not expected or actual != expected or len(actual) != len(group):
+            completed = []
+            continue
+        completed.append(dict(date=group[-1]["date"], open=group[0]["open"],
+            high=max(r["high"] for r in group), low=min(r["low"] for r in group),
+            close=group[-1]["close"], volume=sum(r["volume"] for r in group)))
+    if previous is not None and next_month(previous) != max(buckets):
+        completed = []
+    return completed
+
+
 def evaluate_timeframes(rows, *, eligible=False, verified_sessions=None):
     if not eligible or quality_errors(rows) or not rows:
         return {"status":"unavailable","score":None}
@@ -34,6 +64,9 @@ def evaluate_timeframes(rows, *, eligible=False, verified_sessions=None):
                 close=group[-1]["close"],volume=sum(r["volume"] for r in group)))
         if previous_start is not None and max(buckets) != previous_start+timedelta(days=7):
             weekly = []
+    monthly = completed_months(ordered, verified_sessions)
+    month = detect_structure(monthly) if monthly else None
+    monthly_bias = month["bias"] if month and month["status"] == "screened" else None
     week = detect_structure(weekly) if weekly else None
     weekly_bias = week["bias"] if week and week["status"]=="screened" else None
     daily_bias = daily["bias"] if daily["status"]=="screened" else None
@@ -45,10 +78,11 @@ def evaluate_timeframes(rows, *, eligible=False, verified_sessions=None):
     rv = ordered[-1]["volume"]/baseline if baseline>0 else None
     # Research descriptors, not trade signals or the production SMC score.
     return {"status":"research_only","daily_bias":daily_bias,"weekly_bias":weekly_bias,
+            "monthly_bias":monthly_bias,"monthly_completed_bars":len(monthly),
             "weekly_completed_bars":len(weekly),"alignment":alignment,"score":None,
             "t_plus_2":{"action":"NO TRADE","recent_events":events,"relative_volume":rv,
                         "missing":["execution_depth","short_term_broker_flow","validated_trade_plan"]},
             "swing":{"action":"NO TRADE","alignment":alignment,
                      "missing":["validated_trade_plan","liquidity","market_sector_confirmation"]},
-            "limitations":["Weekly coverage requires an independently verified complete session calendar.",
+            "limitations":["Weekly and monthly coverage requires an independently verified complete session calendar.",
                            "No score is assigned until confluence rules are validated."]}

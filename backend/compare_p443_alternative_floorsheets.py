@@ -56,6 +56,37 @@ def compare(a,b):
             "exact_nonempty_multiset_match":bool(a) and a==b,
             "admission_allowed":False}
 
+def broker_signature(row):
+    def pick(names):
+        values={str(row[n]).strip() for n in names if row.get(n)}
+        if len(values)!=1: raise ValueError("missing or conflicting broker field")
+        value=values.pop()
+        if not value.isdigit() or int(value)<=0: raise ValueError("invalid broker")
+        return int(value)
+    return (pick(("buyer","buyer_broker","buyer_broker_id","buyer_member_id","buying_broker","buyer_member","buyer_member_code","buy_member_id")),
+            pick(("seller","seller_broker","seller_broker_id","seller_member_id","selling_broker","seller_member","seller_member_code","sell_member_id")))
+
+def parse_broker_trades(raw,day,targets):
+    result={s:Counter() for s in targets}
+    errors=Counter()
+    timestamps=Counter()
+    reader=csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+    headers=reader.fieldnames or []
+    for original in reader:
+        row={str(k).strip().lower():str(v or "").strip() for k,v in original.items()}
+        symbol=(row.get("stock_symbol") or row.get("symbol") or row.get("scrip") or "").upper()
+        if symbol not in targets: continue
+        try:
+            s,d,c,q,p,a=signature(row)
+            if d!=day: raise ValueError("date mismatch")
+            buyer,seller=broker_signature(row)
+            result[s][(c,q,p,a,buyer,seller)]+=1
+            if any(row.get(n) for n in ("trade_time","transaction_time","execution_time","contract_time","timestamp","time")):
+                timestamps[s]+=1
+        except (ValueError,ArithmeticError):
+            errors[s]+=1
+    return result,errors,timestamps,headers
+
 def main():
     base=ROOT/"data/reports"
     primary=json.loads((base/"p443_floorsheet_extraction_manifest.json").read_text())["files"]
@@ -71,12 +102,18 @@ def main():
         if hashlib.sha1(f"blob {len(raw)}\0".encode()+raw).hexdigest()!=f["git_blob_sha"]: raise ValueError("primary hash mismatch")
         compressed=get("https://huggingface.co/datasets/urekmazino69/Nepse-floorsheet-and-indices/resolve/main/"+m["path"],m["size"])
         if hashlib.sha256(compressed).hexdigest()!=m["sha256"]: raise ValueError("alternative hash mismatch")
-        a,ae=parse(raw,day,targets);b,be=parse(gzip.decompress(compressed),day,targets)
+        alternative_raw=gzip.decompress(compressed)
+        a,ae=parse(raw,day,targets);b,be=parse(alternative_raw,day,targets)
+        ab,abe,at,ah=parse_broker_trades(raw,day,targets)
+        bb,bbe,bt,bh=parse_broker_trades(alternative_raw,day,targets)
         for s in sorted(targets):
             records.append({"symbol":s,"date":day,"primary_sha256":hashlib.sha256(raw).hexdigest(),
-                "alternative_compressed_sha256":m["sha256"],"primary_errors":ae[s],"alternative_errors":be[s],**compare(a[s],b[s])})
+                "alternative_compressed_sha256":m["sha256"],"primary_errors":ae[s],"alternative_errors":be[s],**compare(a[s],b[s]),
+                "broker_parity":compare(ab[s],bb[s]),"primary_broker_errors":abe[s],"alternative_broker_errors":bbe[s],
+                "primary_timestamp_rows":at[s],"alternative_timestamp_rows":bt[s],"primary_headers":ah,"alternative_headers":bh,
+                "execution_order_verified":False})
     if len(records)!=11: raise ValueError("scope mismatch")
-    output={"records":records,"approved_corrections":[],"limitations":"shared lineage and execution order unverified; buyer/seller parity not tested"}
+    output={"records":records,"approved_corrections":[],"limitations":"shared lineage and execution order unverified; timestamp presence does not authenticate execution chronology"}
     dest=ROOT/"recovery-output/alternative-comparison.json"
     dest.parent.mkdir(exist_ok=True)
     dest.write_text(json.dumps(output,indent=2)+"\n")

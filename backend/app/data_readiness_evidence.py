@@ -72,6 +72,7 @@ def assemble_training_evidence(*, universe_report: dict | None,
         "point_in_time_leakage_checks_passed": pit_ok,
         "corporate_action_policy_reviewed": corporate_action_reviewed is True,
         "historical_coverage_threshold_met": coverage_ok,
+        "historical_quarantine_clearance_verified": False,  # No independent dataset clearance connected yet.
         "holdout_protocol_defined": bool(holdout_protocol_id and holdout_protocol_id.strip()),
         "ohlcv_coverage": (ohlcv_report or {}).get("coverage_ratio"),
         "broker_identity_coverage": (broker_report or {}).get("verified_amount_coverage"),

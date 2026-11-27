@@ -107,5 +107,45 @@ class RepeatedAdjacentTests(unittest.TestCase):
                              "repeated_signature_has_invalid_ohlc_bounds")
 
 
+    def test_reject_invalid_calendar_date(self):
+        from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "calendar.csv"
+            for day in ("2026-02-30", "20260101", ""):
+                with self.subTest(day=day):
+                    p.write_text("date,status\n" + day + ",project_accepted_open\n", encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        join_project_calendar([], p)
+
+    def test_reject_unknown_calendar_status(self):
+        from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "calendar.csv"
+            for status in ("", "open", "unverified_closed"):
+                with self.subTest(status=status):
+                    p.write_text("date,status\n2026-01-01," + status + "\n", encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        join_project_calendar([], p)
+
+    def test_reject_duplicate_calendar_date(self):
+        from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "calendar.csv"
+            p.write_text("date,status\n2026-01-01,verified_open\n2026-01-01,verified_closed\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                join_project_calendar([], p)
+
+    def test_verified_open_distinct_from_project_open(self):
+        from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "calendar.csv"
+            p.write_text("date,status\n2026-01-01,project_accepted_open\n2026-01-02,verified_exceptional_open\n", encoding="utf-8")
+            rows = [{"repository":"example/repo","previous_date":"2026-01-01","current_date":"2026-01-02"}]
+            joined, summary = join_project_calendar(rows,p)
+            self.assertEqual(summary["project_accepted_open_dates"],1)
+            self.assertEqual(summary["verified_open_dates"],1)
+            self.assertEqual(joined[0]["session_join_classification"],"adjacent_project_sessions_review")
+
+
 if __name__ == "__main__":
     unittest.main()

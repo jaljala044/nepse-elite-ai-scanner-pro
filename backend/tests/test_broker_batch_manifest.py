@@ -1,4 +1,5 @@
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -33,9 +34,11 @@ def clean_report(batch_id):
             "coverage_ratio": "1", "batch_id": batch_id,
             "available_at": "2026-11-26T09:01:00+05:45",
             "status": "descriptive_only",
-            "raw_capture_sha256": "RAW_CAPTURE_PLACEHOLDER",
-            "raw_record_sha256": "b" * 64,
-            "raw_record_locator": "csv:row:2",
+            "raw_record_lineage": [{
+                "raw_record_sha256": "b" * 64,
+                "raw_record_locator": "csv:row:2",
+                "contract_id": "CONTRACT-1",
+            }],
         }],
     )
 
@@ -161,8 +164,10 @@ class BrokerRawCaptureTests(unittest.TestCase):
             as_of_date="2026-11-25",
             as_of_timestamp="2026-11-27T00:00:00+05:45")
         self.assertEqual(stored_rows[0]["raw_capture_sha256"], manifest.raw_sha256)
-        self.assertEqual(stored_rows[0]["raw_record_sha256"], "b" * 64)
-        self.assertEqual(stored_rows[0]["raw_record_locator"], "csv:row:2")
+        record_lineage = json.loads(stored_rows[0]["raw_record_lineage_json"])
+        self.assertEqual(record_lineage[0]["raw_record_sha256"], "b" * 64)
+        self.assertEqual(record_lineage[0]["raw_record_locator"], "csv:row:2")
+        self.assertEqual(record_lineage[0]["contract_id"], "CONTRACT-1")
         self.assertEqual(stored_rows[0]["raw_capture_batch_id"], manifest.capture_id)
         self.assertEqual(stored_rows[0]["raw_capture_captured_at"], "2026-11-26 03:15:00+00")
         self.assertEqual(stored_rows[0]["raw_capture_available_at"], "2026-11-26 03:16:00+00")
@@ -199,7 +204,7 @@ class BrokerRawCaptureTests(unittest.TestCase):
             report = clean_report(batch)
             report.accepted[0]["raw_capture_sha256"] = manifest.raw_sha256
             if mutation == "missing_locator":
-                report.accepted[0].pop("raw_record_locator")
+                report.accepted[0]["raw_record_lineage"][0].pop("raw_record_locator")
             else:
                 report.accepted[0]["raw_capture_sha256"] = "0" * 64
             digest = registry.record_dry_run(batch, report)

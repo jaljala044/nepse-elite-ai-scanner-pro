@@ -118,7 +118,7 @@ class SessionCalendarTests(unittest.TestCase):
 
     def test_unsupported_calendar_status_is_rejected(self):
         self.write_calendar([self.evidence(status="candidate_open")])
-        with self.assertRaisesRegex(ValueError, "unsupported evidence-backed"):
+        with self.assertRaisesRegex(ValueError, "unsupported calendar status"):
             load_calendar(self.calendar)
 
 

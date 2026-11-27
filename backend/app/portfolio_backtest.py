@@ -299,7 +299,7 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
 
 
 def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_actions=None,
-                               benchmark_rows=None, benchmark_symbol=None, action_policy="retrospective_exclusion"):
+                               benchmark_rows=None, benchmark_symbol=None, action_policy="point_in_time_guard"):
     """Replay frozen signal scenarios; fail closed on action-affected symbols.
 
     This is a reconciliation adapter, not corporate-action-aware signal sizing.
@@ -376,5 +376,5 @@ def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_a
             "corporate_action_excluded_signals": excluded,
             "action_policy": action_policy,
             "point_in_time_action_guard": action_policy == "point_in_time_guard",
-            "limitations":["Corporate-action-affected symbols excluded retrospectively before allocation; selection bias possible. No corporate-action-aware sizing.",
+            "limitations":[("Corporate-action-affected symbols excluded retrospectively before allocation; selection bias possible." if action_policy == "retrospective_exclusion" else "Known affected symbols excluded; future announcements cause replay rejection. No event-aware sizing."),
                            "Scenario evidence is not actual exchange trade evidence."]}

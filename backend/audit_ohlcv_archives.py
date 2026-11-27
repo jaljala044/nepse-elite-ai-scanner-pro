@@ -130,10 +130,12 @@ def _get(client: httpx.Client, url: str) -> httpx.Response:
     raise RuntimeError(f"Request failed: {url}: {last_error}")
 
 
-def _repository_snapshot(client: httpx.Client, repo: str) -> tuple[str, str, list[dict[str, Any]]]:
+def _repository_snapshot(client: httpx.Client, repo: str, commit_ref: str | None = None) -> tuple[str, str, list[dict[str, Any]]]:
     metadata = _get(client, f"{API}/repos/{repo}").json()
-    branch = metadata["default_branch"]
-    commit = _get(client, f"{API}/repos/{repo}/commits/{quote(branch, safe='')}").json()
+    ref = commit_ref or metadata["default_branch"]
+    commit = _get(client, f"{API}/repos/{repo}/commits/{quote(ref, safe='')}").json()
+    if commit_ref and commit.get("sha") != commit_ref:
+        raise RuntimeError(f"{repo}: requested pinned commit {commit_ref}, received {commit.get('sha')}")
     commit_sha = commit["sha"]
     tree_sha = commit["commit"]["tree"]["sha"]
     tree = _get(client, f"{API}/repos/{repo}/git/trees/{tree_sha}?recursive=1").json()
@@ -149,9 +151,13 @@ def _repository_snapshot(client: httpx.Client, repo: str) -> tuple[str, str, lis
 
 
 def audit_repositories(
-    repos: list[str] | None = None, *, workers: int = 8
+    repos: list[str] | None = None, *, workers: int = 8,
+    repo_commits: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    selected = repos or DEFAULT_REPOS
+    selected = repos or list(repo_commits or {}) or DEFAULT_REPOS
+    unknown_pins = set(repo_commits or {}) - set(selected)
+    if unknown_pins:
+        raise ValueError(f"pinned commits supplied for repositories not selected: {sorted(unknown_pins)}")
     token = os.getenv("GITHUB_TOKEN", "").strip()
     headers = {
         "User-Agent": "NEPSE-ELITE-OHLCV-Archive-Audit/1.0",
@@ -166,7 +172,7 @@ def audit_repositories(
     )
     with httpx.Client(timeout=TIMEOUT, headers=headers, follow_redirects=True) as client:
         for repo in selected:
-            commit_sha, tree_sha, files = _repository_snapshot(client, repo)
+            commit_sha, tree_sha, files = _repository_snapshot(client, repo, (repo_commits or {}).get(repo))
             audited: list[dict[str, Any]] = []
             errors: list[dict[str, str]] = []
 
@@ -301,12 +307,29 @@ def audit_repositories(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", action="append", dest="repos")
+    parser.add_argument(
+        "--repo-commit", action="append", default=[],
+        metavar="OWNER/REPO=COMMIT_SHA",
+        help="pin a repository to an exact 40-character commit SHA; repeat per repository",
+    )
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--output", type=Path, default=Path("data/reports/ohlcv-archive-audit.json"))
     args = parser.parse_args()
     if args.workers < 1 or args.workers > 16:
         parser.error("--workers must be between 1 and 16")
-    report = audit_repositories(args.repos, workers=args.workers)
+    repo_commits = {}
+    for item in args.repo_commit:
+        if "=" not in item:
+            parser.error("--repo-commit must use OWNER/REPO=COMMIT_SHA")
+        repo, commit_sha = item.rsplit("=", 1)
+        if not repo or not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
+            parser.error(f"invalid --repo-commit value: {item}")
+        if repo in repo_commits:
+            parser.error(f"duplicate --repo-commit for {repo}")
+        repo_commits[repo] = commit_sha
+    if args.repos and repo_commits and not set(repo_commits).issubset(set(args.repos)):
+        parser.error("every --repo-commit repository must also be selected with --repo")
+    report = audit_repositories(args.repos, workers=args.workers, repo_commits=repo_commits)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps({

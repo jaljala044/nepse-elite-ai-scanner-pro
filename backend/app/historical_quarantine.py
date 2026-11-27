@@ -13,13 +13,14 @@ def load():
     return frozenset(keys)
 QUARANTINE=load()
 
-def window_errors(symbol, rows, sessions=None):
+def window_errors(symbol, rows, sessions=None, *, require_calendar=True):
     errors=quality_errors(rows)
     if errors or not rows:return errors or ["no_rows"]
     days={str(r["date"]) for r in rows}
-    blocked=sorted(d for d in days if (symbol,d) in QUARANTINE)
+    symbol=str(symbol).strip().upper()
+    blocked=sorted(d for s,d in QUARANTINE if s==symbol and min(days)<=d<=max(days))
     errors.extend("historical_quarantine:"+d for d in blocked)
-    if sessions is None:return errors+["verified_session_calendar_required"]
+    if sessions is None:return errors+(["verified_session_calendar_required"] if require_calendar else [])
     try:
         cal=[date.fromisoformat(str(d)).isoformat() for d in sessions]
         if not cal or cal!=sorted(set(cal)):return errors+["invalid_session_calendar"]

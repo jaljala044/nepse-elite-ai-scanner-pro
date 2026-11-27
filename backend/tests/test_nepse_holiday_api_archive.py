@@ -40,6 +40,34 @@ class NepseHolidayApiArchiveAuditTests(unittest.TestCase):
             self.assertEqual(result["years"][0]["duplicate_dates"][0]["record_count"], 2)
             self.assertFalse(result["canonical_calendar_promotion_allowed"])
 
+    def test_non_official_source_host_is_rejected_even_with_valid_payload_hash(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = self._capture(root, 2025, [
+                {"holidayDate": "2025-01-01", "holidayDescription": "Holiday"},
+            ])
+            report_path = folder / "capture-report.json"
+            report = json.loads(report_path.read_text())
+            report["source_url"] = "https://nepalstock.com.np.attacker.example/api/nots/holiday/list?year=2025"
+            report_path.write_text(json.dumps(report))
+            result = audit_archive(root)
+            self.assertEqual(result["failure_count"], 1)
+            self.assertIn("official NEPSE holiday endpoint", result["failures"][0]["error"])
+
+    def test_source_url_must_match_requested_year(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = self._capture(root, 2025, [
+                {"holidayDate": "2025-01-01", "holidayDescription": "Holiday"},
+            ])
+            report_path = folder / "capture-report.json"
+            report = json.loads(report_path.read_text())
+            report["source_url"] = "https://nepalstock.com.np/api/nots/holiday/list?year=2024"
+            report_path.write_text(json.dumps(report))
+            result = audit_archive(root)
+            self.assertEqual(result["failure_count"], 1)
+            self.assertIn("official NEPSE holiday endpoint", result["failures"][0]["error"])
+
     def test_hash_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

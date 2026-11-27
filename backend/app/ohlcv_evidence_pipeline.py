@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from app.ohlcv_csv_adapter import OhlcvCsvMapping, parse_ohlcv_csv
 from app.session_evidence import resolve_session_state
+from app.historical_quarantine import configured_holds, reject_held
 
 
 def _utc(value: str) -> datetime:
@@ -22,6 +23,7 @@ def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
                                 decision_time: str,
                                 availability_by_key: dict | None = None) -> dict:
     """Annotate each row; unknown membership/calendar/PIT state remains quarantined."""
+    holds = configured_holds()
     cutoff = _utc(decision_time)
     parsed = parse_ohlcv_csv(payload, source_id=source_id, mapping=mapping)
     by_symbol = {}
@@ -44,6 +46,10 @@ def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
             if start <= session and (end is None or session <= end):
                 candidates.append(instrument)
         reasons = []
+        try:
+            reject_held(symbol, session.isoformat(), holds)
+        except ValueError:
+            reasons.append("p443_historical_quarantine")
         if len(candidates) != 1:
             reasons.append("security_identity_missing_or_ambiguous")
         elif not str(candidates[0].get("security_id", "")).strip():

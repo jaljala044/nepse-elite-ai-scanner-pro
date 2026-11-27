@@ -6,7 +6,7 @@ missing context yields INSUFFICIENT_EVIDENCE, never a guessed signal.
 """
 from __future__ import annotations
 
-import math
+from decimal import Decimal, InvalidOperation
 import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -29,6 +29,19 @@ def _aware(value: object, field: str) -> datetime:
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError(f"{field} must be timezone-aware")
     return parsed
+
+
+def _finite_numeric(value: object) -> bool:
+    """Return whether a non-boolean int/float is mathematically finite.
+
+    Decimal avoids math.isfinite's OverflowError for very large Python integers.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return Decimal(str(value)).is_finite()
+    except (InvalidOperation, ValueError):
+        return False
 
 
 def _find_channel(window: dict, broker_code: str) -> dict | None:
@@ -58,7 +71,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         as_of_session = datetime.fromisoformat(as_of_session).date().isoformat()
     except (TypeError, ValueError) as exc:
         raise ValueError("as_of_session must be YYYY-MM-DD") from exc
-    if isinstance(minimum_daily_flow_multiple, bool) or not isinstance(minimum_daily_flow_multiple, (int, float)) or not math.isfinite(minimum_daily_flow_multiple) or minimum_daily_flow_multiple <= 0:
+    if not _finite_numeric(minimum_daily_flow_multiple) or minimum_daily_flow_multiple <= 0:
         raise ValueError("minimum_daily_flow_multiple must be finite and positive")
     if cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date().isoformat() != as_of_session:
         return _insufficient(broker_code, symbol, "decision_time_session_mismatch")
@@ -110,7 +123,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         if not isinstance(window, dict) or window.get("status") != "observed" or window.get("window_complete") is not True:
             return _insufficient(broker_code, symbol, "broker_horizon_incomplete", [horizon])
         coverage = window.get("coded_amount_coverage_pct")
-        if isinstance(coverage, bool) or not isinstance(coverage, (int, float)) or not math.isfinite(coverage) or coverage < 80:
+        if not _finite_numeric(coverage) or coverage < 80 or coverage > 100:
             return _insufficient(broker_code, symbol, "broker_execution_code_coverage_below_80_pct", [horizon])
         profile = _find_channel(window, broker_code)
         if profile is None:
@@ -130,8 +143,7 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
         ("latest_buy_vs_prior_20_avg_ratio", buy_ratio),
         ("latest_sell_vs_prior_20_avg_ratio", sell_ratio),
     ):
-        if (isinstance(value, bool) or not isinstance(value, (int, float))
-                or not math.isfinite(value) or value < 0):
+        if not _finite_numeric(value) or value < 0:
             return _insufficient(
                 broker_code, symbol, "daily_flow_baseline_ratio_invalid", [field]
             )

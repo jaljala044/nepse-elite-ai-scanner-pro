@@ -50,7 +50,16 @@ def _safe_payload_path(root: Path, relative: Any) -> Path:
     if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
         raise TrustedArtifactError("payload_path_unsafe")
     root_resolved = root.resolve()
-    path = (root_resolved / relative).resolve()
+    candidate = root_resolved / posix.as_posix()
+    # Reject symlinks in every path component, including a final payload
+    # symlink that resolves back inside the store. A hash-pinned registry
+    # should name immutable regular files, not aliases that can be retargeted.
+    current = root_resolved
+    for part in posix.parts:
+        current = current / part
+        if current.is_symlink():
+            raise TrustedArtifactError("payload_path_symlink_not_allowed")
+    path = candidate.resolve()
     if path != root_resolved and root_resolved not in path.parents:
         raise TrustedArtifactError("payload_path_escapes_store")
     return path

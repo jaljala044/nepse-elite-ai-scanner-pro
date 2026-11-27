@@ -60,5 +60,20 @@ class LiquidityTrapIntegrationTests(unittest.TestCase):
         fingerprint=result["distribution_evidence"]["source_id"]
         self.assertEqual(len(fingerprint.split(":")[-1]),64)
         self.assertEqual(client.post(url,json=payload).json()["distribution_evidence"]["source_id"],fingerprint)
+        self.assertEqual(result["corporate_asset_coverage"],"NOT_ASSESSED")
+        self.assertFalse(result["new_entries_allowed_by_risk_gate"])
+        payload["snapshot"]["corporate_asset_balance_basis"]="confirmed_receipts_and_payments_included_pending_assets_excluded"
+        entitlement=evidence(action_id="D",symbol="AAA",action_type="dividend",record_date=day,due_date="2024-03-10",gross_amount=1000)
+        payload["corporate_assets"]=dict(entitlements=[entitlement],confirmations=[])
+        pending=client.post(url,json=payload)
+        self.assertEqual(pending.status_code,200,pending.text)
+        p=pending.json()
+        self.assertEqual(p["action"],"REDUCE_REVIEW")
+        self.assertFalse(p["new_entries_allowed_by_risk_gate"])
+        self.assertEqual(p["corporate_asset_risk"]["pending_gross_dividends"],"1000")
+        self.assertEqual(p["corporate_asset_risk"]["spendable_cash_after_commitments"],"10000")
+        payload["corporate_assets"]["entitlements"].append(entitlement)
+        self.assertEqual(client.post(url,json=payload).status_code,422)
+        payload["corporate_assets"]["entitlements"].pop()
         payload["broker_records"][-1]["available_at"]="2025-01-01T17:00:00+05:45"
         self.assertEqual(client.post(url,json=payload).status_code,422)

@@ -126,3 +126,47 @@ def build_idpat_scanner_bundle(*, snapshot, as_of_date, as_of_timestamp,
         "immutable_snapshot": True,
         "persisted": False,
     }
+
+
+
+def persist_idpat_bundle(bundle, *, gate_evidence, horizon="swing"):
+    """Freeze and append a NO TRADE research snapshot using the existing P4.42 store."""
+    from app.signal_tracking import freeze_signal
+    from app.signal_store import store_signal
+
+    if not isinstance(bundle, dict) or bundle.get("status") != "research_bundle_ready":
+        raise ValueError("only complete-gate IDPAT research bundles may be persisted")
+    if horizon not in {"t_plus_2", "swing", "positional", "investment"}:
+        raise ValueError("invalid_signal_horizon")
+    record = bundle["record"]
+    evidence = []
+    for name in REQUIRED_GATES:
+        item = gate_evidence.get(name) if isinstance(gate_evidence, dict) else None
+        if not isinstance(item, dict) or item.get("status") != "verified":
+            raise ValueError("all_verified_gate_evidence_required_for_persistence")
+        evidence.append({
+            "evidence_id": item["evidence_id"],
+            "available_at": item["available_at"],
+        })
+    envelope = freeze_signal(
+        symbol=record["symbol"],
+        decision_time=record["decision_time"],
+        horizon=horizon,
+        action="NO TRADE",
+        methodology=record["methodology_version"],
+        evidence=evidence,
+        details={
+            "idpat_bundle_id": bundle["signal_id"],
+            "idpat_record": record,
+            "classification": "research_only_not_execution",
+        },
+    )
+    stored = store_signal(envelope)
+    return {
+        "status": stored["status"],
+        "signal_id": envelope["signal_id"],
+        "horizon": horizon,
+        "action": "NO TRADE",
+        "classification": "research_only_not_execution",
+        "persisted": True,
+    }

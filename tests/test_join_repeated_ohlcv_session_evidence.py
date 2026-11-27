@@ -80,5 +80,28 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
             self.assertEqual(row["session_pair_classification"], "contains_verified_closure")
 
 
+    def test_rejects_noncanonical_dates_and_timestamp_suffixes(self):
+        invalid_dates = ("20261105", "2026-11-05T00:00:00", "2026-1-05")
+        for invalid in invalid_dates:
+            with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                candidates = root / "candidates.csv"
+                calendar = root / "calendar.csv"
+                output = root / "joined.csv"
+                summary = root / "summary.json"
+                candidates.write_text(
+                    "repository,commit_sha,path,file_sha256,symbol,previous_date,current_date,previous_csv_line,current_csv_line\\n"
+                    "source/a," + "a" * 40 + ",ABC.csv," + "b" * 64 +
+                    ",ABC," + invalid + ",2026-11-06,2,3\\n",
+                    encoding="utf-8",
+                )
+                calendar.write_text(
+                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(ValueError, "previous_date must be canonical YYYY-MM-DD"):
+                    join_candidates(candidates, calendar, output, summary)
+
+
 if __name__ == "__main__":
     unittest.main()

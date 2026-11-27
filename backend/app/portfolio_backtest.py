@@ -7,6 +7,7 @@ trade. Only complete P4.44 execution scenarios are admitted.
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import date, datetime
 from math import floor, sqrt
 from statistics import mean, pstdev
 
@@ -15,6 +16,8 @@ from .execution_constraints import settlement_date
 
 
 def _finite(value, name):
+    if isinstance(value, bool):
+        raise ValueError("invalid_" + name)
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -22,6 +25,33 @@ def _finite(value, name):
     if not number > 0 or number == float("inf") or number != number:
         raise ValueError("invalid_" + name)
     return number
+
+
+def _canonical_day(value, name):
+    """Accept typed date values or exact YYYY-MM-DD strings only."""
+    if type(value) is date:
+        return value.isoformat()
+    if not isinstance(value, str):
+        raise ValueError(name + "_must_be_canonical_iso_date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(name + "_must_be_canonical_iso_date") from None
+    if parsed.isoformat() != value:
+        raise ValueError(name + "_must_be_canonical_iso_date")
+    return value
+
+
+def _decision_timestamp(value):
+    if not isinstance(value, str):
+        raise ValueError("signal_decision_time_must_be_timezone_aware")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError("signal_decision_time_must_be_timezone_aware") from None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("signal_decision_time_must_be_timezone_aware")
+    return value
 
 
 def _equity(cash, positions, receivables, mark_date, rows_by_symbol):
@@ -75,21 +105,25 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
     for name, value in (("max_position_pct", max_position_pct),
                         ("max_sector_pct", max_sector_pct),
                         ("risk_per_trade_pct", risk_per_trade_pct)):
+        if isinstance(value, bool):
+            raise ValueError("invalid_" + name)
         pct = float(value)
         if not 0 < pct <= 1:
             raise ValueError("invalid_" + name)
         limits[name] = pct
     if limits["risk_per_trade_pct"] > limits["max_position_pct"]:
         raise ValueError("risk_budget_cannot_exceed_position_cap")
+    if isinstance(max_drawdown_pct, bool):
+        raise ValueError("invalid_max_drawdown_pct")
     drawdown_limit = float(max_drawdown_pct)
     if not 0 < drawdown_limit <= 1:
         raise ValueError("invalid_max_drawdown_pct")
     if not isinstance(portfolio_sessions, list) or len(portfolio_sessions) < 2:
         raise ValueError("portfolio_verified_sessions_required")
-    days = [str(x) for x in portfolio_sessions]
+    days = [_canonical_day(x, "portfolio_session") for x in portfolio_sessions]
     if days != sorted(days) or len(days) != len(set(days)):
         raise ValueError("portfolio_sessions_must_be_sorted_unique")
-    end = str(evaluation_date)
+    end = _canonical_day(evaluation_date, "evaluation_date")
     days = [d for d in days if d <= end]
     if not days or days[-1] != end:
         raise ValueError("evaluation_date_must_be_verified_portfolio_session")
@@ -110,6 +144,8 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
     candidates = []
     probe_quantity = 1_000_000_000
     for decision_time, sid, signal in unique:
+        _decision_timestamp(signal.get("decision_time"))
+        _canonical_day(signal.get("details", {}).get("decision_date"), "signal_decision_date")
         symbol = signal.get("symbol")
         if (symbol not in rows_by_symbol or symbol not in verified_sessions_by_symbol
                 or symbol not in sector_by_symbol or symbol not in cost_assumptions_by_symbol
@@ -124,6 +160,12 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
             execution_config=execution_config_by_symbol[symbol], reviewed=reviewed)
         if scenario.get("status") != "scenario_completed":
             withheld.append({"signal_id": sid, "reason": scenario.get("reason", "scenario_unavailable")})
+            continue
+        try:
+            _canonical_day(scenario.get("entry_session"), "scenario_entry_session")
+            _canonical_day(scenario.get("exit_session"), "scenario_exit_session")
+        except ValueError:
+            withheld.append({"signal_id": sid, "reason": "scenario_dates_must_be_canonical_iso"})
             continue
         if not isinstance(sector_by_symbol[symbol], str) or not sector_by_symbol[symbol].strip():
             withheld.append({"signal_id": sid, "reason": "sector_mapping_invalid"})

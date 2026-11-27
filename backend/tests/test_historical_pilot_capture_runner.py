@@ -26,7 +26,7 @@ class CaptureRunnerTests(unittest.TestCase):
         out=capture_registered_source_pages(source_spec=self.spec(),fetch_page=fetch,captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
         self.assertEqual(out["status"],"CAPTURE_INCOMPLETE")
     def test_capture_manifest_passes_validator_and_ingestion(self):
-        raw=b"ticker,date,o,h,l,c,qty\\nAAA,2025-01-02,10,12,9,11,100\\n"
+        raw=b"ticker,date,o,h,l,c,qty\nAAA,2025-01-02,10,12,9,11,100\n"
         def fetch(url):
             return {"status_code":200,"final_url":url,"content_type":"text/csv","body":raw,"has_more":False,"available_at":"2025-02-01T10:00:00+05:45"}
         spec=self.spec()

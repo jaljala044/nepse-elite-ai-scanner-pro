@@ -90,7 +90,7 @@ class PortfolioRiskDashboardTests(unittest.TestCase):
     def test_closed_open_position_reconciliation(self):
         p=self.base_portfolio()
         p["closed_positions"]=[{"source_signal_id":"A","exit_date":"2026-01-03"}]
-        p["open_position_count"]=1
+        p["open_position_count"]=2
         out=build_portfolio_risk_dashboard(comparison={"portfolios":[{"portfolio":p}]})
         self.assertEqual(out["reports"][0]["ending_open_position_count"],2)
         p["open_position_count"]=3

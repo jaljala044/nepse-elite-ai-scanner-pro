@@ -24,6 +24,64 @@ class PortfolioRouteTests(unittest.TestCase):
         self.env.stop()
         self.tmp.cleanup()
 
+
+    def test_holding_preferences_api_is_authenticated_scoped_and_validated(self):
+        created = self.client.post(
+            "/v1/portfolios", headers=self.headers, json={"name": "Preferences"}
+        )
+        self.assertEqual(created.status_code, 201)
+        portfolio_id = created.json()["id"]
+        tx = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions",
+            headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "2500",
+                  "price": "593", "trade_date": "2026-01-01"},
+        )
+        self.assertEqual(tx.status_code, 201)
+
+        saved = self.client.put(
+            f"/v1/portfolios/{portfolio_id}/holding-preferences/cfcl",
+            headers=self.headers,
+            json={"investment_horizon": "one_to_three_months",
+                  "risk_preference": "aggressive_growth"},
+        )
+        self.assertEqual(saved.status_code, 200)
+        self.assertEqual(saved.json()["symbol"], "CFCL")
+        self.assertEqual(saved.json()["investment_horizon"], "one_to_three_months")
+
+        listed = self.client.get(
+            f"/v1/portfolios/{portfolio_id}/holding-preferences",
+            headers=self.headers,
+        )
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(len(listed.json()["preferences"]), 1)
+
+        invalid = self.client.put(
+            f"/v1/portfolios/{portfolio_id}/holding-preferences/CFCL",
+            headers=self.headers,
+            json={"investment_horizon": "forever", "risk_preference": "balanced"},
+        )
+        self.assertEqual(invalid.status_code, 422)
+
+        other_headers = {**self.headers, "x-nepse-subject": "investor-2"}
+        isolated = self.client.get(
+            f"/v1/portfolios/{portfolio_id}/holding-preferences",
+            headers=other_headers,
+        )
+        self.assertEqual(isolated.status_code, 404)
+
+    def test_holding_preferences_api_rejects_missing_position(self):
+        created = self.client.post(
+            "/v1/portfolios", headers=self.headers, json={"name": "Empty"}
+        )
+        portfolio_id = created.json()["id"]
+        response = self.client.put(
+            f"/v1/portfolios/{portfolio_id}/holding-preferences/CFCL",
+            headers=self.headers,
+            json={"investment_horizon": "long_term", "risk_preference": "balanced"},
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_authentication_required(self):
         response = self.client.get("/v1/portfolios")
         self.assertEqual(response.status_code, 401)

@@ -1,3 +1,4 @@
+# Re-run trigger after project-accepted 3,630-date calendar baseline was applied.
 name: Repeated adjacent OHLCV candidate audit
 
 on:

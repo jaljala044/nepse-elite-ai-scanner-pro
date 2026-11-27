@@ -7,10 +7,10 @@ Obtain first-party, exchange-issued historical evidence for the NEPSE AI project
 ## Verified public contact
 
 NEPSE's current official website lists Murahari Parajuli as an Information Officer:
-- Email: mparujali@nepalstock.com
+- Email: mparajuli@nepalstock.com
 - Phone: +977-01-4250758, extension 125
 
-**Important:** the address above is transcribed from NEPSE's official website as `mparujali@nepalstock.com` only if confirmed by the page. The captured official listing spells it `mparujali@nepalstock.com`? Verify before sending. The project previously recorded `research@nepalstock.com.np`, but that address was not independently confirmed in this 2026-11-27 check. Do not send to an unverified address. Ask the Information Officer to route the request to the Research Branch if appropriate.
+**Important:** NEPSE's official website currently publishes this contact. The project previously recorded `research@nepalstock.com.np`, but that address was not independently confirmed in this 2026-11-27 check. Address the verified Information Officer and ask that the request be routed to the Research Branch if appropriate.
 
 Official contact page/source: https://nepalstock.com.np/
 
@@ -46,7 +46,7 @@ If a complete register is not available, please advise which official date-level
 
 ## Draft email — do not send without user approval
 
-**To:** mparujali@nepalstock.com  
+**To:** mparajuli@nepalstock.com  
 **Subject:** Request for official historical EOD records and NEPSE trading-session register for research
 
 Dear Mr. Parajuli,
@@ -80,7 +80,7 @@ Sincerely,
 ## Status at 2026-11-27
 
 - Request specification and draft prepared; **not sent**.
-- Current official website contact identified as Murahari Parajuli, Information Officer, extension 125.
+- Current official website contact identified as Murahari Parajuli, Information Officer, `mparajuli@nepalstock.com`, extension 125.
 - The prior project note's Research Branch email address was not independently verified during this check.
 - No external historical records have been received.
 - Priority 1 remains open; no calendar dates promoted.

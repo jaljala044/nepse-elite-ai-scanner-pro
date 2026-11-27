@@ -8,15 +8,32 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
+import errno
 import json
+import os
+import stat
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
 from .market_intelligence_snapshot import REQUIRED_MODULES
 
+_SUPPORTS_DIR_FD_OPEN = os.open in getattr(os, "supports_dir_fd", set())
+
 
 class TrustedArtifactError(ValueError):
     """Raised when a deployment-pinned artifact cannot be safely admitted."""
+
+
+def _canonical_date(value: Any, field: str) -> date:
+    if not isinstance(value, str):
+        raise TrustedArtifactError(f"{field}_must_be_iso_date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise TrustedArtifactError(f"{field}_must_be_iso_date") from None
+    if parsed.isoformat() != value:
+        raise TrustedArtifactError(f"{field}_must_be_iso_date")
+    return parsed
 
 
 def _timestamp(value: Any, field: str) -> datetime:
@@ -31,17 +48,73 @@ def _timestamp(value: Any, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def _safe_payload_path(root: Path, relative: Any) -> Path:
+def _read_payload_bytes(root: Path, relative: Any) -> bytes:
+    """Open a payload beneath root without following replaceable path symlinks.
+
+    Each component is opened relative to an already-open directory descriptor.
+    The final digest is therefore computed from the same file descriptor that
+    was checked as a regular file, not by reopening a previously checked path.
+    """
     if not isinstance(relative, str) or not relative.strip():
         raise TrustedArtifactError("payload_path_missing")
-    posix = PurePosixPath(relative)
-    if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+    if "\x00" in relative:
         raise TrustedArtifactError("payload_path_unsafe")
-    root_resolved = root.resolve()
-    path = (root_resolved / relative).resolve()
-    if path != root_resolved and root_resolved not in path.parents:
-        raise TrustedArtifactError("payload_path_escapes_store")
-    return path
+    posix = PurePosixPath(relative)
+    if posix.is_absolute() or ".." in posix.parts or "\\" in relative or not posix.parts:
+        raise TrustedArtifactError("payload_path_unsafe")
+
+    # Fail closed on platforms that cannot perform descriptor-relative,
+    # no-follow opens. The deployment target is Linux; silently falling back
+    # to Path.read_bytes() would reintroduce the TOCTOU vulnerability.
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    directory = getattr(os, "O_DIRECTORY", None)
+    if nofollow is None or directory is None or not _SUPPORTS_DIR_FD_OPEN:
+        raise TrustedArtifactError("secure_payload_open_unsupported")
+
+    cloexec = getattr(os, "O_CLOEXEC", 0)
+    directory_flags = os.O_RDONLY | directory | nofollow | cloexec
+    file_flags = os.O_RDONLY | nofollow | cloexec | getattr(os, "O_NONBLOCK", 0)
+
+    try:
+        root_path = root.resolve(strict=True)
+        root_fd = os.open(root_path, directory_flags)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise TrustedArtifactError("payload_root_unavailable") from exc
+
+    directory_fds = [root_fd]
+    file_fd = None
+    try:
+        current_fd = root_fd
+        for part in posix.parts[:-1]:
+            try:
+                current_fd = os.open(part, directory_flags, dir_fd=current_fd)
+            except OSError as exc:
+                if exc.errno == errno.ELOOP:
+                    raise TrustedArtifactError("payload_path_symlink_not_allowed") from exc
+                if exc.errno == errno.ENOTDIR:
+                    raise TrustedArtifactError("payload_path_component_not_directory") from exc
+                raise TrustedArtifactError("payload_path_unavailable") from exc
+            directory_fds.append(current_fd)
+
+        try:
+            file_fd = os.open(posix.parts[-1], file_flags, dir_fd=current_fd)
+        except OSError as exc:
+            if exc.errno == errno.ELOOP:
+                raise TrustedArtifactError("payload_path_symlink_not_allowed") from exc
+            if exc.errno == errno.ENOTDIR:
+                raise TrustedArtifactError("payload_not_regular_file") from exc
+            raise TrustedArtifactError("payload_path_unavailable") from exc
+
+        if not stat.S_ISREG(os.fstat(file_fd).st_mode):
+            raise TrustedArtifactError("payload_not_regular_file")
+        with os.fdopen(file_fd, "rb") as stream:
+            file_fd = None
+            return stream.read()
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+        for descriptor in reversed(directory_fds):
+            os.close(descriptor)
 
 
 class TrustedArtifactStore:
@@ -67,13 +140,21 @@ class TrustedArtifactStore:
 
     def load(self, *, decision_date: str, decision_time: str,
              required_modules: tuple[str, ...] = REQUIRED_MODULES) -> dict[str, dict]:
+        cutoff_date = _canonical_date(decision_date, "decision_date")
+        # Compare the supplied timestamp's own calendar date before
+        # normalizing it to UTC. A valid Nepal-local midnight timestamp can
+        # fall on the previous UTC date and must not be rejected.
+        if not isinstance(decision_time, str):
+            raise TrustedArtifactError("decision_time_must_be_timezone_aware")
         try:
-            cutoff_date = date.fromisoformat(decision_date)
-        except (TypeError, ValueError):
-            raise TrustedArtifactError("decision_date_must_be_iso_date") from None
-        cutoff = _timestamp(decision_time, "decision_time")
-        if cutoff.date() < cutoff_date:
+            local_cutoff = datetime.fromisoformat(decision_time.replace("Z", "+00:00"))
+        except ValueError:
+            raise TrustedArtifactError("decision_time_must_be_timezone_aware") from None
+        if local_cutoff.tzinfo is None or local_cutoff.utcoffset() is None:
+            raise TrustedArtifactError("decision_time_must_be_timezone_aware")
+        if local_cutoff.date() < cutoff_date:
             raise TrustedArtifactError("decision_time_precedes_decision_date")
+        cutoff = _timestamp(decision_time, "decision_time")
         if not isinstance(self.registry, Mapping):
             raise TrustedArtifactError("server_registry_invalid")
 
@@ -92,7 +173,7 @@ class TrustedArtifactStore:
                         or len(evidence_ids) != len(set(evidence_ids))):
                     raise TrustedArtifactError("evidence_ids_missing_or_duplicate")
 
-                as_of = date.fromisoformat(str(entry.get("as_of_date")))
+                as_of = _canonical_date(entry.get("as_of_date"), "artifact_as_of_date")
                 if as_of > cutoff_date:
                     raise TrustedArtifactError("artifact_as_of_after_decision_date")
                 if cutoff_date - as_of > timedelta(days=self.max_age_days):
@@ -101,8 +182,7 @@ class TrustedArtifactStore:
                 available_at = _timestamp(entry.get("available_at"), "available_at")
                 if available_at > cutoff:
                     raise TrustedArtifactError("artifact_available_after_decision_time")
-                payload_path = _safe_payload_path(self.root, entry.get("payload_path"))
-                raw = payload_path.read_bytes()
+                raw = _read_payload_bytes(self.root, entry.get("payload_path"))
                 expected_hash = entry.get("payload_sha256")
                 actual_hash = sha256(raw).hexdigest()
                 if (not isinstance(expected_hash, str) or len(expected_hash) != 64
@@ -171,7 +251,6 @@ class TrustedArtifactStore:
                     "data": data,
                 }
             except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
-                # Preserve explicit failure reasons without admitting partial data.
                 reason = str(exc) or "artifact_unavailable"
                 output[module] = {"status": "unavailable", "rejection_reason": reason}
         return output

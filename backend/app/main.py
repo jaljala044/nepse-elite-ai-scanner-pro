@@ -17,6 +17,8 @@ from .broker_pattern_detector import detect_broker_patterns
 from .index_intelligence import build_verified_index_intelligence
 from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
+from .trusted_broker_dashboard import load_deployment_broker_dashboard
+from .trusted_artifact_store import TrustedArtifactError
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -40,6 +42,10 @@ class BrokerDashboardRequest(BaseModel):
     source_manifest: dict
     sector_rotation_by_window: dict = Field(default_factory=dict)
     candidates: list[dict] = Field(default_factory=list)
+
+class TrustedBrokerDashboardRequest(BaseModel):
+    as_of_date: date
+    as_of_timestamp: str
 
 class EarlySignalRequest(BaseModel):
     as_of_date: date
@@ -135,6 +141,19 @@ def broker_dashboard(request: BrokerDashboardRequest):
             sector_rotation_by_window=request.sector_rotation_by_window,
             candidates=request.candidates,
         )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@app.post("/v1/research/broker-dashboard/trusted")
+def trusted_broker_dashboard(request: TrustedBrokerDashboardRequest):
+    """Read-only dashboard from deployment-pinned, hash-verified artifacts only."""
+    try:
+        return load_deployment_broker_dashboard(
+            decision_date=request.as_of_date.isoformat(),
+            decision_time=request.as_of_timestamp,
+        )
+    except TrustedArtifactError as exc:
+        raise HTTPException(503, str(exc)) from exc
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
 

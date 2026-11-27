@@ -43,6 +43,18 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertEqual(result["index_intelligence"]["data"]["metric"], 12)
         self.assertEqual(result["index_intelligence"]["source_ids"], ["NEPSE_PRIMARY_EOD_01"])
 
+    def test_nepal_local_midnight_is_not_rejected_by_utc_date_rollover(self):
+        # The pinned artifact must be available before the Nepal-local
+        # decision cutoff; keep this fixture independent of the later default
+        # availability timestamp used by the other store tests.
+        entry = dict(self.entry, available_at="2026-11-27T00:05:00+05:45")
+        result = self.store(entry).load(
+            decision_date="2026-11-27",
+            decision_time="2026-11-27T00:10:00+05:45",
+            required_modules=("index_intelligence",),
+        )
+        self.assertEqual(result["index_intelligence"]["data"]["metric"], 12)
+
     def test_hash_mismatch_is_not_admitted(self):
         entry = dict(self.entry, payload_sha256="0" * 64)
         result = self.store(entry).load(
@@ -85,6 +97,21 @@ class TrustedArtifactStoreTests(unittest.TestCase):
             required_modules=("index_intelligence",),
         )
         self.assertIn("payload_path_unsafe", result["index_intelligence"]["rejection_reason"])
+
+    def test_symlinked_payload_path_is_rejected_even_when_target_is_inside_store(self):
+        target = self.root / "index.json"
+        link = self.root / "index-alias.json"
+        try:
+            link.symlink_to(target.name)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"symlinks unavailable: {exc}")
+        entry = dict(self.entry, payload_path=link.name)
+        result = self.store(entry).load(
+            decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+            required_modules=("index_intelligence",),
+        )
+        self.assertIn("payload_path_symlink_not_allowed",
+                      result["index_intelligence"]["rejection_reason"])
 
     def test_missing_modules_remain_unknown_in_snapshot(self):
         snapshot = build_trusted_market_snapshot(
@@ -145,6 +172,56 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertIn("evidence_ids_missing_or_duplicate",
                       result["index_intelligence"]["rejection_reason"])
 
+    def test_noncanonical_decision_and_artifact_dates_are_rejected(self):
+        for decision_date in ("20261127", "2026-1-27"):
+            with self.subTest(decision_date=decision_date):
+                with self.assertRaisesRegex(ValueError, "decision_date_must_be_iso_date"):
+                    self.store().load(
+                        decision_date=decision_date,
+                        decision_time="2026-11-27T16:00:00+05:45",
+                        required_modules=("index_intelligence",),
+                    )
+        for artifact_date in ("20261127", "2026-1-27", "2026-11-27T00:00:00"):
+            with self.subTest(artifact_date=artifact_date):
+                entry = dict(self.entry, as_of_date=artifact_date)
+                result = self.store(entry).load(
+                    decision_date="2026-11-27",
+                    decision_time="2026-11-27T16:00:00+05:45",
+                    required_modules=("index_intelligence",),
+                )
+                self.assertIn("artifact_as_of_date_must_be_iso_date",
+                              result["index_intelligence"]["rejection_reason"])
+
+
+
+    def test_opened_payload_fd_is_not_redirected_by_post_open_symlink_swap(self):
+        import os
+        from unittest.mock import patch
+
+        outside = self.root / "outside.json"
+        outside.write_text('{"metric": 999}', encoding="utf-8")
+        real_open = os.open
+        swapped = False
+
+        def open_then_swap(path, flags, *args, **kwargs):
+            nonlocal swapped
+            descriptor = real_open(path, flags, *args, **kwargs)
+            if path == "index.json" and kwargs.get("dir_fd") is not None and not swapped:
+                os.replace(self.root / "index.json", self.root / "opened-index.json")
+                (self.root / "index.json").symlink_to(outside)
+                swapped = True
+            return descriptor
+
+        with patch("app.trusted_artifact_store.os.open", side_effect=open_then_swap):
+            result = self.store().load(
+                decision_date="2026-11-27",
+                decision_time="2026-11-27T16:00:00+05:45",
+                required_modules=("index_intelligence",),
+            )
+
+        self.assertTrue(swapped)
+        self.assertEqual(result["index_intelligence"]["data"]["metric"], 12)
+        self.assertNotIn("rejection_reason", result["index_intelligence"])
 
 if __name__ == "__main__":
     unittest.main()

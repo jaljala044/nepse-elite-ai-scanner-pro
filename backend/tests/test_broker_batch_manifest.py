@@ -146,6 +146,7 @@ class BrokerRawCaptureTests(unittest.TestCase):
         manifest, raw = fixture()
         base = manifest.source_rights_evidence
         invalids = [({'terms_url': 'http://publisher.example/terms'}, 'rights_terms_url_must_be_https'),
+                    ({'terms_url': 'https://trusted.example@attacker.example/terms'}, 'rights_terms_url_must_be_https'),
                     ({'terms_sha256': 'bad'}, 'invalid_rights_terms_sha256'),
                     ({'reviewer_id': ''}, 'rights_reviewer_required'),
                     ({'permitted_uses': ('internal_research',)}, 'broker_aggregation_not_permitted')]
@@ -160,6 +161,16 @@ class BrokerRawCaptureTests(unittest.TestCase):
         expired = SourceRightsEvidence(**{**manifest.source_rights_evidence.__dict__, 'expires_at': '2026-11-26T08:30:00+05:45'})
         candidate = RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': expired})
         with self.assertRaisesRegex(CaptureRejected, 'rights_evidence_expired_at_capture'):
+            self.registry.stage(candidate, raw)
+
+    def test_rights_evidence_must_remain_valid_through_availability(self):
+        manifest, raw = fixture()
+        evidence = SourceRightsEvidence(**{
+            **manifest.source_rights_evidence.__dict__,
+            'expires_at': '2026-11-26T09:00:30+05:45',
+        })
+        candidate = RawCaptureManifest(**{**manifest.__dict__, 'source_rights_evidence': evidence})
+        with self.assertRaisesRegex(CaptureRejected, 'rights_evidence_expired_at_availability'):
             self.registry.stage(candidate, raw)
 
     def test_rights_evidence_is_persisted_in_manifest(self):

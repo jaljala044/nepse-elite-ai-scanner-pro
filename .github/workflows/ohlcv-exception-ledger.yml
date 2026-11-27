@@ -54,12 +54,12 @@ jobs:
           assert len(json_ids) == len(set(json_ids)) == 1339
           assert len(csv_ids) == 1339 and set(csv_ids) == set(json_ids)
           resolved = {row["symbol"] for row in ledger["exceptions"] if row["disposition"] == "resolved_with_user_authoritative_evidence"}
-          assert resolved == {"BGWT", "MEHL", "RAWA", "RHGCL", "ULHC"}
+          assert resolved == {"API", "BGWT", "HRL", "MEHL", "RAWA", "RHGCL", "ULHC"}
           assert all(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"] if row["exception_type"] == "invalid_ohlc")
-          assert sum(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"]) == 1334
-          assert sum(row["disposition"] == "resolved_with_user_authoritative_evidence" for row in ledger["exceptions"]) == 5
+          assert sum(row["disposition"] == "quarantined_unresolved" for row in ledger["exceptions"]) == 1332
+          assert sum(row["disposition"] == "resolved_with_user_authoritative_evidence" for row in ledger["exceptions"]) == 7
           assert all(row.get("resolution_evidence", {}).get("canonical_promotion_allowed") is False for row in ledger["exceptions"] if row["disposition"] == "resolved_with_user_authoritative_evidence")
-          print("PASS: 1,339 unique JSON/CSV IDs; 1,334 quarantined, 5 user-authoritatively resolved")
+          print("PASS: 1,339 unique JSON/CSV IDs; 1,332 quarantined, 7 user-authoritatively resolved")
           PY
       - name: Run ledger builder regression tests
         run: python -m unittest discover -s tests -p "test_ohlcv_exception_ledger_builder.py" -v

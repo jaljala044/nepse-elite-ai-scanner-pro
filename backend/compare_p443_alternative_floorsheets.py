@@ -116,6 +116,8 @@ def timestamp_audit(raw, day, targets):
                         "timestamp_open_candidate":str(next(iter(first))) if len(first)==1 and unique and not errors[symbol] else None,
                         "timestamp_close_candidate":str(next(iter(last))) if len(last)==1 and unique and not errors[symbol] else None,
                         "first_price_ambiguous":len(first)>1,"last_price_ambiguous":len(last)>1,
+                        "first_boundary_trades":[{"contract":str(x[1]),"price":str(x[2])} for x in by_id if x[0]==ordered[0][0]] if ordered else [],
+                        "last_boundary_trades":[{"contract":str(x[1]),"price":str(x[2])} for x in by_id if x[0]==ordered[-1][0]] if ordered else [],
                         "execution_order_authenticated":False}
     return result
 

@@ -87,3 +87,20 @@ Initial arithmetic fixture from Issue #85 (test-only, not market data): CFCL, 2,
 ## 8. Explicit non-claims
 
 This document does not assert that authentication, encryption, tenant isolation, portfolio CRUD, accounting, mobile UI, backups, or production deployment already exist. It is a design baseline for review before implementation.
+
+
+## 9. Implementation sequence and acceptance evidence
+
+The design should be implemented in independently reviewable increments; do not treat this document as evidence that any phase already exists.
+
+1. **Persistence and migrations:** add portfolio, holding, lot, transaction, corporate-action application, valuation, alert, analysis snapshot, and audit-event storage. Include tenant ownership, foreign-key constraints, decimal types, immutable ledger semantics, migration rollback, and restore tests.
+2. **Authorization boundary:** derive the principal only from the authenticated server context. Add tenant-scoped repository/service methods and two-user isolation tests for every nested resource, export, and background job before exposing CRUD.
+3. **Accounting engine:** implement the selected cost-basis method and explicit fee/tax configuration with decimal arithmetic. Add golden fixtures for multiple lots, partial sells, fees, negative-quantity rejection, realized/unrealized P&L, and break-even.
+4. **Evidence-bound valuation:** consume only existing eligible market snapshots. Return UNKNOWN for missing, stale, unverified, or out-of-scope prices; attach source, timestamp, freshness, and eligibility to every result. Corporate actions must be independently verified before application.
+5. **Shared API contract:** publish versioned request/response schemas and deterministic fixtures used by both web and mobile clients. Keep client-supplied user IDs and prices out of authorization/accounting decisions.
+6. **Client experiences:** implement beginner and professional views over the same API, including explicit loading, empty, stale, unknown, error, and audit/provenance states. Keep local storage non-authoritative and clear sensitive cache on account switch/logout.
+7. **Security/release review:** run object-level authorization, prompt-injection, redaction, idempotency, rate-limit, backup/restore, accessibility, and independent security tests. Keep production rollout disabled until all release gates in Section 7 pass.
+
+Each phase must ship with its own migration/test evidence and exact-head CI result. Do not merge a later phase by copying or reimplementing a completed phase; extend the accepted contract and record its owner/status first.
+
+The current PR remains a design-only proposal. No API, database migration, tenant-isolation control, accounting engine, web/mobile screen, encryption, or deployment is claimed as implemented by this sequence.

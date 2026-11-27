@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from pathlib import Path
 from unittest.mock import patch
 
@@ -59,6 +61,27 @@ class PortfolioServiceTests(unittest.TestCase):
             self.tx("SELL", "2", "110", "0", "2026-01-01")
         position = service.portfolio_positions(self.owner, self.portfolio["id"])[0]
         self.assertEqual(position["quantity"], "5")
+
+    def test_trade_date_requires_canonical_iso_format(self):
+        for invalid in ("20260102", "2026/01/02", "2026-02-30"):
+            with self.subTest(trade_date=invalid):
+                with self.assertRaisesRegex(ValueError, "trade_date must be YYYY-MM-DD"):
+                    self.tx("BUY", "1", "100", "0", invalid)
+
+    def test_concurrent_idempotent_replays_create_one_transaction(self):
+        barrier = Barrier(2)
+
+        def submit():
+            barrier.wait()
+            return self.tx("BUY", "2", "100", "0", "2026-01-01", "parallel-capture")
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first, second = list(pool.map(lambda _: submit(), range(2)))
+
+        self.assertEqual(first["id"], second["id"])
+        transactions = service.portfolio_transactions(self.owner, self.portfolio["id"])
+        self.assertEqual(len(transactions), 1)
+        self.assertEqual(transactions[0]["id"], first["id"])
 
     def test_idempotent_replay_and_conflict(self):
         first = self.tx("BUY", "2", "100", "0", "2026-01-01", "capture-1")

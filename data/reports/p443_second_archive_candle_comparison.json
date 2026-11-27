@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "source_repository": "jaljala044/nepse-history-starter",
+  "reconstruction_blob": "5c6316363ecc9dd4d89eab2f12fced9321a8aa8d",
+  "records": [
+    {
+      "symbol": "MERO",
+      "date": "2026-04-24",
+      "source_path": "03_stock_charts_ohlcv/MERO_OHLCV.csv",
+      "source_blob": "ce15a85e4be2dae55cb7a080ef8d3d769257c2da",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-24",
+      "source_path": "03_stock_charts_ohlcv/UAIL_OHLCV.csv",
+      "source_blob": "0892094ca36c97185804e4a15b222bbc76d9d2da",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UAIL",
+      "date": "2026-04-29",
+      "source_path": "03_stock_charts_ohlcv/UAIL_OHLCV.csv",
+      "source_blob": "0892094ca36c97185804e4a15b222bbc76d9d2da",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "API",
+      "date": "2026-04-27",
+      "source_path": "03_stock_charts_ohlcv/API_OHLCV.csv",
+      "source_blob": "65ebab9f040ff03d42898ae8d80952683b124ad7",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-27",
+      "source_path": "03_stock_charts_ohlcv/RAWA_OHLCV.csv",
+      "source_blob": "bfa54d16d646522bcd6d96f759e75d4b4ca28ef0",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RAWA",
+      "date": "2026-04-29",
+      "source_path": "03_stock_charts_ohlcv/RAWA_OHLCV.csv",
+      "source_blob": "bfa54d16d646522bcd6d96f759e75d4b4ca28ef0",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "SPDL",
+      "date": "2026-04-28",
+      "source_path": "03_stock_charts_ohlcv/SPDL_OHLCV.csv",
+      "source_blob": "3778f0d5f5f95b2e788f53d82071d8cdb22a7af7",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "BGWT",
+      "date": "2026-04-29",
+      "source_path": "03_stock_charts_ohlcv/BGWT_OHLCV.csv",
+      "source_blob": "c6ff57e0b142440606011f6a41cc8e1da52daded",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "HRL",
+      "date": "2026-04-29",
+      "source_path": "03_stock_charts_ohlcv/HRL_OHLCV.csv",
+      "source_blob": "2c7318c47591d193d5f0fb83301cd26b28b984a0",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "RADHI",
+      "date": "2026-04-29",
+      "source_path": "03_stock_charts_ohlcv/RADHI_OHLCV.csv",
+      "source_blob": "7a485cd9f3b8b2988b018ab92c9d26242c1a308d",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    },
+    {
+      "symbol": "UNHPL",
+      "date": "2026-04-29",
+      "source_path": "03_stock_charts_ohlcv/UNHPL_OHLCV.csv",
+      "source_blob": "c42ca94cc1e0550a2529abbc2212d62b7427800c",
+      "source_header": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "match_count": 0,
+      "archive_values": null,
+      "candidate_match": false,
+      "original_match": false,
+      "independent_lineage_verified": false,
+      "admission_allowed": false
+    }
+  ],
+  "policy": "second repository comparison does not prove independent publisher lineage"
+}

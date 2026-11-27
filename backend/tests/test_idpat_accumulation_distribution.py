@@ -1,4 +1,5 @@
 import unittest
+from datetime import date, timedelta
 
 from app.idpat_accumulation_distribution import analyze_idpat_accumulation_distribution
 
@@ -16,7 +17,7 @@ def make_snapshot(last_overrides=None, volume=1000):
             high, low, opn, close = base + 0.3, base - 0.3, base + 0.05, base - 0.05
             vol = 600
         bars.append({
-            "date": f"2026-10-{i + 1:02d}", "open": str(opn),
+            "date": (date(2026, 9, 1) + timedelta(days=i)).isoformat(), "open": str(opn),
             "high": str(high), "low": str(low), "close": str(close),
             "volume": str(vol),
         })
@@ -76,7 +77,7 @@ class IDPATAccumulationDistributionTests(unittest.TestCase):
 
     def test_climax_requires_volume_and_spread_expansion(self):
         data = make_snapshot({
-            "open": "99.0", "high": "100.0", "low": "98.0",
+            "open": "99.0", "high": "101.5", "low": "97.5",
             "close": "98.2", "volume": "3000",
         })
         result = self.analyze(data)

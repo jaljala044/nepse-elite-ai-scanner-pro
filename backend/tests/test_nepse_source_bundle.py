@@ -23,7 +23,7 @@ class HistoricalBundleTests(unittest.TestCase):
         "corporate_actions":b"security_id,action_type,announcement_date,effective_date,status\nS1,bonus,2025-01-01,2025-01-02,FINAL\n"}
         requests=[]; transports={}
         for kind,body in datasets.items():
-            sid=kind
+            sid={"session_calendar":"cal","instrument_universe":"universe","corporate_actions":"actions"}.get(kind,kind)
             requests.append({"request_id":"req-"+kind,"dataset_kind":kind,"source_id":sid,
                 "endpoint_uri":"https://"+sid+".example.org/"+kind+".csv",
                 "evidence_id":"e-"+kind,"captured_at":"2025-01-03T00:00:00+05:45",

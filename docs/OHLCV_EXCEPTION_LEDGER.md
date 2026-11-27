@@ -33,7 +33,8 @@ remains the underlying evidence.
 | Exception class | Count | Disposition |
 | --- | ---: | --- |
 | Invalid OHLC rows | 1,331 | `quarantined_unresolved` |
-| Cross-source OHLCV conflicts | 8 | `quarantined_unresolved` |
+| Cross-source conflicts with user-authoritative evidence | 5 | `resolved_with_user_authoritative_evidence` |
+| Other cross-source conflicts | 3 | `quarantined_unresolved` |
 | **Total unique exceptions** | **1,339** | **No canonical promotion** |
 
 Every invalid row retains the pinned source commit, ticker path, file SHA-256,
@@ -47,9 +48,41 @@ available as corroboration only. SocrateAI is not an exchange-origin truth sourc
 No source wins automatically, and no raw CSV is modified, repaired, merged or
 promoted.
 
+## User-authoritative 2025-07-28 conflict resolutions
+
+The user explicitly designated their supplied OHLC chart readings and floorsheet
+quantity/turnover for BGWT, MEHL, RAWA, RHGCL and ULHC on 2025-07-28 as final and
+authoritative. These five conflict records therefore use
+`resolved_with_user_authoritative_evidence`, not unresolved quarantine. Both original
+pinned-source rows remain intact in `source_evidence`; the resolved values are kept
+separately in `resolution_evidence.authoritative_values`.
+
+The authoritative rows (OHLC, shares, turnover NPR, trades) are:
+
+| Symbol | Open | High | Low | Close | Shares | Turnover (NPR) | Trades |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| BGWT | 940.00 | 992.00 | 933.40 | 957.17 | 14,028 | 13,256,345.00 | 194 |
+| MEHL | 471.10 | 480.50 | 460.00 | 475.63 | 29,753 | 14,008,898.10 | 333 |
+| RAWA | 796.00 | 811.00 | 780.30 | 796.90 | 3,165 | 2,515,662.50 | 74 |
+| RHGCL | 346.70 | 362.00 | 341.40 | 357.05 | 296,715 | 103,872,614.40 | 1,030 |
+| ULHC | 509.00 | 515.00 | 495.00 | 510.75 | 32,288 | 16,273,342.10 | 300 |
+
+Evidence is the user-provided `NEPSE_Chart_Evidence.pdf`, page 1, which records
+ShareHub daily OHLC and reconciled ShareHub floorsheet totals. The user authority
+instruction controls the disposition for these exact five records. No other conflict
+is resolved by extrapolation. In particular, the 2026-11-19 API, HRL and RHGCL
+conflicts remain quarantined unresolved.
+
+This row-level disposition is not blanket authorization to promote either source
+archive or to ingest the five rows automatically. The generated ledger records
+`canonical_promotion_allowed: false` and `raw_source_rows_modified: false` for
+each user-authoritatively resolved record. The supplied PDF binary's SHA-256 was not
+captured in this run; the filename and page are retained as the evidence locator
+rather than inventing a checksum.
+
 ## Retained generated output
 
-The pull-request workflow rebuilds the ledger from the pinned source artifact, verifies the archive SHA-256, checks the 1,339 unique JSON/CSV IDs and unresolved dispositions, and uploads the generated JSON/CSV package as a 90-day GitHub Actions artifact. The first retained artifact is [run 45929360486, artifact 15167354458](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45929360486). Its downloaded outer ZIP SHA-256 is `125f786aadff0dda295f153f51caa097d383fd1331138b2126c668f3d8e2d8e9`; the inner generated ZIP SHA-256 is `6e8a3ee7f202af6386bc39a1b72c100ea6af27ef3978d40a6a05836e43e4d66c`.
+The pull-request workflow rebuilds the ledger from the pinned source artifact, verifies the archive SHA-256, checks the 1,339 unique JSON/CSV IDs, the exact five user-authoritative resolutions, and the remaining unresolved dispositions, and uploads the generated JSON/CSV package as a 90-day GitHub Actions artifact. The first retained artifact is [run 45929360486, artifact 15167354458](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45929360486). Its downloaded outer ZIP SHA-256 is `125f786aadff0dda295f153f51caa097d383fd1331138b2126c668f3d8e2d8e9`; the inner generated ZIP SHA-256 is `6e8a3ee7f202af6386bc39a1b72c100ea6af27ef3978d40a6a05836e43e4d66c`.
 
 ## Validation
 

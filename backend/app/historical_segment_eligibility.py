@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import re
+from .historical_quarantine import QUARANTINE
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _BAR_FIELDS = ("open", "high", "low", "close", "volume")
@@ -46,6 +47,8 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
     cutoff = _available_at(decision_cutoff)
     symbol = str(segment.get("symbol", "")).strip().upper()
     security_id = str(segment.get("security_id", "")).strip()
+    reasons.extend("historical_quarantine:" + day for ticker, day in sorted(QUARANTINE)
+                   if ticker == symbol and sessions[0] <= day <= sessions[-1])
     start = _iso_day(segment.get("effective_from"), "effective_from")
     end = _iso_day(segment["effective_to"], "effective_to") if segment.get("effective_to") else None
     if not symbol or not security_id:

@@ -177,11 +177,11 @@ These are observed endpoint coverage and payload-validation facts. A returned ag
 
 ## Historical per-security EOD route lead — 2026-11-27
 
-A second official-API acquisition route has been identified in public NEPSE client implementations. This is a route-contract lead, not yet a successful first-party capture.
+The existing project already uses this official per-security route in earlier P4.22/P4.23 captures. This note records an additional external cross-check of its request contract and the 365-day cap claim; it is not a newly discovered project endpoint.
 
-### Observed client contract
+### Observed client contract and existing project captures
 
-The public NepseUnofficialApi implementation calls getCompanyPriceVolumeHistory(symbol, start_date, end_date). Its request builder supplies a per-security identifier resolved from the security list, size=500, startDate=YYYY-MM-DD and endDate=YYYY-MM-DD, then issues a GET through the NEPSE authenticated client. The method returns the response content field. Its default start date is one year before the end date, but this is a client-side default and does not prove that NEPSE enforces a 365-day server-side cap. The companion endpoint map in the same public client repository resolves the literal route to GET /api/nots/market/history/security/{securityId}. The map is a third-party-maintained record of the route, not an exchange-published API specification. [Endpoint map](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/data/API_ENDPOINTS.json).
+The public NepseUnofficialApi implementation calls getCompanyPriceVolumeHistory(symbol, start_date, end_date). The project itself had already captured this same route: P4.22 reconciled 281 current equity candidates over 2026-11-19 to 2026-11-24, and P4.23 captured 281 candidates over the 29 official summary dates from 2026-10-05 to 2026-11-26. See [P4.22 reconciliation](P4.22_OFFICIAL_PER_SECURITY_HISTORY_RECONCILIATION_2026-11-26.md) and [P4.23 29-date window](P4.23_29_DATE_OFFICIAL_SECURITY_HISTORY_WINDOW_2026-11-26.md). Its request builder supplies a per-security identifier resolved from the security list, size=500, startDate=YYYY-MM-DD and endDate=YYYY-MM-DD, then issues a GET through the NEPSE authenticated client. The method returns the response content field. Its default start date is one year before the end date, but this is a client-side default and does not prove that NEPSE enforces a 365-day server-side cap. The companion endpoint map in the same public client repository resolves the literal route to GET /api/nots/market/history/security/{securityId}. The map is a third-party-maintained record of the route, not an exchange-published API specification. [Endpoint map](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/data/API_ENDPOINTS.json).
 
 Reference: [public client implementation, getCompanyPriceVolumeHistory](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/NepseLib.py#L2292-L2307).
 
@@ -209,8 +209,8 @@ Per-security EOD rows can corroborate that a particular security has a reported 
 
 ### Current disposition
 
-- New lead: authenticated per-security EOD history route with explicit start/end date parameters and page size 500 is described by a public client implementation.
-- Route identified in third-party endpoint map: GET /api/nots/market/history/security/{securityId}?size=500&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD.
-- Not yet verified: successful current first-party request; 365-day server-side limit; response schema/pagination; historical coverage.
-- Next concrete step: recover the literal path from the client's endpoint map or NEPSE frontend source, then execute and archive the controlled date-window test.
+- Existing project status: the official per-security route is already captured and validated for bounded windows in P4.22/P4.23; it is not a new project capability.
+- Third-party route map: GET /api/nots/market/history/security/{securityId}?size=500&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD.
+- Still unverified: whether the server enforces a rolling 365-day limit, whether deeper pages are available, and whether older dates can be retrieved outside the current one-year coverage window.
+- Next concrete step: compare a deliberately pre-2025-11-27 query with the already archived one-year history responses and preserve raw response/page metadata. Do not repeat already completed P4.22/P4.23 captures.
 - Priority 1 remains active. No calendar dates are promoted.

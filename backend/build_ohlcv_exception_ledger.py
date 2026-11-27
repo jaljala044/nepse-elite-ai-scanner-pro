@@ -19,6 +19,7 @@ CSV_FIELDS = [
     "source_repository", "disposition", "reviewer_rationale",
     "source_commit_sha", "source_path", "source_file_sha256",
     "source_csv_line", "raw_source_row", "source_evidence", "external_corroboration", "evidence_pointer",
+    "validation_rule_violated",
 ]
 
 
@@ -60,6 +61,7 @@ def build_ledger(report: dict[str, Any], *, external_report: dict[str, Any] | No
                     "source_repository": repo,
                     "disposition": "quarantined_unresolved",
                     "reviewer_rationale": invalid.get("error", "Invalid OHLC row; retain exact source values."),
+                    "validation_rule_violated": invalid.get("error", "Invalid OHLC row; retain exact source values."),
                     "source_commit_sha": snapshot["commit_sha"],
                     "source_path": item["path"],
                     "source_file_sha256": item["sha256"],

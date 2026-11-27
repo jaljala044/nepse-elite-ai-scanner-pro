@@ -142,14 +142,23 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
     monthly = selected["1M"]
     buy_ratio = daily.get("latest_buy_vs_prior_20_avg_ratio")
     sell_ratio = daily.get("latest_sell_vs_prior_20_avg_ratio")
-    for field, value in (
-        ("latest_buy_vs_prior_20_avg_ratio", buy_ratio),
-        ("latest_sell_vs_prior_20_avg_ratio", sell_ratio),
+    # A one-sided execution channel can legitimately have no activity on the
+    # opposite side, making that side's average ratio undefined. Validate only
+    # the ratio used by the corresponding net-flow pattern.
+    if daily.get("flow_class") == "net_buyer" and (
+        not _finite_numeric(buy_ratio) or buy_ratio < 0
     ):
-        if not _finite_numeric(value) or value < 0:
-            return _insufficient(
-                broker_code, symbol, "daily_flow_baseline_ratio_invalid", [field]
-            )
+        return _insufficient(
+            broker_code, symbol, "daily_flow_baseline_ratio_invalid",
+            ["latest_buy_vs_prior_20_avg_ratio"],
+        )
+    if daily.get("flow_class") == "net_seller" and (
+        not _finite_numeric(sell_ratio) or sell_ratio < 0
+    ):
+        return _insufficient(
+            broker_code, symbol, "daily_flow_baseline_ratio_invalid",
+            ["latest_sell_vs_prior_20_avg_ratio"],
+        )
 
     entry_pattern = (
         daily.get("flow_class") == "net_buyer"

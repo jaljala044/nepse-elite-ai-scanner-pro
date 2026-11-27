@@ -179,6 +179,36 @@ class RepeatedAdjacentTests(unittest.TestCase):
         self.assertEqual(queue[0]["disposition"], "malformed_date_review")
         self.assertFalse(queue[0]["canonical_promotion_allowed"])
 
+    def test_unlisted_queue_preserves_missing_dates_without_crashing(self):
+        from scripts.extract_repeated_adjacent_ohlcv import unlisted_date_queue
+        rows = [
+            {"previous_calendar_status":"not_listed","current_calendar_status":"not_listed",
+             "session_join_classification":"date_not_in_project_calendar_review",
+             "previous_date":None,"current_date":None},
+            {"previous_calendar_status":"not_listed","current_calendar_status":"not_listed",
+             "session_join_classification":"date_not_in_project_calendar_review",
+             "previous_date":[],"current_date":""},
+        ]
+        queue = unlisted_date_queue(rows)
+        self.assertEqual(queue[0]["date"], None)
+        self.assertFalse(queue[0]["valid_iso_date"])
+        self.assertEqual(queue[0]["affected_pairs"], 1)
+        self.assertEqual(queue[0]["distinct_symbols"], 0)
+        self.assertEqual(queue[0]["repositories"], [])
+        self.assertEqual(queue[1]["date"], "")
+        self.assertFalse(queue[1]["valid_iso_date"])
+
+    def test_unlisted_queue_ignores_blank_identity_labels(self):
+        from scripts.extract_repeated_adjacent_ohlcv import unlisted_date_queue
+        row = {"previous_date":"2026-03-01","current_date":"2026-03-01",
+               "previous_calendar_status":"not_listed","current_calendar_status":"not_listed",
+               "session_join_classification":"date_not_in_project_calendar_review",
+               "symbol":" ","repository":""}
+        queue = unlisted_date_queue([row])
+        self.assertEqual(queue[0]["affected_pairs"], 1)
+        self.assertEqual(queue[0]["distinct_symbols"], 0)
+        self.assertEqual(queue[0]["repositories"], [])
+
     def test_unlisted_queue_excludes_known_session_and_other_classes(self):
         from scripts.extract_repeated_adjacent_ohlcv import unlisted_date_queue
         row = {"previous_date": "2026-01-01", "current_date": "2026-01-02",

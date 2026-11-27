@@ -16,6 +16,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from dataclasses import asdict
 from pathlib import Path
 
@@ -66,7 +67,7 @@ PROFILES = {
 }
 
 
-def load_profile_payload(path: Path, profile_name: str):
+def load_profile_payload(path: Path, profile_name: str, *, expected_git_blob_sha1: str | None = None):
     payload = path.read_bytes()
     if not payload:
         raise ValueError(f"{path} is empty")
@@ -75,19 +76,29 @@ def load_profile_payload(path: Path, profile_name: str):
     except (UnicodeDecodeError, StopIteration, csv.Error) as exc:
         raise ValueError(f"cannot read CSV header from {path}") from exc
     profile = PROFILES[profile_name]
-    if profile["expected_size_bytes"] is not None and len(payload) != profile["expected_size_bytes"]:
-        raise ValueError(
-            f"{profile_name} byte-size mismatch: expected "
-            f"{profile['expected_size_bytes']}, observed {len(payload)}"
-        )
-    if profile["expected_raw_sha256"] is not None:
-        raw_sha256 = hashlib.sha256(payload).hexdigest()
-        if raw_sha256 != profile["expected_raw_sha256"]:
-            raise ValueError(f"{profile_name} raw SHA-256 does not match pinned profile")
-    if profile["expected_blob_sha1"] is not None:
+    if expected_git_blob_sha1 is not None:
+        if not isinstance(expected_git_blob_sha1, str) or not re.fullmatch(r"[0-9a-f]{40}", expected_git_blob_sha1):
+            raise ValueError("expected Git blob SHA-1 must be 40 lowercase hexadecimal characters")
         git_blob = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
-        if hashlib.sha1(git_blob).hexdigest() != profile["expected_blob_sha1"]:
-            raise ValueError(f"{profile_name} Git blob SHA-1 does not match pinned profile")
+        actual_blob_sha1 = hashlib.sha1(git_blob).hexdigest()
+        if actual_blob_sha1 != expected_git_blob_sha1:
+            raise ValueError(f"{profile_name} Git blob SHA-1 does not match supplied date-specific pin")
+        # The explicit date-specific pin binds this payload. Keep the profile's
+        # header schema/mapping, but do not apply its old single-day size/hash.
+    else:
+        if profile["expected_size_bytes"] is not None and len(payload) != profile["expected_size_bytes"]:
+            raise ValueError(
+                f"{profile_name} byte-size mismatch: expected "
+                f"{profile['expected_size_bytes']}, observed {len(payload)}"
+            )
+        if profile["expected_raw_sha256"] is not None:
+            raw_sha256 = hashlib.sha256(payload).hexdigest()
+            if raw_sha256 != profile["expected_raw_sha256"]:
+                raise ValueError(f"{profile_name} raw SHA-256 does not match pinned profile")
+        if profile["expected_blob_sha1"] is not None:
+            git_blob = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
+            if hashlib.sha1(git_blob).hexdigest() != profile["expected_blob_sha1"]:
+                raise ValueError(f"{profile_name} Git blob SHA-1 does not match pinned profile")
     review = profile["review"](header)
     if not review.valid:
         raise ValueError(
@@ -97,17 +108,20 @@ def load_profile_payload(path: Path, profile_name: str):
     return payload, profile["mapping"](), review
 
 
-def source_manifest(profile_name, source_id, path, expected_sha256, payload, review):
+def source_manifest(profile_name, source_id, path, expected_sha256, payload, review,
+                    *, expected_git_blob_sha1: str | None = None):
     profile = PROFILES[profile_name]
+    dynamic_blob_pin = expected_git_blob_sha1 is not None
     return {
         "source_id": source_id,
         "profile": profile_name,
         "repository": profile["repository"],
-        "pinned_revision": profile["revision"],
-        "profile_path": profile["path"],
-        "expected_git_blob_sha1": profile["expected_blob_sha1"],
-        "profile_expected_raw_sha256": profile["expected_raw_sha256"],
-        "profile_expected_size_bytes": profile["expected_size_bytes"],
+        "pinned_revision": None if dynamic_blob_pin else profile["revision"],
+        "profile_path": None if dynamic_blob_pin else profile["path"],
+        "expected_git_blob_sha1": expected_git_blob_sha1 or profile["expected_blob_sha1"],
+        "profile_expected_raw_sha256": None if dynamic_blob_pin else profile["expected_raw_sha256"],
+        "profile_expected_size_bytes": None if dynamic_blob_pin else profile["expected_size_bytes"],
+        "payload_pin_mode": "explicit_date_specific_git_blob_sha1" if dynamic_blob_pin else "static_profile_pin",
         "local_path": str(path),
         "local_size_bytes": len(payload),
         "local_sha256": hashlib.sha256(payload).hexdigest(),
@@ -124,11 +138,16 @@ def main():
         parser.add_argument(f"--{side}-source-id", required=True)
         parser.add_argument(f"--{side}-profile", required=True, choices=sorted(PROFILES))
         parser.add_argument(f"--{side}-sha256", required=True)
+        parser.add_argument(f"--{side}-expected-git-blob-sha1")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
-    left_payload, left_mapping, left_review = load_profile_payload(args.left_file, args.left_profile)
-    right_payload, right_mapping, right_review = load_profile_payload(args.right_file, args.right_profile)
+    left_payload, left_mapping, left_review = load_profile_payload(
+        args.left_file, args.left_profile, expected_git_blob_sha1=args.left_expected_git_blob_sha1
+    )
+    right_payload, right_mapping, right_review = load_profile_payload(
+        args.right_file, args.right_profile, expected_git_blob_sha1=args.right_expected_git_blob_sha1
+    )
     audit = audit_floorsheet_archive_pair(
         left_payload, right_payload,
         left_source_id=args.left_source_id, right_source_id=args.right_source_id,
@@ -140,10 +159,12 @@ def main():
         "left_source_manifest": source_manifest(
             args.left_profile, args.left_source_id, args.left_file,
             args.left_sha256, left_payload, left_review,
+            expected_git_blob_sha1=args.left_expected_git_blob_sha1,
         ),
         "right_source_manifest": source_manifest(
             args.right_profile, args.right_source_id, args.right_file,
             args.right_sha256, right_payload, right_review,
+            expected_git_blob_sha1=args.right_expected_git_blob_sha1,
         ),
         "audit": audit,
         "audit_status": audit["audit_status"],

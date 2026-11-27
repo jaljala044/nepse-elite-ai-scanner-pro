@@ -181,7 +181,7 @@ A second official-API acquisition route has been identified in public NEPSE clie
 
 ### Observed client contract
 
-The public NepseUnofficialApi implementation calls getCompanyPriceVolumeHistory(symbol, start_date, end_date). Its request builder supplies a per-security identifier resolved from the security list, size=500, startDate=YYYY-MM-DD and endDate=YYYY-MM-DD, then issues a GET through the NEPSE authenticated client. The method returns the response content field. Its default start date is one year before the end date, but this is a client-side default and does not prove that NEPSE enforces a 365-day server-side cap. The literal endpoint path is loaded from a separate API_ENDPOINTS.json file and is not exposed in the inspected method.
+The public NepseUnofficialApi implementation calls getCompanyPriceVolumeHistory(symbol, start_date, end_date). Its request builder supplies a per-security identifier resolved from the security list, size=500, startDate=YYYY-MM-DD and endDate=YYYY-MM-DD, then issues a GET through the NEPSE authenticated client. The method returns the response content field. Its default start date is one year before the end date, but this is a client-side default and does not prove that NEPSE enforces a 365-day server-side cap. The companion endpoint map in the same public client repository resolves the literal route to GET /api/nots/market/history/security/{securityId}. The map is a third-party-maintained record of the route, not an exchange-published API specification. [Endpoint map](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/data/API_ENDPOINTS.json).
 
 Reference: [public client implementation, getCompanyPriceVolumeHistory](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/NepseLib.py#L2292-L2307).
 
@@ -210,6 +210,7 @@ Per-security EOD rows can corroborate that a particular security has a reported 
 ### Current disposition
 
 - New lead: authenticated per-security EOD history route with explicit start/end date parameters and page size 500 is described by a public client implementation.
-- Not yet verified: literal endpoint path from its API endpoint map; successful current request; 365-day server-side limit; response schema/pagination; historical coverage.
+- Route identified in third-party endpoint map: GET /api/nots/market/history/security/{securityId}?size=500&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD.
+- Not yet verified: successful current first-party request; 365-day server-side limit; response schema/pagination; historical coverage.
 - Next concrete step: recover the literal path from the client's endpoint map or NEPSE frontend source, then execute and archive the controlled date-window test.
 - Priority 1 remains active. No calendar dates are promoted.

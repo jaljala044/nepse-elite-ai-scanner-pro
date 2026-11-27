@@ -75,3 +75,18 @@ def ledger_blocked(row, keys, symbol=None):
     if not isinstance(name, str) or not name.strip():
         raise ValueError("missing quarantine lookup symbol")
     return (name.strip().upper(), date.fromisoformat(str(day)).isoformat()) in keys
+
+
+def filter_quarantined_feature_rows(rows, keys):
+    """Withhold all price and broker observations for any affected symbol."""
+    rows = list(rows)
+    market_types = {"ohlcv", "broker"}
+    def symbol(row):
+        return str(row.get("symbol", "")).strip().upper()
+    def blocked(row):
+        return is_quarantined(row) or (
+            row.get("record_type") in market_types and ledger_blocked(row, keys))
+    affected = {symbol(row) for row in rows
+                if row.get("record_type") in market_types and blocked(row)}
+    return [row for row in rows if not blocked(row) and not (
+        row.get("record_type") in market_types and symbol(row) in affected)]

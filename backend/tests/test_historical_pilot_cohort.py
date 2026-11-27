@@ -56,8 +56,8 @@ class LifecyclePilotCohortTests(unittest.TestCase):
                 "evidence_basis": "secondary report and archive",
                 "notes": "test",
             })
-        rows.append(dict(rows[0]))
-        with self.assertRaisesRegex(ValueError, "cohort count mismatch"):
+        rows[-1]["symbol"] = rows[0]["symbol"]
+        with self.assertRaisesRegex(ValueError, "duplicate symbol"):
             validate_lifecycle_pilot_rows(rows, expected_count=18)
 
     def test_unknown_disposition_is_rejected(self):

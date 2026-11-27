@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from math import isfinite, log
 from datetime import date
+from .historical_quarantine import QUARANTINE
 from app.scenario_validation import walk_forward_splits
 
 
@@ -23,13 +24,14 @@ def _scores(actual: list[int], probability: list[float], baseline_probability: f
 
 
 def build_walk_forward_report(rows: list[dict], min_train_dates: int,
-                              test_dates: int, step_dates: int | None = None) -> dict:
+                              test_dates: int, step_dates: int | None = None, *, synthetic: bool = False) -> dict:
     """Rows require one binary outcome and probability per dated forecast.
 
     Each fold's benchmark prevalence is calculated only from outcomes strictly
     before that fold's test start. No shuffled splits or test-derived baseline.
     """
     normalized_rows = []
+    excluded = 0
     for index, row in enumerate(rows):
         try:
             observation_date = date.fromisoformat(str(row["observation_date"])).isoformat()
@@ -41,6 +43,17 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
                 raise ValueError("probability must be finite and between zero and one")
         except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise ValueError(f"invalid walk-forward row {index}: {exc}") from exc
+        if not synthetic:
+            symbol = str(row.get("symbol") or "").strip().upper()
+            try:
+                start = date.fromisoformat(row["history_start"]).isoformat()
+                end = date.fromisoformat(row["history_end"]).isoformat()
+            except (KeyError, TypeError, ValueError):
+                excluded += 1
+                continue
+            if not symbol or not start <= observation_date <= end or any(t == symbol and start <= d <= end for t,d in QUARANTINE):
+                excluded += 1
+                continue
         normalized_rows.append({**row, "observation_date": observation_date,
                                 "actual": int(actual_value), "probability": probability})
     ordered = sorted(normalized_rows, key=lambda r: (r["observation_date"], r.get("forecast_id", "")))
@@ -62,5 +75,5 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
         reports.append({"fold": index, **fold, "train_rows": len(train),
                         "test_rows": len(test), **_scores(labels, probabilities, prevalence)})
     return {"status": "evaluated" if reports else "insufficient_sample",
-            "fold_count": len(reports), "folds": reports,
+            "fold_count": len(reports), "excluded_count": excluded, "synthetic_only": synthetic, "production_eligible": False, "folds": reports,
             "warning": "synthetic or unverified records do not establish predictive value; report source and point-in-time gates separately"}

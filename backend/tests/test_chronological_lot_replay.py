@@ -48,3 +48,28 @@ class ChronologicalLotTests(unittest.TestCase):
                 self.event(3,"record",action_id="R",action_type="rights",ratio=".25",subscription_price=100),
                 self.event(4,"rights_payment",action_id="R",subscriptions={"0":25},amount=2500)]
         with self.assertRaisesRegex(ValueError,"insufficient_rights_cash"): self.run_events(events,20000)
+
+    def same_day_buys(self):
+        a=self.event(0,"buy",quantity=10,total_cost=1000,settlement_date=self.days[2],event_time=self.days[0]+"T11:00:00+05:45")
+        b=dict(a,event_id="second",event_time=self.days[0]+"T12:00:00+05:45")
+        return [a,b]
+    def test_multiple_intraday_buys(self):
+        result=self.run_events(self.same_day_buys())
+        self.assertEqual(len(result["lots"]),2)
+        self.assertEqual(Decimal(result["available_cash"]),28000)
+    def test_intraday_missing_timestamp(self):
+        events=self.same_day_buys()
+        del events[1]["event_time"]
+        with self.assertRaisesRegex(ValueError,"intraday_timestamp_required"): self.run_events(events)
+    def test_intraday_equal_or_reversed(self):
+        events=self.same_day_buys()
+        for stamp in (events[0]["event_time"],self.days[0]+"T10:00:00+05:45"):
+            events[1]["event_time"]=stamp
+            with self.assertRaisesRegex(ValueError,"ambiguous_intraday_order"): self.run_events(events)
+    def test_event_after_evidence(self):
+        events=self.same_day_buys()
+        events[1]["event_time"]=self.days[0]+"T18:00:00+05:45"
+        with self.assertRaisesRegex(ValueError,"invalid_event_timestamp"): self.run_events(events)
+    def test_settlement_day_cash_not_available(self):
+        events=self.history()[:2]+[self.event(5,"buy",quantity=1,total_cost=1,settlement_date=self.days[7])]
+        with self.assertRaisesRegex(ValueError,"insufficient_purchase_cash"): self.run_events(events,20000)

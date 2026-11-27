@@ -121,6 +121,28 @@ class SessionCalendarTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported evidence-backed"):
             load_calendar(self.calendar)
 
+
+    def test_project_accepted_archive_session_is_accepted_without_exchange_hash(self):
+        row = self.evidence()
+        row.update({
+            "status": "project_accepted_open",
+            "source_id": "SHARESANSAR_DERIVED_ARCHIVE",
+            "evidence_uri": "https://github.com/srijankarki07/nepse-data",
+            "raw_evidence_sha256": "",
+            "retrieved_at_utc": "",
+            "verified_at_utc": "",
+            "published_at": "",
+            "scope": "project-accepted historical baseline",
+            "notes": "User-approved archive baseline; not exchange-certified",
+        })
+        self.write_calendar([row])
+        loaded = load_calendar(self.calendar)
+        self.assertEqual(classify_date(date(2026, 11, 23), loaded)["classification"], "project_accepted_open")
+        self.write_prices([self.row()])
+        report = audit_ohlcv([self.data], self.calendar)
+        self.assertEqual(report["rows_accepted"], 1)
+        self.assertTrue(report["gate_pass"])
+
     def test_only_explicit_open_dates_pass(self):
         self.write_calendar([self.evidence()])
         self.write_prices([self.row()])

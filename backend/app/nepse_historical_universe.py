@@ -43,7 +43,7 @@ def build_effective_universe(*, universe_rows, session_dates):
         for current,nxt in zip(items,items[1:]):
             if current[1] is not None and current[1]>=nxt[0]:
                 errors.append("overlapping_universe_intervals:"+sid)
-            if current[1] is not None and current[1]+__import__("datetime").timedelta(days=1)<nxt[0]:
+            if current[1] is not None and any(current[1] < session < nxt[0] for session in sessions):
                 errors.append("uncovered_universe_interval:"+sid)
         for session in sessions:
             eligible=[x for x in items if x[0]<=session and (x[1] is None or session<=x[1])]

@@ -596,7 +596,110 @@
       "candidate_security_id": "2825",
       "stable_id": null,
       "effective_date_verified": false,
-      "raw_history_preserved": true
+      "raw_history_preserved": true,
+      "follow_up_disposition": "closed_unverified_alias_retained",
+      "follow_up_closed_on": "2026-11-27",
+      "follow_up_rationale": "Supplementary debenture alias follow-up closed per scope instruction. The exact historical ticker-to-security identity equivalence remains unverified; do not pursue further supplementary verification or merge the histories.",
+      "raw_history_files": [
+        {
+          "repository": "jaljala044/nepse-smc-data",
+          "path": "03_stock_charts_ohlcv/NICAD~2085~2F86_OHLCV.csv",
+          "blob_sha": "c4ce9b17cd34190be4f91ddcf800a42d5c154809",
+          "rows": 2,
+          "first_row": [
+            "2024-05-07",
+            "1000.00",
+            "1000.00",
+            "1000.00",
+            "1000.00",
+            "900"
+          ],
+          "last_row": [
+            "2024-05-08",
+            "1014.00",
+            "1015.20",
+            "1014.00",
+            "1015.10",
+            "65"
+          ]
+        },
+        {
+          "repository": "jaljala044/nepse-history-starter",
+          "path": "03_stock_charts_ohlcv/NICAD~2085~2F86_OHLCV.csv",
+          "blob_sha": "c4ce9b17cd34190be4f91ddcf800a42d5c154809",
+          "rows": 2,
+          "first_row": [
+            "2024-05-07",
+            "1000.00",
+            "1000.00",
+            "1000.00",
+            "1000.00",
+            "900"
+          ],
+          "last_row": [
+            "2024-05-08",
+            "1014.00",
+            "1015.20",
+            "1014.00",
+            "1015.10",
+            "65"
+          ]
+        },
+        {
+          "repository": "jaljala044/nepse-smc-data",
+          "path": "03_stock_charts_ohlcv/NICAD85~2F86_OHLCV.csv",
+          "blob_sha": "5e22cc7e22d08f5b725f2dcc3c3caf098fa99b68",
+          "rows": 312,
+          "first_row": [
+            "2024-05-09",
+            "1010.10",
+            "1020.00",
+            "1010.10",
+            "1015.50",
+            "210"
+          ],
+          "last_row": [
+            "2026-10-15",
+            "1141.00",
+            "1141.00",
+            "1141.00",
+            "1141.00",
+            "100"
+          ]
+        },
+        {
+          "repository": "jaljala044/nepse-history-starter",
+          "path": "03_stock_charts_ohlcv/NICAD85~2F86_OHLCV.csv",
+          "blob_sha": "5e22cc7e22d08f5b725f2dcc3c3caf098fa99b68",
+          "rows": 312,
+          "first_row": [
+            "2024-05-09",
+            "1010.10",
+            "1020.00",
+            "1010.10",
+            "1015.50",
+            "210"
+          ],
+          "last_row": [
+            "2026-10-15",
+            "1141.00",
+            "1141.00",
+            "1141.00",
+            "1141.00",
+            "100"
+          ]
+        }
+      ],
+      "candidate_identity_evidence": {
+        "candidate_symbol": "NICAD85/86",
+        "candidate_security_id": "2825",
+        "sources": [
+          "https://www.nepsealpha.com/financials-reports?page=40",
+          "https://www.nepsealpha.com/announcement?page=418",
+          "https://cdsc.com.np/BondandDebenture"
+        ],
+        "evidence_limit": "Candidate name/format resemblance and secondary listing evidence only; no source proves exact historical ticker equivalence or effective dates."
+      }
     },
     {
       "symbol": "SLBSL",

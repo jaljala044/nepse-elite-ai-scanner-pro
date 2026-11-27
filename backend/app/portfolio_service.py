@@ -68,6 +68,18 @@ def _connect():
         );
         CREATE INDEX IF NOT EXISTS idx_portfolio_tx_order
             ON portfolio_transactions(owner, portfolio_id, symbol, trade_date, created_at, id);
+        CREATE TABLE IF NOT EXISTS portfolio_holding_preferences (
+            owner TEXT NOT NULL,
+            portfolio_id TEXT NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+            symbol TEXT NOT NULL,
+            investment_horizon TEXT NOT NULL CHECK(investment_horizon IN
+                ('short_term','one_to_three_months','three_to_six_months','long_term')),
+            risk_preference TEXT NOT NULL CHECK(risk_preference IN
+                ('capital_protection','balanced','aggressive_growth')),
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(owner, portfolio_id, symbol),
+            FOREIGN KEY(owner, portfolio_id) REFERENCES portfolios(owner, id) ON DELETE CASCADE
+        );
     """)
     return con
 
@@ -251,3 +263,70 @@ def portfolio_transactions(owner: str, portfolio_id: str) -> list[dict] | None:
             WHERE owner=? AND portfolio_id=? ORDER BY trade_date,created_at,id""",
             (owner, portfolio_id)).fetchall()
     return [_transaction(row) for row in rows]
+
+
+_HORIZONS = {
+    "short_term", "one_to_three_months", "three_to_six_months", "long_term"
+}
+_RISK_PREFERENCES = {"capital_protection", "balanced", "aggressive_growth"}
+
+
+def set_holding_preferences(owner: str, portfolio_id: str, symbol: str, *,
+                            investment_horizon: str, risk_preference: str) -> dict | None:
+    """Set user-owned planning preferences for an existing positive holding.
+
+    Preferences are user intent, not a market signal or recommendation. They
+    are deliberately separate from the transaction ledger and valuation.
+    """
+    symbol = str(symbol).strip().upper()
+    horizon = str(investment_horizon).strip()
+    risk = str(risk_preference).strip()
+    if not _SYMBOL.fullmatch(symbol):
+        raise ValueError("symbol must be 1 to 20 uppercase letters or digits")
+    if horizon not in _HORIZONS:
+        raise ValueError("investment_horizon is not supported")
+    if risk not in _RISK_PREFERENCES:
+        raise ValueError("risk_preference is not supported")
+    now = datetime.now(timezone.utc).isoformat()
+    with _connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        portfolio = con.execute(
+            "SELECT 1 FROM portfolios WHERE id=? AND owner=?",
+            (portfolio_id, owner),
+        ).fetchone()
+        if portfolio is None:
+            return None
+        position = _calculate_positions(con, owner, portfolio_id).get(symbol)
+        if position is None or Decimal(position["quantity"]) <= 0:
+            raise LookupError("positive holding not found")
+        con.execute("""
+            INSERT INTO portfolio_holding_preferences
+                (owner, portfolio_id, symbol, investment_horizon, risk_preference, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(owner, portfolio_id, symbol) DO UPDATE SET
+                investment_horizon=excluded.investment_horizon,
+                risk_preference=excluded.risk_preference,
+                updated_at=excluded.updated_at
+        """, (owner, portfolio_id, symbol, horizon, risk, now))
+        row = con.execute("""
+            SELECT symbol, investment_horizon, risk_preference, updated_at
+            FROM portfolio_holding_preferences
+            WHERE owner=? AND portfolio_id=? AND symbol=?
+        """, (owner, portfolio_id, symbol)).fetchone()
+    return dict(row)
+
+
+def list_holding_preferences(owner: str, portfolio_id: str) -> list[dict] | None:
+    with _connect() as con:
+        exists = con.execute(
+            "SELECT 1 FROM portfolios WHERE id=? AND owner=?",
+            (portfolio_id, owner),
+        ).fetchone()
+        if exists is None:
+            return None
+        rows = con.execute("""
+            SELECT symbol, investment_horizon, risk_preference, updated_at
+            FROM portfolio_holding_preferences
+            WHERE owner=? AND portfolio_id=? ORDER BY symbol
+        """, (owner, portfolio_id)).fetchall()
+    return [dict(row) for row in rows]

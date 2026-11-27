@@ -113,7 +113,7 @@ class QualityDashboardTests(unittest.TestCase):
 
     def test_missing_or_incomplete_calendar_coverage_contract_blocks(self):
         args = self.args()
-        args.pop("calendar_coverage_contract")
+        args["calendar_coverage_contract"] = None
         out = self.build(**args)
         self.assertEqual(out["status"], "BLOCKED")
         self.assertIn("calendar_coverage_contract_missing", [x["reason"] for x in out["expected_session_errors"]])

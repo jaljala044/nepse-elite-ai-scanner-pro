@@ -66,6 +66,8 @@ class CaptureOfficialHarTests(unittest.TestCase):
     def test_rejects_non_official_or_non_https_url(self):
         for url in ("https://example.com/data", "http://www.nepalstock.com.np/data",
                     "https://nepalstock.com.np:8443/data",
+                    "https://nepalstock.com:8443/company",
+                    "https://www.nepalstock.com:8443/company",
                     "https://nepalstock.com.evil.example/data"):
             with self.subTest(url=url), tempfile.TemporaryDirectory() as tmp:
                 har = self._write_har(tmp, make_har(b'{"x":1}', url=url))

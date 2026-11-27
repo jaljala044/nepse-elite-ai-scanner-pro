@@ -53,6 +53,13 @@ class PortfolioServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exceeds available"):
             self.tx("SELL", "6", "110", "0", "2026-01-02")
 
+    def test_backdated_sell_cannot_precede_acquisition(self):
+        self.tx("BUY", "5", "100", "0", "2026-01-02")
+        with self.assertRaisesRegex(ValueError, "historical sells exceed buys"):
+            self.tx("SELL", "2", "110", "0", "2026-01-01")
+        position = service.portfolio_positions(self.owner, self.portfolio["id"])[0]
+        self.assertEqual(position["quantity"], "5")
+
     def test_idempotent_replay_and_conflict(self):
         first = self.tx("BUY", "2", "100", "0", "2026-01-01", "capture-1")
         replay = self.tx("BUY", "2", "100", "0", "2026-01-01", "capture-1")

@@ -87,6 +87,8 @@ class BrokerDailyHistoryStore:
             for column, sql_type in (
                 ("raw_capture_sha256", "VARCHAR"),
                 ("raw_capture_batch_id", "VARCHAR"),
+                ("raw_capture_captured_at", "TIMESTAMPTZ"),
+                ("raw_capture_available_at", "TIMESTAMPTZ"),
                 ("parser_name", "VARCHAR"),
                 ("parser_version", "VARCHAR"),
                 ("reconciliation_sha256", "VARCHAR"),
@@ -184,6 +186,10 @@ class BrokerDailyHistoryStore:
             lineage = {
                 "raw_capture_sha256": raw_capture_manifest["raw_sha256"].lower(),
                 "raw_capture_batch_id": raw_capture_manifest["capture_id"],
+                "raw_capture_captured_at": _aware_timestamp(
+                    raw_capture_manifest["captured_at"], "raw_capture_captured_at").isoformat(),
+                "raw_capture_available_at": _aware_timestamp(
+                    raw_capture_manifest["available_at"], "raw_capture_available_at").isoformat(),
                 "parser_name": raw_capture_manifest["parser_name"],
                 "parser_version": raw_capture_manifest["parser_version"],
                 "reconciliation_sha256": reconciliation_sha256.lower(),
@@ -208,6 +214,8 @@ class BrokerDailyHistoryStore:
                 raise DailyHistoryRejected(f"missing_observation_identity:{index}")
             if row["batch_id"] != report.batch_id:
                 raise DailyHistoryRejected("batch_id_mismatch")
+            if raw_capture_manifest is not None and row["source_id"] != raw_capture_manifest["source_id"]:
+                raise DailyHistoryRejected("observation_source_capture_mismatch")
             side = str(row.get("side", "")).upper()
             if side not in {"BUY", "SELL"}:
                 raise DailyHistoryRejected("invalid_observation_side")
@@ -276,8 +284,9 @@ class BrokerDailyHistoryStore:
                         side, amount, quantity, source_id, evidence_id, source_payload_sha256,
                         source_row_count, coverage_ratio, batch_id, available_at, status,
                         payload_json, inserted_at, raw_capture_sha256, raw_capture_batch_id,
+                        raw_capture_captured_at, raw_capture_available_at,
                         parser_name, parser_version, reconciliation_sha256
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, [
                     observation_id, natural_key, row["security_id"], row["broker_id"],
                     session, str(row["side"]).upper(), amount, quantity, row["source_id"],
@@ -286,6 +295,8 @@ class BrokerDailyHistoryStore:
                     payload_json, datetime.now(timezone.utc),
                     (lineage or {}).get("raw_capture_sha256"),
                     (lineage or {}).get("raw_capture_batch_id"),
+                    (lineage or {}).get("raw_capture_captured_at"),
+                    (lineage or {}).get("raw_capture_available_at"),
                     (lineage or {}).get("parser_name"),
                     (lineage or {}).get("parser_version"),
                     (lineage or {}).get("reconciliation_sha256"),
@@ -321,7 +332,9 @@ class BrokerDailyHistoryStore:
                        evidence_id, source_payload_sha256, source_row_count,
                        CAST(coverage_ratio AS VARCHAR), batch_id,
                        CAST(available_at AS VARCHAR), status, raw_capture_sha256,
-                       raw_capture_batch_id, parser_name, parser_version, reconciliation_sha256
+                       raw_capture_batch_id, CAST(raw_capture_captured_at AS VARCHAR),
+                       CAST(raw_capture_available_at AS VARCHAR), parser_name, parser_version,
+                       reconciliation_sha256
                 FROM broker_daily_observations
                 WHERE session_date <= ? AND available_at <= ?
                 ORDER BY session_date, security_id, broker_id, side, source_id, evidence_id
@@ -331,8 +344,9 @@ class BrokerDailyHistoryStore:
         keys = ("security_id", "broker_id", "session_date", "side", "amount", "quantity",
                 "source_id", "evidence_id", "source_payload_sha256", "source_row_count",
                 "coverage_ratio", "batch_id", "available_at", "status",
-                "raw_capture_sha256", "raw_capture_batch_id", "parser_name",
-                "parser_version", "reconciliation_sha256")
+                "raw_capture_sha256", "raw_capture_batch_id", "raw_capture_captured_at",
+                "raw_capture_available_at", "parser_name", "parser_version",
+                "reconciliation_sha256")
         return [dict(zip(keys, row)) for row in rows]
 
     def complete_sessions_as_of(self, *, as_of_date: str, as_of_timestamp: str) -> list[str]:

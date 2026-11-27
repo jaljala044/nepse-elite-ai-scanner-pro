@@ -64,7 +64,12 @@ def audit_archive(root: Path) -> dict:
                 value = item.get("holidayDate")
                 if not isinstance(value, str):
                     raise ValueError(f"record {index} has no holidayDate")
-                day = date.fromisoformat(value)
+                try:
+                    day = date.fromisoformat(value)
+                except ValueError:
+                    raise ValueError(
+                        f"record {index} holidayDate must use canonical YYYY-MM-DD"
+                    ) from None
                 if day.isoformat() != value:
                     raise ValueError(f"record {index} holidayDate must use canonical YYYY-MM-DD")
                 if day.year != year:

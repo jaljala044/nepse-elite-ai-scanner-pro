@@ -18,6 +18,7 @@ class NepseHolidayApiArchiveAuditTests(unittest.TestCase):
         (folder / "parsed-response.json").write_text(json.dumps(records), encoding="utf-8")
         (folder / "capture-report.json").write_text(json.dumps({
             "requested_year": year,
+            "source_url": f"https://nepalstock.com.np/api/nots/holiday/list?year={year}",
             "http_status": 200,
             "response_preserved": True,
             "response_sha256": hashlib.sha256(raw).hexdigest(),

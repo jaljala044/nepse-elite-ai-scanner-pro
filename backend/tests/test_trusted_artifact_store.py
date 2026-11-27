@@ -43,6 +43,14 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertEqual(result["index_intelligence"]["data"]["metric"], 12)
         self.assertEqual(result["index_intelligence"]["source_ids"], ["NEPSE_PRIMARY_EOD_01"])
 
+    def test_nepal_local_midnight_is_not_rejected_by_utc_date_rollover(self):
+        result = self.store().load(
+            decision_date="2026-11-27",
+            decision_time="2026-11-27T00:10:00+05:45",
+            required_modules=("index_intelligence",),
+        )
+        self.assertEqual(result["index_intelligence"]["data"]["metric"], 12)
+
     def test_hash_mismatch_is_not_admitted(self):
         entry = dict(self.entry, payload_sha256="0" * 64)
         result = self.store(entry).load(

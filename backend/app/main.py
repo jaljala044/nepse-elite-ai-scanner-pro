@@ -2,7 +2,8 @@ from datetime import date, datetime, timezone, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from .broker_context_server import server_context
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
 from .structure_timeframes import evaluate_timeframes
@@ -40,6 +41,27 @@ class BrokerDashboardRequest(BaseModel):
     source_manifest: dict
     sector_rotation_by_window: dict = Field(default_factory=dict)
     candidates: list[dict] = Field(default_factory=list)
+
+class BrokerContextRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    snapshot: dict
+    prices: list[dict] = Field(max_length=100000)
+    memberships: list[dict] = Field(max_length=10000)
+    sector_prices: list[dict] = Field(max_length=100000)
+    decision_time: str
+    expected_sessions: list[str] = Field(min_length=5,max_length=252)
+
+@app.post("/v1/research/broker-context")
+def broker_context_research(request: BrokerContextRequest):
+    """Read-only; caller data not authenticated. Server controls calendar and quarantine."""
+    try:
+        return server_context(request.snapshot,request.prices,request.memberships,
+            request.sector_prices,decision_time=request.decision_time,
+            expected_sessions=request.expected_sessions)
+    except OSError as exc:
+        raise HTTPException(503,"Server evidence unavailable") from exc
+    except (ValueError,TypeError,KeyError,AttributeError) as exc:
+        raise HTTPException(422,"Invalid broker context evidence") from exc
 
 class EarlySignalRequest(BaseModel):
     as_of_date: date

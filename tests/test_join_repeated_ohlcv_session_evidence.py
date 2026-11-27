@@ -131,14 +131,23 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
                     writer = csv.DictWriter(handle, fieldnames=list(values))
                     writer.writeheader()
                     writer.writerow(values)
-                calendar.write_text(
-                    "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\n"
-                    "2026-11-05,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
-                    ",2026-11-05T10:00:00+05:45,2026-11-05T11:00:00Z,2026-11-05T12:00:00Z,all_market,open\n"
-                    "2026-11-06,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
-                    ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,2026-11-06T12:00:00Z,all_market,open\n",
-                    encoding="utf-8",
-                )
+                with calendar.open("w", newline="", encoding="utf-8") as handle:
+                    fields = [
+                        "date", "status", "source_id", "evidence_uri", "raw_evidence_sha256",
+                        "published_at", "retrieved_at_utc", "verified_at_utc", "scope", "notes",
+                    ]
+                    writer = csv.DictWriter(handle, fieldnames=fields)
+                    writer.writeheader()
+                    for day in ("2026-11-05", "2026-11-06"):
+                        writer.writerow({
+                            "date": day, "status": "verified_open", "source_id": "NEPSE",
+                            "evidence_uri": "https://nepalstock.com/evidence",
+                            "raw_evidence_sha256": "d" * 64,
+                            "published_at": day + "T10:00:00+05:45",
+                            "retrieved_at_utc": day + "T05:15:00Z",
+                            "verified_at_utc": day + "T05:30:00Z",
+                            "scope": "all_market", "notes": "open",
+                        })
                 with self.assertRaisesRegex(ValueError, expected_error):
                     join_candidates(candidates, calendar, output, summary)
 

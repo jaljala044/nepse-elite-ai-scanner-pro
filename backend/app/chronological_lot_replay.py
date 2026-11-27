@@ -17,17 +17,31 @@ def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
     cash=None if initial_cash is None else _amount(initial_cash)
     receivables=[]
     prior=None
+    prior_timestamp=None
+    daily_counts={}
+    for event in events:
+        d=_day(event['date'],'event_date')
+        daily_counts[d]=daily_counts.get(d,0)+1
     for e in events:
         _available(e,now,"event")
         day=_day(e["date"],"event_date")
         eid=e["event_id"]
-        if not eid or eid in seen or day>now.date() or _time(e["available_at"]).date()<day or (prior and day<=prior):
+        if not eid or eid in seen or day>now.date() or _time(e["available_at"]).date()<day or (prior and day<prior):
             raise ValueError("ambiguous_or_invalid_event_order")
+        timestamp=None
+        if daily_counts[day]>1 or "event_time" in e:
+            if "event_time" not in e: raise ValueError("intraday_timestamp_required")
+            timestamp=_time(e["event_time"])
+            if timestamp.date()!=day or timestamp>_time(e["available_at"]) or timestamp>now:
+                raise ValueError("invalid_event_timestamp")
+            if prior==day and (prior_timestamp is None or timestamp<=prior_timestamp):
+                raise ValueError("ambiguous_intraday_order")
         seen.add(eid)
         prior=day
+        prior_timestamp=timestamp
         if cash is not None:
-            cash+=sum((v for d,v in receivables if d<=day),Decimal(0))
-            receivables=[(d,v) for d,v in receivables if d>day]
+            cash+=sum((v for d,v in receivables if d<day),Decimal(0))
+            receivables=[(d,v) for d,v in receivables if d>=day]
         kind=e["type"]
         symbol=e["symbol"]
         if kind=="buy":
@@ -48,7 +62,7 @@ def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
             cost=Decimal(0)
             for a in allocations:
                 l=lots[a["lot_id"]]; n=a["quantity"]
-                if l["symbol"]!=symbol or l["settled"]>day or n>l["quantity"]: raise ValueError("unavailable_lot")
+                if l["symbol"]!=symbol or l["settled"]>=day or n>l["quantity"]: raise ValueError("unavailable_lot")
                 debit=l["cost"] if n==l["quantity"] else l["cost"]*n/l["quantity"]
                 l["quantity"]-=n; l["cost"]-=debit; cost+=debit
             proceeds=_amount(e["price"])*qty-_amount(e["fees"])
@@ -59,7 +73,7 @@ def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
             aid=e["action_id"]; action=e["action_type"]
             if aid in entitlements or action not in ("bonus","split","rights","dividend"): raise ValueError("invalid_action")
             if any(s["symbol"]==symbol and s["settlement"]>=day for s in realized): raise ValueError("ambiguous_record_date")
-            if any(l["symbol"]==symbol and l["quantity"] and l["settled"]>day for l in lots.values()): raise ValueError("unsettled_record_date_buy")
+            if any(l["symbol"]==symbol and l["quantity"] and l["settled"]>=day for l in lots.values()): raise ValueError("unsettled_record_date_buy")
             if any(a["symbol"]==symbol and a["kind"]!="dividend" and not a["closed"] for a in entitlements.values()): raise ValueError("overlapping_share_actions")
             entitlements[aid]=dict(symbol=symbol,kind=action,quantities={k:l["quantity"] for k,l in lots.items() if l["symbol"]==symbol and l["quantity"]},terms=e,closed=False,paid=False)
         elif kind in ("rights_payment","credit"):
@@ -112,5 +126,5 @@ def replay_lot_events(*,events,sessions,assessment_time,initial_cash=None):
         realized=[dict(s,settlement=s["settlement"].isoformat()) for s in realized],
         dividend_receipts=str(cash_receipts),rights_payments=str(rights_paid),
         pending_action_ids=[k for k,a in entitlements.items() if not a["closed"]],production_eligible=False,
-        limitations=["One event per date; overlapping share actions and sales during pending share entitlements withheld.",
+        limitations=["Same-day events require strictly increasing evidence-backed timestamps; settlement-day cash and shares unavailable for intraday use. Overlapping share actions withheld.",
         "Caller-attested confirmed credits; optional simulated cash funding, no tax or independent custody verification."])

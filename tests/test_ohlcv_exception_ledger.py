@@ -26,7 +26,7 @@ def write_fixture(root, records):
     with cp.open("w",encoding="utf-8",newline="") as stream:
         writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader()
         for row in records:
-            writer.writerow({k:json.dumps(v) if isinstance(v,(dict,list)) else v for k,v in row.items()})
+            writer.writerow({k:json.dumps(v,ensure_ascii=False,sort_keys=True) if isinstance(v,(dict,list)) else v for k,v in row.items()})
     return jp,cp
 
 class LedgerValidationTests(unittest.TestCase):

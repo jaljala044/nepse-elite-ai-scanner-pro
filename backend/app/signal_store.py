@@ -52,10 +52,10 @@ def store_signal(envelope: dict) -> dict:
     if not isinstance(envelope, dict) or not verify_signal(envelope):
         raise ValueError("signal envelope hash verification failed")
     record = envelope["record"]
-    if record.get("classification") != "research_only":
+    if record.get("classification") != "research_only_not_execution":
         raise ValueError("only research-only signal records may be stored")
-    if record.get("action") != "NO TRADE":
-        raise ValueError("production recommendations are not authorized")
+    if record.get("action") not in {"BUY", "SELL", "HOLD", "NO TRADE"}:
+        raise ValueError("unsupported research action")
     encoded = _canonical(record)
     decision_time = _aware(record["decision_time"])
     con = connect()
@@ -164,6 +164,57 @@ def list_signal_outcomes(signal_id: str) -> list[dict]:
                WHERE signal_id = ? ORDER BY observed_at, outcome_id""",
             [signal_id],
         ).fetchall()
+        return [json.loads(str(row[0])) for row in rows]
+    finally:
+        con.close()
+
+
+def list_signals(*, symbol: str | None = None, horizon: str | None = None,
+                 limit: int = 500) -> list[dict]:
+    """List frozen signal records in decision-time order; no mutable latest-state view."""
+    if not 1 <= limit <= 5000:
+        raise ValueError("limit_out_of_range")
+    con = connect()
+    try:
+        _ensure_tables(con)
+        clauses, params = [], []
+        if symbol:
+            clauses.append("symbol = ?")
+            params.append(symbol.upper())
+        if horizon:
+            if horizon not in HORIZONS:
+                raise ValueError("invalid_horizon")
+            clauses.append("horizon = ?")
+            params.append(horizon)
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        rows = con.execute(
+            "SELECT record_json FROM research_signals" + where +
+            " ORDER BY decision_time DESC, signal_id LIMIT ?", params + [limit]
+        ).fetchall()
+        return [json.loads(str(row[0])) for row in rows]
+    finally:
+        con.close()
+
+
+def list_all_outcomes(*, horizon: str | None = None, limit: int = 2000) -> list[dict]:
+    """List immutable outcome snapshots for research-only aggregate reporting."""
+    if not 1 <= limit <= 10000:
+        raise ValueError("limit_out_of_range")
+    con = connect()
+    try:
+        _ensure_tables(con)
+        if horizon is not None and horizon not in HORIZONS:
+            raise ValueError("invalid_horizon")
+        if horizon:
+            rows = con.execute(
+                "SELECT outcome_json FROM research_outcomes WHERE horizon = ? "
+                "ORDER BY observed_at, outcome_id LIMIT ?", [horizon, limit]
+            ).fetchall()
+        else:
+            rows = con.execute(
+                "SELECT outcome_json FROM research_outcomes "
+                "ORDER BY observed_at, outcome_id LIMIT ?", [limit]
+            ).fetchall()
         return [json.loads(str(row[0])) for row in rows]
     finally:
         con.close()

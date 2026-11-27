@@ -14,7 +14,10 @@ class SignalTests(unittest.TestCase):
         args=self.fixture()
         args["evidence"][0]["available_at"]="2025-01-02T11:00:00Z"
         with self.assertRaises(ValueError): freeze_signal(**args)
-    def test_unauthorized_buy(self):
+    def test_buy_is_frozen_as_research_not_execution(self):
         args=self.fixture()
         args["action"]="BUY"
-        with self.assertRaises(ValueError): freeze_signal(**args)
+        envelope=freeze_signal(**args)
+        self.assertEqual(envelope["record"]["action"],"BUY")
+        self.assertEqual(envelope["record"]["classification"],"research_only_not_execution")
+        self.assertTrue(verify_signal(envelope))

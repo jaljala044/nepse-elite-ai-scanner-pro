@@ -13,6 +13,9 @@ from .equity_universe_manifest import load_equity_universe_manifest
 from .storage import DATA, IMPORTS, store_rows, snapshot
 from .broker_intelligence_dashboard import build_broker_intelligence_dashboard
 from .early_entry_exit_signals import generate_early_entry_exit_signals
+from .signal_tracking import freeze_signal, HORIZONS as TRACKED_HORIZONS
+from .signal_store import store_signal, store_outcome, get_signal, list_signals, list_signal_outcomes, list_all_outcomes
+from .signal_outcome_validation import evaluate_signal_path
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -41,6 +44,26 @@ class EarlySignalRequest(BaseModel):
     as_of_date: date
     as_of_timestamp: str
     snapshot: dict
+
+class FreezeSignalRequest(BaseModel):
+    symbol: str
+    decision_time: str
+    horizon: str
+    action: str
+    methodology: str
+    evidence: list[dict]
+    details: dict
+
+class EvaluateSignalOutcomeRequest(BaseModel):
+    evaluation_date: date
+    verified_sessions: list[date]
+    calendar_evidence: dict
+
+class StoreSignalOutcomeRequest(BaseModel):
+    horizon: str
+    observed_at: str
+    outcome: dict
+
 
 @app.get("/health")
 def health():
@@ -73,12 +96,186 @@ def early_signals(request: EarlySignalRequest):
     The endpoint never places orders or claims confirmed fills.
     """
     try:
-        return generate_early_entry_exit_signals(
+        result = generate_early_entry_exit_signals(
             request.snapshot, as_of_date=request.as_of_date.isoformat(),
             as_of_timestamp=request.as_of_timestamp,
         )
+        # Freeze each horizon decision immediately so later outcome tracking
+        # cannot silently rewrite the original action, levels or evidence.
+        evidence = []
+        decision_cutoff = datetime.fromisoformat(request.as_of_timestamp.replace("Z", "+00:00"))
+        for name in ("market", "sector", "liquidity", "broker", "price_volume", "candidate"):
+            item = request.snapshot.get(name) or {}
+            available = item.get("available_at")
+            source_ids = item.get("source_ids") or ([item.get("source_id")] if item.get("source_id") else [])
+            if available:
+                try:
+                    available_dt = datetime.fromisoformat(str(available).replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if available_dt.tzinfo is None or available_dt.utcoffset() is None or available_dt > decision_cutoff:
+                    continue
+                evidence.extend({"evidence_id": sid, "available_at": available}
+                                for sid in source_ids if isinstance(sid, str) and sid.strip())
+        stored_signals = {}
+        for horizon in TRACKED_HORIZONS.intersection({"t_plus_2", "swing", "positional"}):
+            entry_plan = (result.get("horizons") or {}).get(horizon, {})
+            exit_review = (result.get("exit_reviews") or {}).get(horizon, {})
+            action = entry_plan.get("action", "NO_TRADE")
+            if exit_review.get("action") == "SELL_OR_REDUCE":
+                action = "SELL"
+            elif exit_review.get("action") == "HOLD_WITH_CAUTION" and action != "BUY":
+                action = "HOLD"
+            if action not in {"BUY", "SELL", "HOLD", "NO_TRADE"}:
+                action = "NO TRADE"
+            envelope = freeze_signal(
+                symbol=result.get("symbol", request.snapshot.get("symbol")),
+                decision_time=request.as_of_timestamp, horizon=horizon,
+                action=action, methodology=request.snapshot.get("methodology_version", "p4.41_v1"),
+                evidence=evidence,
+                details={"decision_date": request.as_of_date.isoformat(),
+                         "plan": entry_plan, "exit_review": exit_review,
+                         "common_reasons": result.get("common_reasons", [])},
+            )
+            stored_signals[horizon] = store_signal(envelope)
+        result["signal_tracking"] = stored_signals
+        return result
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/v1/research/signals")
+def create_research_signal(request: FreezeSignalRequest):
+    """Freeze and persist a content-addressed research signal; never places an order."""
+    try:
+        envelope = freeze_signal(
+            symbol=request.symbol, decision_time=request.decision_time,
+            horizon=request.horizon, action=request.action,
+            methodology=request.methodology, evidence=request.evidence,
+            details=request.details,
+        )
+        stored = store_signal(envelope)
+        return {**envelope, "storage": stored,
+                "classification": "research_only_not_execution"}
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/research/signals")
+def research_signals(symbol: str | None = None, horizon: str | None = None, limit: int = 500):
+    try:
+        return {"classification": "research_only_not_execution",
+                "signals": list_signals(symbol=symbol, horizon=horizon, limit=limit)}
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/v1/research/signals/{signal_id}/evaluate")
+def evaluate_research_signal(signal_id: str, request: EvaluateSignalOutcomeRequest):
+    """Measure price references using server-reviewed OHLCV and a caller-attested calendar."""
+    try:
+        record = get_signal(signal_id)
+        if record is None:
+            raise HTTPException(404, "signal_not_found")
+        if record.get("symbol") not in DATA:
+            raise HTTPException(422, "ohlcv_history_unavailable")
+        calendar = request.calendar_evidence
+        cutoff = datetime.combine(request.evaluation_date, time.max, ZoneInfo("Asia/Kathmandu"))
+        try:
+            coverage = float(calendar.get("coverage"))
+            available = datetime.fromisoformat(str(calendar.get("available_at", "")).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            raise HTTPException(422, "calendar_evidence_malformed")
+        if (calendar.get("status") != "verified" or not isinstance(calendar.get("source_id"), str)
+                or not calendar.get("source_id").strip() or not 0.95 <= coverage <= 1.0):
+            raise HTTPException(422, "verified_calendar_evidence_required")
+        if available.tzinfo is None or available.utcoffset() is None or available > cutoff:
+            raise HTTPException(422, "calendar_evidence_late_or_timezone_missing")
+        rows = DATA[record["symbol"]]
+        result = evaluate_signal_path(
+            record, rows, [d.isoformat() for d in request.verified_sessions],
+            evaluation_date=request.evaluation_date.isoformat(), reviewed=REVIEWED_ROWS,
+        )
+        if result.get("status") in {"observed", "partial"}:
+            saved = store_outcome(
+                signal_id=signal_id, horizon=record["horizon"],
+                observed_at=cutoff.isoformat(), outcome=result,
+            )
+            result["storage"] = saved
+        return result
+    except HTTPException:
+        raise
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/research/signals/{signal_id}/outcomes")
+def research_signal_outcomes(signal_id: str):
+    if get_signal(signal_id) is None:
+        raise HTTPException(404, "signal_not_found")
+    return {"classification": "research_reference_not_execution",
+            "outcomes": list_signal_outcomes(signal_id)}
+
+
+@app.get("/v1/research/performance")
+def research_signal_performance(horizon: str | None = None, limit: int = 2000):
+    """Descriptive gross reference outcomes only; no strategy edge is inferred."""
+    try:
+        outcomes = list_all_outcomes(horizon=horizon, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    # Repeated as-of evaluations append snapshots. Use only the latest snapshot
+    # per frozen signal/horizon for descriptive hit-rate summaries.
+    latest = {}
+    for item in outcomes:
+        key = (item.get("signal_id"), item.get("horizon"))
+        if key not in latest or item.get("observed_at", "") > latest[key].get("observed_at", ""):
+            latest[key] = item
+    outcomes = list(latest.values())
+    grouped = {}
+    for item in outcomes:
+        h = item.get("horizon")
+        payload = item.get("outcome", {})
+        bucket = grouped.setdefault(h, {"sample_size": 0, "entry_touched": 0,
+            "stop_touched": 0, "target_touches": {"T1": 0, "T2": 0, "T3": 0},
+            "positive_reference": 0, "negative_reference": 0,
+            "returns": [], "statuses": {}})
+        bucket["sample_size"] += 1
+        status = payload.get("status", "unknown")
+        bucket["statuses"][status] = bucket["statuses"].get(status, 0) + 1
+        if payload.get("entry_touched") is True:
+            bucket["stop_touched"] += int(payload.get("stop_touched") is True)
+            for target in payload.get("targets_touched", []):
+                if target in bucket["target_touches"]:
+                    bucket["target_touches"][target] += 1
+        if payload.get("entry_touched") is True and payload.get("reference_return_pct") is not None:
+            value = float(payload["reference_return_pct"])
+            bucket["entry_touched"] += 1
+            bucket["returns"].append(value)
+            if value > 0: bucket["positive_reference"] += 1
+            elif value < 0: bucket["negative_reference"] += 1
+    summaries = {}
+    for h, bucket in grouped.items():
+        vals = bucket.pop("returns")
+        winners = [x for x in vals if x > 0]
+        losers = [x for x in vals if x < 0]
+        bucket["entry_rate_pct"] = (100 * bucket["entry_touched"] / bucket["sample_size"]) if bucket["sample_size"] else None
+        bucket["stop_rate_pct"] = (100 * bucket["stop_touched"] / bucket["entry_touched"]) if bucket["entry_touched"] else None
+        bucket["target_hit_rate_pct"] = {target: (100 * count / bucket["entry_touched"])
+            if bucket["entry_touched"] else None for target, count in bucket["target_touches"].items()}
+        bucket["win_rate_pct"] = (100 * len(winners) / len(vals)) if vals else None
+        bucket["average_reference_return_pct"] = (sum(vals) / len(vals)) if vals else None
+        bucket["average_win_pct"] = (sum(winners) / len(winners)) if winners else None
+        bucket["average_loss_pct"] = (sum(losers) / len(losers)) if losers else None
+        bucket["profit_factor"] = (sum(winners) / abs(sum(losers))) if losers and sum(losers) else None
+        bucket["data_quality"] = "LOW_CONFIDENCE" if len(vals) < 30 else "DESCRIPTIVE_ONLY"
+        summaries[h] = bucket
+    return {"classification": "gross_price_reference_statistics_not_backtest",
+            "sample_count": len(outcomes), "by_horizon": summaries,
+            "limitations": ["No execution/fill records, fees, slippage or market impact",
+                            "Repeated evaluations of one signal are separate observations; deduplication is not a trade ledger",
+                            "No calibrated probability or strategy-performance claim is produced"]}
+
 
 @app.get("/v1/research/readiness")
 def research_readiness():

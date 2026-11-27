@@ -92,3 +92,44 @@ class NumericalFrameTests(unittest.TestCase):
               for d,(o,h,l,c,v) in zip(days,[(10,13,9,12,100),(12,15,11,14,200),(14,16,13,15,300)])]
         bars,_=aggregate_complete(rows,days,days[-1],"weekly")
         self.assertEqual(bars,[dict(date="2025-01-06",open=10,high=15,low=9,close=14,volume=300)])
+
+    def bearish_pattern(self):
+        return [(30-o,30-l,30-h,30-c) for o,h,l,c in self.pattern()]
+    def test_bearish_weekly_order_block(self):
+        events=self.frame("weekly",self.bearish_pattern())["structure"]["events"]
+        block=next(e for e in events if e["type"]=="order_block")
+        self.assertEqual((block["direction"],block["lower"],block["upper"],block["trigger"]),("bearish",19,23,"bos"))
+        self.assertEqual(block["invalidation"],{"field":"close","operator":">","level":23})
+    def test_bearish_monthly_order_block(self):
+        events=self.frame("monthly",self.bearish_pattern())["structure"]["events"]
+        block=next(e for e in events if e["type"]=="order_block")
+        self.assertEqual((block["direction"],block["lower"],block["upper"]),("bearish",19,23))
+    def test_sell_side_sweep(self):
+        events=self.frame("weekly",self.bearish_pattern())["structure"]["events"]
+        sweep=next(e for e in events if e["type"]=="liquidity_sweep")
+        self.assertEqual((sweep["side"],sweep["level"],sweep["observed_close"]),("low",17,18))
+    def test_bullish_choch(self):
+        events=self.frame("monthly",self.bearish_pattern())["structure"]["events"]
+        event=next(e for e in events if e["type"]=="choch")
+        self.assertEqual((event["direction"],event["level"],event["observed_close"]),("bullish",23,23.5))
+    def test_bearish_fvg_bounds(self):
+        frame=self.frame("monthly",[(21,22,20,21),(20,21,17,18),(16,18,15,16)])
+        gap=next(z for z in frame["zones"]["zones"] if z["zone_type"]=="fvg")
+        self.assertEqual((gap["direction"],gap["lower"],gap["upper"],gap["state"]),("bearish",18,20,"untested"))
+    def test_bearish_fvg_partial(self):
+        frame=self.frame("weekly",[(21,22,20,21),(20,21,17,18),(16,18,15,16),(18,19,17,18)])
+        gap=next(z for z in frame["zones"]["zones"] if z["zone_type"]=="fvg")
+        self.assertEqual((gap["state"],gap["max_penetration"]),("partially_mitigated",0.5))
+    def test_bearish_fvg_invalidation(self):
+        frame=self.frame("monthly",[(21,22,20,21),(20,21,17,18),(16,18,15,16),(18,21,17,21)])
+        gap=next(z for z in frame["zones"]["zones"] if z["zone_type"]=="fvg")
+        self.assertEqual((gap["state"],gap["touch_count"]),("invalidated",0))
+    def test_ipda_premium(self):
+        window=self.frame("weekly",[(100,110,90,108)]*20)["ipda"]["windows"]["20"]
+        self.assertEqual((window["equilibrium"],window["location"]),(100,"premium"))
+    def test_ipda_discount(self):
+        window=self.frame("monthly",[(100,110,90,92)]*20)["ipda"]["windows"]["20"]
+        self.assertEqual((window["equilibrium"],window["location"]),(100,"discount"))
+    def test_ipda_equilibrium(self):
+        window=self.frame("weekly",[(100,110,90,100)]*20)["ipda"]["windows"]["20"]
+        self.assertEqual((window["equilibrium"],window["location"]),(100,"equilibrium"))

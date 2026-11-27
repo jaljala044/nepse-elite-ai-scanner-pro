@@ -122,3 +122,51 @@ Outstanding provider coverage: historical NEPSE Alpha chart endpoint candidate d
 ### Disposition
 
 No additional dated provider record was recovered in this pass. Dated evidence remains 2/6 at most, with only one demonstrated ShareSansar-derived lineage plus incomplete MeroLagani replay evidence; the formal 4/6 and two-independent-lineage gate remains unmet. Official exchange-designated close remains unverified for all five securities. No record was promoted, no raw market data was modified, and P1 remains open.
+
+## Evidence-first, field-level approval policy — 2026-11-27
+
+This section supersedes the earlier interpretation that every field must first satisfy a universal 4-of-6 secondary-provider vote. The 4/6 plus two-independent-lineage rule remains the project's **secondary-source consensus fallback**, not a NEPSE regulatory requirement and not a veto over sufficient authoritative exchange evidence.
+
+### Approval hierarchy
+
+1. **Authoritative official exchange evidence:** An authentic NEPSE record may establish a field directly when the record is date/security-specific, its field definition and applicable calculation method are known, its adjustment status is known, and integrity/provenance are preserved. A qualifying official record does not need four secondary websites to repeat it. Do not call a secondary chart or a public page an official exchange record merely because it displays NEPSE data.
+2. **Reconstructed floorsheet evidence:** Existing contract-level floorsheet data may establish derived measures only to the extent that the required fields, ordering/timestamps, trade eligibility and calculation rules are present. Preserve raw contracts; calculate in a reproducible script or ledger; record the inclusion/exclusion rule and contract IDs. Do not infer trade type from quantity or an undocumented contract-code substring.
+3. **Secondary-source reconciliation:** Where an authoritative exchange record or fully reproducible eligible-trade reconstruction is unavailable, use the 4-of-6 provider / at-least-two-independent-lineage rule as the secondary consensus route. Multiple websites that republish the same upstream feed count as one lineage. A blocked or unaudited provider is neither a vote nor evidence of failure.
+4. **Field-specific disposition:** Approve fields that pass their own evidence and semantic checks; quarantine only unresolved fields. A conflict in Close must not automatically invalidate independently supported Open, High, Low, volume or turnover. Never overwrite the user's owner-authoritative values for BGWT, MEHL, RAWA, RHGCL and ULHC on 2025-07-28.
+
+### Reuse-first calculation plan for the five securities — 2025-07-28
+
+Use the existing SocrateAI floorsheet archive, extracted daily-board rows, ShareSansar-derived chart/archive evidence and the already recorded MeroLagani date-filtered results. Do not repeat completed captures or purchase API access unless a specific missing field cannot be resolved from these artifacts.
+
+| Field | Existing-evidence treatment | Conditions / unresolved points |
+|---|---|---|
+| Open | Derive from the first eligible regular-session execution, then compare with existing chart Open | Requires reliable execution chronology and the applicable opening-session / trade-eligibility rules. The archived floorsheet has no timestamps; file order alone is not accepted as chronology. |
+| High / Low | Derive extrema from eligible executions, then compare with chart High / Low | Requires trade-type eligibility. Preserve the BGWT one-share Rs 925 contract as suspected_odd_lot_pending_trade_type_confirmation; do not silently include/exclude it from official OHLC. |
+| LTP | Identify the last execution only when reliable sequence/time is available; preserve literal provider LTP labels | LTP is not automatically the official closing price. |
+| Official Close | Keep distinct from LTP and full-day VWAP | Accept only from an authenticated official exchange record with the historical method/field semantics established, or a fully reproducible calculation using the official method and eligible trades. |
+| Quantity / volume | Sum contract quantities using the documented session scope; reconcile to chart totals | Preserve raw contract IDs and exact quantity. Explain any trade-category exclusions or inclusion rules. |
+| Turnover | Sum contract consideration using documented units/rounding; reconcile to chart totals | Keep currency and rounding explicit; do not substitute VWAP or price times rounded volume for exact turnover. |
+| VWAP | Recompute as eligible traded consideration divided by eligible quantity; compare to archived VWAP | State whether odd-lot/de-prioritized executions are included. Do not store VWAP in Close. |
+| Odd-lot classification | Use an explicit exchange trade-type/segment/order flag or official confirmation | Quantity alone, contract-code substring, or a price outside chart Low/High is not proof of classification. |
+
+### Current five-stock evidence facts retained
+
+The existing replayed floorsheet aggregation reports:
+
+| Symbol | Contracts | Quantity | Turnover (Rs) | Floorsheet min–max (Rs) | Full-day VWAP (Rs) |
+|---|---:|---:|---:|---:|---:|
+| BGWT | 194 | 14,028 | 13,256,345.00 | 925.00–992.00 | 944.9918 |
+| MEHL | 333 | 29,753 | 14,008,898.10 | 460.00–480.50 | 470.8399 |
+| RAWA | 74 | 3,165 | 2,515,662.50 | 780.30–811.00 | 794.8381 |
+| RHGCL | 1,030 | 296,715 | 103,872,614.40 | 341.40–362.00 | 350.0754 |
+| ULHC | 300 | 32,288 | 16,273,342.10 | 495.00–515.00 | 504.0059 |
+
+These are existing archived/replayed calculations, not newly acquired data. They establish arithmetic consistency for the captured tape, but do not by themselves establish official trade eligibility, opening/last execution chronology, official Close methodology, or upstream lineage. The BGWT one-share Rs 925 execution remains preserved and pending its explicit trade-type flag.
+
+### Decision and next actions
+
+- Reuse the current raw floorsheet and chart artifacts; no broad recapture and no API purchase authorized or required at this stage.
+- Build/verify a reproducible field-level comparison from the existing files, with raw contract references and per-field pass/quarantine results.
+- Resolve only the missing chronology and eligibility details that materially affect Open, High, Low, LTP, VWAP or official Close. If those details are absent from existing artifacts, identify that exact gap before requesting any additional evidence.
+- Keep Close, LTP and VWAP as separate fields. The five Source A values match MeroLagani's dated LTP; the competing ShareSansar-derived Close/VWAP values remain a distinct measure. No official exchange Close has yet been established.
+- No canonical promotion or training until each field's own gate passes. P1 remains open; 616 session-date candidates and 196,784 repeated-OHLCV candidates retain their existing statuses.

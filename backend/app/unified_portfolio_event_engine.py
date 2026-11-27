@@ -173,6 +173,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
     executed_trades = []
     linked_entries = {}
     pending_buys = defaultdict(float)
+    pending_sales = defaultdict(float)
     for day in days:
         # Settlement of purchases adds shares; sale proceeds become spendable cash.
         for trade in trades_by_day.get(day, []):
@@ -192,6 +193,9 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         # Corporate-action entitlement is determined from settled holdings at record-date close.
         for action in actions_by_day.get(day, []):
             symbol = action["symbol"]
+            # A trade-date disposal is not proof of record-date custody eligibility.
+            if pending_sales[symbol] > 1e-8:
+                raise ValueError("record_date_unsettled_sale_requires_custody_evidence:" + symbol)
             entitlement = positions.get(symbol, {"quantity": 0.0})["quantity"]
             aid = action["action_id"]
             kind, effective, terms = entitlement_by_action[aid]["event"]
@@ -230,6 +234,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             if event["type"] == "sell_proceeds_settled":
                 cash += event["cash_delta"]
                 receivables -= event["cash_delta"]
+                pending_sales[event["symbol"]] -= event["quantity"]
                 continue
             if event["type"] in ("trade_settlement_audit", "buy_shares_settled"):
                 continue
@@ -360,9 +365,10 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 if proceeds < 0:
                     raise ValueError("negative_sale_proceeds")
                 receivables += proceeds
+                pending_sales[symbol] += qty
                 pending_events[trade["_settle"]].append({"type": "sell_proceeds_settled",
                                                           "trade_id": trade["trade_id"],
-                                                          "symbol": symbol, "cash_delta": proceeds,
+                                                          "symbol": symbol, "cash_delta": proceeds, "quantity": qty,
                                                           "source_id": trade["source_id"]})
             executed_trades.append({"trade_id": trade["trade_id"], "signal_id": trade.get("signal_id"), "side": trade["side"], "symbol": symbol, "quantity": qty, "price": trade["_price"], "fees": trade["_fees"], "date": day.isoformat()})
             pending_events[trade["_settle"]].append({"type": "trade_settlement_audit",
@@ -447,6 +453,7 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             "Initial holdings must be a reconciled opening snapshot; transactions before the first supplied session are outside this replay.",
             "Buy shares enter holdings on supplied settlement date; sale proceeds become spendable cash on supplied settlement date.",
             "Corporate-action entitlement is calculated from settled holdings at the supplied record date; record-date/ex-date eligibility conventions must be confirmed against official event terms.",
+            "Record-date overlap with unsettled sales (including same-day settlement before custody confirmation) is rejected rather than guessing entitlement.",
             "Rights subscribed quantity and allotment/listing are caller supplied; no default election is inferred.",
             "Split ratio is new shares per old share; effective-date conversion preserves total cost basis. Overlapping unsettled buys or same-day trades and fractional shares are rejected.",
             "Paid unlisted rights are carried at subscription cost, not fair value; unpaid entitlements are not valued.",

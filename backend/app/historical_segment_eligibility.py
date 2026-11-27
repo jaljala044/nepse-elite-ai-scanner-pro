@@ -30,7 +30,7 @@ def _available_at(value: str) -> datetime:
 def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
                                 session_statuses: dict[str, str], records: list[dict],
                                 required_sessions: int = 120,
-                                required_warmup_sessions: int = 0,
+                                available_warmup_sessions: int = 0,
                                 decision_cutoff: str) -> dict:
     """Audit a segment; never repairs rows or approves production promotion.
 
@@ -41,8 +41,8 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
     sessions = sorted({_iso_day(x, "expected session") for x in expected_sessions})
     if len(sessions) != len(expected_sessions) or not sessions:
         raise ValueError("expected_sessions must be non-empty and unique")
-    if required_sessions < 1 or required_warmup_sessions < 0:
-        raise ValueError("session and warmup requirements are invalid")
+    if required_sessions < 1 or available_warmup_sessions < 0:
+        raise ValueError("session and available warmup counts are invalid")
     cutoff = _available_at(decision_cutoff)
     symbol = str(segment.get("symbol", "")).strip().upper()
     security_id = str(segment.get("security_id", "")).strip()
@@ -65,7 +65,8 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
         reasons.append("adjustment_basis_missing")
     if len(sessions) < required_sessions:
         reasons.append("insufficient_verified_sessions")
-    if required_warmup_sessions < segment.get("minimum_warmup_sessions", 0):
+    required_warmup_sessions = int(segment.get("minimum_warmup_sessions", 0))
+    if available_warmup_sessions < required_warmup_sessions:
         reasons.append("insufficient_causal_warmup")
     counts: dict[str, list[dict]] = {day: [] for day in sessions}
     for index, row in enumerate(records):
@@ -125,6 +126,7 @@ def evaluate_historical_segment(*, segment: dict, expected_sessions: list[str],
         "verified_session_count": len(sessions), "verified_no_trade_count": no_trade_count,
         "required_session_count": required_sessions,
         "required_warmup_sessions": required_warmup_sessions,
+        "available_warmup_sessions": available_warmup_sessions,
         "exploratory_replay_eligible": not reasons,
         "approved_backtest_eligible": False, "production_promotion_allowed": False,
         "reasons": reasons,

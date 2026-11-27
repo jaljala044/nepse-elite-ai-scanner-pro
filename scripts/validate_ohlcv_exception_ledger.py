@@ -15,6 +15,16 @@ NEPSE_REQUIRED_FIELDS = {
     ("API","2026-11-19"): {"high","low","close","volume"},
     ("RHGCL","2026-11-19"): {"high","low","close","volume","trades"},
 }
+HRL_CONFLICT_KEY = ("HRL","2026-11-19")
+HRL_PROJECT_CONTEXT = {
+    "project_designated": {"open": "483.00", "low": "483.90"},
+    "exchange_observed": {"low": "480.00"},
+    "sharehub_observed": {"low": "480.00"},
+    "geometry_issue": "project_designated_low_above_open",
+    "disposition": "quarantined_unresolved",
+    "canonical_promotion_allowed": False,
+    "raw_source_rows_modified": False,
+}
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 COMMON = {"exception_id","exception_type","symbol","trade_date","source_repository","disposition","reviewer_rationale","evidence_pointer"}
 
@@ -77,6 +87,15 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
                 if not SHA256.fullmatch(str(item.get("file_sha256",""))): errors.append(f"conflict record {i} evidence {repository} has invalid SHA-256")
                 if not isinstance(item.get("source_csv_line"),int) or item["source_csv_line"]<2:
                     errors.append(f"conflict record {i} evidence {repository} has invalid source CSV line")
+            if key==HRL_CONFLICT_KEY:
+                if disposition!="quarantined_unresolved":
+                    errors.append(f"record {i} HRL discrepancy must remain quarantined_unresolved")
+                if r.get("project_owner_context")!=HRL_PROJECT_CONTEXT:
+                    errors.append(f"record {i} HRL project and observed lows must be preserved side by side")
+                if resolution:
+                    errors.append(f"record {i} HRL discrepancy must not carry resolution_evidence")
+            elif r.get("project_owner_context") is not None:
+                errors.append(f"record {i} has project-owner context outside the approved HRL key")
     if user_resolved!=USER_FINAL_KEYS: errors.append(f"user-authoritative conflict keys differ: {sorted(user_resolved)}")
     if nepse_resolved!=NEPSE_FIELD_KEYS: errors.append(f"field-scoped NEPSE conflict keys differ: {sorted(nepse_resolved)}")
     expected_unresolved=1332

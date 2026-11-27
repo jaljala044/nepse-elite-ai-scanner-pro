@@ -53,7 +53,40 @@ def reconcile_chronological_ledger(*,ledger_inputs,events):
     record_ids={e["action_id"] for e in events if e["type"]=="record"}
     if action_ids!=record_ids:
         differences["action_ids"]={"unified":sorted(action_ids),"chronological":sorted(record_ids)}
+    # Compare individual action events, not merely net cash or share totals.
+    records={e["action_id"]:e for e in events if e["type"]=="record"}
+    action_audit={(a["action_id"],a["type"]):a for a in unified["corporate_action_audit"]}
+    observed_audit=set()
+    for e in events:
+        if e["type"] not in ("credit","rights_payment"): continue
+        aid=e["action_id"]
+        record=records[aid]
+        kind=record["action_type"]
+        typ="rights_subscription_payment" if e["type"]=="rights_payment" else {"bonus":"bonus_shares","split":"split_conversion","rights":"rights_shares","dividend":"dividend_cash"}[kind]
+        key=(aid,typ)
+        observed_audit.add(key)
+        a=action_audit.get(key)
+        if not a:
+            differences["missing_action_event:"+aid+":"+typ]="missing_unified_event"
+            continue
+        if (a["symbol"],a["effective_date"])!=(e["symbol"],e["date"]):
+            differences["action_event_identity:"+aid+":"+typ]="symbol_or_date_mismatch"
+        if typ=="rights_subscription_payment":
+            compare("rights_payment:"+aid,-a["cash_delta"],e["amount"])
+            compare("rights_subscription_quantity:"+aid,a["quantity"],sum(e["subscriptions"].values()))
+        elif typ=="dividend_cash":
+            compare("dividend_cash:"+aid,a["cash_delta"],e["net_amount"])
+        elif typ=="split_conversion":
+            compare("split_factor:"+aid,a["factor"],record["ratio"])
+        else:
+            compare("share_credit:"+aid,a["quantity"],sum(e["quantities"].values()))
+    for aid,typ in set(action_audit)-observed_audit:
+        differences["missing_chronological_event:"+aid+":"+typ]="missing_chronological_event"
+    for a in unified["corporate_action_entitlements"]:
+        e=records.get(a["action_id"])
+        if e and (e["symbol"],e["date"])!=(a["symbol"],a["record_date"]):
+            differences["record_identity:"+a["action_id"]]="symbol_or_date_mismatch"
     return dict(balance_checks_passed=not differences,differences=differences,
         unified=unified,chronological=chronological,full_accounting_reconciled=False,
-        production_eligible=False,limitations=["Aggregate average-cost versus explicit lot allocation differences are reported, not treated as proof of error. Individual entitlement terms and settlement evidence not fully reconciled.",
+        production_eligible=False,limitations=["Aggregate average-cost versus explicit lot allocation differences are reported, not treated as proof of error. Individual credit events compared; record-date quantities and settlement evidence not fully reconciled. Gross versus net dividend differences are reported.",
         "Different intraday settlement assumptions may reject otherwise comparable histories."])

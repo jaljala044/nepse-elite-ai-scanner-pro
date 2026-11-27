@@ -18,12 +18,16 @@ from typing import Any
 CALENDAR_FIELDS = ("date", "status", "source_id", "evidence_uri", "raw_evidence_sha256", "published_at", "retrieved_at_utc", "verified_at_utc", "scope", "notes")
 OHLCV_FIELDS = ("symbol", "date", "open", "high", "low", "close", "volume")
 REGIMES = (
-    # Schedule history is a candidate hint only; each actual date still needs evidence.
-    (date.min, date(2022, 5, 14), {4, 5}, "Sunday-Thursday regular-session candidate; Friday odd-lot excluded; Saturday closed"),
-    (date(2022, 5, 15), date(2022, 6, 14), {5, 6}, "Temporary Monday-Friday candidate; Saturday/Sunday closed"),
-    (date(2022, 6, 15), date(2022, 9, 16), {5}, "Temporary Sunday-Friday candidate; Saturday closed"),
-    (date(2022, 9, 17), date(2026, 4, 5), {4, 5}, "Sunday-Thursday candidate; Friday/Saturday excluded"),
-    (date(2026, 4, 6), date.max, {5, 6}, "Monday-Friday candidate; Saturday/Sunday excluded"),
+    # User-approved weekly regimes. These are candidate context; dated calendar rows take precedence.
+    (date.min, date(2020, 3, 22), {4, 5}, "Sunday-Thursday regular; Friday odd-lot only; Saturday closed"),
+    (date(2020, 3, 23), date(2020, 5, 11), {0, 1, 2, 3, 4, 5, 6}, "COVID lockdown; trading suspended"),
+    (date(2020, 5, 12), date(2020, 5, 13), set(), "Exceptional restricted sessions; 11:00-13:00"),
+    (date(2020, 5, 14), date(2020, 6, 28), {0, 1, 2, 3, 4, 5, 6}, "COVID lockdown; trading suspended"),
+    (date(2020, 6, 29), date(2022, 5, 14), {4, 5}, "Sunday-Thursday regular; Friday odd-lot only; Saturday closed"),
+    (date(2022, 5, 15), date(2022, 6, 14), {5, 6}, "Monday-Friday regular; Saturday/Sunday closed"),
+    (date(2022, 6, 15), date(2022, 9, 16), {5}, "Sunday-Thursday regular; Friday half-day; Saturday closed"),
+    (date(2022, 9, 17), date(2026, 4, 5), {4, 5}, "Sunday-Thursday regular; Friday/Saturday closed"),
+    (date(2026, 4, 6), date.max, {5, 6}, "Monday-Friday regular; Saturday/Sunday closed"),
 )
 
 

@@ -119,6 +119,30 @@ class TrustedBrokerDashboardTests(unittest.TestCase):
         self.assertEqual(result["status"], "insufficient_evidence")
         self.assertIn("broker_profiles", result["missing_modules"])
 
+    def test_as_of_dates_must_match_for_cross_module_join(self):
+        from app.trusted_artifact_store import TrustedArtifactError
+
+        entry = dict(self.registry["index_intelligence"], as_of_date="2026-11-25")
+        registry = dict(self.registry, index_intelligence=entry)
+        with self.assertRaisesRegex(TrustedArtifactError, "trusted_artifacts_as_of_date_mismatch"):
+            build_trusted_broker_dashboard(
+                TrustedArtifactStore(self.root, registry),
+                decision_date="2026-11-26",
+                decision_time="2026-11-26T12:00:00+05:45",
+            )
+
+    def test_session_calendar_identity_must_match(self):
+        from app.trusted_artifact_store import TrustedArtifactError
+
+        entry = dict(self.registry["sector_rotation"], session_calendar_id="other-calendar")
+        registry = dict(self.registry, sector_rotation=entry)
+        with self.assertRaisesRegex(TrustedArtifactError, "trusted_artifacts_session_calendar_mismatch"):
+            build_trusted_broker_dashboard(
+                TrustedArtifactStore(self.root, registry),
+                decision_date="2026-11-26",
+                decision_time="2026-11-26T12:00:00+05:45",
+            )
+
     def test_late_broker_artifact_is_withheld(self):
         entry = dict(self.registry["broker_profiles"],
                      available_at="2026-11-26T12:01:00+05:45")

@@ -147,5 +147,51 @@ class RepeatedAdjacentTests(unittest.TestCase):
             self.assertEqual(joined[0]["session_join_classification"],"adjacent_project_sessions_review")
 
 
+    def test_unlisted_queue_rank_and_distinct_symbols(self):
+        from scripts.extract_repeated_adjacent_ohlcv import unlisted_date_queue
+        def pair(prior, current, symbol, repo, prior_status="not_listed"):
+            return {"previous_date": prior, "current_date": current,
+                    "previous_calendar_status": prior_status, "current_calendar_status": "not_listed",
+                    "session_join_classification": "date_not_in_project_calendar_review",
+                    "symbol": symbol, "repository": repo}
+        rows = [pair("2026-01-01", "2026-01-02", "ABC", "a/repo"),
+                pair("2026-01-02", "2026-01-03", "ABC", "b/repo"),
+                pair("2026-01-02", "2026-01-04", "XYZ", "a/repo")]
+        queue = unlisted_date_queue(rows)
+        self.assertEqual(queue[0]["date"], "2026-01-02")
+        self.assertEqual(queue[0]["affected_pairs"], 3)
+        self.assertEqual(queue[0]["distinct_symbols"], 2)
+        self.assertEqual(queue[0]["repositories"], ["a/repo", "b/repo"])
+        self.assertEqual([x["date"] for x in queue[1:]],
+                         ["2026-01-01", "2026-01-03", "2026-01-04"])
+        self.assertTrue(all(not x["canonical_promotion_allowed"] for x in queue))
+
+    def test_unlisted_queue_same_endpoint_counts_once_and_malformed(self):
+        from scripts.extract_repeated_adjacent_ohlcv import unlisted_date_queue
+        row = {"previous_date": "2026-02-30", "current_date": "2026-02-30",
+               "previous_calendar_status": "not_listed", "current_calendar_status": "not_listed",
+               "session_join_classification": "date_not_in_project_calendar_review",
+               "symbol": "ABC", "repository": "a/repo"}
+        queue = unlisted_date_queue([row])
+        self.assertEqual(len(queue), 1)
+        self.assertEqual(queue[0]["affected_pairs"], 1)
+        self.assertFalse(queue[0]["valid_iso_date"])
+        self.assertEqual(queue[0]["disposition"], "malformed_date_review")
+        self.assertFalse(queue[0]["canonical_promotion_allowed"])
+
+    def test_unlisted_queue_excludes_known_session_and_other_classes(self):
+        from scripts.extract_repeated_adjacent_ohlcv import unlisted_date_queue
+        row = {"previous_date": "2026-01-01", "current_date": "2026-01-02",
+               "previous_calendar_status": "project_accepted_open", "current_calendar_status": "not_listed",
+               "session_join_classification": "date_not_in_project_calendar_review",
+               "symbol": "ABC", "repository": "a/repo"}
+        other = dict(row, session_join_classification="explicit_closure_date_conflict_review")
+        queue = unlisted_date_queue([row, other])
+        self.assertEqual([x["date"] for x in queue], ["2026-01-02"])
+        self.assertEqual(queue[0]["affected_pairs"], 1)
+        self.assertEqual(queue[0]["disposition"], "evidence_required")
+        self.assertEqual(unlisted_date_queue([]), [])
+
+
 if __name__ == "__main__":
     unittest.main()

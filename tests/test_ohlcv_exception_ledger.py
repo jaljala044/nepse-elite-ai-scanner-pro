@@ -138,5 +138,51 @@ class LedgerValidationTests(unittest.TestCase):
                                 for error in errors))
 
 
+    def test_csv_identity_fields_cannot_be_changed_under_same_exception_id(self):
+        records = ([record("invalid_ohlc", i) for i in range(1331)] +
+                   [record("cross_source_ohlcv_conflict", i) for i in range(8)])
+        for row in records[1331:1338]:
+            row["disposition"] = "resolved_with_user_authoritative_evidence"
+            row["resolution_evidence"] = {
+                "authority": "explicit_user_designation_as_final_and_authoritative",
+                "canonical_promotion_allowed": False,
+                "raw_source_rows_modified": False,
+            }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp, cp = root / "ledger.json", root / "ledger.csv"
+            jp.write_text(json.dumps({
+                "counts": {"total_exception_records": 1339,
+                           "invalid_ohlc_rows": 1331,
+                           "cross_source_conflict_keys": 8},
+                "exceptions": records,
+            }), encoding="utf-8")
+            fields = sorted({key for row in records for key in row})
+            csv_rows = []
+            for row in records:
+                csv_rows.append({
+                    key: json.dumps(value) if isinstance(value, (dict, list)) else value
+                    for key, value in row.items()
+                })
+            for field, replacement in (
+                ("exception_type", "cross_source_ohlcv_conflict"),
+                ("symbol", "OTHER"),
+                ("trade_date", "2026-01-02"),
+                ("source_repository", "attacker/other-repository"),
+            ):
+                with self.subTest(field=field):
+                    changed = [dict(row) for row in csv_rows]
+                    changed[0][field] = replacement
+                    with cp.open("w", encoding="utf-8", newline="") as stream:
+                        writer = csv.DictWriter(stream, fieldnames=fields)
+                        writer.writeheader()
+                        writer.writerows(changed)
+                    errors = validate(jp, cp)
+                    self.assertTrue(
+                        any(f"JSON/CSV {field} mismatch" in error for error in errors),
+                        errors,
+                    )
+
+
 if __name__ == "__main__":
     unittest.main()

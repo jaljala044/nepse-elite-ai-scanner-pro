@@ -30,7 +30,7 @@ class UnifiedPortfolioRiskTests(unittest.TestCase):
         a=run([execution("x1")]); b=run([execution("x2")])
         result=run_unified_portfolio_risk(execution_runs=[a,b],daily_marks=mark(),
             market_controls=control(),initial_cash="1000",max_symbol_exposure_pct="60",
-            max_sector_exposure_pct="80",max_gross_exposure_pct="80")
+            max_sector_exposure_pct="80",max_gross_exposure_pct="100")
         self.assertEqual(result["accepted_execution_count"],1)
         self.assertEqual(result["rejected_executions"][0]["reason"],"symbol_exposure_limit_exceeded")
         self.assertEqual(result["status"],"VALUED")

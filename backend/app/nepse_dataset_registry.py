@@ -31,6 +31,7 @@ def build_dataset_registry(*, intake_reports, decision_cutoff, expected_start_da
     if unknown: errors.extend("unsupported_dataset:" + k for k in unknown)
     for kind in ALL_DATASETS:
         report = intake_reports.get(kind)
+        error_count_before_dataset = len(errors)
         if report is None:
             if kind in REQUIRED_DATASETS: errors.append("required_dataset_missing:" + kind)
             continue
@@ -61,7 +62,7 @@ def build_dataset_registry(*, intake_reports, decision_cutoff, expected_start_da
             "raw_sha256": digest, "available_at": available.isoformat() if available else None,
             "row_count": len(rows) if isinstance(rows, list) else 0,
             "captured_at": report.get("captured_at"),
-            "status": "admitted" if kind not in [e.split(":")[-1] for e in errors if e.endswith(":" + kind)] else "withheld",
+            "status": "admitted" if len(errors) == error_count_before_dataset else "withheld",
         }
     admitted_required = all(k in registry and registry[k]["status"] == "admitted" for k in REQUIRED_DATASETS)
     start, end = expected_start_date, expected_end_date

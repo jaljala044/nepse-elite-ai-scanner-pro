@@ -1,7 +1,8 @@
 import unittest
 from datetime import date, timedelta
 
-from app.idpat_accumulation_distribution import analyze_idpat_accumulation_distribution\nfrom app.idpat_price_volume import IDPATError
+from app.idpat_accumulation_distribution import analyze_idpat_accumulation_distribution
+from app.idpat_price_volume import IDPATError
 
 
 def make_snapshot(last_overrides=None, volume=1000):

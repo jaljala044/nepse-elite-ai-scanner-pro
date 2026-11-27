@@ -214,3 +214,39 @@ Per-security EOD rows can corroborate that a particular security has a reported 
 - Still unverified: whether the server enforces a rolling 365-day limit, whether deeper pages are available, and whether older dates can be retrieved outside the current one-year coverage window.
 - Next concrete step: compare a deliberately pre-2025-11-27 query with the already archived one-year history responses and preserve raw response/page metadata. Do not repeat already completed P4.22/P4.23 captures.
 - Priority 1 remains active. No calendar dates are promoted.
+
+
+## Public NEPSE historical EOD route boundary and formal acquisition path — 2026-11-27
+
+### First-party route tests already on record
+
+The project's preserved NEPSE investigations establish the following bounded outcomes for the five 2025-07-28 disputed securities (BGWT, MEHL, RAWA, RHGCL and ULHC):
+
+- Per-security history GET `/api/nots/market/history/security/{securityId}` returned valid empty collections for those five older date queries. This is a valid empty response, not evidence that the securities did not trade and not a market-closure signal.
+- Date-filtered bulk `today-price` POST `/api/nots/nepse-data/today-price?size=500&businessDate=2025-07-28` returned HTTP 500 with the body `Searched Date is not valid` in the later authenticated capture. Earlier 401 attempts were route/authentication diagnostics and are superseded by the later result for this request.
+- The official company-specific floorsheet route `/api/nots/security/floorsheet/{securityId}` returned HTTP 403 from nginx on both official hostnames in the recorded test, including clean-header and payload variants.
+- Legacy PHP routes tested in the same investigation returned the modern SPA shell rather than historical records.
+
+These tests establish that the already investigated public routes did not yield the requested 2025-07-28 primary records in those runs. They do not prove that NEPSE has no archived records or that a different authorized export is unavailable. See `docs/NEPSE_P1_INVESTIGATION_LOG.md` and the preserved run-42 evidence referenced there.
+
+### Data acquisition path now required
+
+The investigation log identifies NEPSE's published Data Usage Procedure 2077 as describing a formal historical-data request route, and the NEPSE FAQ directs data/information requests to the Research Branch (`research@nepalstock.com.np`, extension 125). The procedure is an older document; its current applicability, rates, student eligibility, permitted use, delivery format and rights must be confirmed directly with NEPSE before any payment or ingestion. Do not rely on historical fee figures as current quotes.
+
+For the 2025-07-28 five-security evidence gap, request a certified or exchange-issued daily EOD price board and, if available, historical time-and-sales/floorsheet export for BGWT, MEHL, RAWA, RHGCL and ULHC. Require the response to identify:
+- exchange business date and security identifiers/symbols effective on that date;
+- open, high, low, designated official close, traded quantity and turnover;
+- the exact definition of the close field and the weighted-average closing-price methodology applicable on 2025-07-28;
+- source document/report identifier, generation/publication timestamp and any corrections;
+- whether the export is complete for the requested date and all requested securities;
+- permitted research/commercial use, redistribution restrictions, current fee and delivery format.
+
+For the 616-date calendar, request date-scoped official daily market-summary/index records or an exchange-issued trading-session register for 2024-03-04 through 2026-11-20, plus all notices for exceptional closures, suspensions and schedule changes. A market-wide daily record is preferred over per-security evidence. If NEPSE supplies only a list of open dates, request the scope, effective period, completeness statement and any correction history.
+
+### Acceptance handling
+
+Archive the original delivered files and any accompanying correspondence as immutable raw evidence; preserve exact filenames, bytes, headers/metadata, retrieval timestamp, source identity and SHA-256. Keep the delivered source's rights/terms alongside the data. Reconcile date and symbol scope before deriving records. Do not promote a calendar date solely because a requested export is absent or incomplete. Keep all 616 candidate dates `candidate_unverified` and all 196,784 repeated-OHLCV candidates quarantined until the required date-level evidence and independent validation pass.
+
+### Decision
+
+Public unauthenticated/standard API paths already tested are not a demonstrated route to the older primary records. The next meaningful acquisition action is an authorized Research Branch request or an authorized broker time-and-sales export (for the five disputed records only). No calendar promotion or OHLCV conflict resolution is authorized by this finding.

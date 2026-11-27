@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from app.broker_behavior_memory import build_broker_behavior_memory
 from app.broker_ingestion import IngestionReport
-from app.quarantine_guard import is_quarantined
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
 from app.broker_memory_store import BrokerMemoryStore
 
 class PromotionRejected(ValueError):
@@ -20,9 +20,17 @@ def promote_validated_batch(report: IngestionReport, store: BrokerMemoryStore, *
     observations, availabilities, batch_ids = [], [], set()
     if report.conflicts:
         raise PromotionRejected("batch contains conflicts")
+    try:
+        keys = runtime_quarantine_keys()
+    except ValueError as exc:
+        raise PromotionRejected("invalid quarantine ledger") from exc
     for row in report.accepted:
         if is_quarantined(row):
             raise PromotionRejected("quarantined accepted row")
+        if keys is not None:
+            # Broker aggregates use stable security IDs; never guess a ticker mapping.
+            # Without independently verified ticker identity, withhold promotion.
+            raise PromotionRejected("broker ledger identity mapping not verified")
         if row.get("status") != "descriptive_only":
             raise PromotionRejected("non-descriptive row in accepted batch")
         available_at = row.get("available_at")

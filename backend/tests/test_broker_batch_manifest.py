@@ -20,7 +20,7 @@ def fixture(raw=b"official source extract"):
         source_rights_evidence=SourceRightsEvidence(
             source_id="SRC-A", evidence_id="RIGHTS-1", decision="cleared",
             terms_url="https://publisher.example/terms", terms_sha256="c" * 64,
-            retrieved_at="2026-11-26T08:00:00+05:45",
+            retrieved_at="2026-11-25T15:00:00+05:45",
             permitted_uses=("internal_research", "broker_aggregation"), reviewer_id="reviewer-1"),
         raw_sha256=hashlib.sha256(raw).hexdigest(), raw_byte_count=len(raw),
         parser_name="floorsheet-csv", parser_version="1.0.0", session_complete=True,

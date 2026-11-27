@@ -69,6 +69,20 @@ class NepseHolidayApiArchiveAuditTests(unittest.TestCase):
             self.assertEqual(result["failure_count"], 1)
             self.assertIn("official NEPSE holiday endpoint", result["failures"][0]["error"])
 
+    def test_source_url_rejects_extra_query_parameters(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = self._capture(root, 2025, [
+                {"holidayDate": "2025-01-01", "holidayDescription": "Holiday"},
+            ])
+            report_path = folder / "capture-report.json"
+            report = json.loads(report_path.read_text())
+            report["source_url"] += "&redirect=https://attacker.example"
+            report_path.write_text(json.dumps(report))
+            result = audit_archive(root)
+            self.assertEqual(result["failure_count"], 1)
+            self.assertIn("official NEPSE holiday endpoint", result["failures"][0]["error"])
+
     def test_hash_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

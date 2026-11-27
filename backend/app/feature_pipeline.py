@@ -331,6 +331,25 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         )
         aggregate_scores[symbol]["decision_status"] = "research_only_fail_closed_stage2_preview"
 
+    # Preserve response keys for rejected symbols, but never compute their features.
+    for symbol, contract in price_contract_by_symbol.items():
+        if not symbol or contract["score_eligible"]:
+            continue
+        unavailable = {"status": "input_contract_unverified", "score": None}
+        for mapping in (security_features, trend_features, volume_features,
+                        wyckoff_features, smc_features_by_symbol):
+            mapping[symbol] = dict(unavailable)
+        bundle = {name: dict(unavailable) for name in
+                  ("wyckoff", "trend", "relative_strength", "broker", "volume",
+                   "liquidity", "sector", "smc")}
+        component_feature_bundles[symbol] = bundle
+        component_candidates[symbol] = {name: None for name in bundle}
+        aggregate_scores[symbol] = score_feature_bundle(
+            bundle, stage1_quality="UNKNOWN", structure_confirmed=False,
+            liquidity_ok=False, market_tradeable=False, reward_risk=None,
+            hard_blocks=["historical_input_contract_unverified"])
+        aggregate_scores[symbol]["decision_status"] = "research_only_fail_closed_stage2_preview"
+
     latest_by_symbol = []
     for symbol, items in by_symbol.items():
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]

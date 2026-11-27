@@ -1,3 +1,26 @@
+## Latest whole-project live verification — 2026-11-28 (newest exact heads)
+
+This section supersedes earlier PR-head and workflow statements below where they differ. All ten active issue records and the listed active/secondary PRs were re-fetched. No submitted GitHub review/approval was present on the PRs listed here.
+
+### Priority 5 execution refresh
+- **Issue #5 / PR #198:** current PR head `c3d50e050c6729766403737ce68e0ac98f1b7690`, open/draft/mergeable. Exact-head workflows all pass: candidate audit `46065706773`, session join `46065706796`, backend contract `46065706743`, backend tests `46065706872`. Latest artifact `15231005676` is present and not expired; ZIP SHA-256 `a6173b021416da7543ea58bed75bf0fd37f5d6dfe1d1bc5ffd47001b1f29f555`. Downloaded CSV: 196,784 rows / 22 columns; CSV SHA-256 unchanged at `a343c1a4c87fb305415b0ce2b62427753250152e74d69dcb0558b13153cbef1`; four partitions unchanged (194 adjacent project sessions; 176 omitted project-session rows; 15,559 closure-overlap pairs; 180,855 pairs with at least one unlisted date). The explicit-closure partition was endpoint-triaged in Issue #5 comment 7228311263; the latest exact-head reproduction is recorded in comment 7228327545. All pairs remain review-only pending row-level evidence and independent review.
+- **Issue #4 / PR #179:** current head `64c89570521f89b0f36d20ac13e1f66834541c6d`; ledger/backend/contract all pass (runs `46065613900`, `46065613854`, `46065613859`). Open/draft/mergeable; no submitted review. HRL 2026-11-19 remains quarantined unresolved; 1,331 invalid rows remain quarantined.
+- **Issue #20 / PR #177:** current head `86ad9200aa1a427bab3d03b2e25ddb8381ee81ea`; backend and contract pass (`45985035911`, `45985036013`). Open/draft, mergeable=false, no submitted review. The primary 616-date calendar and per-instrument lifecycle/120-session evidence remain incomplete.
+- **Issue #90 / PR #196:** current head `2c913c45835bada4b11f297d2e1dbc883ab78c31`; broker capture regression/backend/contract pass (`46040600783`, `46040600780`, `46040600691`). Open/draft/mergeable, no review. Written source rights and authorized capture remain hard gates.
+- **Issue #106 / PR #216:** current head `c5f1be4b8241475cc35982051437a97666a7d3e1`; backend and contract pass (`46046656739`, `46046656786`). Open/draft, mergeable=false, no review. Research-only; rights, effective-dated sector mapping and verified session/price inputs remain open.
+
+### Remaining project active/secondary items
+- **Issue #134:** still open; candidate index graph/history routes documented, but no reproducible authorized first-party historical payload/schema or verified coverage.
+- **Issue #146:** still open; official NEPSE classification PDF remains historical class evidence only, not an effective-dated sector-membership registry.
+- **Issue #6:** still open; 281 active-equity current snapshot and coverage evidence remain the working basis; lifecycle and rights boundaries unchanged.
+- **Issue #85:** PR #194 head `b086b87b7d672e318e55c915eed511dd0159e0b5` passes portfolio-slice/backend/contract (runs `46046696993`, `46046697027`, `46046697097`); PR #219 head `eb382425c52b96fe0138ab5ee5d225d73c5e47c8` has focused slice test pass but backend and contract fail (`46040258614`, `46040258676`). Both open/draft, no review.
+- **Issue #86:** PR #203 head `755a5cee80ef8c0851be8d1a1882a93f2ed64838`; backend passes (`46004961230`); open/draft, no review. Web/mobile parity, security/legal and operations gates remain.
+- **PR #143:** open, no longer draft, current head `e6313969e67201937df0720714bee70ce08a62bf`; backend and contract fail (`46005642706`, `46005642852`). Do not accept finality gate.
+- **PR #190:** open/draft, current head `90d1239fc9d716eb8211302674b5e917060b439d`; holiday ledger/backend/contract pass (`46063683199`, `46063683201`, `46063683216`); primary circulars and independent review remain.
+- **PR #233:** open/draft, current head `cca72bb96a33402b307451f6e4be112fc507c7b5`; backend passes (`46047709350`); 225/616 positive-activity overlap evidence remains corroborative only, 391 outside the rolling capture remain unknown.
+
+No PR in this refresh has a submitted GitHub approval. Green CI means only code/tests passed at the exact recorded SHA; it is not independent acceptance or permission to promote data. No source OHLCV mutation, forward-fill, canonical/training admission, production broker signal, historical backtest promotion or AI recommendation enablement is authorized.
+
 ## Latest Issue #5 execution — explicit-closure endpoint triage (2026-11-28)
 
 After the previous full-artifact verification, the 15,559 explicit-closure candidate-pair partition was re-opened and endpoint-classified:

@@ -40,7 +40,8 @@ def run_six_strategy_replay(*, historical_panel, signals_by_strategy_horizon,
                         sellable_after_sessions=sellable_after_sessions)
                     runs.append({"strategy_id":strategy_id,"horizon":horizon,"partition":partition,
                         "metrics":result["metrics"],"trade_count":len(result["trades"]),
-                        "rejected_signals":result["rejected_signals"],"pending_exits":result["pending_exits"],
+                        "trades":result["trades"],"rejected_signals":result["rejected_signals"],
+                        "pending_exits":result["pending_exits"],
                         "assumptions":result["assumptions"],"excluded_non_universe_signals":excluded,
                         "status":"replayed" if result["trades"] else "no_eligible_trades"})
                 except (ValueError, TypeError) as exc:

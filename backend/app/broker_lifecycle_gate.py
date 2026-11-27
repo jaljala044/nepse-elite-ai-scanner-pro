@@ -14,13 +14,17 @@ def lifecycle_reason(security_id,symbol,start,end,evidence):
     if start>end: raise ValueError("inverted window")
     identities,events,predecessors=evidence
     matching=[r for r in identities if r["security_id"]==security_id and r["symbol"]==symbol and r["instrument_type"]=="equity"]
-    for r in predecessors:
-        if r.get("symbol")==symbol and r.get("effective_date_verified") is not True:
-            return "unresolved_predecessor_identity"
+    # A dated lifecycle event inside the requested window is the most
+    # specific exclusion and must be reported before broader predecessor
+    # identity uncertainty. This preserves the actual event evidence while
+    # still failing closed on windows without a dated event.
     for r in events:
         if r["security_id"]!=security_id and r["symbol"]!=symbol: continue
         if r["event_type"] in {"merger_joint_operations_start","post_merger_shares_listed","post_merger_shares_listed_and_trading_released","trading_suspension_start","trading_resumption","delisting"}:
             if start<=date.fromisoformat(r["event_date"])<=end: return "lifecycle_event_in_window"
+    for r in predecessors:
+        if r.get("symbol")==symbol and r.get("effective_date_verified") is not True:
+            return "unresolved_predecessor_identity"
     if len(matching)!=1: return "missing_or_ambiguous_lifecycle_identity"
     r=matching[0]
     if not r["valid_from"]: return "trading_start_unverified"

@@ -54,7 +54,7 @@ class FloorsheetArchiveCliTests(unittest.TestCase):
         self.assertEqual(manifest["payload_pin_mode"], "explicit_date_specific_git_blob_sha1")
         self.assertIsNone(manifest["profile_expected_size_bytes"])
         self.assertIsNone(manifest["profile_expected_raw_sha256"])
-        self.assertFalse(manifest["canonical_promotion_allowed"] if "canonical_promotion_allowed" in manifest else True)
+        self.assertNotIn("canonical_promotion_allowed", manifest)
 
     def test_date_specific_blob_pin_rejects_wrong_blob_sha1(self):
         payload = b"date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"

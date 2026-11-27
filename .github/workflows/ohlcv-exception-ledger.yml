@@ -26,19 +26,21 @@ jobs:
           run-id: 45397942163
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: input
-      - name: Generate row-level ledger
+      - name: Generate row-level ledger with repository's canonical builder
         run: |
-          python scripts/build_ohlcv_exception_ledger.py \
-            --archive-audit input/ohlcv-archive-audit.json \
-            --external-audit input/ohlcv-socrateai-crosscheck.json \
-            --output-dir output
+          python backend/build_ohlcv_exception_ledger.py \
+            --input input/ohlcv-archive-audit.json \
+            --external-input input/ohlcv-socrateai-crosscheck.json \
+            --json-output output/ohlcv_exception_ledger.json \
+            --csv-output output/ohlcv_exception_ledger.csv
       - name: Validate deterministic ledger
         run: |
           python scripts/validate_ohlcv_exception_ledger.py \
             --json output/ohlcv_exception_ledger.json \
             --csv output/ohlcv_exception_ledger.csv
-      - name: Run ledger regression tests
-        run: python -m unittest discover -s tests -p 'test_ohlcv_exception_ledger.py' -v
+      - name: Run canonical builder regression tests
+        working-directory: backend
+        run: python -m unittest tests.test_build_ohlcv_exception_ledger -v
       - uses: actions/upload-artifact@v4
         with:
           name: ohlcv-row-level-exception-ledger

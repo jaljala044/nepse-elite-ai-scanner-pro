@@ -196,12 +196,35 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         reasons.append("adjustment_basis_unverified")
     if adjustment_basis == "verified_adjusted":
         adjustment_evidence = segment.get("adjustment_evidence")
-        if (not _valid_primary_evidence(adjustment_evidence, cutoff)
-                or not isinstance(adjustment_evidence.get("factor_version"), str)
-                or not adjustment_evidence["factor_version"].strip()
-                or _decimal(adjustment_evidence.get("factor")) is None
-                or _decimal(adjustment_evidence.get("factor")) <= 0
-                or not isinstance(adjustment_evidence.get("effective_date"), str)):
+        adjustment_valid = _valid_primary_evidence(adjustment_evidence, cutoff)
+        if adjustment_valid:
+            factor_version = adjustment_evidence.get("factor_version")
+            factor = _decimal(adjustment_evidence.get("factor"))
+            effective_date_value = adjustment_evidence.get("effective_date")
+            claims = adjustment_evidence.get("claims")
+            try:
+                factor_effective_date = _iso_date(
+                    effective_date_value, "adjustment effective_date"
+                )
+            except ValueError:
+                factor_effective_date = None
+            expected_adjustment_claims = {
+                "factor": str(factor),
+                "factor_version": factor_version,
+                "effective_date": effective_date_value,
+            }
+            adjustment_valid = (
+                isinstance(factor_version, str)
+                and bool(factor_version.strip())
+                and factor is not None
+                and factor > 0
+                and factor_effective_date is not None
+                and factor_effective_date <= cutoff.date()
+                and isinstance(claims, dict)
+                and all(claims.get(key) == value
+                        for key, value in expected_adjustment_claims.items())
+            )
+        if not adjustment_valid:
             reasons.append("adjustment_factor_evidence_unverified")
     minimum_warmup = segment.get("minimum_warmup_sessions", 0)
     if not isinstance(minimum_warmup, int) or isinstance(minimum_warmup, bool) or minimum_warmup < 0:

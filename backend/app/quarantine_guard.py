@@ -33,16 +33,34 @@ def _canonical_day(value):
     return value
 
 
-def quarantine_keys(path, expected_sha256):
+def quarantine_keys(path, expected_sha256, *, expected_source_commits=None):
     """Load a pinned OHLCV exception ledger. Reject malformed or changed input."""
     raw = Path(path).read_bytes()
     if hashlib.sha256(raw).hexdigest() != expected_sha256:
         raise ValueError("quarantine ledger hash mismatch")
+    if not isinstance(expected_sha256, str) or len(expected_sha256) != 64 or any(ch not in "0123456789abcdef" for ch in expected_sha256.lower()):
+        raise ValueError("invalid quarantine ledger digest")
     ledger = json.loads(raw)
     rows = ledger.get("exceptions") if isinstance(ledger, dict) else None
+    source_audit = ledger.get("source_audit") if isinstance(ledger, dict) else None
+    repositories = source_audit.get("repositories") if isinstance(source_audit, dict) else None
+    report_digest = source_audit.get("source_audit_report_sha256") if isinstance(source_audit, dict) else None
     if ledger.get("schema_version") != "1.0" or not isinstance(rows, list):
         raise ValueError("invalid quarantine ledger schema")
-    if ledger.get("counts", {}).get("total_exception_records") != len(rows):
+    if (not isinstance(repositories, dict) or len(repositories) != 2
+            or not isinstance(report_digest, str) or len(report_digest) != 64
+            or any(ch not in "0123456789abcdef" for ch in report_digest.lower())):
+        raise ValueError("invalid quarantine ledger source audit")
+    actual_source_commits = {}
+    for repository, metadata in repositories.items():
+        commit = metadata.get("commit_sha") if isinstance(metadata, dict) else None
+        if not isinstance(repository, str) or not isinstance(commit, str) or len(commit) != 40 or any(ch not in "0123456789abcdef" for ch in commit.lower()):
+            raise ValueError("invalid quarantine ledger source commit")
+        actual_source_commits[repository] = commit.lower()
+    if expected_source_commits is not None and actual_source_commits != expected_source_commits:
+        raise ValueError("quarantine ledger source commits stale")
+    counts = ledger.get("counts")
+    if not isinstance(counts, dict) or counts.get("total_exception_records") != len(rows):
         raise ValueError("quarantine ledger count mismatch")
     keys = set()
     ids = set()
@@ -99,16 +117,31 @@ def reject_quarantined_history(rows, symbol, keys):
 
 
 def runtime_quarantine_keys(*, required=False):
-    """Server-owned configuration; partial configuration is never accepted."""
+    """Server-owned, digest- and source-version-pinned quarantine configuration."""
     required = required or os.environ.get("NEPSE_REQUIRE_QUARANTINE_LEDGER") == "1"
     path = os.environ.get("NEPSE_QUARANTINE_LEDGER")
     digest = os.environ.get("NEPSE_QUARANTINE_LEDGER_SHA256")
-    if not path and not digest and not required:
+    source_commits_raw = os.environ.get("NEPSE_QUARANTINE_SOURCE_COMMITS")
+    if not path and not digest and not source_commits_raw and not required:
         return None
     if not path or not digest:
         raise ValueError("pinned quarantine ledger required")
+    if required and not source_commits_raw:
+        raise ValueError("pinned quarantine source commits required")
+    expected_source_commits = None
+    if source_commits_raw:
+        try:
+            expected_source_commits = json.loads(source_commits_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid quarantine source commit pin") from exc
+        if (not isinstance(expected_source_commits, dict) or len(expected_source_commits) != 2
+                or any(not isinstance(repo, str) or not isinstance(commit, str) or len(commit) != 40
+                       or any(ch not in "0123456789abcdef" for ch in commit.lower())
+                       for repo, commit in expected_source_commits.items())):
+            raise ValueError("invalid quarantine source commit pin")
+        expected_source_commits = {repo: commit.lower() for repo, commit in expected_source_commits.items()}
     try:
-        return quarantine_keys(path, digest)
+        return quarantine_keys(path, digest, expected_source_commits=expected_source_commits)
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
         raise ValueError("invalid runtime quarantine ledger") from exc
 

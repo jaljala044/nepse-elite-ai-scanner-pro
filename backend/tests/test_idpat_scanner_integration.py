@@ -1,7 +1,10 @@
 import unittest
 from datetime import date, timedelta
+import os
+import tempfile
+from pathlib import Path
 
-from app.idpat_scanner_integration import build_idpat_scanner_bundle, REQUIRED_GATES
+from app.idpat_scanner_integration import build_idpat_scanner_bundle, persist_idpat_bundle, REQUIRED_GATES
 
 
 def snapshot():
@@ -27,6 +30,7 @@ def snapshot():
 
 def gates():
     return {name: {"status": "verified", "evidence_id": "EV-" + name,
+                   "source_id": "SRC-" + name,
                    "available_at": "2026-11-26T15:30:00+05:45"}
             for name in REQUIRED_GATES}
 
@@ -78,6 +82,27 @@ class IDPATScannerIntegrationTests(unittest.TestCase):
     def test_missing_risk_inputs_do_not_create_plan(self):
         result = self.build()
         self.assertEqual(result["record"]["risk_plan"]["reason"], "explicit_risk_inputs_required")
+
+    def test_gate_without_source_identity_is_blocked(self):
+        evidence = gates()
+        evidence["broker"].pop("source_id")
+        result = self.build(gate_evidence=evidence, risk=risk_inputs())
+        self.assertIn("broker:gate_source_id_missing", result["record"]["blocked_gates"])
+
+    def test_existing_append_only_signal_store_persists_no_trade_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["NEPSE_API_DATABASE"] = str(Path(temp) / "idpat.duckdb")
+            try:
+                evidence = gates()
+                bundle = self.build(risk=risk_inputs())
+                first = persist_idpat_bundle(bundle, gate_evidence=evidence, horizon="swing")
+                second = persist_idpat_bundle(bundle, gate_evidence=evidence, horizon="swing")
+                self.assertEqual(first["status"], "stored")
+                self.assertEqual(second["status"], "already_stored")
+                self.assertEqual(first["action"], "NO TRADE")
+                self.assertTrue(first["persisted"])
+            finally:
+                os.environ.pop("NEPSE_API_DATABASE", None)
 
     def test_all_horizons_remain_research_only(self):
         result = self.build()

@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "source_repository": "jaljala044/nepse-smc-data",
+  "quarantine_blob": "ecccab0b05c12d3a35d2cc4f35aee42d5bdfb3b5",
+  "records": [
+    {
+      "symbol": "SPDL",
+      "path": "reference/SPDL_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dbd7aca95de9f7ffac1fbf06b47cf3b33310c0be",
+      "quarantine_count": 53,
+      "register_count": 53,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 42,
+        "OTHER_OHLC_INVARIANT": 11
+      },
+      "open_equals_previous_close": 42,
+      "open_outside_range": 52,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "CHL",
+      "path": "reference/CHL_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "8c7cc365feb30e168fc5c4d97ac6f9a8b62d5b9d",
+      "quarantine_count": 45,
+      "register_count": 45,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 44,
+        "OTHER_OHLC_INVARIANT": 1
+      },
+      "open_equals_previous_close": 44,
+      "open_outside_range": 45,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "HIDCL",
+      "path": "reference/HIDCL_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "94783d943aec38bb88b6aa7d5936336d1510fac9",
+      "quarantine_count": 30,
+      "register_count": 30,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 29,
+        "OTHER_OHLC_INVARIANT": 1
+      },
+      "open_equals_previous_close": 29,
+      "open_outside_range": 30,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "RADHI",
+      "path": "reference/remaining_six_equity_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dc748a9c06e8e3c1f457d7d6ca2198ee351b80bd",
+      "quarantine_count": 2,
+      "register_count": 2,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 2
+      },
+      "open_equals_previous_close": 1,
+      "open_outside_range": 2,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "RAWA",
+      "path": "reference/remaining_six_equity_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dc748a9c06e8e3c1f457d7d6ca2198ee351b80bd",
+      "quarantine_count": 2,
+      "register_count": 2,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 2
+      },
+      "open_equals_previous_close": 2,
+      "open_outside_range": 2,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "UAIL",
+      "path": "reference/remaining_six_equity_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dc748a9c06e8e3c1f457d7d6ca2198ee351b80bd",
+      "quarantine_count": 2,
+      "register_count": 2,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 2
+      },
+      "open_equals_previous_close": 2,
+      "open_outside_range": 2,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "UNHPL",
+      "path": "reference/remaining_six_equity_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dc748a9c06e8e3c1f457d7d6ca2198ee351b80bd",
+      "quarantine_count": 2,
+      "register_count": 2,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OTHER_OHLC_INVARIANT": 1,
+        "OPEN_OUTSIDE_RANGE": 1
+      },
+      "open_equals_previous_close": 2,
+      "open_outside_range": 1,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "BGWT",
+      "path": "reference/remaining_six_equity_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dc748a9c06e8e3c1f457d7d6ca2198ee351b80bd",
+      "quarantine_count": 1,
+      "register_count": 1,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 1
+      },
+      "open_equals_previous_close": 1,
+      "open_outside_range": 1,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    },
+    {
+      "symbol": "HRL",
+      "path": "reference/remaining_six_equity_ohlc_exception_register_2026-11-26.csv",
+      "register_blob": "dc748a9c06e8e3c1f457d7d6ca2198ee351b80bd",
+      "quarantine_count": 1,
+      "register_count": 1,
+      "duplicate_dates": 0,
+      "missing_registered_keys": [],
+      "extra_register_keys": [],
+      "register_blob_mismatches": 0,
+      "source_blob_mismatches": 0,
+      "flag_counts": {
+        "OPEN_OUTSIDE_RANGE": 1
+      },
+      "open_equals_previous_close": 1,
+      "open_outside_range": 1,
+      "corrected_rows": 0,
+      "disposition": "retain_quarantine_pending_independent_price_evidence"
+    }
+  ]
+}

@@ -56,11 +56,22 @@ class MarketSummaryFinalityTests(unittest.TestCase):
 
     def test_missing_session_fails_closed(self):
         capture, calendar, attestation = fixtures()
+        capture["rows"].append({"session_date": "2026-11-27", "source_payload_sha256": DIGEST})
+        calendar["session_dates"].append("2026-11-26")
         calendar["session_dates"].append("2026-11-27")
+        calendar["session_dates"] = sorted(set(calendar["session_dates"]))
         result = self.validate(capture, calendar, attestation)
         self.assertEqual(result["status"], "insufficient_evidence")
-        self.assertEqual(result["missing_sessions"], ["2026-11-27"])
+        self.assertEqual(result["missing_sessions"], ["2026-11-26"])
         self.assertFalse(result["promotion_allowed"])
+
+    def test_calendar_dates_outside_capture_range_are_not_missing_rows(self):
+        capture, calendar, attestation = fixtures()
+        calendar["session_dates"] = ["2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"]
+        result = self.validate(capture, calendar, attestation)
+        self.assertEqual(result["status"], "attested_final")
+        self.assertEqual(result["session_count"], 2)
+        self.assertTrue(result["promotion_allowed"])
 
     def test_unexpected_observed_date_fails_closed(self):
         capture, calendar, attestation = fixtures()

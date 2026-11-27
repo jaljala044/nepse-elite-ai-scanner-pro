@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ConfigDict
 from .broker_context_server import server_context
+from .broker_mode_research import mode_research
 from .broker_research_leaderboards import research_leaderboards
 from .broker_ledger_profiles import ledger_profiles
 from .broker_research_security import BrokerResearchSecurity
@@ -75,6 +76,19 @@ def broker_leaderboards(request: BrokerContextRequest):
         return research_leaderboards(broker_context_research(request))
     except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
         raise HTTPException(422,"Invalid leaderboard evidence") from exc
+
+class BrokerModeRequest(BrokerContextRequest):
+    mode: str
+
+@app.post("/v1/research/broker-mode")
+def broker_mode(request: BrokerModeRequest):
+    try:
+        return mode_research(request.snapshot,request.prices,request.memberships,request.sector_prices,
+            mode=request.mode,decision_time=request.decision_time,expected_sessions=request.expected_sessions)
+    except OSError as exc:
+        raise HTTPException(503,"Server evidence unavailable") from exc
+    except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
+        raise HTTPException(422,"Invalid broker mode evidence") from exc
 
 class BrokerConcentrationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")

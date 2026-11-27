@@ -35,3 +35,8 @@ Sources: https://cdsc.com.np/BondandDebenture · https://bishaludash.com.np/NEPS
 - The identity-evidence JSON records `follow_up_disposition=closed_unverified_alias_retained`, both repository paths, blob SHAs, row counts and boundary rows.
 - No canonical identity mapping, history splice, price promotion or scanner admission is authorized.
 - No further supplementary alias follow-up is required unless new primary evidence is supplied.
+
+
+## CI dependency alignment — 2026-11-27
+
+This documentation PR is now based on `research/issue-20-historical-segment-eligibility` at `86ad9200aa1a427bab3d03b2e25ddb8381ee81ea`, which supplies the evaluator module imported by the repository's historical-segment regression test. The earlier backend run `45932272657` tested the previous `main` base and failed on that missing module; it does not validate the retargeted PR composition. The separate historical identity regression run `45932272651` passed for the identity evidence change. The alias remains unresolved and retained; no identity mapping, history splice, or scanner admission is authorized. A new exact-head backend run is required.

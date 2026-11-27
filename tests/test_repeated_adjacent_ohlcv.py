@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.extract_repeated_adjacent_ohlcv import extract
+from scripts.extract_repeated_adjacent_ohlcv import annotate_calendar, extract
 
 
 class RepeatedAdjacentTests(unittest.TestCase):
@@ -10,6 +10,30 @@ class RepeatedAdjacentTests(unittest.TestCase):
         file = root / "ABC_OHLCV.csv"
         file.write_text("Date,Open,High,Low,Close,Volume\n" + rows, encoding="utf-8")
         return file
+
+    def test_calendar_join_preserves_project_tier_and_missing_dates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            calendar = root / "calendar.csv"
+            fields = "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes"
+            rows = [
+                fields,
+                "2026-11-05,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified",
+                "2026-11-06,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified",
+            ]
+            calendar.write_text(chr(10).join(rows) + chr(10), encoding="utf-8")
+            candidates = [
+                {"previous_date": "2026-11-05", "current_date": "2026-11-06"},
+                {"previous_date": "2026-11-05", "current_date": "2026-11-07"},
+            ]
+            summary = annotate_calendar(candidates, calendar)
+            self.assertEqual(candidates[0]["previous_session_classification"], "project_accepted_open")
+            self.assertEqual(candidates[0]["session_pair_classification"], "adjacent_project_sessions")
+            self.assertEqual(candidates[0]["project_session_index_gap"], 1)
+            self.assertEqual(candidates[1]["session_pair_classification"], "date_not_listed_in_project_calendar")
+            self.assertEqual(summary["project_open_session_count"], 2)
+            self.assertIn("not NEPSE certification", summary["calendar_policy"])
+
 
     def test_identical_valid_next_calendar_date_is_baseline_eligible(self):
         with tempfile.TemporaryDirectory() as tmp:

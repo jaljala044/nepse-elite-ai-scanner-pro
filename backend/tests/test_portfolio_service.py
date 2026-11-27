@@ -95,12 +95,35 @@ class PortfolioServiceTests(unittest.TestCase):
         self.assertEqual(db_path.stat().st_mode & 0o777, 0o600)
         self.assertEqual(db_path.parent.stat().st_mode & 0o777, 0o700)
 
-    def test_owner_isolation_and_delete_cascade(self):
+    def test_owner_isolation_and_soft_delete_retains_transaction_ledger(self):
         self.tx("BUY", "2", "100", "0", "2026-01-01")
+        portfolio_id = self.portfolio["id"]
         self.assertEqual(service.list_portfolios("user-b"), [])
-        self.assertIsNone(service.portfolio_positions("user-b", self.portfolio["id"]))
-        self.assertTrue(service.delete_portfolio(self.owner, self.portfolio["id"]))
+        self.assertIsNone(service.portfolio_positions("user-b", portfolio_id))
+        self.assertTrue(service.delete_portfolio(self.owner, portfolio_id))
+        self.assertFalse(service.delete_portfolio(self.owner, portfolio_id))
         self.assertEqual(service.list_portfolios(self.owner), [])
+        self.assertIsNone(service.get_portfolio(self.owner, portfolio_id))
+        self.assertIsNone(service.portfolio_positions(self.owner, portfolio_id))
+        self.assertIsNone(service.portfolio_transactions(self.owner, portfolio_id))
+        self.assertIsNone(service.get_portfolio("user-b", portfolio_id))
+
+        con = service._connect()
+        try:
+            portfolio = con.execute(
+                "SELECT deleted_at FROM portfolios WHERE id=? AND owner=?",
+                (portfolio_id, self.owner),
+            ).fetchone()
+            self.assertIsNotNone(portfolio["deleted_at"])
+            self.assertEqual(
+                con.execute(
+                    "SELECT COUNT(*) FROM portfolio_transactions WHERE portfolio_id=?",
+                    (portfolio_id,),
+                ).fetchone()[0],
+                1,
+            )
+        finally:
+            con.close()
 
     def test_invalid_values_and_symbols_rejected(self):
         with self.assertRaises(ValueError):

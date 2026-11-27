@@ -90,7 +90,7 @@ class BenchmarkComparisonTests(unittest.TestCase):
 
 
     def test_malformed_ohlcv_date_is_rejected(self):
-        rows = [dict(self.rows[0], date="2025-01-01T00:00:00")]
+        rows = [{"date": "2025-01-01T00:00:00", "open": 100, "high": 110, "low": 90, "close": 100, "volume": 1000}]
         with self.assertRaisesRegex(ValueError, "invalid_ohlcv_date"):
             adjust_ohlcv_for_corporate_actions(
                 rows=rows, actions=[], as_of_date="2025-01-03",

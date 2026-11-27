@@ -62,14 +62,18 @@ def assemble_historical_panel(*, datasets, start_date, end_date, decision_cutoff
     session_set = set(sessions)
 
     universe = {}
+    security_to_symbol = {}
     for row in reports["instrument_universe"]["accepted_rows"]:
         symbol = str(row.get("symbol","")).strip().upper()
+        security_id = str(row.get("security_id","")).strip().upper()
         effective = _day(row.get("effective_from"))
-        if not symbol or effective is None: continue
+        if not symbol or not security_id or effective is None: continue
+        security_to_symbol[security_id] = symbol
         universe.setdefault(symbol, []).append((effective, str(row.get("listing_status","")).upper(), row))
     bars_by_symbol = {}
     for row in reports["ohlcv"]["accepted_rows"]:
-        symbol = str(row.get("symbol") or row.get("security_id") or "").strip().upper()
+        security_id = str(row.get("security_id","")).strip().upper()
+        symbol = str(row.get("symbol") or security_to_symbol.get(security_id) or "").strip().upper()
         d = _day(row.get("session_date"))
         if not symbol or d is None or not (start <= d <= end): continue
         if d.isoformat() not in session_set:
@@ -77,7 +81,7 @@ def assemble_historical_panel(*, datasets, start_date, end_date, decision_cutoff
         bars_by_symbol.setdefault(symbol, []).append(row)
     actions = {}
     for row in reports["corporate_actions"]["accepted_rows"]:
-        symbol = str(row.get("symbol") or row.get("security_id") or "").strip().upper()
+        symbol = str(row.get("symbol") or security_to_symbol.get(str(row.get("security_id","")).strip().upper()) or "").strip().upper()
         effective = _day(row.get("effective_date"))
         if symbol and effective and start <= effective <= end and str(row.get("status","")).lower() not in {"cancelled","rejected","withdrawn"}:
             actions.setdefault(symbol, []).append(row)

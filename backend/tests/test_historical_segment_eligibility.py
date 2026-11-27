@@ -12,14 +12,16 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "boundary_reviewed": True, "suspension_overlap": False,
             "merger_or_successor_boundary": False, "adjustment_basis": "raw",
             "minimum_warmup_sessions": 20,
+            "identity_evidence": self.source_evidence("identity:NABIL:123"),
+            "lifecycle_evidence": self.source_evidence("lifecycle:NABIL:123"),
         }
         self.statuses = {day: "traded" for day in self.sessions}
         self.session_evidence = {
             day: {
                 "status": "traded", "source_id": "fixture-calendar-v1",
                 "source_record_ref": f"fixture:{day}",
-                "source_url": "https://example.invalid/calendar/2025",
-                "evidence_sha256": "b" * 64, "rights_status": "approved",
+                "source_url": "https://www.nepalstock.com/calendar/2025",
+                "evidence_sha256": "b" * 64, "payload_sha256": "b" * 64, "rights_status": "approved",
                 "retrieved_at": "2025-12-31T15:00:00+05:45",
                 "available_at": "2025-12-31T15:00:00+05:45",
             }
@@ -27,12 +29,23 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         }
         self.records = [self.row(day) for day in self.sessions]
 
+    def source_evidence(self, record_ref):
+        return {
+            "source_id": "nepse-official-v1", "source_record_ref": record_ref,
+            "source_url": "https://www.nepalstock.com/api/evidence",
+            "evidence_sha256": "c" * 64, "payload_sha256": "c" * 64,
+            "rights_status": "approved",
+            "available_at": "2025-12-30T00:00:00+05:45",
+            "retrieved_at": "2025-12-31T15:00:00+05:45",
+        }
+
     def row(self, day):
         return {
             "session_date": day, "symbol": "NABIL", "security_id": "123",
             "open": "100", "high": "105", "low": "95", "close": "102", "volume": "1000",
             "adjustment_basis": "raw", "rights_status": "approved",
             "evidence_sha256": "a" * 64, "available_at": "2025-12-31T15:00:00+05:45",
+            "source_evidence": self.source_evidence("ohlcv:NABIL:123:" + day),
         }
 
     def evaluate(self, **overrides):
@@ -158,6 +171,30 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         records[0] = dict(records[0], volume="0")
         result = self.evaluate(records=records)
         self.assertIn("invalid_ohlcv:" + self.sessions[0], result["reasons"])
+
+    def test_fractional_share_volume_is_invalid(self):
+        records = list(self.records)
+        records[0] = dict(records[0], volume="1000.5")
+        result = self.evaluate(records=records)
+        self.assertIn("invalid_ohlcv:" + self.sessions[0], result["reasons"])
+
+    def test_untrusted_session_source_host_fails_closed(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(evidence[self.sessions[0]], source_url="https://example.invalid/calendar")
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+
+    def test_bar_requires_full_primary_source_evidence(self):
+        records = list(self.records)
+        records[0] = dict(records[0], source_evidence={"source_url": "https://www.nepalstock.com"})
+        result = self.evaluate(records=records)
+        self.assertIn("bar_source_evidence_unverified:" + self.sessions[0], result["reasons"])
+
+    def test_identity_and_lifecycle_flags_without_source_evidence_fail(self):
+        segment = dict(self.segment, identity_evidence=None, lifecycle_evidence=None)
+        result = self.evaluate(segment=segment)
+        self.assertIn("instrument_identity_source_evidence_unverified", result["reasons"])
+        self.assertIn("lifecycle_source_evidence_unverified", result["reasons"])
 
     def test_expected_session_outside_lifecycle_fails_even_without_bar(self):
         segment = dict(self.segment, effective_to=self.sessions[-2])

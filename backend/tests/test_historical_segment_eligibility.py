@@ -103,5 +103,39 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("bar_present_on_verified_no_trade_session:" + day, result["reasons"])
 
 
+    def test_closed_session_is_distinct_from_verified_no_trade(self):
+        day = self.sessions[-1]
+        statuses = dict(self.statuses, **{day: "closed_verified"})
+        result = self.evaluate(session_statuses=statuses, records=self.records[:-1])
+        self.assertEqual(result["verified_closed_session_count"], 1)
+        self.assertEqual(result["verified_no_trade_count"], 0)
+        self.assertIn("closed_session_in_expected_sessions:" + day, result["reasons"])
+
+    def test_explicit_unknown_session_is_not_assumed_closed(self):
+        day = self.sessions[-1]
+        statuses = dict(self.statuses, **{day: "unknown"})
+        result = self.evaluate(session_statuses=statuses, records=self.records[:-1])
+        self.assertEqual(result["unknown_session_count"], 1)
+        self.assertEqual(result["verified_closed_session_count"], 0)
+        self.assertIn("session_status_unverified:" + day, result["reasons"])
+
+    def test_adjustment_basis_mismatch_fails_closed(self):
+        records = list(self.records)
+        records[0] = dict(records[0], adjustment_basis="verified_adjusted")
+        result = self.evaluate(records=records)
+        self.assertIn("adjustment_basis_mismatch:" + self.sessions[0], result["reasons"])
+
+    def test_record_outside_verified_session_grid_is_reported(self):
+        records = list(self.records) + [self.row("2025-06-01")]
+        result = self.evaluate(records=records)
+        self.assertIn("unexpected_bar:2025-06-01", result["reasons"])
+
+    def test_unavailable_or_naive_timestamp_fails_closed(self):
+        records = list(self.records)
+        records[0] = dict(records[0], available_at="2025-12-31T15:00:00")
+        result = self.evaluate(records=records)
+        self.assertIn("available_at_unverified:" + self.sessions[0], result["reasons"])
+
+
 if __name__ == "__main__":
     unittest.main()

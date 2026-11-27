@@ -5,6 +5,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
+from .session_calendar import load_calendar
 from .structure_timeframes import evaluate_timeframes
 from .smc_confluence import evaluate_confluence
 from .idpat_v3 import evaluate_idpat_v3, evaluate_provisional
@@ -29,6 +30,30 @@ except (OSError, ValueError) as exc:
     # Fail closed: no scan is permitted when the candidate universe is absent or invalid.
     EQUITY_UNIVERSE = None
     UNIVERSE_LOAD_ERROR = str(exc)
+# Server-owned calendar only. Every civil date in the requested window must
+# have an explicit market-wide disposition known at the decision cutoff.
+def trusted_sessions(rows, cutoff):
+    from datetime import timedelta
+    if not rows:
+        return None
+    try:
+        evidence = load_calendar(Path(__file__).resolve().parents[2] / "data/reference/nepse_session_calendar.csv")
+        days = [date.fromisoformat(str(r["date"])) for r in rows]
+        day = min(days)
+        sessions = []
+        while day <= max(days):
+            entry = evidence.get(day)
+            if not entry or entry["scope"] not in ("all_securities", "*"):
+                return None
+            if datetime.fromisoformat(entry["verified_at_utc"].replace("Z", "+00:00")) > cutoff:
+                return None
+            if entry["status"] in ("verified_open", "verified_exceptional_open"):
+                sessions.append(day.isoformat())
+            day += timedelta(days=1)
+        return sessions or None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
 class ScanRequest(BaseModel):
     symbols: list[str] | None = None
     as_of: date | None = None
@@ -349,7 +374,10 @@ def scan(request: ScanRequest):
         cutoff = datetime.now(timezone.utc)
         if request.as_of:
             cutoff = min(cutoff, datetime.combine(request.as_of, time.max, ZoneInfo("Asia/Kathmandu")))
-        errors = assess(symbol.upper(), rows, cutoff.isoformat(), REVIEWED_ROWS)
+        sessions = trusted_sessions(rows, cutoff)
+        errors = assess(symbol.upper(), rows, cutoff.isoformat(), REVIEWED_ROWS, verified_sessions=sessions)
+        if sessions is None and not errors:
+            errors.append("trusted_calendar_unavailable")
         result["eligibility"] = {"eligible": not errors, "reasons": errors}
         if errors:
             structure_status = (
@@ -367,7 +395,7 @@ def scan(request: ScanRequest):
             result["market_structure"] = structure
         result["idpat_v3"] = evaluate_idpat_v3(rows, eligible=not errors)
         result["provisional_research"] = evaluate_provisional(rows, eligible=not errors)
-        timeframes = evaluate_timeframes(rows, eligible=not errors)
+        timeframes = evaluate_timeframes(rows, eligible=not errors, verified_sessions=sessions, symbol=symbol)
         if not errors:
             # Return the reviewed event objects, rather than unlinked duplicates.
             recent = {str(row["date"]) for row in sorted(rows,key=lambda row:str(row["date"]))[-5:]}

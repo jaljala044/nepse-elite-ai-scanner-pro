@@ -118,6 +118,21 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "OHLCV row must be a mapping"):
             run_market_scan(["AAA"], {"AAA": [None]}, as_of=None, scan_symbol=lambda *args: {})
 
+    def test_callback_mutation_does_not_change_source_market_data(self):
+        source_rows = [{"date": "2026-01-01", "close": "10"}]
+        source = {"AAA": source_rows}
+
+        def mutating_scan(symbol, rows, as_of):
+            rows[0]["close"] = "999"
+            rows.append({"date": "2026-01-02", "close": "20"})
+            return {"status": "screened"}
+
+        result = run_market_scan(
+            ["AAA"], source, as_of=date(2026, 1, 1), scan_symbol=mutating_scan
+        )
+        self.assertEqual(source["AAA"], [{"date": "2026-01-01", "close": "10"}])
+        self.assertEqual(result["results"][0]["observations"], 1)
+
     def test_empty_universe_is_safe(self):
         result = run_market_scan([], {}, as_of=None, scan_symbol=lambda *args: {})
         self.assertEqual(result["candidate_universe_count"], 0)

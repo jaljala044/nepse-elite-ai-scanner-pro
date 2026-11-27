@@ -55,9 +55,9 @@ class CanonicalReconciliationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             first=persist_reconciliation_ledger(tmp,ledger)
             second=persist_reconciliation_ledger(tmp,ledger)
+            self.assertTrue(Path(first["path"]).exists())
         self.assertFalse(first["idempotent"])
         self.assertTrue(second["idempotent"])
-        self.assertTrue(Path(first["path"]).exists())
 
     def test_ledger_tampering_is_rejected(self):
         ledger=reconcile_ohlcv_batches(batches=[batch("SRC-A","a"),batch("SRC-B","b")],

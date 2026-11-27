@@ -117,6 +117,21 @@ class BrokerEarlyPatternTests(unittest.TestCase):
         self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
         self.assertEqual(result["reason"], "daily_flow_baseline_ratio_invalid")
 
+    def test_very_large_integer_daily_ratio_does_not_raise_overflow(self):
+        self.windows["1D"]["execution_channels"][0]["latest_buy_vs_prior_20_avg_ratio"] = 10 ** 1000
+        result = self.evaluate()
+        self.assertEqual(result["status"], "EARLY_ENTRY_CANDIDATE")
+
+    def test_very_large_integer_threshold_does_not_raise_overflow(self):
+        result = self.evaluate(minimum_daily_flow_multiple=10 ** 1000)
+        self.assertEqual(result["status"], "WATCH")
+
+    def test_coverage_above_100_percent_fails_closed(self):
+        self.windows["1D"]["coded_amount_coverage_pct"] = 100.01
+        result = self.evaluate()
+        self.assertEqual(result["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertEqual(result["reason"], "broker_execution_code_coverage_below_80_pct")
+
     def test_negative_daily_ratio_fails_closed(self):
         self.windows["1D"]["execution_channels"][0]["latest_buy_vs_prior_20_avg_ratio"] = -0.1
         result = self.evaluate()

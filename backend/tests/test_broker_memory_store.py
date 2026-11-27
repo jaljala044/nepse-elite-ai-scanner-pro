@@ -183,7 +183,11 @@ class BrokerMemoryStoreTests(unittest.TestCase):
         self.assertEqual(daily["daily_activity"][-1]["session_date"], sessions[-1])
         self.assertEqual(profile["observation_count"], 42)
         self.assertEqual(len(profile["input_lineage_sha256"]), 64)
-        self.assertEqual(profile["selected_early_patterns"][0]["status"], "EARLY_ENTRY_CANDIDATE")
+        self.assertEqual(
+            profile["selected_early_patterns"][0]["status"],
+            "EARLY_ENTRY_CANDIDATE",
+            profile["selected_early_patterns"][0],
+        )
 
     def test_source_lineage_drilldown_is_paginated_and_filterable_by_code(self):
         self.persist()

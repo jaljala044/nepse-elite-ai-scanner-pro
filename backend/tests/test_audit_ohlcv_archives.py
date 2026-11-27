@@ -1,6 +1,6 @@
 import unittest
 
-from audit_ohlcv_archives import audit_ohlcv_csv
+from audit_ohlcv_archives import _repository_snapshot, audit_ohlcv_csv
 
 
 class AuditOhlcvCsvTests(unittest.TestCase):
@@ -43,6 +43,55 @@ class AuditOhlcvCsvTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_ohlcv_csv(content, "TEST_OHLCV.csv")
 
+
+    def test_repository_snapshot_uses_exact_requested_commit_not_default_branch(self):
+        class Response:
+            status_code = 200
+            def __init__(self, payload):
+                self.payload = payload
+            def json(self):
+                return self.payload
+            def raise_for_status(self):
+                return None
+
+        class Client:
+            def __init__(self):
+                self.urls = []
+            def get(self, url):
+                self.urls.append(url)
+                if url.endswith("/repos/owner/repo"):
+                    return Response({"default_branch": "main"})
+                if url.endswith("/commits/" + "a" * 40):
+                    return Response({"sha": "a" * 40, "commit": {"tree": {"sha": "b" * 40}}})
+                if url.endswith("/git/trees/" + "b" * 40 + "?recursive=1"):
+                    return Response({"truncated": False, "tree": []})
+                raise AssertionError(f"unexpected URL: {url}")
+
+        client = Client()
+        commit, tree, files = _repository_snapshot(client, "owner/repo", "a" * 40)
+        self.assertEqual(commit, "a" * 40)
+        self.assertEqual(tree, "b" * 40)
+        self.assertEqual(files, [])
+        self.assertIn("/commits/" + "a" * 40, client.urls[1])
+
+    def test_repository_snapshot_rejects_commit_ref_mismatch(self):
+        class Response:
+            status_code = 200
+            def __init__(self, payload):
+                self.payload = payload
+            def json(self):
+                return self.payload
+            def raise_for_status(self):
+                return None
+
+        class Client:
+            def get(self, url):
+                if url.endswith("/repos/owner/repo"):
+                    return Response({"default_branch": "main"})
+                return Response({"sha": "c" * 40, "commit": {"tree": {"sha": "b" * 40}}})
+
+        with self.assertRaisesRegex(RuntimeError, "requested pinned commit"):
+            _repository_snapshot(Client(), "owner/repo", "a" * 40)
 
 if __name__ == "__main__":
     unittest.main()

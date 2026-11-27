@@ -1,0 +1,44 @@
+name: P443 historical floorsheet recovery
+on:
+  push:
+    branches: [p443-runtime-quarantine]
+    paths:
+      - '.github/workflows/p443-floorsheet-recovery.yml'
+      - 'backend/recover_p443_floorsheet_candidates.py'
+      - 'data/reports/p443_floorsheet_extraction_manifest.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run extraction tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p test_recover_p443_floorsheet_candidates.py
+      - name: Reconstruct research candidates
+        run: python backend/recover_p443_floorsheet_candidates.py --manifest data/reports/p443_floorsheet_extraction_manifest.json --output recovery-output/candidates.json
+      - name: Validate report scope
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          manifest=json.loads(Path("data/reports/p443_floorsheet_extraction_manifest.json").read_text())
+          report=json.loads(Path("recovery-output/candidates.json").read_text())
+          expected={(f["date"],s) for f in manifest["files"] for s in f["symbols"]}
+          rows=report["records"]
+          assert len(rows)==11 and {(r["date"],r["symbol"]) for r in rows}==expected
+          assert all(r["admission_allowed"] is False for r in rows)
+          assert report["approved_corrections"]==[]
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p443-floorsheet-recovery-candidates
+          path: recovery-output/candidates.json
+          if-no-files-found: error

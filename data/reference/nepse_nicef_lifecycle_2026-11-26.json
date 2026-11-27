@@ -52,5 +52,40 @@
       "https://omitnomis.github.io/ShareSansarScraper/api/history/NICEF.json",
       "https://nepsealpha.com/nepse-chart"
     ]
+  },
+  "evidence_review_2026_11_27": {
+    "status": "one_pass_followup_completed_no_verified_ohlcv",
+    "review_date": "2026-11-27",
+    "additional_sources_reviewed": [
+      {
+        "source": "MeroLagani announcement detail",
+        "url": "https://cdn.merolagani.com/AnnouncementDetail.aspx?id=68146",
+        "finding": "Confirms 100,000,000 NICEF units listed on 2026-11-04; does not state an executed first trade or daily OHLCV."
+      },
+      {
+        "source": "ShareSansar listing announcement",
+        "url": "https://www.sharesansar.com/index.php/newsdetail/nic-asia-equity-opportunity-fund-have-been-listed-on-nepse-2026-11-04",
+        "finding": "Says trading was expected to begin Thursday 2026-11-05; expectation is not proof of execution."
+      },
+      {
+        "source": "ShareSansarScraper public history endpoint",
+        "url": "https://omitnomis.github.io/ShareSansarScraper/api/history/NICEF.json",
+        "finding": "Previously returned HTTP 404; no price history exposed."
+      },
+      {
+        "source": "NepseAlpha price export",
+        "url": "https://nepsealpha.com/nepse-data/",
+        "finding": "Public page exposes historical export UI, but this review did not obtain a NICEF-specific dated row."
+      },
+      {
+        "source": "NEPSE daily market report, 2026-11-05",
+        "url": "https://nepseiq.com/nepse-today/2026-11-05",
+        "finding": "Confirms an ordinary-market session occurred, but the report does not identify a NICEF execution or price."
+      }
+    ],
+    "actual_first_trade_date": null,
+    "first_ohlcv": null,
+    "disposition": "follow_up_closed_after_one_bounded_search_pass; no additional chase required for supplementary mutual-fund coverage",
+    "ingestion_decision": "Keep NICEF as a closed-end mutual fund in the instrument/lifecycle registry and outside the equity scanner. Do not synthesize a first-trade date, OHLCV row, zero-volume candle, or no-trade classification. The missing first-trade/price evidence is recorded as unresolved and is non-blocking for equity coverage and web/app delivery."
   }
 }

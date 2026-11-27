@@ -11,6 +11,24 @@ import hashlib
 import json
 from typing import Any, Iterable, Mapping
 
+from app.historical_quarantine import configured_holds, reject_held
+
+def _verified_symbol(security_id, day, registry):
+    matches = []
+    for row in registry:
+        if row.get("security_id") != security_id or row.get("status") != "verified":
+            continue
+        try:
+            start = date.fromisoformat(row["effective_from"])
+            end = date.fromisoformat(row["effective_to"]) if row.get("effective_to") else None
+        except (KeyError, TypeError, ValueError):
+            continue
+        if start <= day and (end is None or day <= end):
+            matches.append(row)
+    if len(matches) != 1 or not isinstance(matches[0].get("symbol"), str) or not matches[0]["symbol"].strip():
+        raise IngestionError("security_symbol_mapping_missing_or_ambiguous")
+    return matches[0]["symbol"]
+
 COVERAGE_THRESHOLD = Decimal("0.95")
 SIDES = {"BUY", "SELL"}
 
@@ -64,6 +82,7 @@ def reconcile_broker_batch(
     contracts: Iterable[ContractTotal] | None = None,
     seen_natural_keys: Mapping[str, str] | None = None,
     coverage_threshold: Decimal = COVERAGE_THRESHOLD,
+    security_registry: list[dict] | None = None,
 ) -> IngestionReport:
     """Validate a batch; availability must be timezone-aware ISO-8601.
 
@@ -98,6 +117,9 @@ def reconcile_broker_batch(
         ratio = str(ratio_decimal)
         coverage_status = "complete" if ratio_decimal >= threshold else "partial"
 
+    holds = configured_holds()
+    if not security_registry:
+        raise IngestionError("verified_security_registry_required_for_quarantine")
     report = IngestionReport(batch_id, coverage_status, ratio)
     prior = dict(seen_natural_keys or {})
     staged: list[dict[str, Any]] = []
@@ -125,6 +147,14 @@ def reconcile_broker_batch(
                 reasons.append("blank_required_identity:" + identity_field)
         if session is None or str(raw["session_date"]) not in verified_sessions:
             reasons.append("unverified_or_invalid_session")
+        if session is not None:
+            try:
+                symbol = _verified_symbol(raw["security_id"], session, security_registry)
+                if session.isoformat() in {"2024-08-14", "2024-08-18"}:
+                    raise IngestionError("p443_archive_session_quarantined")
+                reject_held(symbol, session.isoformat(), holds)
+            except (ValueError, TypeError, AttributeError) as exc:
+                reasons.append("historical_quarantine:" + str(exc))
         if str(raw["broker_id"]) not in verified_brokers:
             reasons.append("unverified_broker_identity")
         if str(raw["source_id"]) not in expected or str(raw["source_id"]) not in received:

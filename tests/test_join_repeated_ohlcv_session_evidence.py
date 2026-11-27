@@ -87,17 +87,15 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
             calendar = root / "calendar.csv"
             output = root / "joined.csv"
             summary = root / "summary.json"
-            candidates.write_text(
-                "repository,commit_sha,path,file_sha256,symbol,previous_date,current_date,previous_csv_line,current_csv_line\\n"
-                "source/a," + "a" * 40 + ",ABC.csv," + "b" * 64 +
-                ",ABC,2026-11-05,2026-11-06,2,3\\n", encoding="utf-8"
-            )
-            calendar.write_text(
-                "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes\\n"
-                "2026-11-05,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified\\n"
-                "2026-11-06,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified\\n",
-                encoding="utf-8",
-            )
+            candidates.write_text("\\n".join([
+                "repository,commit_sha,path,file_sha256,symbol,previous_date,current_date,previous_csv_line,current_csv_line",
+                "source/a," + "a" * 40 + ",ABC.csv," + "b" * 64 + ",ABC,2026-11-05,2026-11-06,2,3",
+            ]) + "\\n", encoding="utf-8")
+            calendar.write_text("\\n".join([
+                "date,status,source_id,evidence_uri,raw_evidence_sha256,published_at,retrieved_at_utc,verified_at_utc,scope,notes",
+                "2026-11-05,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified",
+                "2026-11-06,project_accepted_open,SS_ARCHIVE,https://github.com/srijankarki07/nepse-data,,,,,project_baseline,ShareSansar-derived;not_exchange_certified",
+            ]) + "\\n", encoding="utf-8")
             result = join_candidates(candidates, calendar, output, summary)
             with output.open(newline="", encoding="utf-8") as handle:
                 row = next(csv.DictReader(handle))

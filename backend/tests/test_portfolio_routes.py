@@ -54,6 +54,30 @@ class PortfolioRouteTests(unittest.TestCase):
         deleted = self.client.delete(f"/v1/portfolios/{portfolio_id}", headers=self.headers)
         self.assertEqual(deleted.status_code, 204)
 
+    def test_compact_transaction_date_is_rejected_at_api_boundary(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "Date validation"})
+        portfolio_id = created.json()["id"]
+        response = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions",
+            headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "1",
+                  "price": "100", "fees": "0", "trade_date": "20260102"},
+        )
+        self.assertEqual(response.status_code, 422)
+
+    def test_invalid_calendar_date_is_rejected_by_service(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "Date validation"})
+        portfolio_id = created.json()["id"]
+        response = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions",
+            headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "1",
+                  "price": "100", "fees": "0", "trade_date": "2026-02-30"},
+        )
+        self.assertEqual(response.status_code, 422)
+
     def test_cross_user_access_is_not_found(self):
         created = self.client.post("/v1/portfolios", headers=self.headers, json={"name": "Private"})
         portfolio_id = created.json()["id"]

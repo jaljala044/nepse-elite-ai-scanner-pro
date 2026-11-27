@@ -47,6 +47,14 @@ class SessionCalendarTests(unittest.TestCase):
         self.assertEqual(classify_date(date(2026, 11, 23), {})["classification"],
                          "unverified_session_candidate")
 
+    def test_user_approved_2020_lockdown_and_exceptional_sessions(self):
+        self.assertFalse(schedule_candidate(date(2020, 4, 1))[0])
+        self.assertTrue(schedule_candidate(date(2020, 5, 12))[0])
+        self.assertTrue(schedule_candidate(date(2020, 5, 13))[0])
+        self.assertFalse(schedule_candidate(date(2020, 5, 14))[0])
+        self.assertFalse(schedule_candidate(date(2020, 6, 28))[0])
+        self.assertTrue(schedule_candidate(date(2020, 6, 29))[0])
+
     def test_weekly_regime_transitions_are_explicit(self):
         self.assertFalse(schedule_candidate(date(2022, 4, 29))[0]) # Friday odd-lot period
         self.assertFalse(schedule_candidate(date(2022, 5, 6))[0]) # Before two-day weekend starts

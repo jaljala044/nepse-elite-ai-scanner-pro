@@ -38,7 +38,7 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
                 "2026-11-05,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
                 ",2026-11-05T10:00:00+05:45,2026-11-05T11:00:00Z,2026-11-05T12:00:00Z,all_market,official open\n"
                 "2026-11-06,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
-                ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,all_market,official open\n",
+                ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,2026-11-06T12:00:00Z,all_market,official open\n",
                 encoding="utf-8",
             )
             result = join_candidates(candidates, calendar, output, summary)
@@ -71,7 +71,7 @@ class RepeatedOHLCVSessionJoinTests(unittest.TestCase):
                 "2026-11-05,verified_open,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
                 ",2026-11-05T10:00:00+05:45,2026-11-05T11:00:00Z,2026-11-05T12:00:00Z,all_market,open\n"
                 "2026-11-06,verified_closed,NEPSE,https://nepalstock.com/evidence," + "d" * 64 +
-                ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,all_market,closure\n",
+                ",2026-11-06T10:00:00+05:45,2026-11-06T11:00:00Z,2026-11-06T12:00:00Z,all_market,closure\n",
                 encoding="utf-8",
             )
             join_candidates(candidates, calendar, output, summary)

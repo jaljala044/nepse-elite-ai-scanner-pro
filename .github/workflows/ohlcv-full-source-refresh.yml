@@ -123,6 +123,16 @@ jobs:
                   rejected(lambda: build_walk_forward_report([row],1,1),"quarantined")
               assert load_state() == ({},[])
           Path("refresh/runtime-consumer-test.json").write_text(json.dumps({"tested_keys":len(keys|prior),"database_import":"passed","scenario":"passed","walk_forward":"passed","scope":"synthetic inputs using actual blocked keys; not deployment acceptance","promotion_allowed":False},indent=2))
+          from datetime import date
+          from app.broker_memory_store import BrokerMemoryStore
+          from app.temporal_registry import SecurityMasterRecord
+          symbol, day = sorted(keys | prior)[0]
+          registry = [SecurityMasterRecord("SEC-CI", symbol, "equity", "active", date(2000,1,1), None, "ci-primary", "primary_nepse_notice", True, True)]
+          store = BrokerMemoryStore(Path(tmp)/"broker.duckdb", security_records=registry)
+          snap = {"as_of_date":day,"security_id":"SEC-CI","broker_entity_id":"BROKER-CI","window":"daily","buy_amount":"1","sell_amount":"0","net_amount":"1","source_ids":["SRC"],"evidence_ids":["E"],"payload_hashes":["a"*64],"status":"descriptive_only","observed_sessions":1,"requested_sessions":1,"first_session":day,"last_session":day,"observation_rows":1,"constituent_sessions":[day],"constituent_lineage":[{"session_date":day,"source_id":"SRC","evidence_id":"E","payload_sha256":"a"*64}]}
+          rejected(lambda: store.append(snap,idempotency_key="quarantine-ci"),"quarantined constituent")
+          assert store.count() == 0
+          Path("refresh/runtime-consumer-test.json").write_text(json.dumps({"tested_keys":len(keys|prior),"database_import":"passed","scenario":"passed","walk_forward":"passed","broker_memory_append":"passed","broker_rows_persisted":store.count(),"scope":"isolated DuckDB integration using actual blocked keys; not deployment acceptance","promotion_allowed":False},indent=2))
           PY
           sha256sum refresh/runtime-consumer-test.json >> refresh/SHA256SUMS
       - uses: actions/upload-artifact@v4

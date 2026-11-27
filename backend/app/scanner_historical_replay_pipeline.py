@@ -55,6 +55,38 @@ def _verified_level(value, cutoff):
     return available is not None and available<=cutoff and price is not None
 
 
+def _valid_trade_plan(plan, snapshot, decision_day, partition):
+    """Compatibility validator for a source-bound long trade plan."""
+    if not isinstance(plan, dict) or not isinstance(snapshot, dict):
+        return False
+    cutoff = _timestamp(snapshot.get("decision_cutoff"))
+    if cutoff is None or snapshot.get("session_date") != decision_day:
+        return False
+    if plan.get("evidence_status") != "verified":
+        return False
+    if not all(isinstance(plan.get(k), str) and plan[k].strip()
+               for k in ("signal_id", "source_id", "evidence_id")):
+        return False
+    if plan.get("decision_date") != decision_day or plan.get("sample_partition") != partition:
+        return False
+    plan_cutoff = _timestamp(plan.get("decision_time"))
+    available = _timestamp(plan.get("available_at"))
+    if plan_cutoff is None or plan_cutoff != cutoff or available is None or available > cutoff:
+        return False
+    entry = _positive(plan.get("entry_price"))
+    stop_item, target_item = plan.get("stop"), plan.get("target")
+    if not _verified_level(stop_item, cutoff) or not _verified_level(target_item, cutoff):
+        return False
+    stop, target = _positive(stop_item.get("price")), _positive(target_item.get("price"))
+    cap = _positive(plan.get("liquidity_quantity_cap"))
+    net_rr = _positive(plan.get("net_reward_risk"))
+    if (entry is None or stop is None or target is None or not stop < entry < target
+            or cap is None or cap != cap.to_integral_value() or net_rr is None or net_rr < Decimal("2")):
+        return False
+    gross_rr = (target - entry) / (entry - stop)
+    return net_rr <= gross_rr
+
+
 def build_historical_research_candidates(*, snapshots, feature_evidence_by_key,
     trade_plans_by_key, partition_by_date, minimum_coverage="0.95"):
     """Evaluate every strategy/horizon; only source-bound, risk-valid plans become replay signals.

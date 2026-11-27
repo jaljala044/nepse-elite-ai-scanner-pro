@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone, time
 from pathlib import Path
+import os
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -17,9 +18,19 @@ from .broker_pattern_detector import detect_broker_patterns
 from .index_intelligence import build_verified_index_intelligence
 from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
+from .quarantine_guard import runtime_quarantine_keys
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
+
+
+def validate_quarantine_configuration():
+    """Validate the pinned exception ledger before serving a required deployment."""
+    if os.getenv("NEPSE_REQUIRE_QUARANTINE_LEDGER") == "1":
+        runtime_quarantine_keys(required=True)
+
+
+app.add_event_handler("startup", validate_quarantine_configuration)
 
 _UNIVERSE_PATH = Path(__file__).resolve().parents[2] / "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
 try:
@@ -596,7 +607,6 @@ def unified_coverage():
 
 # Mount only the built public frontend, never the repository or raw data.
 from fastapi.staticfiles import StaticFiles
-import os
 _public_frontend = Path(os.environ.get("NEPSE_PUBLIC_FRONTEND", str(Path(__file__).resolve().parents[2] / "frontend" / "public-build")))
 if (_public_frontend / "index.html").is_file():
     app.mount("/terminal", StaticFiles(directory=str(_public_frontend), html=True), name="terminal")

@@ -195,10 +195,17 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
             entitlement = positions.get(symbol, {"quantity": 0.0})["quantity"]
             aid = action["action_id"]
             kind, effective, terms = entitlement_by_action[aid]["event"]
-            if kind == "rights" and terms[0] > entitlement * _positive(action.get("ratio"), "rights_ratio") + 1e-8:
+            if kind == "rights_payment" and terms[0] > entitlement * _positive(action.get("ratio"), "rights_ratio") + 1e-8:
                 raise ValueError("rights_subscription_exceeds_record_date_entitlement:" + aid)
             entitlement_by_action[aid]["quantity"] = entitlement
             entitlement_by_action[aid]["terms"] = terms
+            active = [(tid, lot) for tid, lot in linked_entries.items()
+                      if lot["symbol"] == symbol and not lot["closed"] and lot["settlement"] <= day]
+            if kind != "dividend" and active:
+                if len(active) != 1 or abs(active[0][1]["quantity"] - entitlement) > 1e-8:
+                    raise ValueError("corporate_action_requires_unambiguous_single_lot")
+                active[0][1]["pending_actions"].add(aid)
+                entitlement_by_action[aid]["linked_entry_id"] = active[0][0]
             if kind == "split":
                 pending_events[effective].append({"type": "split_conversion", "action_id": aid,
                                                   "symbol": symbol, "factor": terms,
@@ -250,6 +257,14 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                 if event["type"] == "rights_shares":
                     pos["cost_basis"] += event["quantity"] * event["price"]
                     rights_paid -= event["quantity"] * event["price"]
+            if event["type"] in ("split_conversion", "bonus_shares", "rights_shares"):
+                lot_id = entitlement_by_action[event["action_id"]].get("linked_entry_id")
+                if lot_id is not None:
+                    lot = linked_entries[lot_id]
+                    if lot["closed"] or abs(pending_buys[symbol]) > 1e-8:
+                        raise ValueError("corporate_action_lot_changed_before_credit")
+                    lot["quantity"] = pos["quantity"]
+                    lot["pending_actions"].discard(event["action_id"])
             if event["type"] != "dividend_cash":
                 pos["average_cost"] = pos["cost_basis"] / pos["quantity"] if pos["quantity"] else 0.0
             event["effective_date"] = day.isoformat()
@@ -258,6 +273,8 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
         for trade in trades_by_day.get(day, []):
             symbol, qty = trade["symbol"], trade["_qty"]
             gross = qty * trade["_price"]
+            if any(lot["symbol"] == symbol and lot["pending_actions"] for lot in linked_entries.values()):
+                raise ValueError("trade_during_pending_lot_corporate_action")
             if trade["side"] == "BUY":
                 if trade.get("auto_size") is True:
                     if not all(k in limits for k in ("max_position_pct", "max_sector_pct", "risk_per_trade_pct", "max_positions", "max_drawdown_pct")):
@@ -318,14 +335,16 @@ def run_unified_portfolio_event_ledger(*, initial_cash, initial_holdings, trades
                     raise ValueError("insufficient_cash_for_buy:" + trade["trade_id"])
                 cash -= debit
                 pending_buys[symbol] += qty
-                linked_entries[trade["trade_id"]] = {"symbol": symbol, "quantity": qty, "settlement": trade["_settle"], "closed": False}
+                linked_entries[trade["trade_id"]] = {"symbol": symbol, "quantity": qty, "settlement": trade["_settle"], "closed": False, "pending_actions": set()}
                 # Shares enter holdings only on settlement date.
             else:
                 if trade.get("exit_entry_id") is not None:
                     entry = linked_entries.get(trade["exit_entry_id"])
                     if not entry or entry["symbol"] != symbol or entry["settlement"] > day or entry["closed"]:
                         raise ValueError("linked_exit_entry_unavailable")
-                    if any(a.get("symbol") == symbol for a in corporate_actions or []):
+                    if entry["pending_actions"]:
+                        raise ValueError("linked_exit_pending_corporate_action")
+                    if any(a.get("symbol") == symbol for a in corporate_actions or []) and abs(positions.get(symbol, {}).get("quantity", 0) - entry["quantity"]) > 1e-8:
                         raise ValueError("linked_exit_corporate_action_requires_lot_reconciliation")
                     qty = entry["quantity"]
                     gross = qty * trade["_price"]

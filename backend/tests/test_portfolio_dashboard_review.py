@@ -33,3 +33,25 @@ class PortfolioDashboardTests(unittest.TestCase):
         args["snapshot"]["positions"][0]["stop"]=95
         args["distribution"]["action"]="UNKNOWN"
         self.assertEqual(portfolio_dashboard_review(**args)["action"],"UNKNOWN")
+
+    def test_http_dashboard_contract(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        client=TestClient(app)
+        response=client.post("/v1/research/portfolio/dashboard",json=self.args)
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertEqual(response.json()["action"],"EXIT_REVIEW")
+        self.assertFalse(response.json()["production_eligible"])
+    def test_http_invalid_evidence(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        args=deepcopy(self.args)
+        args["quote"]["available_at"]="2024-05-03T17:00:00+05:45"
+        response=TestClient(app).post("/v1/research/portfolio/dashboard",json=args)
+        self.assertEqual(response.status_code,422,response.text)
+    def test_http_missing_required_field(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        args=deepcopy(self.args)
+        del args["holding"]
+        self.assertEqual(TestClient(app).post("/v1/research/portfolio/dashboard",json=args).status_code,422)

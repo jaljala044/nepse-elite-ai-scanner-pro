@@ -5,6 +5,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ConfigDict
 from .broker_context_server import server_context
 from .broker_mode_research import mode_research
+from .broker_strategy_confluence import unified_research
 from .broker_research_leaderboards import research_leaderboards
 from .broker_ledger_profiles import ledger_profiles
 from .broker_research_security import BrokerResearchSecurity
@@ -89,6 +90,26 @@ def broker_mode(request: BrokerModeRequest):
         raise HTTPException(503,"Server evidence unavailable") from exc
     except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
         raise HTTPException(422,"Invalid broker mode evidence") from exc
+
+class UnifiedResearchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    symbol: str
+    as_of: date
+    mode: str
+    ohlcv: list[dict]
+    smc_result: dict
+    ict_result: dict
+    idpat_result: dict
+    broker_result: dict
+
+@app.post("/v1/research/unified-broker-confluence")
+def unified_broker_confluence(request: UnifiedResearchRequest):
+    try:
+        return unified_research(symbol=request.symbol,as_of=request.as_of.isoformat(),mode=request.mode,
+            ohlcv=request.ohlcv,smc_result=request.smc_result,ict_result=request.ict_result,
+            idpat_result=request.idpat_result,broker_result=request.broker_result)
+    except (ValueError,TypeError,KeyError) as exc:
+        raise HTTPException(422,"Invalid unified research evidence") from exc
 
 class BrokerConcentrationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")

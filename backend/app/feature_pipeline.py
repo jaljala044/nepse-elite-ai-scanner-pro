@@ -139,27 +139,22 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
     for contract in price_contract_by_symbol.values():
         observed = set(contract["observed_sessions"])
         contract["missing_expected_sessions"] = sorted(canonical_sessions - observed) if valid_calendar else []
-        contract["score_eligible"] = (
-            contract["input_rows"] > 0
-            and contract["admitted_rows"] == contract["input_rows"]
-            and valid_calendar
-            and not contract["duplicate_sessions"]
-            and observed == canonical_sessions
+        contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
+        contract["idpat_eligible"] = (
+            contract["score_eligible"] and valid_calendar
+            and not contract["duplicate_sessions"] and observed == canonical_sessions
         )
     for contract in broker_contract_by_symbol.values():
         contract["score_eligible"] = contract["input_rows"] > 0 and contract["admitted_rows"] == contract["input_rows"]
 
-    # Only complete, provenance-valid, unquarantined symbol histories reach feature
-    # engines. Raw rows remain represented in the input-contract diagnostics.
-    prices = [
-        row for row in raw_prices
-        if price_contract_by_symbol.get(str(row.get("symbol", "")).strip().upper(), {}).get("score_eligible")
-    ]
+    # Preserve point-in-time rows for existing descriptive diagnostics; IDPAT has
+    # its own stricter per-symbol admission gate below.
+    prices = raw_prices
 
     input_contracts = {
         "canonical_session_calendar": "verified" if valid_calendar else "unavailable_or_invalid",
         "ohlcv": {"input_rows": len(raw_prices), "admitted_rows": len(raw_prices) - len(price_contract_failures),
-                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and bool(price_contract_by_symbol) and all(item.get("score_eligible") for item in price_contract_by_symbol.values()),
+                  "excluded_rows": len(price_contract_failures), "score_eligible": bool(raw_prices) and not price_contract_failures,
                   "exclusions": price_contract_failures, "symbols": price_contract_by_symbol},
         "broker_floorsheet": {"input_rows": len(raw_broker_rows), "admitted_rows": len(broker_rows),
                   "excluded_rows": len(broker_contract_failures), "score_eligible": bool(raw_broker_rows) and len(broker_rows) == len(raw_broker_rows),
@@ -168,8 +163,19 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                               "reason": sector_membership_contract_reason},
     }
     by_symbol = {}
+    seen_feature_sessions = {}
     for row in prices:
-        by_symbol.setdefault(str(row.get("symbol", "")).upper(), []).append(row)
+        symbol = str(row.get("symbol", "")).strip().upper()
+        day = str(row.get("session_date", ""))
+        if not symbol:
+            continue
+        seen = seen_feature_sessions.setdefault(symbol, set())
+        # Duplicate sessions are already marked in the contract and block IDPAT;
+        # retain one row for legacy descriptive modules that reject duplicate keys.
+        if day in seen:
+            continue
+        seen.add(day)
+        by_symbol.setdefault(symbol, []).append(row)
     security_features = {
         symbol: security_footprint(items)
         for symbol, items in sorted(by_symbol.items()) if symbol
@@ -228,7 +234,7 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
             continue
         contract = price_contract_by_symbol.get(symbol, {})
         items = by_symbol.get(symbol, [])
-        if not contract.get("score_eligible"):
+        if not contract.get("idpat_eligible"):
             idpat_features_by_symbol[symbol] = {
                 "status": "input_contract_unverified",
                 "reason": ("no_point_in_time_eligible_prices" if not items else

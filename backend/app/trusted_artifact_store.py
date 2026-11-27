@@ -19,6 +19,18 @@ class TrustedArtifactError(ValueError):
     """Raised when a deployment-pinned artifact cannot be safely admitted."""
 
 
+def _canonical_date(value: Any, field: str) -> date:
+    if not isinstance(value, str):
+        raise TrustedArtifactError(f"{field}_must_be_iso_date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise TrustedArtifactError(f"{field}_must_be_iso_date") from None
+    if parsed.isoformat() != value:
+        raise TrustedArtifactError(f"{field}_must_be_iso_date")
+    return parsed
+
+
 def _timestamp(value: Any, field: str) -> datetime:
     if not isinstance(value, str):
         raise TrustedArtifactError(f"{field}_must_be_timezone_aware")
@@ -67,10 +79,7 @@ class TrustedArtifactStore:
 
     def load(self, *, decision_date: str, decision_time: str,
              required_modules: tuple[str, ...] = REQUIRED_MODULES) -> dict[str, dict]:
-        try:
-            cutoff_date = date.fromisoformat(decision_date)
-        except (TypeError, ValueError):
-            raise TrustedArtifactError("decision_date_must_be_iso_date") from None
+        cutoff_date = _canonical_date(decision_date, "decision_date")
         # Compare the supplied timestamp's own calendar date before
         # normalizing it to UTC. A valid Nepal-local midnight timestamp can
         # fall on the previous UTC date and must not be rejected.
@@ -103,7 +112,7 @@ class TrustedArtifactStore:
                         or len(evidence_ids) != len(set(evidence_ids))):
                     raise TrustedArtifactError("evidence_ids_missing_or_duplicate")
 
-                as_of = date.fromisoformat(str(entry.get("as_of_date")))
+                as_of = _canonical_date(entry.get("as_of_date"), "artifact_as_of_date")
                 if as_of > cutoff_date:
                     raise TrustedArtifactError("artifact_as_of_after_decision_date")
                 if cutoff_date - as_of > timedelta(days=self.max_age_days):
@@ -182,7 +191,6 @@ class TrustedArtifactStore:
                     "data": data,
                 }
             except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
-                # Preserve explicit failure reasons without admitting partial data.
                 reason = str(exc) or "artifact_unavailable"
                 output[module] = {"status": "unavailable", "rejection_reason": reason}
         return output

@@ -13,6 +13,10 @@ import json
 from collections import Counter
 from datetime import date
 from pathlib import Path
+import sys
+
+# Allow this repository-root CLI to reuse the backend calendar validator.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 from app.session_calendar import classify_date, load_calendar
 

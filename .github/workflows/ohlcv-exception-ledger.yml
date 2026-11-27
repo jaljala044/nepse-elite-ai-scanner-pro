@@ -1,0 +1,47 @@
+name: OHLCV exception ledger
+on:
+  pull_request:
+    paths:
+      - "scripts/build_ohlcv_exception_ledger.py"
+      - "scripts/validate_ohlcv_exception_ledger.py"
+      - "tests/test_ohlcv_exception_ledger.py"
+      - ".github/workflows/ohlcv-exception-ledger.yml"
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download immutable pinned audit artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nepse-ohlcv-row-audit
+          repository: jaljala044/nepse-elite-ai-scanner-pro
+          run-id: 45397942163
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: input
+      - name: Generate row-level ledger
+        run: |
+          python scripts/build_ohlcv_exception_ledger.py \
+            --archive-audit input/ohlcv-archive-audit.json \
+            --external-audit input/ohlcv-socrateai-crosscheck.json \
+            --output-dir output
+      - name: Validate deterministic ledger
+        run: |
+          python scripts/validate_ohlcv_exception_ledger.py \
+            --json output/ohlcv_exception_ledger.json \
+            --csv output/ohlcv_exception_ledger.csv
+      - name: Run ledger regression tests
+        run: python -m unittest tests.test_ohlcv_exception_ledger -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ohlcv-row-level-exception-ledger
+          path: output/
+          if-no-files-found: error
+          retention-days: 90

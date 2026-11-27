@@ -37,20 +37,20 @@ def evaluate_strategy(*,strategy_id,symbol,horizon,decision_time,history_session
  threshold=_decimal(minimum_coverage)
  if threshold is None or threshold<=0 or threshold>1: raise ValueError("minimum_coverage_out_of_range")
  if not isinstance(symbol,str) or not symbol.strip(): raise ValueError("symbol_required")
- spec=STRATEGIES[strategy_id]; evidence=feature_evidence if isinstance(feature_evidence,dict) else {}; clusters={}; rejected=[]
+ spec=STRATEGIES[strategy_id]; evidence=feature_evidence if isinstance(feature_evidence,dict) else {}; clusters={}; rejected=[]; raw_covered=Decimal("0")
  for feature,weight in spec["weights"].items():
   item=evidence.get(feature)
   if not isinstance(item,dict): continue
   score=_decimal(item.get("score")); available=_timestamp(item.get("available_at"))
   if item.get("status")!="verified" or score is None or score<0 or score>100 or not item.get("source_id") or not item.get("evidence_id") or available is None or available>cutoff:
    rejected.append(feature); continue
-  clusters.setdefault(spec["clusters"][feature],[]).append((feature,weight,score,item))
+  raw_covered+=Decimal(weight)\n  clusters.setdefault(spec["clusters"][feature],[]).append((feature,weight,score,item))
  covered=Decimal("0"); points=Decimal("0"); accepted={}
  for cluster,members in clusters.items():
   cap=max(Decimal(m[1]) for m in members); selected=max(members,key=lambda m:(m[2],m[1])); feature,_,score,item=selected
   covered+=cap; points+=score*cap
   accepted[cluster]={"selected_feature":feature,"score":str(score),"credited_weight":str(cap),"evidence_id":item["evidence_id"],"source_id":item["source_id"],"cluster_members_observed":[m[0] for m in members]}
- total=Decimal(sum(spec["weights"].values())); coverage=covered/total; score=points/covered if covered else None
+ total=Decimal(sum(spec["weights"].values())); coverage=raw_covered/total; score=points/covered if covered else None
  history_ok=history_sessions>=HORIZONS[horizon]; coverage_ok=coverage>=threshold
  status="research_ranked" if history_ok and coverage_ok and not rejected and score is not None else "withheld"
  return {"schema_version":"strategy-lab-1.0.0","strategy_id":strategy_id,"strategy_label":spec["label"],"symbol":symbol,"horizon":horizon,"decision_time":cutoff.isoformat(),"history_sessions":history_sessions,"minimum_history_sessions":HORIZONS[horizon],"history_passed":history_ok,"score":str(score) if score is not None else None,"evidence_coverage_pct":str(coverage*100),"coverage_passed":coverage_ok,"accepted_evidence_clusters":accepted,"rejected_features":rejected,"missing_features":[n for n in spec["weights"] if n not in evidence],"action":"RESEARCH_ONLY_NO_TRADE" if status=="research_ranked" else "NO_TRADE","status":status,"probability":None,"production_enabled":False,"limitations":["Weights are research design assumptions, not calibrated.","Correlated features sharing a cluster receive one capped contribution.","Research ranking is not a BUY instruction; execution and trade-plan gates remain separate.","Compare all strategies on identical point-in-time inputs and realistic costs."]}

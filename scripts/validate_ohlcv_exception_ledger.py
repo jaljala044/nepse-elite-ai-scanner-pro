@@ -6,7 +6,7 @@ from collections import Counter
 from pathlib import Path
 
 EXPECTED = {"invalid_ohlc": 1331, "cross_source_ohlcv_conflict": 8}
-USER_FINAL_KEYS = {("BGWT","2025-07-28"),("MEHL","2025-07-28"),("RAWA","2025-07-28"),("RHGCL","2025-07-28"),("ULHC","2025-07-28")}
+USER_FINAL_KEYS = {("BGWT","2025-07-28"),("MEHL","2025-07-28"),("RAWA","2025-07-28"),("RHGCL","2025-07-28"),("ULHC","2025-07-28"),("API","2026-11-19"),("HRL","2026-11-19")}
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 COMMON = {"exception_id","exception_type","symbol","trade_date","source_repository","disposition","reviewer_rationale","evidence_pointer"}
 
@@ -33,8 +33,17 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
         if disposition=="resolved_with_user_authoritative_evidence":
             if r.get("exception_type")!="cross_source_ohlcv_conflict" or key not in USER_FINAL_KEYS:
                 errors.append(f"record {i} uses user-authoritative disposition outside approved 2025-07-28 keys")
-            if not str(r.get("evidence_pointer","")).startswith("conversation-memory://user-final-authoritative-2025-07-28-records"):
-                errors.append(f"record {i} lacks user-authority evidence pointer")
+            resolution=r.get("resolution_evidence") or {}
+            if resolution.get("authority")!="explicit_user_designation_as_final_and_authoritative":
+                errors.append(f"record {i} lacks explicit user-authority resolution evidence")
+            if not isinstance(resolution.get("authoritative_values"),dict) or not resolution["authoritative_values"]:
+                errors.append(f"record {i} lacks authoritative numeric values")
+            if resolution.get("canonical_promotion_allowed") is not False:
+                errors.append(f"record {i} incorrectly permits canonical promotion")
+            if resolution.get("raw_source_rows_modified") is not False:
+                errors.append(f"record {i} does not affirm source immutability")
+            if not str(r.get("evidence_pointer","")):
+                errors.append(f"record {i} lacks a user-authority evidence pointer")
             resolved.add(key)
         elif disposition!="quarantined_unresolved":
             errors.append(f"record {i} has unsupported disposition {disposition!r}")
@@ -51,13 +60,13 @@ def validate(json_path: Path, csv_path: Path) -> list[str]:
                     if item.get(field) in (None,""): errors.append(f"conflict record {i} evidence {repository} missing {field}")
                 if not SHA256.fullmatch(str(item.get("file_sha256",""))): errors.append(f"conflict record {i} evidence {repository} has invalid SHA-256")
     if resolved!=USER_FINAL_KEYS: errors.append(f"user-authoritative conflict keys differ: {sorted(resolved)}")
-    expected_unresolved=1334
+    expected_unresolved=1332
     if summary.get("unresolved")!=expected_unresolved: errors.append(f"summary unresolved count must equal {expected_unresolved}")
-    if summary.get("resolved_with_user_authoritative_evidence")!=5: errors.append("summary user-authoritative resolution count must equal five")
+    if summary.get("resolved_with_user_authoritative_evidence")!=7: errors.append("summary user-authoritative resolution count must equal seven")
     actual_unresolved=sum(r.get("disposition")=="quarantined_unresolved" for r in records)
     actual_resolved=sum(r.get("disposition")=="resolved_with_user_authoritative_evidence" for r in records)
     if actual_unresolved!=expected_unresolved: errors.append(f"actual unresolved count must equal {expected_unresolved}, got {actual_unresolved}")
-    if actual_resolved!=5: errors.append(f"actual user-authoritative resolution count must equal five, got {actual_resolved}")
+    if actual_resolved!=7: errors.append(f"actual user-authoritative resolution count must equal seven, got {actual_resolved}")
     csv_ids=[r.get("exception_id") for r in rows]
     if len(csv_ids)!=len(set(csv_ids)):
         errors.append("duplicate CSV exception_id values")
@@ -91,7 +100,7 @@ def main()->int:
         print("FAIL")
         for error in errors: print(f"- {error}")
         return 1
-    print("PASS: 1,339 unique exceptions; 1,334 unresolved; five 2025-07-28 conflicts superseded by user-designated authoritative records.")
+    print("PASS: 1,339 unique exceptions; 1,332 unresolved; seven user-authoritatively resolved conflicts.")
     return 0
 
 if __name__=="__main__": raise SystemExit(main())

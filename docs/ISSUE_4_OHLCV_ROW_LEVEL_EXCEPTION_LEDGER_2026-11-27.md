@@ -85,3 +85,29 @@ The five 2025-07-28 values are transcribed from the user-provided `NEPSE_Chart_E
 
 Trade counts for API and HRL were not present in the reconciliation record and remain null. The PDF binary SHA-256 was not captured; no checksum is claimed. These dispositions do not authorize canonical promotion or raw source edits.
 
+
+## Final pinned rerun with conflict line-number provenance — 2026-11-27
+
+The exact pinned-commit rerun and canonical ledger pipeline passed on PR head `58f0ed0828ca393fff839fd1a4ac17abbc0a114d`:
+
+- Workflow: [OHLCV exception ledger run 45933953438](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953438)
+- Backend unit tests: [45933953436](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953436)
+- Backend contract tests: [45933953451](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953451)
+- Output artifact: [15169872483](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/45933953438/artifacts/15169872483)
+- Artifact ZIP SHA-256: `7b0327ab21da3ef175f878be349146920cde7e94b3f9e612900f71c03c8a044a`
+- Audit JSON SHA-256: `e91b19819c3e6a802dbfc5fc2b44e591f8de064bb873a810b14f22cb2a578ebb`
+- SocrateAI cross-check JSON SHA-256: `d7b1201098c1a0c73efc53c3274e102f0c058686b07d9226659f63114c99f60e`
+- Ledger JSON SHA-256: `d8ef3f15ab38def0a8f2e71212fcb6b8eaf1636d07de118f4b860398f5ed21be`
+- Ledger CSV SHA-256: `43b19ba98703b32274064eedf55daf675d9c5cd31039315f97bb45aa0aff5afe`
+
+The audit re-fetched all 525 OHLCV files from each exact pinned commit (1,050/1,050 files; zero download errors), totaling 314,712 rows from `nepse-smc-data` and 301,632 from `nepse-history-starter`. Counts remained unchanged: 1,331 invalid OHLC rows, eight cross-source conflict keys, zero duplicate dates, zero out-of-order transitions, 196,542 repeated-adjacent-calendar flags, 25 blob-level differences, and eight row-level conflicts. The audit gate correctly remains FAIL; repeated rows are review flags and are not automatically deleted.
+
+The SocrateAI cross-check used commit `70324524df83eaa7c2964441ad4026d6ab00cc7e`, covering all 1,339 exception candidates across 995 dates: 994 daily files downloaded, one not published, zero download errors. Classifications: 1,325 partial/conflicting, five all-source matches, three one-source matches, two no-source matches, three symbols absent, and one daily file not published. This is third-party corroboration, not exchange-origin truth.
+
+The audit now retains original CSV line numbers on every normalized valid observation. Each of the eight conflict records contains the source file SHA-256 and the exact original CSV line for both source repositories; the strict validator rejects a missing/invalid conflict line. The final JSON and CSV each contain 1,339 unique records with identical ID sets. All 1,339 records retain external corroboration metadata. Seven user-authoritative conflicts are separately documented (five 2025-07-28 records plus API and HRL on 2026-11-19); 1,332 records remain quarantined unresolved.
+
+The read-only builder test also asserts that the source audit JSON bytes remain unchanged and that the output stores their SHA-256. No raw OHLCV rows were modified, repaired, merged or promoted.
+
+## Closure status
+
+The ledger implementation, source-lineage, exact pinned rerun, corroboration attachment, deterministic JSON/CSV validation and regression tests are complete. The source-quality gate itself remains FAIL because 1,331 invalid rows and one non-user-authoritative conflict (RHGCL 2026-11-19) remain quarantined; this does not authorize canonical OHLCV promotion. PR #179 is stacked on PR #177 (Issue #20 evaluator) and remains draft pending review and integration of its base dependency. Do not close Issue #4 or merge this stacked PR until the PR base is integrated and the final review is complete.

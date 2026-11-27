@@ -77,7 +77,10 @@ class QualityDashboardTests(unittest.TestCase):
         out = self.build(**args)
         self.assertEqual(out["status"], "BLOCKED")
         self.assertEqual(len(out["duplicate_panel_rows"]), 1)
-        self.assertEqual(len(out["panel_row_errors"]), 2)
+        self.assertCountEqual([item["reason"] for item in out["panel_row_errors"]],
+                              ["panel_session_date_invalid", "panel_row_not_mapping",
+                               "duplicate_panel_symbol_session"])
+        self.assertIn("panel_rows_malformed_or_duplicated", out["blocking_reasons"])
 
     def test_empty_expected_denominator_blocks(self):
         args = self.args()

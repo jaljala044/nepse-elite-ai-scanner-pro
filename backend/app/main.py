@@ -17,7 +17,7 @@ from .broker_pattern_detector import detect_broker_patterns
 from .index_intelligence import build_verified_index_intelligence
 from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
-from .idpat_scanner_integration import build_idpat_scanner_bundle
+from .idpat_scanner_integration import build_idpat_scanner_bundle, persist_idpat_bundle
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -54,6 +54,8 @@ class IDPATResearchRequest(BaseModel):
     session_calendar: dict | None = None
     gate_evidence: dict = Field(default_factory=dict)
     risk_inputs: dict | None = None
+    persist_signal: bool = False
+    horizon: str = "swing"
 
 class BrokerPatternRequest(BaseModel):
     symbol: str
@@ -162,7 +164,7 @@ def early_signals(request: EarlySignalRequest):
 def idpat_research(request: IDPATResearchRequest):
     """Research-only IDPAT bundle; missing independent gates force NO_TRADE."""
     try:
-        return build_idpat_scanner_bundle(
+        result = build_idpat_scanner_bundle(
             snapshot=request.snapshot,
             as_of_date=request.as_of_date.isoformat(),
             as_of_timestamp=request.as_of_timestamp,
@@ -170,6 +172,11 @@ def idpat_research(request: IDPATResearchRequest):
             gate_evidence=request.gate_evidence,
             risk_inputs=request.risk_inputs,
         )
+        if request.persist_signal:
+            result["signal_ledger"] = persist_idpat_bundle(
+                result, gate_evidence=request.gate_evidence, horizon=request.horizon
+            )
+        return result
     except (ValueError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
 

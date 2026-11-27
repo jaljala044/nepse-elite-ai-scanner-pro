@@ -141,15 +141,14 @@ The matrix is an evidence index, not a reviewed-row manifest. It does not author
 
 ## Integration status refresh — 2026-11-27
 
-The scanner integration was re-ported onto the latest main snapshot, including the new SEBON evidence test additions, in PR #155:
-- PR #155: [3A.01 latest-main scanner integration](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/155).
-- Head: `070a556ffb89cd933053dabd2b0c1a80b905256a`; base snapshot: `33fd3eaad0d4cc23342fff64f9b7e0696c38c4b0`.
-- The port replays all eight scanner implementation/UI/test changes additively. The lowercase-symbol regression test is included and passes.
-- Exact-head frontend build passed (run 45900204383).
-- Exact-head `unit-tests` (run 45900232390) and `backend-unit-tests` (run 45900232414) both failed at the same unrelated test import: `backend/tests/test_sebon_pdf_capture.py` imports missing `app.sebon_pdf_capture`. The test was added to main by commit `33fd3eaad0d4cc23342fff64f9b7e0696c38c4b0`; this scanner PR does not modify SEBON files. Both logs show all scanner orchestration/API tests passing, including lowercase-symbol rejection.
-- GitHub currently reports PR #155 mergeable. The full backend CI gate remains blocked until the missing SEBON module is implemented or the orphaned test is corrected on main.
-- PR #155 remains draft and unmerged. Earlier scanner ports PR #142 and PR #153 remain open but superseded; no merge or deployment is claimed.
+The current scanner integration was re-applied onto the latest main snapshot after main removed the prematurely committed SEBON capture test:
+- PR #157: [3A.01 scanner integration after SEBON CI repair](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/157).
+- Head: `a630ddf2660b8b304b2b524a5f5abbc11929c337`; base snapshot: `4b8d01be47b769f0ea03a1874c26da53f52ffa45`.
+- The port includes deterministic market-wide orchestration, API and frontend scanner module, fail-closed reviewed-row gating, future-row exclusion and lowercase-symbol rejection.
+- Branch comparison: 7 commits ahead, 0 behind at creation. GitHub initially reported mergeability as pending.
+- The orphan SEBON test was removed from main by commit `3ba03e1e2c5702eba18334799d2f09c17b61d913`, so the previous unrelated import blocker should no longer apply. Exact-head CI for PR #157 is currently running; no passing result is claimed yet.
+- Earlier scanner ports PR #142, #153 and #155 remain open but superseded. No merge or deployment is claimed.
 
-The evidence artifacts in this PR were copied onto a branch created from current main. Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
+The evidence artifacts have been re-based onto current main in the companion audit PR (being opened separately). Matrix semantics remain explicit: 1,379 invariant flags are not 1,379 unique rows; 1,329 unique invalid symbol/date rows are reported separately. The manifest correction count (713) and detailed correction components (711) remain unreconciled by two counts; no equivalence is assumed.
 
 No pull request was merged. No deployment verification was performed.

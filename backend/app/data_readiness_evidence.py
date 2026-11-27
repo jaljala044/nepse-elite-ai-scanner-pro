@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 import re
 from app.training_readiness import REQUIRED_GATES, evaluate_training_readiness
+from app.training_dataset_quarantine import audit_training_windows
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -26,7 +27,8 @@ def assemble_training_evidence(*, universe_report: dict | None,
                                corporate_action_reviewed: bool = False,
                                holdout_protocol_id: str | None = None,
                                historical_coverage: float | None = None,
-                               evidence_snapshot_id: str | None = None) -> dict:
+                               evidence_snapshot_id: str | None = None,
+                               training_windows: list[dict] | None = None) -> dict:
     """Translate upstream reports into gate evidence; absent reports fail closed."""
     universe_ok = bool(universe_report and universe_report.get("manifest_verified") is True)
     sessions = session_reports or []
@@ -62,6 +64,7 @@ def assemble_training_evidence(*, universe_report: dict | None,
         and point_in_time_report.get("premature_label_count") == 0
     )
     coverage_ok = _coverage_passes(historical_coverage)
+    quarantine_audit = audit_training_windows(training_windows)
     values = {
         "universe_verified": universe_ok,
         "session_calendar_verified": sessions_ok,
@@ -72,7 +75,7 @@ def assemble_training_evidence(*, universe_report: dict | None,
         "point_in_time_leakage_checks_passed": pit_ok,
         "corporate_action_policy_reviewed": corporate_action_reviewed is True,
         "historical_coverage_threshold_met": coverage_ok,
-        "historical_quarantine_clearance_verified": False,  # No independent dataset clearance connected yet.
+        "historical_quarantine_clearance_verified": quarantine_audit.get("independent_dataset_clearance") is True,
         "holdout_protocol_defined": bool(holdout_protocol_id and holdout_protocol_id.strip()),
         "ohlcv_coverage": (ohlcv_report or {}).get("coverage_ratio"),
         "broker_identity_coverage": (broker_report or {}).get("verified_amount_coverage"),
@@ -80,6 +83,7 @@ def assemble_training_evidence(*, universe_report: dict | None,
     }
     return {
         **values,
+        "training_dataset_quarantine_audit": quarantine_audit,
         "derived_gate_checks": {key: values[key] for key in REQUIRED_GATES},
         "training_readiness": evaluate_training_readiness(values),
         "policy": "derive_only_from_explicit_upstream_evidence_missing_means_blocked",

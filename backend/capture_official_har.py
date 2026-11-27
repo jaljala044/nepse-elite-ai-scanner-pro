@@ -12,7 +12,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 
 ALLOWED_HOSTS = {
     "nepalstock.com.np", "www.nepalstock.com.np",
@@ -34,6 +34,15 @@ def _official_https_url(url: str) -> bool:
         )
     except (TypeError, ValueError):
         return False
+
+
+def _has_sensitive_query(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        sensitive = {"token", "access_token", "auth", "authorization", "api_key", "apikey", "key", "signature", "sig", "session", "sessionid"}
+        return any(name.lower() in sensitive for name, _ in parse_qsl(parsed.query, keep_blank_values=True))
+    except (TypeError, ValueError):
+        return True
 
 
 def _header(headers: list, name: str) -> str:
@@ -91,11 +100,15 @@ def capture_har_entry(
     response_status = response.get("status")
     if not _official_https_url(request_url):
         raise ValueError("HAR request URL must be HTTPS on an approved official NEPSE or SEBON host")
+    if _has_sensitive_query(request_url):
+        raise ValueError("HAR request URL contains a credential-like query parameter; sanitize the capture first")
     if not isinstance(response_status, int) or isinstance(response_status, bool) or response_status != 200:
         raise ValueError("selected HAR response must have HTTP status 200")
     response_url = entry.get("response", {}).get("redirectURL") or request_url
     if not _official_https_url(response_url):
         raise ValueError("HAR response URL must be HTTPS on an approved official host")
+    if _has_sensitive_query(response_url):
+        raise ValueError("HAR response URL contains a credential-like query parameter; sanitize the capture first")
 
     content = response.get("content")
     if not isinstance(content, dict) or not isinstance(content.get("text"), str):

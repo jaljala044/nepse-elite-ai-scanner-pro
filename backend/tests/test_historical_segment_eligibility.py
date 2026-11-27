@@ -218,5 +218,11 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
                 self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
 
 
+    def test_duplicate_expected_sessions_fail_closed(self):
+        result = self.evaluate(expected_sessions=[self.sessions[0], self.sessions[0]])
+        self.assertIn("duplicate_expected_session", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+
 if __name__ == "__main__":
     unittest.main()

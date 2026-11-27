@@ -132,8 +132,12 @@ def validate_market_summary_finality(
     if _utc(capture.get("retrieved_at"), "capture_retrieved_at") > cutoff:
         raise ValueError("capture_not_available_at_decision_time")
 
-    missing = sorted(set(normalized_calendar) - set(observed))
-    unexpected = sorted(set(observed) - set(normalized_calendar))
+    # Reconcile only the calendar window covered by this capture. Calendar
+    # entries before/after the capture are context, not missing capture rows.
+    calendar_window = [day for day in normalized_calendar
+                       if observed[0] <= day <= observed[-1]]
+    missing = sorted(set(calendar_window) - set(observed))
+    unexpected = sorted(set(observed) - set(calendar_window))
     if missing or unexpected:
         return {
             "status": "insufficient_evidence",

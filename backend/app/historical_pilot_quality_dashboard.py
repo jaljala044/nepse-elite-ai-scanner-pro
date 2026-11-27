@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, timedelta
 from typing import Iterable, Mapping
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -22,6 +22,7 @@ def build_historical_pilot_quality_dashboard(
     expected_sessions: Iterable[Mapping[str, object]], panel_report: Mapping[str, object],
     reconciliation_report: Mapping[str, object], replay_preflight: Mapping[str, object],
     corporate_action_status: Mapping[str, object],
+    calendar_coverage_contract: Mapping[str, object] | None = None,
 ) -> dict:
     """Summarize supplied evidence; incomplete inputs can never look review-ready."""
     symbols, master, sessions = list(cohort_symbols), list(security_master), list(expected_sessions)
@@ -87,8 +88,47 @@ def build_historical_pilot_quality_dashboard(
                 session_errors.append({"session_date": day, "reason": "open_session_evidence_id_missing"})
             else:
                 open_days.add(day)
-        elif item.get("status") not in ("confirmed_closed", "unknown", "suspended"):
+        elif item.get("status") == "confirmed_closed":
+            pass
+        elif item.get("status") in ("unknown", "suspended"):
+            session_errors.append({"session_date": day, "reason": "session_status_unresolved"})
+        else:
             session_errors.append({"session_date": day, "reason": "session_status_invalid"})
+
+    coverage_start = coverage_end = None
+    coverage_dates: list[str] = []
+    if not isinstance(calendar_coverage_contract, Mapping):
+        session_errors.append({"reason": "calendar_coverage_contract_missing"})
+    else:
+        try:
+            coverage_start = _canonical_date(calendar_coverage_contract.get("start_date"))
+            coverage_end = _canonical_date(calendar_coverage_contract.get("end_date"))
+            if coverage_end < coverage_start:
+                raise ValueError("coverage range inverted")
+            cursor = coverage_start
+            while cursor <= coverage_end:
+                coverage_dates.append(cursor.isoformat())
+                cursor += timedelta(days=1)
+            supplied_dates = calendar_coverage_contract.get("expected_dates")
+            if not isinstance(supplied_dates, list) or supplied_dates != coverage_dates:
+                session_errors.append({"reason": "calendar_coverage_contract_dates_incomplete_or_noncanonical"})
+            if not str(calendar_coverage_contract.get("coverage_contract_id", "")).strip():
+                session_errors.append({"reason": "calendar_coverage_contract_id_missing"})
+            if not str(calendar_coverage_contract.get("evidence_id", "")).strip():
+                session_errors.append({"reason": "calendar_coverage_evidence_id_missing"})
+        except (TypeError, ValueError):
+            coverage_start = coverage_end = None
+            coverage_dates = []
+            session_errors.append({"reason": "calendar_coverage_contract_invalid"})
+
+    if coverage_dates:
+        declared = set(coverage_dates)
+        observed_dates = set(session_counts)
+        for day in sorted(declared - observed_dates):
+            session_errors.append({"session_date": day, "reason": "calendar_date_unaccounted"})
+        for day in sorted(observed_dates - declared):
+            session_errors.append({"session_date": day, "reason": "session_date_outside_declared_calendar_range"})
+
     duplicate_sessions = sorted(day for day, count in session_counts.items() if count > 1)
     if duplicate_sessions:
         session_errors.extend({"session_date": day, "reason": "duplicate_session_rows"} for day in duplicate_sessions)
@@ -170,6 +210,14 @@ def build_historical_pilot_quality_dashboard(
         "cohort_count": len(symbols), "identity_covered_symbols": len(valid_identity),
         "identity_errors": identity_errors,
         "verified_open_session_count": len(open_days), "expected_session_errors": session_errors,
+        "calendar_coverage_contract": {
+            "coverage_contract_id": calendar_coverage_contract.get("coverage_contract_id") if isinstance(calendar_coverage_contract, Mapping) else None,
+            "evidence_id": calendar_coverage_contract.get("evidence_id") if isinstance(calendar_coverage_contract, Mapping) else None,
+            "start_date": coverage_start.isoformat() if coverage_start else None,
+            "end_date": coverage_end.isoformat() if coverage_end else None,
+            "expected_calendar_days": len(coverage_dates),
+            "complete_date_list": bool(coverage_dates) and isinstance(calendar_coverage_contract, Mapping) and calendar_coverage_contract.get("expected_dates") == coverage_dates,
+        },
         "expected_symbol_sessions": len(expected),
         "observed_panel_symbol_sessions": len(observed),
         "coverage_pct": round(coverage, 4) if coverage is not None else None,
@@ -187,6 +235,7 @@ def build_historical_pilot_quality_dashboard(
         "backtest_admission_allowed": False, "canonical_promotion_allowed": False, "production_enabled": False,
         "limitations": [
             "Dashboard reflects only operator-supplied reports and the bounded cohort; it does not fetch or authenticate sources.",
+            "The expected calendar range is an explicit operator-reviewed coverage contract; the dashboard checks date accounting but cannot independently authenticate the calendar publisher or prove exchange completeness.",
             "Coverage denominator includes only supplied evidence-backed open sessions and supplied effective-dated identities.",
             "A clean dashboard is not proof of market-wide completeness and never grants replay admission.",
         ],

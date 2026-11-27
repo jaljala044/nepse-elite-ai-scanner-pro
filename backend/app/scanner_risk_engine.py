@@ -28,7 +28,16 @@ def calculate_risk_limited_position(
              "average_daily_volume", "risk_pct", "max_risk_pct",
              "max_position_pct", "max_adv_participation_pct",
              "round_trip_cost_pct", "slippage_pct", "settlement_gap_stress_pct")
-    vals = {name: _d(locals()[name]) for name in names}
+    raw = {
+        "equity": equity, "available_cash": available_cash, "entry_price": entry_price,
+        "structural_stop": structural_stop, "average_daily_volume": average_daily_volume,
+        "risk_pct": risk_pct, "max_risk_pct": max_risk_pct,
+        "max_position_pct": max_position_pct,
+        "max_adv_participation_pct": max_adv_participation_pct,
+        "round_trip_cost_pct": round_trip_cost_pct, "slippage_pct": slippage_pct,
+        "settlement_gap_stress_pct": settlement_gap_stress_pct,
+    }
+    vals = {name: _d(raw[name]) for name in names}
     if any(v is None for v in vals.values()):
         return {"status": "blocked", "reason": "required_numeric_input_missing_or_invalid", "quantity": 0}
     v = vals

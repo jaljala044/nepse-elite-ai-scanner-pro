@@ -25,3 +25,5 @@ Branch: idpat-5-scanner-integration
 - The caller supplies all stage data and gate attestations; the API validates structure/timestamps but does not independently authenticate those upstream sources.
 - Current market-health readiness still reports missing canonical market, sector and source evidence.
 - Synthetic tests validate the adapter contract only; they are not a strategy backtest or production acceptance.
+## Integration dependency
+- This branch depends on IDPAT-4 and the tested historical-segment eligibility implementation in PR #177. Preserve both dependencies in the PR base chain so the full backend suite runs against the matching implementation and evidence-aware tests.

@@ -102,6 +102,22 @@ class MarketScanOrchestrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must not be a datetime"):
             run_market_scan(["AAA"], {"AAA": [{"date": datetime(2026, 1, 1)}]}, as_of=None, scan_symbol=lambda *args: {})
 
+    def test_rejects_string_candidate_collection(self):
+        with self.assertRaisesRegex(ValueError, "not a string"):
+            run_market_scan("AAA", {}, as_of=None, scan_symbol=lambda *args: {})
+
+    def test_rejects_non_date_as_of_and_datetime(self):
+        for value in ("2026-01-01", datetime(2026, 1, 1)):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "as_of must be a calendar date"):
+                    run_market_scan(["AAA"], {}, as_of=value, scan_symbol=lambda *args: {})
+
+    def test_rejects_non_mapping_market_data_and_rows(self):
+        with self.assertRaisesRegex(ValueError, "market_data must be a mapping"):
+            run_market_scan(["AAA"], [], as_of=None, scan_symbol=lambda *args: {})
+        with self.assertRaisesRegex(ValueError, "OHLCV row must be a mapping"):
+            run_market_scan(["AAA"], {"AAA": [None]}, as_of=None, scan_symbol=lambda *args: {})
+
     def test_empty_universe_is_safe(self):
         result = run_market_scan([], {}, as_of=None, scan_symbol=lambda *args: {})
         self.assertEqual(result["candidate_universe_count"], 0)

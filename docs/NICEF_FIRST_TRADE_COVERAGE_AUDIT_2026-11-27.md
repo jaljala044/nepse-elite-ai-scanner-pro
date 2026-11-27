@@ -2,9 +2,9 @@
 
 ## Decision
 
-NICEF is a listed closed-end mutual fund, but the freely accessible ShareSansar-derived daily archive inspected for this audit contains **no NICEF price row and no NICEF symbol-history endpoint** through its latest published session, 2026-11-26. The archive's complete symbol index contains 525 symbols and does not include NICEF.
+NICEF is a listed closed-end mutual fund. The freely accessible ShareSansar-derived archive's complete 525-symbol index does not include NICEF, and its per-symbol history endpoint is absent. The 12 individually checked daily CSVs listed below contain no NICEF row; those sampled files do not, by themselves, establish a full scan of all 941 archived sessions.
 
-**Do not manufacture an OHLCV row or infer that the expected first-trading date was an actual trade.** Close the outstanding NICEF first-trading-date OHLCV follow-up as an evidence-availability result: no free-provider trading observation was found in this archive through 2026-11-26. Retain NICEF in the existing 47-fund candidate set and preserve the listing evidence. Reopen only if a later freely accessible source supplies an actual dated trade record.
+**Do not manufacture an OHLCV row or infer that the expected first-trading date was an actual trade.** Close the outstanding NICEF first-trading-date OHLCV follow-up as an evidence-availability result for this provider's index, history endpoint, and the 12 checked daily files—not as a complete 941-session daily-file scan and not as proof that NEPSE had no trade. Retain NICEF in the existing 47-fund candidate set and preserve the listing evidence. Reopen only if a later freely accessible source supplies an actual dated trade record.
 
 ## Listing evidence
 
@@ -25,7 +25,7 @@ Archive metadata at the audit time:
 - The complete 525-symbol index does not contain `NICEF`.
 - `docs/api/history/NICEF.json` is absent (GitHub contents lookup returned 404).
 
-Daily CSV checks: exact symbol-column equality (`Symbol == NICEF`) returned zero rows in every file below.
+Daily CSV sample checks (12 of 941 archived sessions): exact symbol-column equality (`Symbol == NICEF`) returned zero rows in each file below. This is a reproducible sample, not an exhaustive scan of every archived daily CSV.
 
 | Session date | CSV blob SHA |
 |---|---|
@@ -56,4 +56,4 @@ The archive's README: https://github.com/OmitNomis/ShareSansarScraper/blob/maste
 
 ## CI dependency alignment — 2026-11-27
 
-The documentation PR is now based on `research/issue-20-historical-segment-eligibility` at `86ad9200aa1a427bab3d03b2e25ddb8381ee81ea`, so the existing historical-segment test and its evaluator module are present together. The earlier backend run `45930820570` tested the old `main` base and failed with `ModuleNotFoundError` for that module; it is not a result for this retargeted PR composition. No NICEF evidence disposition or raw market data was changed by this dependency alignment. A new exact-head run is required after this documentation update.
+The documentation PR is now based on `research/issue-20-historical-segment-eligibility` at `86ad9200aa1a427bab3d03b2e25ddb8381ee81ea`, so the existing historical-segment test and its evaluator module are present together. The earlier backend run `45930820570` tested the old `main` base and failed with `ModuleNotFoundError` for that module; it is not a result for this retargeted PR composition. This update narrows the archive-absence claim to the actual evidence sampled; no NICEF evidence disposition or raw market data was changed. A new exact-head run is required.

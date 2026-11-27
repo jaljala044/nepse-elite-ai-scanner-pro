@@ -98,5 +98,45 @@ class LedgerValidationTests(unittest.TestCase):
             self.assertTrue(any("must remain quarantined_unresolved" in e for e in validate(jp, cp)))
 
 
+    def test_csv_disposition_cannot_be_swapped_while_preserving_counts(self):
+        records = ([record("invalid_ohlc", i) for i in range(1331)] +
+                   [record("cross_source_ohlcv_conflict", i) for i in range(8)])
+        for row in records[1331:1336]:
+            row["disposition"] = "resolved_with_user_authoritative_evidence"
+            row["resolution_evidence"] = {
+                "authority": "explicit_user_designation_as_final_and_authoritative",
+                "canonical_promotion_allowed": False,
+                "raw_source_rows_modified": False,
+            }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp, cp = root / "ledger.json", root / "ledger.csv"
+            jp.write_text(json.dumps({
+                "counts": {"total_exception_records": 1339,
+                           "invalid_ohlc_rows": 1331,
+                           "cross_source_conflict_keys": 8},
+                "exceptions": records,
+            }), encoding="utf-8")
+            fields = sorted({key for row in records for key in row})
+            with cp.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=fields)
+                writer.writeheader()
+                for row in records:
+                    writer.writerow({k: json.dumps(v) if isinstance(v, (dict, list)) else v
+                                     for k, v in row.items()})
+            with cp.open(encoding="utf-8", newline="") as stream:
+                csv_rows = list(csv.DictReader(stream))
+                fieldnames = csv_rows[0].keys()
+            csv_rows[0]["disposition"] = "resolved_with_user_authoritative_evidence"
+            csv_rows[1331]["disposition"] = "quarantined_unresolved"
+            with cp.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(csv_rows)
+            errors = validate(jp, cp)
+            self.assertTrue(any("JSON/CSV disposition mismatch" in error
+                                for error in errors))
+
+
 if __name__ == "__main__":
     unittest.main()

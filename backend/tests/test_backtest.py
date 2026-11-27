@@ -63,6 +63,28 @@ class WalkForwardBacktestTests(unittest.TestCase):
         self.assertEqual(result["status"], "insufficient_sample")
         self.assertEqual(result["partitions"], {})
 
+    def test_noncanonical_signal_and_evaluation_dates_are_rejected(self):
+        signals, rows, sessions, reviewed = self._fixture()
+        for day in ("20250101", "2025-1-01", "2025-01-01T00:00:00"):
+            malformed = [dict(item, details=dict(item["details"], decision_date=day))
+                         for item in signals]
+            with self.subTest(day=day), self.assertRaisesRegex(ValueError, "canonical_iso_date"):
+                run_walk_forward_backtest(signals=malformed, rows_by_symbol=rows,
+                    verified_sessions_by_symbol=sessions,
+                    evaluation_date=sessions["TEST"][-1], reviewed=reviewed)
+        with self.assertRaisesRegex(ValueError, "canonical_iso_date"):
+            run_walk_forward_backtest(signals=signals, rows_by_symbol=rows,
+                verified_sessions_by_symbol=sessions, evaluation_date="20250101",
+                reviewed=reviewed)
+
+    def test_noncanonical_or_unsorted_symbol_sessions_are_withheld(self):
+        signals, rows, sessions, reviewed = self._fixture()
+        malformed_sessions = dict(sessions, TEST=["20250101", *sessions["TEST"][1:]])
+        result = run_walk_forward_backtest(signals=signals, rows_by_symbol=rows,
+            verified_sessions_by_symbol=malformed_sessions,
+            evaluation_date=sessions["TEST"][-1], reviewed=reviewed, min_partition=2)
+        self.assertEqual(sum(x["evaluated_trades"] for x in result["partitions"].values()), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

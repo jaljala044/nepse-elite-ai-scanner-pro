@@ -242,6 +242,9 @@ class BrokerRawCaptureRegistry:
                 raise CaptureRejected(f"row_source_capture_mismatch:{index}")
             if row.get("session_date") != manifest.get("trade_date"):
                 raise CaptureRejected(f"row_trade_date_capture_mismatch:{index}")
+            supplied_capture_hash = row.get("raw_capture_sha256")
+            if supplied_capture_hash is not None and supplied_capture_hash != raw_hash:
+                raise CaptureRejected(f"row_raw_capture_hash_mismatch:{index}")
             lineage = row.get("raw_record_lineage")
             if not isinstance(lineage, list) or not lineage:
                 raise CaptureRejected(f"raw_record_lineage_required:{index}")

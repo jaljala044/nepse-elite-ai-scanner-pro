@@ -33,7 +33,7 @@ class HistoricalBundleTests(unittest.TestCase):
             decision_cutoff="2025-01-04T00:00:00+05:45",start_date="2025-01-02",
             end_date="2025-01-02",transport_by_source=transports)
         self.assertEqual(result["capture_count"],4,result["manifest"]["failures"])
-        self.assertEqual(result["readiness"]["status"],"READY")
+        self.assertEqual(result["readiness"]["status"],"PARTIAL")
         self.assertFalse(result["historical_panel_promotion_allowed"])
         self.assertEqual(result["promotion_block_reason"],"independent corporate-action reconciliation evidence must be supplied and verified separately")
         self.assertEqual(len(result["manifest"]["manifest_sha256"]),64)

@@ -1,3 +1,15 @@
+## Latest Issue #5 execution — explicit-closure endpoint triage (2026-11-28)
+
+After the previous full-artifact verification, the 15,559 explicit-closure candidate-pair partition was re-opened and endpoint-classified:
+- 15,559 unique pairs contain at least one explicit closure endpoint.
+- 18,186 closure-endpoint incidences across 17 distinct dates (all pinned as `verified_closed`); 399 distinct symbols across the two source repositories.
+- 2,627 pairs have both endpoints explicitly closed; 12,932 have exactly one closed endpoint.
+- Previous-endpoint status cross-tab: 7,160 closed, 6,487 project-accepted-open, 1,912 unlisted. Current-endpoint status: 11,026 closed, 4,533 unlisted.
+- Date incidence counts (not unique pair counts): 2026-01-11 632; 2026-01-15 1,232; 2026-01-19 646; 2026-01-30 1,224; 2026-02-15 646; 2026-02-18 1,360; 2026-02-19 1,360; 2026-03-04 1,268; 2026-03-05 1,268; 2026-03-06 1,268; 2026-03-08 634; 2026-03-18 651; 2026-03-27 1,314; 2026-04-14 657; 2026-05-01 1,310; 2026-05-28 1,358; 2026-05-29 1,358.
+- Issue #5 comment [7228311263](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/issues/5#issuecomment-7228311263) records the breakdown and boundaries.
+
+This is triage only, not final disposition: closure on one endpoint does not prove carry-forward, and both-closed pairs remain unresolved as to exact source-row behavior. The 180,855 unlisted-calendar pairs remain unknown. No raw OHLCV edits, weekday inference, forward-fill or promotion. Next execution step is per-date/per-symbol source activity review for the 17 closure dates, then separate unlisted-date batches.
+
 > **2026-11-26 owner decision — current-universe merger identity:** Use the 2026-11-25 current snapshot IDs for surviving successor equities; former merger/acquisition tickers are retired aliases and excluded from current scans. Seven successor mappings are recorded in [the current-universe successor ID policy](CURRENT_UNIVERSE_SUCCESSOR_ID_POLICY_2026-11-26.md): SLBSL/2804, NMLBBL/396, MATRI/694, SMATA/2761, SMPDA/2896, GBLBS/583 and PFL/236. Historical predecessor IDs and validity intervals are **not required for current-universe scanning**; they remain unresolved only for historical research. This does not authorize price-history splicing, cross-boundary indicators/backtests, or training. All other data-integrity, calendar, provenance, licensing and CI gates remain unchanged.
 
 # NEPSE AI — Master Progress, Evidence and Roadmap Register

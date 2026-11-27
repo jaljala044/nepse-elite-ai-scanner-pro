@@ -130,7 +130,10 @@ def evaluate_broker_early_pattern(*, broker_code: str, symbol: str,
             return _insufficient(broker_code, symbol, "execution_channel_not_observed", [horizon])
         if profile.get("identity_status") != "execution_channel_only":
             return _insufficient(broker_code, symbol, "execution_channel_identity_boundary_missing", [horizon])
-        if profile.get("prior_20_session_count") != 20:
+        # The 20-session baseline is used to normalize the latest daily flow.
+        # Weekly and monthly windows provide persistence confirmation and do
+        # not themselves need a second 20-session baseline.
+        if horizon == "1D" and profile.get("prior_20_session_count") != 20:
             return _insufficient(broker_code, symbol, "insufficient_20_session_baseline", [horizon])
         selected[horizon] = profile
 

@@ -2,7 +2,8 @@ name: OHLCV exception ledger
 on:
   pull_request:
     paths:
-      - "scripts/build_ohlcv_exception_ledger.py"
+      - "backend/build_ohlcv_exception_ledger.py"
+      - "backend/tests/test_build_ohlcv_exception_ledger.py"
       - "scripts/validate_ohlcv_exception_ledger.py"
       - "tests/test_ohlcv_exception_ledger.py"
       - ".github/workflows/ohlcv-exception-ledger.yml"

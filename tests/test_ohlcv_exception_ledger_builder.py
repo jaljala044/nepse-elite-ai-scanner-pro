@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from scripts.build_ohlcv_exception_ledger import build
+from scripts.build_ohlcv_exception_ledger import build, USER_AUTHORITATIVE_RESOLUTIONS
 
 
 class LedgerBuilderTests(unittest.TestCase):
@@ -33,8 +33,6 @@ class LedgerBuilderTests(unittest.TestCase):
                    {"invalid_ohlc": 1, "cross_source_ohlcv_conflict": 1}):
             result = build(archive, external, 123, "a" * 64)
         self.assertEqual(result["counts"]["total_exception_records"], 2)
-        self.assertTrue(all(r["disposition"] == "quarantined_unresolved"
-                            for r in result["exceptions"]))
         conflict = next(r for r in result["exceptions"]
                         if r["exception_type"] == "cross_source_ohlcv_conflict")
         self.assertEqual(len(conflict["source_evidence"]), 2)
@@ -45,6 +43,35 @@ class LedgerBuilderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "pinned audit counts changed"):
             build(archive, external, 123, "a" * 64)
 
+
+    def test_user_authoritative_july_2025_rows_are_resolved_without_promotion(self):
+        expected = {
+            "BGWT": ("940.00", "992.00", "933.40", "957.17", "14028", "13256345.00"),
+            "MEHL": ("471.10", "480.50", "460.00", "475.63", "29753", "14008898.10"),
+            "RAWA": ("796.00", "811.00", "780.30", "796.90", "3165", "2515662.50"),
+            "RHGCL": ("346.70", "362.00", "341.40", "357.05", "296715", "103872614.40"),
+            "ULHC": ("509.00", "515.00", "495.00", "510.75", "32288", "16273342.10"),
+        }
+        self.assertEqual(set(USER_AUTHORITATIVE_RESOLUTIONS),
+                         {(symbol, "2025-07-28") for symbol in expected})
+        for symbol, values in expected.items():
+            row = USER_AUTHORITATIVE_RESOLUTIONS[(symbol, "2025-07-28")]
+            self.assertEqual((row["open"], row["high"], row["low"], row["close"],
+                              row["volume"], row["turnover_npr"]), values)
+            self.assertIn("trades", row)
+
+        archive, external = self.fixture()
+        archive["cross_source"]["conflicts"][0]["symbol"] = "BGWT"
+        archive["cross_source"]["conflicts"][0]["date"] = "2025-07-28"
+        with patch("scripts.build_ohlcv_exception_ledger.EXPECTED",
+                   {"invalid_ohlc": 1, "cross_source_ohlcv_conflict": 1}):
+            result = build(archive, external, 123, "a" * 64)
+        conflict = next(r for r in result["exceptions"]
+                        if r["exception_type"] == "cross_source_ohlcv_conflict")
+        self.assertEqual(conflict["disposition"], "resolved_with_user_authoritative_evidence")
+        self.assertFalse(conflict["resolution_evidence"]["canonical_promotion_allowed"])
+        self.assertFalse(conflict["resolution_evidence"]["raw_source_rows_modified"])
+        self.assertEqual(len(conflict["source_evidence"]), 2)
 
 if __name__ == "__main__":
     unittest.main()

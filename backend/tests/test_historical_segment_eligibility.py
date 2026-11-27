@@ -248,6 +248,46 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         result = self.evaluate(segment=segment)
         self.assertIn("adjustment_factor_evidence_unverified", result["reasons"])
 
+    def adjustment_evidence(self, *, factor="0.5", factor_version="bonus-v1",
+                            effective_date="2025-01-01", claims=None):
+        evidence = self.source_evidence("corporate-action:CFCL:bonus-v1")
+        evidence.update({"factor": factor, "factor_version": factor_version,
+                         "effective_date": effective_date})
+        evidence["claims"] = claims if claims is not None else {
+            "factor": factor, "factor_version": factor_version,
+            "effective_date": effective_date,
+        }
+        return evidence
+
+    def test_adjustment_factor_requires_canonical_effective_date(self):
+        segment = dict(self.segment, adjustment_basis="verified_adjusted",
+                       adjustment_evidence=self.adjustment_evidence(effective_date="01-01-2025"))
+        result = self.evaluate(segment=segment)
+        self.assertIn("adjustment_factor_evidence_unverified", result["reasons"])
+
+    def test_future_adjustment_effective_date_fails_point_in_time_gate(self):
+        segment = dict(self.segment, adjustment_basis="verified_adjusted",
+                       adjustment_evidence=self.adjustment_evidence(effective_date="2026-01-02"))
+        result = self.evaluate(segment=segment)
+        self.assertIn("adjustment_factor_evidence_unverified", result["reasons"])
+
+    def test_adjustment_factor_claims_must_match_evidence_fields(self):
+        evidence = self.adjustment_evidence(
+            claims={"factor": "0.25", "factor_version": "bonus-v1",
+                    "effective_date": "2025-01-01"})
+        segment = dict(self.segment, adjustment_basis="verified_adjusted",
+                       adjustment_evidence=evidence)
+        result = self.evaluate(segment=segment)
+        self.assertIn("adjustment_factor_evidence_unverified", result["reasons"])
+
+    def test_adjustment_factor_requires_matching_claims(self):
+        evidence = self.adjustment_evidence()
+        evidence.pop("claims")
+        segment = dict(self.segment, adjustment_basis="verified_adjusted",
+                       adjustment_evidence=evidence)
+        result = self.evaluate(segment=segment)
+        self.assertIn("adjustment_factor_evidence_unverified", result["reasons"])
+
     def test_source_payload_hash_must_match_evidence_hash(self):
         records = list(self.records)
         source = dict(records[0]["source_evidence"], payload_sha256="d" * 64)

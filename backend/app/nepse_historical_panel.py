@@ -99,7 +99,7 @@ def assemble_historical_panel(*, datasets, start_date, end_date, decision_cutoff
             if bars: reasons.append("bars_outside_effective_listing_status")
             else: continue
         missing_dates = sorted(set(expected_dates) - set(by_date))
-        if missing_dates: reasons.append("incomplete_active_session_history:"+str(len(missing_dates)))
+        if missing_dates: reasons.append("incomplete_session_history:"+str(len(missing_dates)))
         unexpected = sorted(set(by_date) - set(expected_dates))
         if unexpected: reasons.append("bars_when_not_listed_or_suspended")
         action_rows = actions.get(symbol, [])
@@ -115,11 +115,11 @@ def assemble_historical_panel(*, datasets, start_date, end_date, decision_cutoff
                 adjusted=apply_reconciled_adjustments(bars=bars,reconciled_events=[x for x in reconciled if str(x.get("security_id"))==security_id],decision_cutoff=cutoff.isoformat())
                 bars=adjusted["bars"]
         if reasons:
-            excluded[security_id] = sorted(set(reasons)); continue
+            excluded[symbol] = sorted(set(reasons)); continue
         for row in bars:
             values = {k:_num(row.get(k)) for k in ("open","high","low","close","volume","turnover")}
             if any(v is None for v in values.values()):
-                excluded[security_id] = ["ohlcv_numeric_validation_failed"]; break
+                excluded[symbol] = ["ohlcv_numeric_validation_failed"]; break
             panel.append({"symbol":symbol,"security_id":security_id,"session_date":row["session_date"],**{k:str(v) for k,v in values.items()},
                 "source_id":reports["ohlcv"].get("source_id"),"evidence_id":reports["ohlcv"].get("evidence_id"),
                 "available_at":reports["ohlcv"].get("available_at"),

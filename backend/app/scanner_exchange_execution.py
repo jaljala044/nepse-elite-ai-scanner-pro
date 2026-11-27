@@ -42,8 +42,8 @@ def simulate_exchange_execution(*, order, sessions, impact_bps="0", max_particip
     limit=_d(order.get("limit_price"))
     if limit is not None and limit<=0: raise ValueError("invalid_limit_price")
     tick=_d(order.get("tick_size"))
-    impact=_d(impact_bps); participation=_d(max_participation_pct)
-    if tick is None or tick<=0 or impact is None or impact<0 or participation is None or not (0<participation<=100):
+    impact_rate=_d(impact_bps); participation=_d(max_participation_pct)
+    if tick is None or tick<=0 or impact_rate is None or impact_rate<0 or participation is None or not (0<participation<=100):
         raise ValueError("execution_parameters_invalid")
     sellable=order.get("sellable_quantity",qty)
     if isinstance(sellable,bool) or not isinstance(sellable,int) or sellable<0:

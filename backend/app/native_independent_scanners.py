@@ -4,6 +4,7 @@ from .automatic_evidence_adapter import derive_chart_evidence
 from .wyckoff_features import wyckoff_event_features
 from .trend_features import minervini_trend_template
 from .idpat_horizon_research import broker_persistence
+from .scanner_event_validation import review_events
 
 def momentum(closes):
     def ema(values,n):
@@ -30,7 +31,9 @@ def native_reviews(*,symbol,horizon,rows,benchmark_rows,sessions,assessment_time
     bars=[dict(r,session_date=r["date"]) for r in sorted(rows,key=lambda r:r["date"])]
     wy=wyckoff_event_features(bars)
     recent=set(sessions[-5:])
-    directions={e["direction"].upper() for e in wy.get("events",[]) if e["session_date"] in recent}
+    event_review=review_events(wy.get("events",[]),bars,sessions[-1])
+    wy=dict(wy,event_review=event_review)
+    directions={e["direction"].upper() for e in event_review["events"] if e["session"] in recent and not e["invalidated"]}
     wd=next(iter(directions)) if len(directions)==1 else "UNKNOWN"
     trend=minervini_trend_template(bars)
     mom=momentum([float(r["close"]) for r in bars])

@@ -108,6 +108,26 @@ class TrustedBrokerDashboardTests(unittest.TestCase):
         self.assertIn("broker_sector_rotation", result["missing_modules"])
         self.assertFalse(result["signals_enabled"])
 
+    def test_deployment_loader_uses_server_registry_environment(self):
+        import os
+        from unittest.mock import patch
+        from app.trusted_broker_dashboard import load_deployment_broker_dashboard
+
+        registry_path = self.root / "registry.json"
+        registry_path.write_text(json.dumps(self.registry), encoding="utf-8")
+        settings = {
+            "NEPSE_TRUSTED_ARTIFACT_ROOT": str(self.root),
+            "NEPSE_TRUSTED_ARTIFACT_REGISTRY_PATH": str(registry_path),
+            "NEPSE_TRUSTED_ARTIFACT_MAX_AGE_DAYS": "7",
+        }
+        with patch.dict(os.environ, settings, clear=True):
+            result = load_deployment_broker_dashboard(
+                decision_date="2026-11-26",
+                decision_time="2026-11-26T12:00:00+05:45",
+            )
+        self.assertEqual(result["status"], "descriptive_only")
+        self.assertEqual(len(result["trusted_inputs"]), 5)
+
     def test_payload_hash_mismatch_withholds_dashboard(self):
         entry = dict(self.registry["broker_profiles"], payload_sha256="0" * 64)
         registry = dict(self.registry, broker_profiles=entry)

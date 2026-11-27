@@ -40,3 +40,13 @@ class CorporateReceiptJournal:
         with closing(sqlite3.connect(self.path)) as db:
             rows=db.execute("SELECT payload_hash,payload FROM corporate_receipts WHERE portfolio_id=? ORDER BY rowid",(portfolio_id,)).fetchall()
         return [dict(payload_hash=h,**json.loads(p)) for h,p in rows]
+
+    def retire_writer(self):
+        """Irreversible through the journal API; privileged SQL can bypass."""
+        with closing(sqlite3.connect(self.path,timeout=30)) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            for operation in ("INSERT","UPDATE","DELETE"):
+                db.execute(f"""CREATE TRIGGER IF NOT EXISTS retired_receipts_{operation.lower()}
+                    BEFORE {operation} ON corporate_receipts
+                    BEGIN SELECT RAISE(ABORT,'legacy_receipt_writer_retired'); END""")
+        return {"writer_retired":True,"production_eligible":False}

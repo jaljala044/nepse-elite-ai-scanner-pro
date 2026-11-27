@@ -11,6 +11,34 @@ from pathlib import Path
 
 EXPECTED = {"invalid_ohlc": 1331, "cross_source_ohlcv_conflict": 8}
 
+# These five 2025-07-28 records are explicitly user-designated authoritative.
+# Values are transcribed from the user-provided NEPSE_Chart_Evidence.pdf, p. 1:
+# ShareHub daily OHLC plus reconciled ShareHub floorsheet shares/amount/trades.
+# This is a row-specific resolution only; it does not authorize source-file edits
+# or canonical dataset promotion.
+USER_AUTHORITATIVE_RESOLUTIONS = {
+    ("BGWT", "2025-07-28"): {
+        "open": "940.00", "high": "992.00", "low": "933.40", "close": "957.17",
+        "volume": "14028", "turnover_npr": "13256345.00", "trades": 194,
+    },
+    ("MEHL", "2025-07-28"): {
+        "open": "471.10", "high": "480.50", "low": "460.00", "close": "475.63",
+        "volume": "29753", "turnover_npr": "14008898.10", "trades": 333,
+    },
+    ("RAWA", "2025-07-28"): {
+        "open": "796.00", "high": "811.00", "low": "780.30", "close": "796.90",
+        "volume": "3165", "turnover_npr": "2515662.50", "trades": 74,
+    },
+    ("RHGCL", "2025-07-28"): {
+        "open": "346.70", "high": "362.00", "low": "341.40", "close": "357.05",
+        "volume": "296715", "turnover_npr": "103872614.40", "trades": 1030,
+    },
+    ("ULHC", "2025-07-28"): {
+        "open": "509.00", "high": "515.00", "low": "495.00", "close": "510.75",
+        "volume": "32288", "turnover_npr": "16273342.10", "trades": 300,
+    },
+}
+
 def load_json(path: Path) -> dict:
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
@@ -57,7 +85,8 @@ def build(archive_audit: dict, external_audit: dict, artifact_id: int,
             evidence[repo] = {"commit_sha": repos[repo]["commit_sha"],
                 "path": file_record["path"], "file_sha256": file_record["sha256"],
                 "row": row, "source_csv_line": None}
-        records.append({
+        user_resolution = USER_AUTHORITATIVE_RESOLUTIONS.get((symbol, date))
+        record = {
             "exception_id": f"cross_source_ohlcv_conflict:{symbol}:{date}",
             "exception_type": "cross_source_ohlcv_conflict", "symbol": symbol,
             "trade_date": date,
@@ -67,11 +96,27 @@ def build(archive_audit: dict, external_audit: dict, artifact_id: int,
             "validation_rule_violated": "OHLCV values differ for the same symbol/date across pinned source archives",
             "counterpart_source_values": conflict["source_rows"], "source_evidence": evidence,
             "external_corroboration": external.get((symbol, date), {"status": "not_found_in_crosscheck"}),
-            "disposition": "quarantined_unresolved",
+            "disposition": "resolved_with_user_authoritative_evidence" if user_resolution else "quarantined_unresolved",
             "evidence_pointer": f"workflow-artifact:{artifact_id}/ohlcv-archive-audit.json#conflict:{symbol}:{date}",
-            "reviewer_rationale": "Both pinned source values are retained. No winner is selected; third-party corroboration is not exchange-origin truth.",
+            "reviewer_rationale": (
+                "Resolved using the user's explicit final/authoritative instruction and supplied chart/floorsheet evidence. "
+                "Both source rows remain preserved; this row-level resolution does not authorize canonical promotion."
+                if user_resolution else
+                "Both pinned source values are retained. No winner is selected; third-party corroboration is not exchange-origin truth."
+            ),
             "point_in_time_available_at": archive_audit["generated_at_utc"],
-        })
+        }
+        if user_resolution:
+            record["resolution_evidence"] = {
+                "authority": "explicit_user_designation_as_final_and_authoritative",
+                "source_file": "NEPSE_Chart_Evidence.pdf",
+                "source_page": 1,
+                "source_basis": "ShareHub daily OHLC and ShareHub floorsheet quantity/turnover/trade-count reconciliation",
+                "authoritative_values": user_resolution,
+                "canonical_promotion_allowed": False,
+                "raw_source_rows_modified": False,
+            }
+        records.append(record)
     counts = Counter(r["exception_type"] for r in records)
     if counts != Counter(EXPECTED):
         raise ValueError(f"pinned audit counts changed: {dict(counts)}")
@@ -87,7 +132,7 @@ def build(archive_audit: dict, external_audit: dict, artifact_id: int,
         "counts": {"total_exception_records": len(records),
                    "invalid_ohlc_rows": counts["invalid_ohlc"],
                    "cross_source_conflict_keys": counts["cross_source_ohlcv_conflict"]},
-        "disposition_policy": "All exceptions remain unresolved and quarantined; no source rows are modified or promoted.",
+        "disposition_policy": "Unresolved exceptions remain quarantined. Five explicitly user-authoritative 2025-07-28 conflicts are row-resolved with preserved source values; no source rows are modified and no canonical promotion is authorized.",
         "exceptions": records,
     }
 

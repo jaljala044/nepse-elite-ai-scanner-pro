@@ -18,6 +18,8 @@ def _signal_input_errors(rows):
             if isinstance(raw_date, datetime):
                 raise ValueError("datetime_not_session_date")
             session_date = raw_date if isinstance(raw_date, date) else date.fromisoformat(str(raw_date))
+            if isinstance(raw_date, str) and session_date.isoformat() != raw_date:
+                raise ValueError("noncanonical_session_date")
             if session_date in seen:
                 errors.append(f"duplicate_date:{session_date}")
             seen.add(session_date)

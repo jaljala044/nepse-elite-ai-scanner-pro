@@ -16,6 +16,8 @@ import tempfile
 from contextlib import contextmanager
 from typing import Any, Iterator, Mapping
 
+from app.broker_ingestion import IngestionReport
+
 
 class CaptureRejected(ValueError):
     """Raw capture or admission transition failed its evidence gate."""
@@ -213,24 +215,49 @@ class BrokerRawCaptureRegistry:
         return {"batch_id": batch_id, "state": state, "idempotent_replay": False,
                 "raw_sha256": normalized["raw_sha256"], "raw_object_path": str(object_path)}
 
-    def record_dry_run(self, batch_id: str, report: Mapping[str, Any]) -> str:
-        """Record reconciliation output; any flagged/quarantined row rejects the batch."""
-        if not isinstance(report, Mapping):
-            raise CaptureRejected("dry_run_report_required")
-        report_json = _canonical(dict(report))
+    @staticmethod
+    def _reconciliation_payload(report: IngestionReport) -> dict[str, Any]:
+        if not isinstance(report, IngestionReport):
+            raise CaptureRejected("typed_ingestion_report_required")
+        return {
+            "batch_id": report.batch_id,
+            "coverage_status": report.coverage_status,
+            "coverage_ratio": report.coverage_ratio,
+            "accepted": report.accepted,
+            "quarantined": report.quarantined,
+            "duplicates_skipped": report.duplicates_skipped,
+            "conflicts": report.conflicts,
+            "reconciliation": report.reconciliation,
+            "memory_eligible": report.memory_eligible,
+        }
+
+    def record_dry_run(self, batch_id: str, report: IngestionReport) -> str:
+        """Bind dry-run approval to the complete typed reconciler output."""
+        payload = self._reconciliation_payload(report)
+        if report.batch_id != batch_id:
+            raise CaptureRejected("reconciliation_batch_id_mismatch")
+        if not report.memory_eligible or report.coverage_status != "complete":
+            raise CaptureRejected("reconciliation_not_memory_eligible")
+        if report.quarantined or report.conflicts:
+            raise CaptureRejected("reconciliation_contains_quarantine_or_conflicts")
+        report_json = _canonical(payload)
         report_hash = hashlib.sha256(report_json.encode("utf-8")).hexdigest()
-        clean = report.get("passed") is True and report.get("quarantined_count", 0) == 0
         with self._connect() as con:
             row = con.execute("SELECT state FROM captures WHERE batch_id=?", [batch_id]).fetchone()
             if not row:
                 raise CaptureRejected("unknown_batch")
             if row[0] != "staged":
                 raise CaptureRejected("dry_run_requires_staged_batch")
-            state = "dry_run_passed" if clean else "rejected"
-            con.execute("UPDATE captures SET state=?, dry_run_sha256=?, updated_at=? WHERE batch_id=?",
-                        [state, report_hash, datetime.now(timezone.utc).isoformat(), batch_id])
-            self._event(con, batch_id, state, {"report_sha256": report_hash,
-                         "quarantined_count": report.get("quarantined_count")})
+            con.execute("UPDATE captures SET state='dry_run_passed', dry_run_sha256=?, updated_at=? WHERE batch_id=?",
+                        [report_hash, datetime.now(timezone.utc).isoformat(), batch_id])
+            self._event(con, batch_id, "dry_run_passed", {
+                "report_sha256": report_hash,
+                "accepted_count": len(report.accepted),
+                "quarantined_count": len(report.quarantined),
+                "duplicates_skipped": report.duplicates_skipped,
+                "conflicts": report.conflicts,
+                "coverage_status": report.coverage_status,
+            })
         return report_hash
 
     def approve(self, batch_id: str, *, operator_id: str, dry_run_sha256: str) -> None:
@@ -251,21 +278,50 @@ class BrokerRawCaptureRegistry:
             self._event(con, batch_id, "approved", {"dry_run_sha256": dry_run_sha256},
                         operator_id.strip())
 
-    def mark_admitted(self, batch_id: str, *, reconciler_memory_eligible: bool) -> None:
-        """Mark downstream admission only after approval and a clean reconciler result."""
-        if reconciler_memory_eligible is not True:
-            raise CaptureRejected("reconciler_batch_not_memory_eligible")
+    def admit_to_daily_history(self, batch_id: str, report: IngestionReport, *,
+                                coverage_manifest: Mapping[str, Any],
+                                history_store: Any) -> dict[str, Any]:
+        """Append to the existing P4.35 ledger only after approved exact-report replay.
+
+        The ledger's own validation remains authoritative. If the append succeeds but
+        the registry update is interrupted, retrying is safe because the ledger is
+        append-only/idempotent and the registry records the same receipt.
+        """
+        payload = self._reconciliation_payload(report)
+        report_hash = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
         with self._connect() as con:
-            row = con.execute("SELECT state,operator_id FROM captures WHERE batch_id=?",
-                              [batch_id]).fetchone()
-            if not row:
+            row = con.execute(
+                "SELECT state,dry_run_sha256,operator_id FROM captures WHERE batch_id=?",
+                [batch_id]).fetchone()
+        if not row:
+            raise CaptureRejected("unknown_batch")
+        if row[0] != "approved" or not row[2]:
+            raise CaptureRejected("explicit_operator_approval_required")
+        if report.batch_id != batch_id or row[1] != report_hash:
+            raise CaptureRejected("approved_reconciliation_report_mismatch")
+        if not report.memory_eligible:
+            raise CaptureRejected("reconciler_batch_not_memory_eligible")
+
+        receipt = history_store.append_validated_daily_batch(
+            report, coverage_manifest=dict(coverage_manifest))
+        receipt_payload = dict(receipt)
+        with self._connect() as con:
+            current = con.execute("SELECT state FROM captures WHERE batch_id=?",
+                                  [batch_id]).fetchone()
+            if not current:
                 raise CaptureRejected("unknown_batch")
-            if row[0] != "approved" or not row[1]:
-                raise CaptureRejected("explicit_operator_approval_required")
+            if current[0] == "admitted":
+                return receipt_payload
+            if current[0] != "approved":
+                raise CaptureRejected("admission_requires_approved_batch")
             con.execute("UPDATE captures SET state='admitted',updated_at=? WHERE batch_id=?",
                         [datetime.now(timezone.utc).isoformat(), batch_id])
-            self._event(con, batch_id, "admitted",
-                        {"descriptive_only": True}, row[1])
+            self._event(con, batch_id, "admitted", {
+                "descriptive_only": True,
+                "reconciliation_sha256": report_hash,
+                "daily_history_receipt": receipt_payload,
+            }, row[2])
+        return receipt_payload
 
     def get(self, batch_id: str) -> dict[str, Any]:
         with self._connect() as con:

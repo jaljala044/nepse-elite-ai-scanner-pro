@@ -2,6 +2,13 @@ name: Repeated adjacent OHLCV candidate audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/extract_repeated_adjacent_ohlcv.py"
+      - "backend/app/session_calendar.py"
+      - "data/reference/nepse_session_calendar.csv"
+      - "tests/test_repeated_adjacent_ohlcv.py"
+      - ".github/workflows/repeated-adjacent-ohlcv-audit.yml"
   push:
     paths:
       - "scripts/extract_repeated_adjacent_ohlcv.py"

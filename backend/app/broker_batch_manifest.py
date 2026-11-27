@@ -268,6 +268,11 @@ class BrokerRawCaptureRegistry:
         result = None
         conflict = None
         with self._connect() as con:
+            # Serialize identity lookup + insert across independent SQLite connections.
+            # Without a write reservation, concurrent first captures can both observe
+            # no row and one will fail the UNIQUE(identity_key) constraint without
+            # producing the required append-only conflict event.
+            con.execute("BEGIN IMMEDIATE")
             old = con.execute(
                 "SELECT batch_id, manifest_json, state FROM captures WHERE identity_key=?",
                 [identity_key],

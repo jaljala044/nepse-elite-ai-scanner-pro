@@ -4,7 +4,7 @@ from __future__ import annotations
 from math import isfinite, log
 from datetime import date
 from app.scenario_validation import walk_forward_splits
-from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys, quarantine_gap_symbols
 
 
 def _scores(actual: list[int], probability: list[float], baseline_probability: float) -> dict:
@@ -45,7 +45,7 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
                 dates_used = [date.fromisoformat(day).isoformat() for day in sessions]
                 if dates_used != sessions or len(set(dates_used)) != len(dates_used) or observation_date not in dates_used:
                     raise ValueError("invalid forecast constituent-session lineage")
-                if any((symbol.strip().upper(), day) in keys for day in dates_used):
+                if quarantine_gap_symbols(((symbol, day) for day in dates_used), keys):
                     raise ValueError("quarantined forecast constituent session")
             actual_value = row["actual"]
             if isinstance(actual_value, bool) or actual_value not in (0, 1, "0", "1"):

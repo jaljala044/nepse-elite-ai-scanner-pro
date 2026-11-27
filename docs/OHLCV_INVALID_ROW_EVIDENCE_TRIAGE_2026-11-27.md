@@ -71,3 +71,19 @@ These are candidates for independent primary-source retrieval, not resolved reco
 ## Safety and disposition
 
 No invalid row is resolved by this triage. All 1,331 remain `quarantined_unresolved`; all remain excluded from canonical ingestion and model training. SocrateAI agreement, including full matches, is not sufficient to repair or promote a row. No raw CSV has been modified.
+
+## Additional public archive comparison
+
+I also compared the 14 priority rows against the separately maintained public archive `srijankarki07/nepse-data`, pinned to commit `688d59c03915dcee73ecad4230d2083a41c61764` (`data: 2026-11-26 end-of-day prices`). The repository describes itself as an append-only archive populated by its own scraper; it is not an official NEPSE raw-data export.
+
+Twelve of the 14 target rows were present and matched the SMC source row exactly, including the OHLC-invalid values. The two absent rows were AHPC 2010-02-10 and AHPC 2011-06-20. This is additional mirror corroboration, not a correction: it suggests the invalid values are reproduced by another archive, but does not establish whether the underlying exchange page contained an erroneous observation or the mirror inherited the same bad row.
+
+Pinned file Git blob IDs:
+- AHPC: `data/series/AHPC.csv` — `9d03bc7630fd2f631e2a2df32093b4502d5b6591`
+- API: `data/series/API.csv` — `7d8d252ae3016bcb8cd5d3751076045bff42db08`
+- HIDCL: `data/series/HIDCL.csv` — `c519422607e431db404ca8b9e2d5b876b0eb0cc0`
+- SPDL: `data/series/SPDL.csv` — `69d181fd958cd11866aa019a27cafb25b957bb0a`
+- MERO: `data/series/MERO.csv` — `a6ce6696fead7b463f332ede6aac95da9b068fdc`
+- UNHPL: `data/series/UNHPL.csv` — `19fc28fe57e2690d7c191f5b6aa6ffb8d4014d97`
+
+The archive's published coverage begins in 2011, which explains why AHPC 2010-02-10 is outside its range. The 2011-06-20 AHPC row was also absent from this pinned series file. No row is resolved or promoted by this comparison.

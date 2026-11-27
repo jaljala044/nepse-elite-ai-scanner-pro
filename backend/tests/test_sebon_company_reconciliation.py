@@ -12,7 +12,7 @@ from app.sebon_company_reconciliation import (
 ARTIFACT_BLOB = "d" * 40
 SOURCE_SNAPSHOT_BLOB = "a" * 40
 SNAPSHOT_DATE = "2026-11-25"
-SOURCE_HASH = "b" * 64
+SOURCE_SNAPSHOT_BLOB = "b" * 64
 
 
 def make_crosswalk(rows=None):
@@ -26,7 +26,7 @@ def make_crosswalk(rows=None):
          "security_name": "Other Example Finance Company Ltd.",
          "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
          "crosswalk_status": "snapshot_id_match_active_status_A",
-         "source_snapshot_blob_sha": SOURCE_HASH},
+         "source_snapshot_blob_sha": SOURCE_SNAPSHOT_BLOB},
     ]
     stream = io.StringIO(newline="")
     writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
@@ -89,11 +89,11 @@ class SebonCompanyReconciliationTests(unittest.TestCase):
             {"symbol": "AAA", "security_id": "101", "security_name": "Same Company Limited",
              "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
              "crosswalk_status": "snapshot_id_match_active_status_A",
-             "source_snapshot_blob_sha": SOURCE_HASH},
+             "source_snapshot_blob_sha": SOURCE_SNAPSHOT_BLOB},
             {"symbol": "BBB", "security_id": "102", "security_name": "Same Company Ltd.",
              "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
              "crosswalk_status": "snapshot_id_match_active_status_A",
-             "source_snapshot_blob_sha": SOURCE_HASH},
+             "source_snapshot_blob_sha": SOURCE_SNAPSHOT_BLOB},
         ]
         result = self.run_reconcile([candidate("Same Company Limited")], make_crosswalk(rows))
         row = result["results"][0]
@@ -107,7 +107,8 @@ class SebonCompanyReconciliationTests(unittest.TestCase):
             reconcile_sebon_company_candidates(
                 [candidate()], raw,
                 expected_crosswalk_payload_sha256="0" * 64,
-                expected_crosswalk_git_blob_sha=GIT_BLOB,
+                expected_crosswalk_artifact_git_blob_sha=ARTIFACT_BLOB,
+                expected_source_snapshot_blob_sha=SOURCE_SNAPSHOT_BLOB,
                 expected_snapshot_date=SNAPSHOT_DATE,
             )
 
@@ -116,11 +117,11 @@ class SebonCompanyReconciliationTests(unittest.TestCase):
             {"symbol": "AAA", "security_id": "101", "security_name": "First Ltd",
              "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
              "crosswalk_status": "snapshot_id_match_active_status_A",
-             "source_snapshot_blob_sha": SOURCE_HASH},
+             "source_snapshot_blob_sha": SOURCE_SNAPSHOT_BLOB},
             {"symbol": "AAA", "security_id": "102", "security_name": "Second Ltd",
              "snapshot_date": SNAPSHOT_DATE, "active_status": "A",
              "crosswalk_status": "snapshot_id_match_active_status_A",
-             "source_snapshot_blob_sha": SOURCE_HASH},
+             "source_snapshot_blob_sha": SOURCE_SNAPSHOT_BLOB},
         ]
         raw = make_crosswalk(rows)
         with self.assertRaisesRegex(ValueError, "duplicate_symbol"):

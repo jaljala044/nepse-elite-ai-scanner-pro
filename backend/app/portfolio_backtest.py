@@ -299,12 +299,14 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
 
 
 def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_actions=None,
-                               benchmark_rows=None, benchmark_symbol=None):
+                               benchmark_rows=None, benchmark_symbol=None, action_policy="retrospective_exclusion"):
     """Replay frozen signal scenarios; fail closed on action-affected symbols.
 
     This is a reconciliation adapter, not corporate-action-aware signal sizing.
     """
     from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
+    if action_policy not in ("retrospective_exclusion", "point_in_time_guard"):
+        raise ValueError("invalid_action_policy")
     if corporate_actions:
         # Exclude affected symbols before sizing, not after portfolio allocation.
         # This is a conservative retrospective exclusion, not a PIT strategy.
@@ -319,6 +321,21 @@ def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_a
                 raise ValueError("corporate_action_aware_signal_sizing_not_available")
             _available(action, cutoff, "corporate_action")
             affected.add(action["symbol"])
+        if action_policy == "point_in_time_guard":
+            # A future announcement cannot justify excluding an earlier decision.
+            # Until event-aware execution exists, withhold the entire result if
+            # a candidate predates an announcement for its symbol.
+            for signal in portfolio_inputs["signals"]:
+                if signal.get("symbol") not in affected:
+                    continue
+                decision = datetime.fromisoformat(str(signal.get("decision_time", "")).replace("Z", "+00:00"))
+                if decision.tzinfo is None:
+                    raise ValueError("signal_decision_timezone_required")
+                for action in corporate_actions:
+                    if action["symbol"] == signal["symbol"]:
+                        announced = datetime.fromisoformat(str(action["available_at"]).replace("Z", "+00:00"))
+                        if announced > decision:
+                            raise ValueError("future_action_requires_event_aware_replay")
         excluded = [s for s in portfolio_inputs["signals"] if s.get("symbol") in affected]
         portfolio_inputs = {**portfolio_inputs, "signals": [
             s for s in portfolio_inputs["signals"] if s.get("symbol") not in affected]}
@@ -357,5 +374,7 @@ def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_a
     return {"classification":"hypothetical_signal_replay_reconciliation",
             "portfolio":result, "ledger":ledger, "production_eligible":False,
             "corporate_action_excluded_signals": excluded,
+            "action_policy": action_policy,
+            "point_in_time_action_guard": action_policy == "point_in_time_guard",
             "limitations":["Corporate-action-affected symbols excluded retrospectively before allocation; selection bias possible. No corporate-action-aware sizing.",
                            "Scenario evidence is not actual exchange trade evidence."]}

@@ -67,6 +67,11 @@ class PortfolioServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "different transaction"):
             self.tx("BUY", "3", "100", "0", "2026-01-01", "capture-1")
 
+    def test_database_and_parent_directory_permissions_are_private(self):
+        db_path = Path(self.tmp.name) / "portfolio.sqlite3"
+        self.assertEqual(db_path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(db_path.parent.stat().st_mode & 0o777, 0o700)
+
     def test_owner_isolation_and_delete_cascade(self):
         self.tx("BUY", "2", "100", "0", "2026-01-01")
         self.assertEqual(service.list_portfolios("user-b"), [])

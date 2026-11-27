@@ -69,6 +69,7 @@ jobs:
                       digests[source] = hashlib.sha256(payload).hexdigest()
                       floor = _aggregate_floorsheet(path,day,source)
                       summary[day][source] = {"blob_sha1":sha,"sha256":digests[source],"bytes":len(payload),"metrics":{k:{"actual":str(floor[k]),"official":str(v),"match":floor[k]==v,"difference":str(floor[k]-v)} for k,v in official[day].items()}}
+                  # Each date-specific blob SHA is independently checked; the profile supplies only its header schema/mapping.
                   subprocess.run(["python","backend/audit_floorsheet_archive_pair.py","--left-file",str(files["samir"]),"--left-source-id",repos["samir"]+"@blob:"+sources["samir"],"--left-profile","samir","--left-sha256",digests["samir"],"--left-expected-git-blob-sha1",sources["samir"],"--right-file",str(files["socrateai"]),"--right-source-id",repos["socrateai"]+"@blob:"+sources["socrateai"],"--right-profile","socrateai","--right-sha256",digests["socrateai"],"--right-expected-git-blob-sha1",sources["socrateai"],"--output",f"review/pair-{day}.json"],check=True)
                   Path("review/aggregate.json").write_text(json.dumps({"dates":summary,"canonical_promotion_allowed":False,"source_rights_verified":False},indent=2))
               print(json.dumps(summary,indent=2))

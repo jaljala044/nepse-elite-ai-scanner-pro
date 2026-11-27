@@ -21,3 +21,6 @@ Original signals are never overwritten. NO_TRADE is not labelled a false negativ
 - Corporate actions must be reconciled upstream.
 - Signal ledger metrics are descriptive and not calibrated probabilities or validated live accuracy.
 - No real NEPSE historical dataset is bundled; no performance claim or production authorization is made.
+
+## Integrated orchestration
+`run_six_strategy_replay` now retains each replay's verified trade records and pending exits. `run_portfolio_outcome_comparison` then creates an independent cash/risk-limited portfolio for each strategy/horizon in the requested partition and builds the append-only outcome ledger from the same partition's signals. The caller must provide signals scoped to that partition; explicit mismatches are rejected. Use `out_of_sample` for final comparison and do not tune from it.

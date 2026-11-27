@@ -62,3 +62,37 @@ class ReceiptBalanceLedger:
                 differences[asset]={"expected":str(want),"actual":str(have)}
         return dict(reconciled=not differences,event_count=len(rows),differences=differences,
             production_eligible=False)
+
+    def migrate_legacy(self,source_path,assessment_time,*,source_frozen=False):
+        """Import receipt totals only, never credit an external customer account."""
+        if source_frozen is not True:
+            raise ValueError("legacy_writer_must_be_retired")
+        from pathlib import Path
+        uri=Path(source_path).resolve().as_uri()+"?mode=ro"
+        with closing(sqlite3.connect(uri,uri=True)) as source, source:
+            source.execute("BEGIN")
+            rows=source.execute("SELECT portfolio_id,action_id,payload_hash,payload FROM corporate_receipts").fetchall()
+        imported=skipped=0
+        with closing(sqlite3.connect(self.path,timeout=30)) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            for portfolio,action,digest,payload in rows:
+                if not portfolio or hashlib.sha256(payload.encode()).hexdigest()!=digest:
+                    raise ValueError("invalid_legacy_receipt")
+                data=json.loads(payload)
+                if data["entitlement"]["action_id"]!=action:
+                    raise ValueError("legacy_action_key_mismatch")
+                result=review_pending_assets(entitlements=[data["entitlement"]],confirmations=[data["confirmation"]],assessment_time=assessment_time)
+                old=db.execute("SELECT digest FROM receipt_balance_events WHERE portfolio=? AND action=?",(portfolio,action)).fetchone()
+                if old:
+                    if old[0]!=digest: raise ValueError("conflicting_legacy_receipt")
+                    skipped+=1
+                    continue
+                db.execute("INSERT INTO receipt_balance_events VALUES (?,?,?,?)",(portfolio,action,digest,payload))
+                changes={"cash:NPR":result["confirmed_cash_receipt_delta"]}
+                changes.update({"shares:"+s:q for s,q in result["confirmed_share_credit_delta"].items()})
+                for asset,delta in changes.items():
+                    old=db.execute("SELECT amount FROM receipt_balance_totals WHERE portfolio=? AND asset=?",(portfolio,asset)).fetchone()
+                    total=Decimal(old[0] if old else "0")+Decimal(str(delta))
+                    db.execute("INSERT INTO receipt_balance_totals VALUES (?,?,?) ON CONFLICT(portfolio,asset) DO UPDATE SET amount=excluded.amount",(portfolio,asset,str(total)))
+                imported+=1
+        return dict(imported=imported,skipped=skipped,production_eligible=False)

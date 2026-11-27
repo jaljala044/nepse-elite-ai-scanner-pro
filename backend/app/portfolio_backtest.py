@@ -167,6 +167,7 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 "sector": position["sector"], "entry_date": position["entry_date"],
                 "exit_date": position["exit_date"], "cash_settlement_date": position["settlement_date"],
                 "quantity": position["quantity"],
+                "entry_price": position["entry_price"], "exit_price": position["exit_price"],
                 "buy_cash": position["buy_cash"], "sell_cash": position["sell_cash"],
                 "net_pnl": position["net_pnl"], "net_return_pct": position["net_return_pct"],
                 "risk_budget_cash": position["risk_budget_cash"],
@@ -231,6 +232,8 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
                 "signal_id": candidate["signal_id"], "symbol": symbol, "sector": sector,
                 "entry_date": scenario["entry_session"], "exit_date": scenario["exit_session"],
                 "quantity": int(scenario["scenario_quantity"]), "buy_cash": buy_cash,
+                "entry_price": float(scenario.get("buy_scenario_price", entry_price)),
+                "exit_price": float(scenario["sell_scenario_price"]) if "sell_scenario_price" in scenario else None,
                 "sell_cash": sell_cash, "settlement_date": cash_settlement,
                 "net_pnl": float(scenario["net_pnl"]),
                 "net_return_pct": float(scenario["net_return_pct"]),
@@ -293,3 +296,85 @@ def run_portfolio_backtest(*, signals, rows_by_symbol, verified_sessions_by_symb
             "Risk sizing uses entry-to-stop price distance and does not guarantee the realized loss is capped."
         ]
     }
+
+
+def reconcile_signal_portfolio(*, portfolio_inputs, evidence_cutoff, corporate_actions=None,
+                               benchmark_rows=None, benchmark_symbol=None, action_policy="point_in_time_guard"):
+    """Replay frozen signal scenarios; fail closed on action-affected symbols.
+
+    This is a reconciliation adapter, not corporate-action-aware signal sizing.
+    """
+    from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
+    if action_policy not in ("retrospective_exclusion", "point_in_time_guard"):
+        raise ValueError("invalid_action_policy")
+    if corporate_actions:
+        # Exclude affected symbols before sizing, not after portfolio allocation.
+        # This is a conservative retrospective exclusion, not a PIT strategy.
+        from .unified_portfolio_event_engine import _available
+        from datetime import datetime
+        cutoff = datetime.fromisoformat(str(evidence_cutoff).replace("Z", "+00:00"))
+        if cutoff.tzinfo is None:
+            raise ValueError("evidence_cutoff_timezone_required")
+        affected = set()
+        for action in corporate_actions:
+            if not isinstance(action, dict) or not action.get("symbol"):
+                raise ValueError("corporate_action_aware_signal_sizing_not_available")
+            _available(action, cutoff, "corporate_action")
+            affected.add(action["symbol"])
+        if action_policy == "point_in_time_guard":
+            # A future announcement cannot justify excluding an earlier decision.
+            # Until event-aware execution exists, withhold the entire result if
+            # a candidate predates an announcement for its symbol.
+            for signal in portfolio_inputs["signals"]:
+                if signal.get("symbol") not in affected:
+                    continue
+                decision = datetime.fromisoformat(str(signal.get("decision_time", "")).replace("Z", "+00:00"))
+                if decision.tzinfo is None:
+                    raise ValueError("signal_decision_timezone_required")
+                for action in corporate_actions:
+                    if action["symbol"] == signal["symbol"]:
+                        announced = datetime.fromisoformat(str(action["available_at"]).replace("Z", "+00:00"))
+                        if announced > decision:
+                            raise ValueError("future_action_requires_event_aware_replay")
+        excluded = [s for s in portfolio_inputs["signals"] if s.get("symbol") in affected]
+        portfolio_inputs = {**portfolio_inputs, "signals": [
+            s for s in portfolio_inputs["signals"] if s.get("symbol") not in affected]}
+    else:
+        excluded = []
+    result = run_portfolio_backtest(**portfolio_inputs)
+    days = [x["date"] for x in result["equity_curve"]]
+    trades = []
+    for t in result["trades"]:
+        symbol, sid, qty = t["symbol"], t["signal_id"], t["quantity"]
+        if t["exit_price"] is None:
+            raise ValueError("execution_scenario_price_missing")
+        sessions = portfolio_inputs["verified_sessions_by_symbol"][symbol]
+        buy_settle = settlement_date(t["entry_date"], sessions)
+        if buy_settle is None:
+            raise ValueError("entry_settlement_not_proven")
+        for side, day, settle, price, fees in (
+            ("BUY", t["entry_date"], buy_settle.isoformat(), t["entry_price"], t["buy_cash"]-qty*t["entry_price"]),
+            ("SELL", t["exit_date"], t["cash_settlement_date"], t["exit_price"], qty*t["exit_price"]-t["sell_cash"])):
+            if fees < -1e-7:
+                raise ValueError("execution_cost_reconciliation_failed")
+            trades.append(dict(trade_id=sid+":"+side, signal_id=sid, symbol=symbol,
+                               side=side, quantity=qty, price=price, fees=max(0,fees),
+                               trade_date=day, settlement_date=settle, status="verified",
+                               source_id="hypothetical_execution_scenario:"+sid,
+                               available_at=evidence_cutoff))
+    trades.sort(key=lambda t: (t["trade_date"], t["side"] != "SELL", t["trade_id"]))
+    ledger = run_unified_portfolio_event_ledger(
+        initial_cash=portfolio_inputs["initial_capital"], initial_holdings={},
+        trades=trades, corporate_actions=[], price_rows_by_symbol=portfolio_inputs["rows_by_symbol"],
+        portfolio_sessions=days, as_of_date=days[-1], evidence_cutoff=evidence_cutoff,
+        benchmark_rows=benchmark_rows, benchmark_symbol=benchmark_symbol)
+    for original, replay in zip(result["equity_curve"], ledger["equity_curve"]):
+        if abs(original["equity"]-replay["equity"]) > 1e-5 or abs(original["cash"]-replay["cash"]) > 1e-5:
+            raise ValueError("signal_portfolio_ledger_mismatch:"+original["date"])
+    return {"classification":"hypothetical_signal_replay_reconciliation",
+            "portfolio":result, "ledger":ledger, "production_eligible":False,
+            "corporate_action_excluded_signals": excluded,
+            "action_policy": action_policy,
+            "point_in_time_action_guard": action_policy == "point_in_time_guard",
+            "limitations":[("Corporate-action-affected symbols excluded retrospectively before allocation; selection bias possible." if action_policy == "retrospective_exclusion" else "Known affected symbols excluded; future announcements cause replay rejection. No event-aware sizing."),
+                           "Scenario evidence is not actual exchange trade evidence."]}

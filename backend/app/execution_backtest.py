@@ -66,7 +66,7 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
         if min_turnover < 0:
             raise ValueError("invalid_min_turnover")
         slip_bps = _d(cost_assumptions.get("slippage_bps"), "slippage_bps")
-        if slip_bps >= 10000:
+        if slip_bps < 0 or slip_bps >= 10000:
             raise ValueError("invalid_slippage_bps")
     except (AttributeError, ValueError) as exc:
         return {**base, "reason": str(exc)}
@@ -126,9 +126,9 @@ def simulate_execution_scenario(*, signal, rows, verified_sessions, evaluation_d
         raw_sell = min(exit_ref, exit_open) if outcome.get("stop_touched") else max(exit_ref, exit_open) if exit_ref == stop_ref else exit_ref
         # Daily-bar lock limits have no demonstrated opposing liquidity: do not assume a fill.
         eband, xband = bands[entry_day], bands[exit_day]
-        if (entry_bar["high"] == entry_bar["low"] == eband["upper"]):
+        if (_d(entry_bar["high"], "high") == _d(entry_bar["low"], "low") == _d(eband["upper"], "upper")):
             return {**base, "reason": "buy_side_upper_circuit_lock_fill_unverified"}
-        if (exit_bar["high"] == exit_bar["low"] == xband["lower"]):
+        if (_d(exit_bar["high"], "high") == _d(exit_bar["low"], "low") == _d(xband["lower"], "lower")):
             return {**base, "reason": "sell_side_lower_circuit_lock_fill_unverified"}
         slip = slip_bps / Decimal("10000")
         buy_price = _tick(raw_buy * (1 + slip), tick, buy=True)

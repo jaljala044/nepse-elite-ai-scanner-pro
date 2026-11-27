@@ -858,3 +858,158 @@ def history(symbol: str):
     if rows is None:
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
+
+
+from .unified_portfolio_event_engine import run_unified_portfolio_event_ledger
+
+class UnifiedPortfolioEventRequest(BaseModel):
+    initial_cash: float
+    initial_holdings: dict[str, dict]
+    trades: list[dict]
+    corporate_actions: list[dict]
+    price_rows_by_symbol: dict[str, list[dict]]
+    portfolio_sessions: list[str]
+    as_of_date: str
+    evidence_cutoff: str
+    benchmark_rows: list[dict] | None = None
+    benchmark_symbol: str | None = None
+    risk_limits: dict | None = None
+    sector_by_symbol: dict[str, str] | None = None
+
+
+@app.post("/v1/research/portfolio/event-ledger")
+def research_unified_portfolio_event_ledger(request: UnifiedPortfolioEventRequest):
+    """Replay caller-attested historical events; not an execution endpoint."""
+    try:
+        return run_unified_portfolio_event_ledger(**request.model_dump())
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .corporate_action_risk import assess_post_action_risk
+from .corporate_action_trade_plan import rebase_trade_plan, rebase_cash_action_plan
+
+class PortfolioRiskReviewRequest(BaseModel):
+    snapshot: dict
+    limits: dict
+    assessment_time: str
+
+@app.post("/v1/research/portfolio/risk-review")
+def research_portfolio_risk_review(request: PortfolioRiskReviewRequest):
+    """Stateless caller-supplied risk review; no live orders or saved holdings."""
+    try:
+        result = assess_post_action_risk(**request.model_dump())
+        return {**result, "schema_version":"1", "data_quality":"CALLER_ATTESTED",
+                "broker_intelligence_status":"UNKNOWN",
+                "profit_booking_status":"NOT_ASSESSED",
+                "live_notifications_enabled":False}
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+class CorporateActionPlanRequest(BaseModel):
+    signal: dict
+    action: dict
+    adjustment_time: str
+    quantity: int
+    cost_basis: float
+    available_cash: float | None = None
+    reference: dict | None = None
+    subscribed_quantity: int = 0
+
+@app.post("/v1/research/portfolio/adjust-plan")
+def research_portfolio_adjust_plan(request: CorporateActionPlanRequest):
+    try:
+        args = request.model_dump()
+        if request.action.get("action_type") in ("bonus","split"):
+            for key in ("available_cash","reference","subscribed_quantity"):
+                args.pop(key)
+            return rebase_trade_plan(**args)
+        return rebase_cash_action_plan(**args)
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .integrated_research_pipeline import run_integrated_research
+
+class IntegratedResearchRequest(BaseModel):
+    snapshot: dict
+    as_of_date: str
+    as_of_timestamp: str
+    confirmation: dict | None = None
+    execution_by_horizon: dict[str, dict] | None = None
+
+@app.post("/v1/research/integrated")
+def research_integrated(request: IntegratedResearchRequest):
+    """Caller-attested research orchestration; no live orders."""
+    try:
+        return run_integrated_research(**request.model_dump())
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .portfolio_dashboard_review import portfolio_dashboard_review
+
+class PortfolioDashboardRequest(BaseModel):
+    holding: dict
+    quote: dict
+    snapshot: dict
+    limits: dict
+    distribution: dict
+    market: dict
+    sector: dict
+    assessment_time: str
+    reduction_fraction: float
+    cost_assumptions: dict | None = None
+    trailing_inputs: dict | None = None
+
+@app.post("/v1/research/portfolio/dashboard")
+def research_portfolio_dashboard(request: PortfolioDashboardRequest):
+    try:
+        return portfolio_dashboard_review(**request.model_dump())
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .automatic_portfolio_dashboard import automatic_portfolio_dashboard
+
+class AutomaticPortfolioDashboardRequest(BaseModel):
+    holding: dict
+    quote: dict
+    snapshot: dict
+    limits: dict
+    market: dict
+    sector: dict
+    assessment_time: str
+    reduction_fraction: float
+    rows: list[dict]
+    benchmark_rows: list[dict]
+    sessions: list[str]
+    broker_records: list[dict]
+    broker_numbers: list[int]
+    cost_assumptions: dict | None = None
+    trailing_config: dict | None = None
+    corporate_assets: dict | None = None
+
+@app.post("/v1/research/portfolio/automatic-dashboard")
+def research_automatic_portfolio_dashboard(request: AutomaticPortfolioDashboardRequest):
+    try:
+        return automatic_portfolio_dashboard(**request.model_dump())
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from .scanner_portfolio_comparison import compare_portfolios
+
+class ScannerPortfolioComparisonRequest(BaseModel):
+    candidates: dict[str, list[dict]]
+    common_inputs: dict
+
+@app.post("/v1/research/scanners/portfolio-comparison")
+def research_scanner_portfolio_comparison(request: ScannerPortfolioComparisonRequest):
+    """Stateless hypothetical comparison, not a live recommendation."""
+    try:
+        result = compare_portfolios(**request.model_dump())
+        return {**result, "schema_version": "1", "data_quality": "CALLER_ATTESTED",
+                "live_trading_enabled": False}
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -87,3 +87,9 @@ Pinned file Git blob IDs:
 - UNHPL: `data/series/UNHPL.csv` — `19fc28fe57e2690d7c191f5b6aa6ffb8d4014d97`
 
 The archive's published coverage begins in 2011, which explains why AHPC 2010-02-10 is outside its range. The 2011-06-20 AHPC row was also absent from this pinned series file. No row is resolved or promoted by this comparison.
+
+## ShareHub historical-data access
+
+ShareHub's published API documentation lists an all-time daily OHLCV price-history endpoint from listing to present. The same documentation states that calls require a Bearer token, a ShareHub data API account/service licence, and an allow-listed server IP. No authorized API credentials or allow-listed host are available in this task context, so I did not attempt to bypass that access control. This remains a possible evidence route if the project owner provides authorized access.
+
+Reference: https://sharehubnepal.com/data/nepse-data-documentation/

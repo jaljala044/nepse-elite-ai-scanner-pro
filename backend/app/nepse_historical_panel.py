@@ -132,7 +132,7 @@ def assemble_historical_panel(*, datasets, start_date, end_date, decision_cutoff
         "start_date":start.isoformat(),"end_date":end.isoformat(),"decision_cutoff":cutoff.isoformat(),
         "session_dates":sessions,"session_count":len(sessions),"eligible_symbols":eligible,
         "excluded_symbols":excluded,"panel":panel,"panel_rows":len(panel),"errors":errors,
-        "data_quality":quality,"corporate_actions_checked":True,"readiness_status":readiness_report.get("status"),"readiness_data_quality":readiness_report.get("data_quality"),"historical_universe_security_count":len(universe_result["security_ids"]),"inactive_universe_events":universe_result["inactive_history"],
+        "data_quality":quality,"corporate_actions_checked":True,"readiness_status":readiness_report.get("status"),"readiness_data_quality":readiness_report.get("data_quality"),"strategy_eligibility":readiness_report.get("strategy_eligibility",{}),"historical_universe_security_count":len(universe_result["security_ids"]),"inactive_universe_events":universe_result["inactive_history"],
         "corporate_action_policy":"exclude affected securities until independently reconciled and consistently adjusted",
         "survivorship_policy":"uses effective-dated permanent security IDs; later IPOs enter from listing date and delisted/suspended securities remain in the historical inventory",
         "common_universe_policy":"only complete symbol histories on the common open-session calendar are admitted",

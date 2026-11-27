@@ -111,5 +111,33 @@ class EffectiveCostScheduleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "brokerage_slab_missing"):
             resolve_cost_assumptions("2026-12-31", 100, 100, fixture(), sell_date="2027-01-01")
 
+    def test_holding_period_boundary(self):
+        s = fixture()
+        short = dict(s["tax_schedules"][0], holding_days_min=0, holding_days_max_exclusive=30, rate="0.08")
+        long = dict(s["tax_schedules"][0], holding_days_min=30, rate="0.04")
+        s["tax_schedules"] = [short, long]
+        for day, rate, days in (("2026-06-30","0.08",29),("2026-07-01","0.04",30)):
+            result = resolve_cost_assumptions("2026-06-01",100,110,s,sell_date=day)
+            self.assertEqual(result["capital_gain_tax_rate"],rate)
+            self.assertEqual(result["holding_calendar_days"],days)
+
+    def test_holding_band_gap(self):
+        s=fixture()
+        s["tax_schedules"][0]["holding_days_min"]=30
+        with self.assertRaisesRegex(ValueError,"tax_schedule_missing"):
+            resolve_cost_assumptions("2026-06-01",100,110,s,sell_date="2026-06-02")
+
+    def test_holding_band_overlap(self):
+        s=fixture()
+        s["tax_schedules"].append(dict(s["tax_schedules"][0],holding_days_min=1))
+        with self.assertRaisesRegex(ValueError,"tax_schedule_ambiguous"):
+            resolve_cost_assumptions("2026-06-01",100,110,s,sell_date="2026-06-02")
+
+    def test_fractional_holding_band_rejected(self):
+        s=fixture()
+        s["tax_schedules"][0]["holding_days_min"]="0.5"
+        with self.assertRaisesRegex(ValueError,"invalid_holding_period_band"):
+            resolve_cost_assumptions("2026-06-01",100,110,s)
+
 if __name__ == "__main__":
     unittest.main()

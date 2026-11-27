@@ -12,7 +12,6 @@ from app.sebon_company_reconciliation import (
 ARTIFACT_BLOB = "d" * 40
 SOURCE_SNAPSHOT_BLOB = "a" * 40
 SNAPSHOT_DATE = "2026-11-25"
-SOURCE_SNAPSHOT_BLOB = "b" * 64
 
 
 def make_crosswalk(rows=None):

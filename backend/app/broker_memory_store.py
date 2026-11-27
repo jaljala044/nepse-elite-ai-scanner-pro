@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Iterable
 
 import duckdb
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
 
 
 class IdempotencyConflict(ValueError):
@@ -77,6 +78,10 @@ class BrokerMemoryStore:
 
     @staticmethod
     def _validate_snapshot(snapshot: dict):
+        if is_quarantined(snapshot):
+            raise ValueError("quarantined broker snapshot")
+        if runtime_quarantine_keys() is not None:
+            raise ValueError("broker snapshot persistence withheld pending verified constituent-session lineage")
         required = (
             "as_of_date", "security_id", "broker_entity_id", "window",
             "buy_amount", "sell_amount", "net_amount", "source_ids",
@@ -238,6 +243,8 @@ class BrokerMemoryStore:
     def get_as_of(self, *, security_id: str, broker_entity_id: str,
                   as_of_date: str, available_by: datetime | None = None) -> list[dict]:
         """Return snapshots visible by both event cutoff and availability cutoff."""
+        if runtime_quarantine_keys() is not None:
+            raise ValueError("broker snapshot reads withheld pending verified constituent-session lineage")
         cutoff = date.fromisoformat(as_of_date)
         available_by = available_by or datetime.now(timezone.utc)
         if available_by.tzinfo is None:

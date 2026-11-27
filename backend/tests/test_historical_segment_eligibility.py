@@ -44,7 +44,7 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "session_date": day, "symbol": "NABIL", "security_id": "123",
             "open": "100", "high": "105", "low": "95", "close": "102", "volume": "1000",
             "adjustment_basis": "raw", "rights_status": "approved",
-            "evidence_sha256": "c" * 64, "available_at": "2025-12-31T15:00:00+05:45",
+            "evidence_sha256": "c" * 64, "available_at": "2025-12-30T00:00:00+05:45",
             "source_evidence": self.source_evidence("ohlcv:NABIL:123:" + day),
         }
 

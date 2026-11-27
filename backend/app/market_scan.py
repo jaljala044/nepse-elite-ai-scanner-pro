@@ -11,6 +11,8 @@ from typing import Callable, Iterable, Mapping, Sequence
 
 
 def _row_date(row: Mapping) -> date:
+    if not isinstance(row, Mapping):
+        raise ValueError("OHLCV row must be a mapping")
     value = row.get("date")
     if isinstance(value, datetime):
         raise ValueError("OHLCV row date must not be a datetime")
@@ -32,6 +34,14 @@ def run_market_scan(
     remains an explicit outcome. No session calendar is inferred and no
     ranking or recommendation is created here.
     """
+    if isinstance(candidate_symbols, (str, bytes)):
+        raise ValueError("candidate_symbols must be an iterable of symbols, not a string")
+    if not isinstance(market_data, Mapping):
+        raise ValueError("market_data must be a mapping keyed by symbol")
+    if not callable(scan_symbol):
+        raise ValueError("scan_symbol must be callable")
+    if as_of is not None and (not isinstance(as_of, date) or isinstance(as_of, datetime)):
+        raise ValueError("as_of must be a calendar date or None, not a datetime")
     symbols = list(candidate_symbols)
     if any(not isinstance(symbol, str) or not symbol or symbol != symbol.upper()
            for symbol in symbols):

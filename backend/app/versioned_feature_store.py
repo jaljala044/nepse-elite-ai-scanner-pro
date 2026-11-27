@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from app.feature_pipeline import build_feature_snapshot
+from app.quarantine_guard import is_quarantined
 from app.temporal_registry import security_as_of, corporate_actions_as_of
 
 
@@ -79,7 +80,7 @@ def build_versioned_feature_snapshot(records: list[dict], decision_time: str,
         }
     included_records = [
         row for row in records
-        if row.get("available_at") and datetime.fromisoformat(row["available_at"].replace("Z", "+00:00")) <= cutoff
+        if not is_quarantined(row) and row.get("available_at") and datetime.fromisoformat(row["available_at"].replace("Z", "+00:00")) <= cutoff
     ]
     input_lineage = []
     for row in included_records:

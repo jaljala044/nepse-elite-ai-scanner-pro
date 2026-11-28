@@ -16,13 +16,21 @@ def source_row(day="2026-11-25", evidence="E1", side="BUY", amount="100"):
         "source_payload_sha256":payload_hash(payload),"source_row_count":1,"coverage_ratio":"1"}
 
 
+def rights_evidence():
+    return {"SRC-FLOORSHEET": {"source_id": "SRC-FLOORSHEET", "evidence_id": "TEST-RIGHTS",
+        "status": "approved", "document_sha256": "d" * 64,
+        "scope": ["electronic_storage", "aggregation"], "effective_from": "2020-01-01",
+        "effective_to": None, "available_at": "2026-11-24T09:00:00+05:45"}}
+
+
 def report(rows, batch_id="BATCH-2026-11-25"):
     days={r["session_date"] for r in rows}
     return reconcile_broker_batch(batch_id=batch_id,rows=rows,
         verified_brokers={"BROKER-17"},verified_sessions=days,
         expected_source_ids={"SRC-FLOORSHEET"},received_source_ids={"SRC-FLOORSHEET"},
         available_at="2026-11-26T10:00:00+05:45",
-        verified_session_finality={d:d+"T16:00:00+05:45" for d in days})
+        verified_session_finality={d:d+"T16:00:00+05:45" for d in days},
+        source_rights_evidence=rights_evidence())
 
 
 def manifest(day="2026-11-25"):

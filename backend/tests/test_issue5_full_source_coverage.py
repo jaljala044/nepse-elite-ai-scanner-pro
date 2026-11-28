@@ -194,5 +194,69 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
                 build_report(ap, cp, up, expected_active_equity_count=1)
 
 
+    def test_non_string_coverage_symbol_is_rejected_without_type_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"][0]["symbols"] = [{"bad": "symbol"}]
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "invalid symbol in date coverage"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_blank_coverage_symbol_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"][0]["symbols"] = [" "]
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "invalid symbol in date coverage"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_case_normalized_duplicate_coverage_symbols_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"][0]["symbols"] = ["ABC", "abc"]
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate symbol in date coverage"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_non_list_date_coverage_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"] = {}
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "date coverage must be a list"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_non_object_date_coverage_row_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"][0] = []
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "invalid date coverage row"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_non_object_source_file_entry_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["files"][0] = "ABC"
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "invalid source file entry"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_blank_source_file_symbol_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["files"][0]["symbol"] = " "
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "missing source symbol"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+    def test_universe_null_fields_do_not_crash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
+            up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n,Equity,Active\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "active equity symbol must be nonblank"):
+                build_report(ap, cp, up, expected_active_equity_count=1)
+
+
 if __name__ == "__main__":
     unittest.main()

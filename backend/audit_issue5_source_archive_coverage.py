@@ -58,12 +58,15 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,
         calendar[row["date"]] = row["status"]
     expected_sessions = sorted(day for day, status in calendar.items() if status in OPEN_STATUSES)
 
-    active_equity_rows = [
-        row for row in universe_rows
-        if row["instrument_type"].strip().lower() == "equity"
-        and row["status"].strip().lower() == "active"
-    ]
-    active_symbols = [row["symbol"].strip().upper() for row in active_equity_rows]
+    active_equity_rows = []
+    for line, row in enumerate(universe_rows, start=2):
+        if not isinstance(row, dict):
+            raise ValueError(f"invalid universe row at line {line}")
+        instrument_type = (row.get("instrument_type") or "").strip().lower()
+        status = (row.get("status") or "").strip().lower()
+        if instrument_type == "equity" and status == "active":
+            active_equity_rows.append(row)
+    active_symbols = [(row.get("symbol") or "").strip().upper() for row in active_equity_rows]
     if any(not symbol for symbol in active_symbols):
         raise ValueError("active equity symbol must be nonblank")
     if len(active_symbols) != len(set(active_symbols)):
@@ -89,15 +92,20 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,
             raise ValueError(f"missing repository audit: {repository}")
         if source.get("commit_sha") != EXPECTED_SOURCE_COMMITS[repository]:
             raise ValueError(f"source audit commit is not the pinned approved input: {repository}")
-        files = source.get("files", [])
+        files = source.get("files")
+        if not isinstance(files, list):
+            raise ValueError(f"source files must be a list in {repository}")
         if (source.get("files_audited") != len(files) or
                 source.get("file_count") != len(files) or source.get("download_errors")):
             raise ValueError(f"incomplete source archive audit: {repository}")
         file_index = {}
-        for item in files:
+        for line, item in enumerate(files, start=1):
+            if not isinstance(item, dict):
+                raise ValueError(f"invalid source file entry in {repository} at row {line}")
             symbol = item.get("symbol")
-            if not isinstance(symbol, str) or not symbol:
-                continue
+            if not isinstance(symbol, str) or not symbol.strip():
+                raise ValueError(f"missing source symbol in {repository} at row {line}")
+            symbol = symbol.strip().upper()
             if symbol in file_index:
                 raise ValueError(f"duplicate symbol file in {repository}: {symbol}")
             file_index[symbol] = item
@@ -113,7 +121,12 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,
 
         observed_by_symbol = {}
         seen_date_rows = set()
-        for line, item in enumerate(source.get("date_coverage", []), start=1):
+        date_coverage = source.get("date_coverage")
+        if not isinstance(date_coverage, list):
+            raise ValueError(f"date coverage must be a list in {repository}")
+        for line, item in enumerate(date_coverage, start=1):
+            if not isinstance(item, dict):
+                raise ValueError(f"invalid date coverage row in {repository} at row {line}")
             day = item.get("date")
             symbols = item.get("symbols", [])
             if not isinstance(day, str) or not isinstance(symbols, list):
@@ -124,10 +137,13 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,
                 raise ValueError(f"invalid date coverage date in {repository} at row {line}") from None
             if parsed_day.isoformat() != day:
                 raise ValueError(f"noncanonical date coverage date in {repository} at row {line}")
+            if any(not isinstance(symbol, str) or not symbol.strip() for symbol in symbols):
+                raise ValueError(f"invalid symbol in date coverage row in {repository}: {day}")
+            symbols = [symbol.strip().upper() for symbol in symbols]
             if len(symbols) != len(set(symbols)):
                 raise ValueError(f"duplicate symbol in date coverage row in {repository}: {day}")
             for symbol in symbols:
-                if not isinstance(symbol, str) or symbol not in file_index:
+                if symbol not in file_index:
                     raise ValueError(f"date coverage references unknown source symbol in {repository}: {symbol!r}")
                 key = (day, symbol)
                 if key in seen_date_rows:

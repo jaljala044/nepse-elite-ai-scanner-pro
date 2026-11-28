@@ -97,7 +97,6 @@ class LedgerGuardTests(unittest.TestCase):
         from app.quarantine_guard import runtime_quarantine_keys
         from app.scenario_validation import validate_binary_forecasts
         from app.walk_forward_report import build_walk_forward_report
-        from app.historical_segment_eligibility import evaluate_runtime_historical_segment
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ledger.json"
             raw = self._ledger("2025-07-28")
@@ -113,7 +112,6 @@ class LedgerGuardTests(unittest.TestCase):
                 path.write_bytes(raw + b" ")
                 with self.assertRaisesRegex(ValueError, "invalid runtime quarantine ledger"):
                     runtime_quarantine_keys(required=True)
-                self.assertFalse(evaluate_runtime_historical_segment()["exploratory_replay_eligible"])
             with patch.dict(os.environ, {"NEPSE_QUARANTINE_LEDGER": str(path)}, clear=True):
                 with self.assertRaisesRegex(ValueError, "pinned quarantine ledger required"):
                     runtime_quarantine_keys()

@@ -70,6 +70,38 @@ class LifecycleEligibilityTests(unittest.TestCase):
         self.assertEqual(report["explicit_no_trade_session_count"], 1)
         self.assertEqual(report["traded_session_count"], 119)
 
+    def test_no_trade_available_at_is_checked_for_lookahead(self):
+        sessions, records = fixture()
+        records[5]["observation_status"] = "no_trade"
+        records[5]["ohlcv"] = None
+        records[5].pop("adjustment_basis")
+        records[5].pop("rights_status")
+        records[5]["available_at"] = "2026-11-29T00:00:00+04:00"
+        report = build(sessions, records)
+        self.assertIn("lookahead_available_after_cutoff",
+                      {item["reason"] for item in report["blockers"]})
+
+    def test_no_trade_record_cannot_smuggle_ohlcv_values(self):
+        sessions, records = fixture()
+        records[5]["observation_status"] = "no_trade"
+        records[5].pop("adjustment_basis")
+        records[5].pop("rights_status")
+        report = build(sessions, records)
+        self.assertIn("no_trade_must_not_contain_imputed_ohlcv",
+                      {item["reason"] for item in report["blockers"]})
+
+    def test_prelisting_and_delisted_sessions_are_not_missing(self):
+        sessions, records = fixture()
+        lifecycle = {"listing_date": sessions[10], "delisting_date": sessions[110],
+                     "suspensions": []}
+        selected = records[10:110]
+        report = build_lifecycle_eligibility_manifest(
+            selected, symbol="NABIL", verified_sessions=sessions,
+            lifecycle=lifecycle, required_warmup_sessions=80,
+            available_as_of=CUTOFF)
+        self.assertEqual(report["rows"][0]["classification"], "not_listed")
+        self.assertEqual(report["rows"][110]["classification"], "delisted")
+
     def test_suspension_is_distinguished_from_missing(self):
         sessions, records = fixture()
         records.pop(20)

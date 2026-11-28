@@ -128,9 +128,6 @@ class HistoricalCoverageTests(unittest.TestCase):
             self.assertFalse(second["report"]["coverage_report"]["canonical_promotion_allowed"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
     def test_noncanonical_expected_session_dates_are_rejected(self):
         for value in ("20261124", "2026-W48-2", "2026-1-4", "2026/11/24"):
             with self.subTest(value=value):
@@ -183,4 +180,23 @@ if __name__ == "__main__":
                 build_cached_historical_coverage_report(
                     source, expected_sessions=["2026-11-24"], expected_symbols=[" "],
                     load_records=lambda path: [], registry=registry)
+    def test_non_string_symbol_is_rejected(self):
+        for value in (None, 123, []):
+            with self.subTest(value=value):
+                record = {"source_id": "A", "symbol": value, "session_date": "2026-11-24", "close": "100"}
+                with self.assertRaisesRegex(ValueError, "invalid coverage input row"):
+                    build_historical_coverage_report(
+                        [record], expected_sessions=["2026-11-24"], expected_symbols=["NABIL"])
+
+    def test_non_string_source_id_is_rejected(self):
+        for value in (None, 123, []):
+            with self.subTest(value=value):
+                record = {"source_id": value, "symbol": "NABIL", "session_date": "2026-11-24", "close": "100"}
+                with self.assertRaisesRegex(ValueError, "invalid coverage input row"):
+                    build_historical_coverage_report(
+                        [record], expected_sessions=["2026-11-24"], expected_symbols=["NABIL"])
+
+
+if __name__ == "__main__":
+    unittest.main()
 

@@ -78,4 +78,28 @@ class BrokerMemoryPromotionTests(unittest.TestCase):
             promote_validated_batch(report([row("2026-11-24","E1")]),self.store,as_of_date="2026-11-24")
         self.assertEqual(self.store.count(),0)
 
+
+    def test_runtime_ledger_identity_admission(self):
+        from datetime import date
+        from unittest.mock import patch
+        from app.temporal_registry import SecurityMasterRecord
+        verified = SecurityMasterRecord("CFCL", "CFCL", "equity", "active",
+            date(2020,1,1), None, "primary-test", "primary_nepse_notice", True, True)
+        unverified = SecurityMasterRecord("CFCL", "CFCL", "equity", "active",
+            date(2020,1,1), None, "secondary-test")
+        conflict = SecurityMasterRecord("CFCL", "OTHER", "equity", "active",
+            date(2020,1,1), None, "primary-conflict", "primary_nepse_notice", True, True)
+        batch = report([row("2026-11-24","E1")])
+        with patch("app.broker_memory_promotion.runtime_quarantine_keys", return_value=frozenset({("CFCL","2026-11-24")})):
+            with self.assertRaisesRegex(PromotionRejected, "quarantined broker"):
+                promote_validated_batch(batch,self.store,as_of_date="2026-11-25",security_records=[verified])
+        with patch("app.broker_memory_promotion.runtime_quarantine_keys", return_value=frozenset()):
+            for registry in ([], [unverified], [verified, conflict]):
+                with self.subTest(registry=registry):
+                    with self.assertRaisesRegex(PromotionRejected, "identity mapping"):
+                        promote_validated_batch(batch,self.store,as_of_date="2026-11-25",security_records=registry)
+            self.assertEqual(self.store.count(),0)
+            result = promote_validated_batch(batch,self.store,as_of_date="2026-11-25",security_records=[verified])
+            self.assertEqual(result["promoted_snapshots"],1)
+
 if __name__=="__main__": unittest.main()

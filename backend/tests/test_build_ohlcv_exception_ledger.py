@@ -25,6 +25,8 @@ def report_fixture():
             }],
         },
     }
+    for snapshot in repos.values():
+        snapshot.update(file_count=1, files_audited=1, download_errors=[])
     return {
         "generated_at_utc": "2026-01-03T00:00:00Z",
         "mode": "pinned_commit_read_only_row_level_audit",
@@ -52,6 +54,13 @@ class ExceptionLedgerBuilderTests(unittest.TestCase):
         self.assertEqual(conflict["source_evidence"]["source-a"]["row"]["close"], "10")
         self.assertEqual(conflict["source_evidence"]["source-b"]["row"]["close"], "11")
         self.assertTrue(all(x["disposition"] == "quarantined_unresolved" for x in ledger["exceptions"]))
+
+    def test_incomplete_audit_fails_closed(self):
+        for update in ({"files_audited":0}, {"download_errors":[{"path":"AAA"}]}, {"file_count":2}):
+            report = report_fixture()
+            report["repositories"]["source-a"].update(update)
+            with self.assertRaisesRegex(ValueError,"incomplete or ambiguous"):
+                build_ledger(report, expected_invalid_rows=1, expected_conflicts=1)
 
     def test_count_drift_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "population drift"):

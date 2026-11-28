@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from app.source_collector import collect_configured_provider
+from app.source_collector import collect_configured_provider, _provider_access_approval
 
 
 class NoNetworkClient:
@@ -63,6 +63,56 @@ class SourceCollectorPolicyTests(unittest.TestCase):
                 period_start="2021-11-28", period_end="2026-11-28")
         self.assertEqual(result[0]["status"], "BLOCKED_ACCESS")
         self.assertEqual(result[0]["error"], "provider_access_manifest_missing")
+
+
+    def test_reviewed_manifest_approves_exact_host_and_path(self):
+        manifest = {
+            "providers": {"sharehub": {
+                "status": "approved", "allowed_data_types": ["chart"],
+                "rights_status": "research_only", "reviewer": "reviewer",
+                "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+                "valid_until": "2099-12-31", "allowed_hosts": ["sharehubnepal.com"],
+                "allowed_path_prefixes": ["/data/api/v1/nepse-data/price-history/"],
+            }}
+        }
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart",
+                "https://sharehubnepal.com/data/api/v1/nepse-data/price-history/AAA?time=5Y"),
+                (True, "approved"))
+
+    def test_manifest_with_string_host_list_is_rejected(self):
+        manifest = {
+            "providers": {"sharehub": {
+                "status": "approved", "allowed_data_types": ["chart"],
+                "rights_status": "research_only", "reviewer": "reviewer",
+                "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+                "valid_until": "2099-12-31", "allowed_hosts": "sharehubnepal.com",
+                "allowed_path_prefixes": ["/data/"],
+            }}
+        }
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://sharehubnepal.com/data/x"),
+                (False, "provider_access_manifest_invalid"))
+
+    def test_manifest_cannot_authorize_another_host_or_path(self):
+        manifest = {
+            "providers": {"sharehub": {
+                "status": "approved", "allowed_data_types": ["chart"],
+                "rights_status": "research_only", "reviewer": "reviewer",
+                "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+                "valid_until": "2099-12-31", "allowed_hosts": ["sharehubnepal.com"],
+                "allowed_path_prefixes": ["/data/api/v1/nepse-data/price-history/"],
+            }}
+        }
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://evil.example/data/api/v1/nepse-data/price-history/AAA"),
+                (False, "provider_endpoint_host_not_approved"))
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://sharehubnepal.com/admin/export"),
+                (False, "provider_endpoint_path_not_approved"))
 
 
 if __name__ == "__main__":

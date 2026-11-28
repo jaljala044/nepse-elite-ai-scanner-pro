@@ -37,6 +37,30 @@ class PortfolioRouteTests(unittest.TestCase):
         response = self.client.get("/v1/portfolios")
         self.assertEqual(response.status_code, 401)
 
+    def test_invalid_proxy_secret_and_untrusted_subject_are_rejected(self):
+        wrong_secret = {"x-nepse-proxy-secret": "wrong" * 8, "x-nepse-subject": "investor-1"}
+        self.assertEqual(self.client.get("/v1/portfolios", headers=wrong_secret).status_code, 401)
+        malformed_subject = {
+            "x-nepse-proxy-secret": "x" * 40,
+            "x-nepse-subject": "../other-user",
+        }
+        self.assertEqual(self.client.get("/v1/portfolios", headers=malformed_subject).status_code, 401)
+
+    def test_non_finite_and_negative_monetary_values_are_rejected_at_api_boundary(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers, json={"name": "Validation"})
+        portfolio_id = created.json()["id"]
+        base = {"symbol": "CFCL", "side": "BUY", "quantity": "1",
+                "price": "100", "fees": "0", "trade_date": "2026-01-01"}
+        for field, value in (("quantity", "NaN"), ("quantity", "Infinity"),
+                             ("price", "-1"), ("fees", "-1")):
+            payload = {**base, field: value}
+            with self.subTest(field=field, value=value):
+                response = self.client.post(
+                    f"/v1/portfolios/{portfolio_id}/transactions",
+                    headers=self.headers, json=payload,
+                )
+                self.assertEqual(response.status_code, 422)
+
     def test_portfolio_crud_and_transaction_routes(self):
         created = self.client.post("/v1/portfolios", headers=self.headers,
                                    json={"name": "Long term"})

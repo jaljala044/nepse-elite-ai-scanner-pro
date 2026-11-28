@@ -285,6 +285,7 @@ def normalize_floorsheet_csv(
         "duplicate_audit": duplicate_rows,
         "quarantine_path": str(quarantine_path.relative_to(ROOT)) if quarantine_path else None,
         "sessions_written": written,
-        "status": "normalized" if not rejected else "normalized_with_quarantine",\n        "validation_cache_hit": cache_hit,
+        "status": "normalized" if not rejected else "normalized_with_quarantine",
+        "validation_cache_hit": cache_hit,
         "warning": "Broker codes identify exchange execution channels; they do not identify beneficial owners or prove institutional accumulation/distribution.",
     }

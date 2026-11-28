@@ -114,6 +114,51 @@ class SourceCollectorPolicyTests(unittest.TestCase):
                 "sharehub", "chart", "https://sharehubnepal.com/admin/export"),
                 (False, "provider_endpoint_path_not_approved"))
 
+    def test_manifest_path_prefix_must_match_path_boundary(self):
+        manifest = {"providers": {"sharehub": {
+            "status": "approved", "allowed_data_types": ["chart"],
+            "rights_status": "research_only", "reviewer": "reviewer",
+            "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+            "valid_until": "2099-12-31", "allowed_hosts": ["sharehubnepal.com"],
+            "allowed_path_prefixes": ["/data/export"],
+        }}}
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://sharehubnepal.com/data/export-evil"),
+                (False, "provider_endpoint_path_not_approved"))
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://sharehubnepal.com/data/export/AAA"),
+                (True, "approved"))
+
+    def test_manifest_rejects_url_credentials_and_nonstandard_port(self):
+        manifest = {"providers": {"sharehub": {
+            "status": "approved", "allowed_data_types": ["chart"],
+            "rights_status": "research_only", "reviewer": "reviewer",
+            "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+            "valid_until": "2099-12-31", "allowed_hosts": ["sharehubnepal.com"],
+            "allowed_path_prefixes": ["/data/"],
+        }}}
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://user@sharehubnepal.com/data/x"),
+                (False, "provider_endpoint_host_not_approved"))
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://sharehubnepal.com:8443/data/x"),
+                (False, "provider_endpoint_host_not_approved"))
+
+    def test_noncanonical_manifest_expiry_is_rejected(self):
+        manifest = {"providers": {"sharehub": {
+            "status": "approved", "allowed_data_types": ["chart"],
+            "rights_status": "research_only", "reviewer": "reviewer",
+            "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+            "valid_until": "20991231", "allowed_hosts": ["sharehubnepal.com"],
+            "allowed_path_prefixes": ["/data/"],
+        }}}
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            self.assertEqual(_provider_access_approval(
+                "sharehub", "chart", "https://sharehubnepal.com/data/x"),
+                (False, "provider_access_manifest_invalid"))
+
 
 if __name__ == "__main__":
     unittest.main()

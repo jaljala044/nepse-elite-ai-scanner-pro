@@ -37,6 +37,20 @@ class LedgerGuardTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 quarantine_keys(path, "0" * 64)
 
+    def test_ledger_rejects_non_object_document_and_malformed_digest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            for raw in (b"[]", b"null", b"42"):
+                path.write_bytes(raw)
+                with self.assertRaisesRegex(ValueError, "invalid quarantine ledger schema"):
+                    quarantine_keys(path, hashlib.sha256(raw).hexdigest())
+            raw = self._ledger("2025-07-28")
+            path.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "invalid quarantine ledger digest"):
+                quarantine_keys(path, "bad")
+            self.assertEqual(quarantine_keys(path, hashlib.sha256(raw).hexdigest().upper()),
+                             {("AAA", "2025-07-28")})
+
     def test_ledger_requires_exact_source_repository_set_and_integer_count(self):
         for mutate in ("repository", "boolean_count"):
             with self.subTest(mutate=mutate), tempfile.TemporaryDirectory() as tmp:

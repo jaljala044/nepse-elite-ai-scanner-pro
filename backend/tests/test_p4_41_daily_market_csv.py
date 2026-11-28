@@ -61,7 +61,7 @@ class DailyMarketCSVTests(unittest.TestCase):
   self.assertEqual(r["records"][0]["source_artifact_sha256"],r["source_artifact"]["sha256"])
   self.assertEqual(r["records"][0]["parser_version"],r["source_artifact"]["parser_version"])
  def test_missing_required_column_rejected(self):
-  r=parse_daily_market_csv("Symbol,Open,High,Low,Close\nADBL,1,2,1,2",session_date="2026-10-14",source_url="public",retrieved_at="now")
+  r=parse_daily_market_csv("Symbol,Open,High,Low,Close\nADBL,1,2,1,2",session_date="2026-10-14",source_url="https://example.test/data.csv",retrieved_at="2026-11-28T17:00:00Z")
   self.assertIn("missing_columns",r["errors"][0])
  def test_invalid_session_rejected(self):
   r=parse_daily_market_csv(HEADER,session_date="bad",source_url="public",retrieved_at="now")

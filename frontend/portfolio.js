@@ -64,10 +64,11 @@
     byId("portfolio-name").textContent = detail.name || "Private portfolio";
     const positionRows = (positions.positions || []).map(p => [
       p.symbol, p.quantity, money(p.average_cost), money(p.cost_basis),
-      money(p.realized_pnl), "UNKNOWN", "UNKNOWN", p.valuation_status || "UNKNOWN"
+      money(p.realized_pnl), "UNKNOWN", "UNKNOWN", p.valuation_status || "UNKNOWN",
+      p.corporate_action_status || "UNKNOWN"
     ]);
     table(byId("portfolio-positions"),
-      ["Symbol", "Quantity", "Average cost", "Cost basis", "Realized P&L", "Market value", "Unrealized P&L", "Valuation"],
+      ["Symbol", "Quantity", "Average cost", "Cost basis", "Realized P&L", "Market value", "Unrealized P&L", "Valuation", "Corporate-action adjustment"],
       positionRows, "No recorded positions in this portfolio.");
     const transactionRows = (transactions.transactions || []).map(t => [
       t.trade_date, t.symbol, t.side, t.quantity, money(t.price), money(t.fees)

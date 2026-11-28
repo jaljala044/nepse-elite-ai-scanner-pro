@@ -45,6 +45,22 @@ class OhlcvEvidencePipelineTests(unittest.TestCase):
         self.assertEqual(result["rows"][0]["security_id"], "SEC-NABIL")
         self.assertFalse(result["promotion_allowed"])
 
+    def test_known_archive_sources_cannot_use_generic_ingestion(self):
+        for source in ("jaljala_history_starter", "jaljala_smc_data",
+                       "jaljala044/nepse-history-starter", "jaljala044/nepse-smc-data"):
+            with self.subTest(source=source):
+                result = run_ohlcv_evidence_pipeline(
+                    self.payload(), source_id=source, mapping=MAPPING,
+                    instrument_lifecycle=MANIFEST, session_evidence=SESSION,
+                    decision_time="2026-11-25T00:00:00Z",
+                    availability_by_key={"NABIL|2026-11-24": "2026-11-24T15:00:00Z"})
+                self.assertEqual(result["counts"]["eligible_for_review"], 0)
+                self.assertEqual(result["counts"]["quarantined"], 1)
+                self.assertIn("archive_guarded_ingestion_required",
+                              result["rows"][0]["quarantine_reasons"])
+                self.assertFalse(result["promotion_allowed"])
+
+
     def test_missing_availability_quarantines_for_point_in_time(self):
         result = self.run_pipeline(availability_by_key={})
         self.assertEqual(result["counts"]["quarantined"], 1)

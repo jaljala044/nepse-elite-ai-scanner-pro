@@ -26,6 +26,7 @@ class SecurityTests(unittest.TestCase):
             self.assertEqual(unauthorized.status_code,401)
             self.assertEqual(unauthorized.headers.get("cache-control"),"private, no-store, max-age=0")
             self.assertEqual(unauthorized.headers.get("pragma"),"no-cache")
+            self.assertEqual(unauthorized.headers.get("www-authenticate"),"Bearer")
             r=self.client.post(self.path,json={"value":123},headers=self.auth)
             self.assertEqual(r.status_code,200)
             self.assertEqual(r.json(),{"value":123})
@@ -42,3 +43,4 @@ class SecurityTests(unittest.TestCase):
             limited=self.client.post(self.path,json={},headers=self.auth)
             self.assertEqual(limited.status_code,429)
             self.assertEqual(limited.headers.get("cache-control"),"private, no-store, max-age=0")
+            self.assertEqual(limited.headers.get("retry-after"),"60")

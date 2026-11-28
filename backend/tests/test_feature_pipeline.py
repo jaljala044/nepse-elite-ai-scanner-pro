@@ -205,5 +205,32 @@ class FeaturePipelineTests(unittest.TestCase):
         self.assertFalse(result["input_contracts"]["broker_floorsheet"]["score_eligible"])
         self.assertFalse(result["input_contracts"]["sector_membership"]["score_eligible"])
 
+    def test_quarantine_marker_withholds_broker_rows_and_ohlcv_for_symbol(self):
+        from unittest.mock import patch
+        rows = [
+            {"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-26",
+             "available_at":"2026-11-26T16:00:00Z","open":10,"high":11,"low":9,
+             "close":10,"previous_close":9,"volume":100,"row_status":"quarantined"},
+            {"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-28",
+             "available_at":"2026-11-28T16:00:00Z","open":10,"high":11,"low":9,
+             "close":10,"previous_close":9,"volume":100},
+            {"record_type":"ohlcv","symbol":"BBB","session_date":"2026-11-28",
+             "available_at":"2026-11-28T16:00:00Z","open":10,"high":11,"low":9,
+             "close":10,"previous_close":9,"volume":100},
+            {"record_type":"broker","symbol":"AAA","trade_date":"2026-11-28",
+             "available_at":"2026-11-28T16:00:00Z","side":"buy","amount":100,
+             "quantity":1,"identity_status":"verified","broker_entity_id":"B1",
+             "session_calendar_status":"confirmed_open",
+             "floorsheet_coverage_status":"verified_complete",
+             "source_validation_status":"verified","source_id":"test",
+             "source_payload_sha256":"d"*64},
+        ]
+        with patch("app.feature_pipeline.runtime_quarantine_keys", return_value=None):
+            result = build_feature_snapshot(rows, "2026-11-29T12:00:00Z", ["AAA","BBB"])
+        self.assertNotIn("AAA", result["security_features"])
+        self.assertIn("BBB", result["security_features"])
+        self.assertEqual(result["quarantined_input_count"], 3)
+
+
 if __name__ == "__main__":
     unittest.main()

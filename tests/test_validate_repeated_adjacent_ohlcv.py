@@ -79,7 +79,7 @@ class CandidateLedgerIntegrityTests(unittest.TestCase):
     def test_missing_required_columns_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "bad.csv"
-            path.write_text("symbol,date\\nABC,2026-01-01\\n", encoding="utf-8")
+            path.write_text("symbol,date\nABC,2026-01-01\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "missing columns"):
                 validate_candidate_ledger(path)
 

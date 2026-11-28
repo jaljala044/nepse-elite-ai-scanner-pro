@@ -38,16 +38,22 @@ def capture_required_historical_datasets(*, source_contract_reports: Mapping[str
     duplicate_contract_kinds = {
         kind: sorted(keys) for kind, keys in contract_keys_by_kind.items() if len(keys) > 1
     }
-    if missing_contract_kinds or duplicate_contract_kinds:
+    missing_transport_kinds = sorted(
+        kind for kind, keys in contract_keys_by_kind.items()
+        if len(keys) == 1 and not callable(transports.get(keys[0]))
+    )
+    missing_dataset_kinds = sorted(set(missing_contract_kinds) | set(missing_transport_kinds))
+    if missing_dataset_kinds or duplicate_contract_kinds:
         return {
             "status": "BLOCKED",
             "required_dataset_kinds": list(required_dataset_kinds),
             "captured_dataset_kinds": [],
-            "missing_dataset_kinds": missing_contract_kinds,
+            "missing_dataset_kinds": missing_dataset_kinds,
             "capture_results": {},
             "errors": [{
                 "reason": "required_capture_contract_cardinality_invalid",
                 "missing_contract_kinds": missing_contract_kinds,
+                "missing_transport_kinds": missing_transport_kinds,
                 "duplicate_contract_kinds": duplicate_contract_kinds,
             }],
             "all_required_capture_packages_validated": False,

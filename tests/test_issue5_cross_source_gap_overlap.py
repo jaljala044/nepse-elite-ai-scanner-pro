@@ -102,7 +102,7 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
             self.assertEqual(report["top_dates"][0]["both_source_symbol_gaps"], 1)
 
 
-    def test_non_string_symbol_fails_closed(self):
+    def test_blank_symbol_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             path = self.write(root, [self.row(SMC, "ABC", "2026-01-02")])
@@ -191,6 +191,15 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
             self.assertEqual(report["top_symbols"][0]["smc_gap_dates"], 2)
             self.assertEqual(report["top_symbols"][0]["history_starter_gap_dates"], 1)
             self.assertEqual(report["top_symbols"][0]["both_source_gap_dates"], 1)
+
+
+    def test_raw_source_mutation_flag_true_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            row = self.row(SMC, "ABC", "2026-01-02")
+            row["raw_source_modified"] = "true"
+            with self.assertRaisesRegex(ValueError, "raw-source mutation flag must be false"):
+                summarize(self.write(root, [row]))
 
 
 if __name__ == "__main__":

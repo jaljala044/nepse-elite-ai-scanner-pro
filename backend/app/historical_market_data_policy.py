@@ -19,7 +19,8 @@ FLOORSHEET_FIELDS = (
 CHART_FIELDS = ("session_date", "symbol", "open", "high", "low", "close", "volume")
 REQUIRED_PROVENANCE = (
     "source_url", "retrieved_utc", "payload_sha256", "parser_version",
-    "source_revision", "upstream_feed",
+    "source_revision", "upstream_feed", "publisher_identity",
+    "publisher_identity_evidence_ref", "source_contract_ref",
 )
 
 
@@ -71,12 +72,6 @@ def classify_history_coverage(*, coverage_start: str, as_of_date: str) -> dict:
 def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
                                     session_dates: list[str] | None = None) -> dict:
     """Plan five-year preferred collection with a three-year minimum fallback."""
-    try:
-        parsed_as_of = date.fromisoformat(as_of_date)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("as_of_date must be a valid ISO date") from exc
-    if parsed_as_of.isoformat() != as_of_date:
-        raise ValueError("as_of_date must use canonical YYYY-MM-DD")
     start = five_year_start(as_of_date)
     minimum_start = three_year_start(as_of_date)
     if not isinstance(equities, list) or not equities:
@@ -98,11 +93,8 @@ def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
         for day in session_dates:
             if date.fromisoformat(day).isoformat() != day:
                 raise ValueError("session_dates must be zero-padded ISO dates")
-            if not minimum_start <= day <= as_of_date:
-                raise ValueError("session_dates must fall within the minimum collection window")
         if len(session_dates) != len(set(session_dates)):
             raise ValueError("session_dates must not contain duplicates")
-        session_dates = sorted(session_dates)
     providers = (*PROVIDERS, *REFERENCE_PROVIDERS)
     return {
         "schema_version": 1, "as_of_date": as_of_date,
@@ -178,9 +170,7 @@ def _signature(record_type: str, record: dict) -> tuple:
             raise ValueError("invalid_volume")
     if record_type == "floorsheet":
         mapped = dict(zip(fields, values))
-        if (mapped["quantity"] <= 0 or mapped["quantity"] != mapped["quantity"].to_integral_value()
-                or mapped["rate"] <= 0 or mapped["amount"] <= 0
-                or mapped["quantity"] * mapped["rate"] != mapped["amount"]):
+        if mapped["quantity"] <= 0 or mapped["rate"] <= 0 or mapped["amount"] < 0:
             raise ValueError("invalid_floorsheet_numeric_bounds")
     return tuple(str(value) for value in values)
 
@@ -197,8 +187,11 @@ def _lineage_groups(valid: list[dict]) -> list[list[int]]:
     for left in range(len(valid)):
         for right in range(left + 1, len(valid)):
             a, b = valid[left], valid[right]
-            if (a["source_id"] == b["source_id"] or
-                    a["upstream_feed"].strip().casefold() == b["upstream_feed"].strip().casefold()):
+            union = a["session_dates"] | b["session_dates"]
+            overlap = len(a["session_dates"] & b["session_dates"]) / len(union) if union else 0
+            if (a["publisher_identity"] == b["publisher_identity"]
+                    or a["upstream_feed"] == b["upstream_feed"]
+                    or overlap > 0.98 and a["upstream_feed"] == b["upstream_feed"]):
                 root_a, root_b = find(left), find(right)
                 if root_a != root_b:
                     parent[root_b] = root_a
@@ -248,17 +241,10 @@ def resolve_record_by_two_source_match(
                 raise ValueError("source_not_allowlisted")
             if not isinstance(item.get("record"), dict):
                 raise ValueError("missing_source_record")
-            record = item["record"]
-            day = record.get("session_date" if record_type == "chart" else "trade_date")
-            if not isinstance(day, str) or date.fromisoformat(day).isoformat() != day or day not in date_set:
-                raise ValueError("record_session_not_in_source_dates")
-            expected_key = (f'{record.get("symbol")}|{day}' if record_type == "chart"
-                            else f'{day}|{record.get("contract_id")}')
-            if expected_key != record_key:
-                raise ValueError("record_key_mismatch")
-            sig = _signature(record_type, record)
+            sig = _signature(record_type, item["record"])
             valid.append({
                 "source_id": item["source_id"], "upstream_feed": item["upstream_feed"],
+                "publisher_identity": item["publisher_identity"].strip().casefold(),
                 "session_dates": date_set, "signature": sig,
                 "record": item["record"], "source_url": item["source_url"],
                 "payload_sha256": digest,

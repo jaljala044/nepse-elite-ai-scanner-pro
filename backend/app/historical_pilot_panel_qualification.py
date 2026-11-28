@@ -1,7 +1,8 @@
 """Qualify a bounded historical evidence panel across datasets and lifecycle checks."""
 from __future__ import annotations
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Iterable, Mapping
+from zoneinfo import ZoneInfo
 
 _CORE = {"official_market_calendar","official_security_master","official_corporate_actions","cdsc_first_trade"}
 
@@ -15,10 +16,22 @@ def qualify_historical_evidence_panel(*, cohort_symbols: Iterable[str], expected
     session_list=list(expected_sessions); sessions=set(session_list)
     errors=[]; warnings=[]; coverage={}
     try:
-        date.fromisoformat(decision_cutoff[:10])
+        if not isinstance(decision_cutoff, str):
+            raise ValueError("decision_cutoff_must_be_timezone_aware")
+        cutoff = datetime.fromisoformat(decision_cutoff.replace("Z", "+00:00"))
+        if cutoff.tzinfo is None or cutoff.utcoffset() is None:
+            raise ValueError("decision_cutoff_must_be_timezone_aware")
+        cutoff_day_text = decision_cutoff[:10]
+        cutoff_day = date.fromisoformat(cutoff_day_text)
+        if cutoff_day.isoformat() != cutoff_day_text:
+            raise ValueError("decision_cutoff_date_must_be_canonical")
+        cutoff_local_day = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
         if not symbols or not sessions or len(sessions)!=len(session_list): raise ValueError
         for day in sessions:
-            if date.fromisoformat(day).isoformat()!=day: raise ValueError
+            if not isinstance(day, str) or date.fromisoformat(day).isoformat()!=day: raise ValueError
+        future_sessions = sorted(day for day in sessions if date.fromisoformat(day) > cutoff_local_day)
+        if future_sessions:
+            return {"status":"BLOCKED","errors":[{"reason":"expected_session_after_decision_cutoff","sessions":future_sessions}],"backtest_admission_allowed":False,"production_enabled":False}
     except (ValueError,TypeError):
         return {"status":"BLOCKED","errors":[{"reason":"cohort_or_session_window_invalid"}],"backtest_admission_allowed":False,"production_enabled":False}
     bars={}

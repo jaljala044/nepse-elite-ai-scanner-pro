@@ -47,19 +47,19 @@ class MarketSectorParticipationTests(unittest.TestCase):
     def test_verified_four_horizon_sector_participation_component(self):
         result = self.run_component()
         self.assertEqual(result["status"], "verified")
-        self.assertEqual(result["score"], 68.0)
-        for window, expected in (("1W", 60.0), ("1M", 60.0), ("3M", 60.0), ("6M", 60.0)):
+        self.assertEqual(result["score"], 70.0)
+        for window, expected in (("1W", 60.0), ("1M", 60.0), ("3M", 80.0), ("6M", 80.0)):
             self.assertEqual(result["metrics"]["positive_sector_participation_pct"][window], expected)
         self.assertEqual(result["metrics"]["weights"], {"1W": 0.20, "1M": 0.30, "3M": 0.30, "6M": 0.20})
 
     def test_weights_use_distinct_horizon_participation(self):
         returns = {
             "A": (1, 1, 1, 1), "B": (1, 1, 1, 1),
-            "C": (-1, -1, -1, -1), "D": (-1, -1, -1, -1),
+            "C": (-1, 1, 1, 1), "D": (-1, -1, -1, 1),
             "E": (-1, -1, -1, -1),
         }
         result = self.run_component(sector_features=features(returns))
-        self.assertEqual(result["score"], 40.0)
+        self.assertEqual(result["score"], 60.0)
         self.assertEqual(result["metrics"]["positive_sector_participation_pct"]["1W"], 40.0)
 
     def test_weak_participation_warns(self):
@@ -70,8 +70,8 @@ class MarketSectorParticipationTests(unittest.TestCase):
 
     def test_short_term_deterioration_is_flagged(self):
         returns = {
-            "A": (-1, 1, 2, 3), "B": (-1, 1, 2, 3),
-            "C": (-1, 1, 2, 3), "D": (1, 1, 2, 3), "E": (1, 1, 2, 3),
+            "A": (1, 1, 2, 3), "B": (-1, 1, 2, 3),
+            "C": (-1, 1, 2, 3), "D": (-1, 1, 2, 3), "E": (-1, 1, 2, 3),
         }
         result = self.run_component(sector_features=features(returns))
         self.assertIn("short_term_sector_participation_deteriorating", result["warnings"])

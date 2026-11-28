@@ -555,7 +555,20 @@ def reliability():
 
 
 from fastapi import Request, Depends
-from .private_accounts import principal, watchlist, set_watchlist, list_alerts, add_alert, delete_alert
+from .private_accounts import principal, proxy_principal, issue_mobile_session, revoke_mobile_session, watchlist, set_watchlist, list_alerts, add_alert, delete_alert
+
+@app.post("/v1/account/mobile/session")
+def mobile_session_issue(request: Request, owner: str = Depends(proxy_principal)):
+    # The authenticated gateway must explicitly enable this exchange and enforce CSRF.
+    if os.getenv("NEPSE_MOBILE_EXCHANGE_ENABLED") != "1":
+        raise HTTPException(503,"Mobile identity exchange unavailable")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(issue_mobile_session(owner),headers={"Cache-Control":"no-store"})
+
+@app.post("/v1/account/mobile/logout")
+def mobile_session_logout(request: Request):
+    revoke_mobile_session(request.headers.get("authorization",""))
+    return {"revoked":True}
 
 @app.get("/v1/account/session")
 def account_session(owner: str = Depends(principal)):
@@ -609,6 +622,8 @@ async def private_deployment_gate(request: Request, call_next):
         try:
             owner = principal(request)
             if request.url.path in {"/v1/ingest/csv","/v1/imports"}:
+                if request.headers.get("authorization"):
+                    raise HTTPException(401,"Proxy authentication required for ingestion")
                 admins = {s.strip() for s in os.getenv("NEPSE_ADMIN_SUBJECTS","").split(",") if s.strip()}
                 if owner not in admins:
                     from fastapi.responses import JSONResponse

@@ -35,7 +35,7 @@ jobs:
       - name: Run extractor unit tests
         run: python -m unittest discover -s tests -p 'test_repeated_adjacent_ohlcv.py'
       - name: Run candidate-ledger validator unit tests
-        run: python -m unittest tests.test_validate_repeated_adjacent_ohlcv -v
+        run: python -m unittest discover -s tests -p 'test_validate_repeated_adjacent_ohlcv.py' -v
       - name: Extract repeated adjacent-row candidates
         run: |
           python scripts/extract_repeated_adjacent_ohlcv.py \
@@ -46,8 +46,8 @@ jobs:
       - name: Validate extracted candidate ledger (review findings remain quarantined)
         run: |
           set +e
-          python scripts/validate_repeated_adjacent_ohlcv.py \\
-            --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \\
+          python scripts/validate_repeated_adjacent_ohlcv.py \
+            --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \
             --output reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json
           status=$?
           set -e

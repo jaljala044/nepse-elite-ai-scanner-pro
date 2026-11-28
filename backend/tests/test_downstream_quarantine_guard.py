@@ -13,7 +13,10 @@ class DownstreamQuarantineTests(unittest.TestCase):
 
     def test_database_rejects_before_opening(self):
         with self.assertRaisesRegex(ValueError, "Quarantined"):
-            persist_import("test", {"AAA":[{"row_status":"quarantined"}]})
+            persist_import("test", {"AAA":[{
+                "date": "2026-11-27", "open": 10, "high": 12, "low": 9,
+                "close": 11, "volume": 100, "row_status": "quarantined"
+            }]})
 
     def test_broker_rejects_marked_row(self):
         report = IngestionReport("test", "complete", "1", accepted=[{"status":"descriptive_only","quarantined":True}])

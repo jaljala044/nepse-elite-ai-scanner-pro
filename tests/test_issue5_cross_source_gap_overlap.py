@@ -81,5 +81,12 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
                 summarize(self.write(root, [row]))
 
 
+    def test_empty_gap_inventory_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaisesRegex(ValueError, "must contain at least one row"):
+                summarize(self.write(root, []))
+
+
 if __name__ == "__main__":
     unittest.main()

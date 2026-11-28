@@ -146,5 +146,23 @@ class TrustedArtifactStoreTests(unittest.TestCase):
                       result["index_intelligence"]["rejection_reason"])
 
 
+    def test_daily_participation_requires_complete_verified_cohort(self):
+        payload = json.dumps(dict(status="research_only", coverage=1,
+                                  as_of_session="2026-11-27", signals_enabled=False,
+                                  rankings={})).encode()
+        (self.root / "index.json").write_bytes(payload)
+        entry = dict(self.entry, payload_sha256=hashlib.sha256(payload).hexdigest(),
+                     equity_universe_status="verified")
+        store = self.store(entry, module="daily_market_participation")
+        snapshot = build_trusted_market_snapshot(store, decision_date="2026-11-27",
+                                                  decision_time="2026-11-27T16:00:00+05:45")
+        self.assertIn("daily_market_participation", snapshot["admitted_modules"])
+        self.assertFalse(snapshot["signals_enabled"])
+        entry["coverage_ratio"] = 0.9
+        result = store.load(decision_date="2026-11-27",
+                            decision_time="2026-11-27T16:00:00+05:45",
+                            required_modules=("daily_market_participation",))
+        self.assertEqual(result["daily_market_participation"]["status"], "unavailable")
+
 if __name__ == "__main__":
     unittest.main()

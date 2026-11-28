@@ -1,0 +1,251 @@
+{
+  "source_id": "NEPSE_OFFICIAL_SECURITY_CLASSIFICATION",
+  "endpoint_path": "/api/nots/security/classification",
+  "source_url": "https://nepalstock.com.np/api/nots/security/classification",
+  "retrieved_at_utc": "2026-11-28T20:00:06.220139Z",
+  "page_reports": [
+    {
+      "page_index": 0,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=0",
+      "http_status": 200,
+      "response_bytes": 26770,
+      "response_sha256": "2839bdddbf16e6e9035ee00862cde56e4ce3656746498e758807dfecaacfe204",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:02 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-000-response-body.bin"
+    },
+    {
+      "page_index": 1,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=1",
+      "http_status": 200,
+      "response_bytes": 27198,
+      "response_sha256": "89821f55492ab252f50c0ecc825f4e65e463ce24960c76996e9f45b24081da9f",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:03 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-001-response-body.bin"
+    },
+    {
+      "page_index": 2,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=2",
+      "http_status": 200,
+      "response_bytes": 26911,
+      "response_sha256": "ab9af1c1ee65e5a5b6f169f5d1920f033db7e58e2232c06edfb28e2b353d16d2",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:03 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-002-response-body.bin"
+    },
+    {
+      "page_index": 3,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=3",
+      "http_status": 200,
+      "response_bytes": 24564,
+      "response_sha256": "e5f24782c244a7c0db564a24889e0ae1a3fcd63e408dc0a84f1d62d630a64205",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:03 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-003-response-body.bin"
+    },
+    {
+      "page_index": 4,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=4",
+      "http_status": 200,
+      "response_bytes": 23803,
+      "response_sha256": "4344665aa875cc9fe89c35a856d30302403f940033e471538b4160c74fefe58e",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:03 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-004-response-body.bin"
+    },
+    {
+      "page_index": 5,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=5",
+      "http_status": 200,
+      "response_bytes": 23715,
+      "response_sha256": "ecb2a574c9e78274095ec4a8d9964dac1728ac76c833002c286726d6b39dcf46",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:03 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-005-response-body.bin"
+    },
+    {
+      "page_index": 6,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=6",
+      "http_status": 200,
+      "response_bytes": 23496,
+      "response_sha256": "7ad5b8e7ae8a7a4c20e3b66c342b9afaa95e2ae975632d194c26ea0997c7eff2",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:04 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-006-response-body.bin"
+    },
+    {
+      "page_index": 7,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=7",
+      "http_status": 200,
+      "response_bytes": 23571,
+      "response_sha256": "c030e993b4a2022897368141f59b87191bbb9d086af6a8aff8905d7359d78a15",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:04 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-007-response-body.bin"
+    },
+    {
+      "page_index": 8,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=8",
+      "http_status": 200,
+      "response_bytes": 23564,
+      "response_sha256": "d82eb113cf49e5ba662f72983abb0e05b492825612bee9938da1629c6c86c25c",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:04 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-008-response-body.bin"
+    },
+    {
+      "page_index": 9,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=9",
+      "http_status": 200,
+      "response_bytes": 23271,
+      "response_sha256": "86dfe4c28a17ef373f3177d5e29c5eb3adb289e6c1ee0e93489c1122316bdaeb",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:04 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-009-response-body.bin"
+    },
+    {
+      "page_index": 10,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=10",
+      "http_status": 200,
+      "response_bytes": 23127,
+      "response_sha256": "08fc62bdf8faad47e1c3a70f1441d2d752e6bb1648f84bf0b80b9615eedeea03",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:05 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-010-response-body.bin"
+    },
+    {
+      "page_index": 11,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=11",
+      "http_status": 200,
+      "response_bytes": 23471,
+      "response_sha256": "0a4ae613f639cf78b635b78542e7792f4a785ec3cc30363da5def3ede58e10bc",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:05 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-011-response-body.bin"
+    },
+    {
+      "page_index": 12,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=12",
+      "http_status": 200,
+      "response_bytes": 23648,
+      "response_sha256": "2baabef822a1c9499ba5c1738d80550f295577558d459b6c766dbf40cde7059d",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:05 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-012-response-body.bin"
+    },
+    {
+      "page_index": 13,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=13",
+      "http_status": 200,
+      "response_bytes": 23658,
+      "response_sha256": "a72e8815e35c83dc8860adfa5db23779206c1df687a27a0c41eca5e6edc671ba",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:05 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 20,
+      "filename": "page-013-response-body.bin"
+    },
+    {
+      "page_index": 14,
+      "request_url": "https://nepalstock.com.np/api/nots/security/classification?page=14",
+      "http_status": 200,
+      "response_bytes": 1469,
+      "response_sha256": "86f8e5a3c464fb4034d810b2a2878af6e8ee0b2e824207981afd666c3a3ecf93",
+      "response_headers": {
+        "date": "Sat, 28 Nov 2026 20:00:06 GMT",
+        "content-type": "application/json",
+        "server": "nepse-website"
+      },
+      "origin_verified": true,
+      "row_count": 1,
+      "filename": "page-014-response-body.bin"
+    }
+  ],
+  "pages_captured": 15,
+  "total_pages_reported": 15,
+  "row_count": 281,
+  "unique_symbol_count": 281,
+  "duplicate_symbol_count": 0,
+  "fields_of_interest": [
+    "id",
+    "symbol",
+    "listingDate",
+    "tradingStartDate",
+    "activeStatus",
+    "isin",
+    "instrumentType"
+  ],
+  "request_errors": [],
+  "calendar_claims_promoted": false,
+  "canonical_promotion_allowed": false,
+  "policy": "raw primary-source capture only; review schema and semantics before any lifecycle promotion"
+}

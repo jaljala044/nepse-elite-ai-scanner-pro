@@ -13,10 +13,10 @@ class SecurityLifecycleEventLedgerTests(unittest.TestCase):
         self.crosswalk = self.root / "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
 
     def test_current_typed_event_ledger_is_valid_but_not_promotable(self):
-        report = validate_security_lifecycle_event_ledger(self.ledger, self.crosswalk, 6)
+        report = validate_security_lifecycle_event_ledger(self.ledger, self.crosswalk, 52)
         self.assertEqual(report["status"], "valid_event_ledger_with_uncaptured_raw_sources")
-        self.assertEqual(report["event_count"], 6)
-        self.assertEqual(report["unique_event_ids"], 6)
+        self.assertEqual(report["event_count"], 52)
+        self.assertEqual(report["unique_event_ids"], 52)
         self.assertFalse(report["promotion_allowed"])
         self.assertEqual(report["errors"], [])
 

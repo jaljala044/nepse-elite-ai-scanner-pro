@@ -65,8 +65,8 @@ class Issue5EvidenceAdjudicationTests(unittest.TestCase):
             root = Path(tmp)
             gaps = root / "gaps.csv"
             gaps.write_text(
-                "repository,symbol,trade_date,gap_status,   \\n"
-                f"{SMC},ABC,2026-01-02,{STATUS},ignored\\n",
+                "repository,symbol,trade_date,gap_status,   \n"
+                f"{SMC},ABC,2026-01-02,{STATUS},ignored\n",
                 encoding="utf-8",
             )
             evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])

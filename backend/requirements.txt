@@ -7,4 +7,3 @@ duckdb>=1.2,<2
 huggingface_hub>=0.36,<2
 pytz>=2024.1
 pypdf>=5.0,<7
-nepse-shared-validation @ git+https://github.com/jaljala044/nepse-smc-data.git@3c42c510d10b73f332324be7019f0b2d45beb6ef

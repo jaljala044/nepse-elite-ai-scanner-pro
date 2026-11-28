@@ -6,6 +6,7 @@ All results remain non-production-authorizing.
 """
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
@@ -95,41 +96,77 @@ def record_restore_drill(
     restore_result: Mapping[str, Any],
     recorded_at_utc: datetime | None = None,
 ) -> dict[str, Any]:
-    """Append a verified restore result; refuses unverified or duplicate drills."""
+    """Append a verified restore result under an inter-process exclusive lock.
+
+    The sidecar lock serializes validation, duplicate detection, chain-head
+    selection, and append as one critical section. A partial write or a crash
+    still leaves the log fail-closed on the next audit.
+    """
     if not drill_id or not backup_id:
         raise ValueError("drill_id and backup_id are required")
     restored_audit = restore_result.get("restored_audit")
     if restore_result.get("status") != "restore_verified" or not isinstance(restored_audit, Mapping) or restored_audit.get("status") != "integrity_ok":
         raise ValueError("only a successful isolated restore with integrity_ok may be recorded")
+
     path = Path(log_path).expanduser()
-    current = audit_restore_drill_log(path)
-    if current["status"] not in {"verified", "missing"}:
-        raise ValueError("restore-drill log is invalid; refusing to append")
-    if path.is_file():
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if json.loads(line).get("drill_id") == drill_id:
-                raise ValueError("drill_id already exists")
-    previous = GENESIS
-    if path.is_file() and path.stat().st_size:
-        previous_event = json.loads(path.read_text(encoding="utf-8").splitlines()[-1])
-        previous = previous_event["event_sha256"]
-    event: dict[str, Any] = {
-        "schema_version": 1,
-        "drill_id": drill_id,
-        "backup_id": backup_id,
-        "recorded_at_utc": _utc(recorded_at_utc).isoformat().replace("+00:00", "Z"),
-        "status": "restore_verified",
-        "restored_audit_status": "integrity_ok",
-        "production_eligible": False,
-        "previous_event_sha256": previous,
-    }
-    event["event_sha256"] = _event_hash(event)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as stream:
-        stream.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n")
-        stream.flush()
-        os.fsync(stream.fileno())
-    return {"status": "restore_drill_recorded", "drill_id": drill_id, "event_sha256": event["event_sha256"], "production_eligible": False}
+    if path.is_symlink():
+        raise ValueError("restore-drill log must not be a symlink")
+    lock_path = path.with_name(path.name + ".lock")
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR | nofollow, 0o600)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        # Recheck after acquiring the lock to close the pre-lock path race.
+        if path.is_symlink():
+            raise ValueError("restore-drill log must not be a symlink")
+        current = audit_restore_drill_log(path)
+        if current["status"] not in {"verified", "missing"}:
+            raise ValueError("restore-drill log is invalid; refusing to append")
+
+        previous = GENESIS
+        if path.is_file():
+            lines = path.read_text(encoding="utf-8").splitlines()
+            for line in lines:
+                if json.loads(line).get("drill_id") == drill_id:
+                    raise ValueError("drill_id already exists")
+            if lines:
+                previous_event = json.loads(lines[-1])
+                previous = previous_event["event_sha256"]
+
+        event: dict[str, Any] = {
+            "schema_version": 1,
+            "drill_id": drill_id,
+            "backup_id": backup_id,
+            "recorded_at_utc": _utc(recorded_at_utc).isoformat().replace("+00:00", "Z"),
+            "status": "restore_verified",
+            "restored_audit_status": "integrity_ok",
+            "production_eligible": False,
+            "previous_event_sha256": previous,
+        }
+        event["event_sha256"] = _event_hash(event)
+        payload = (json.dumps(event, sort_keys=True, separators=(",", ":")) + "\\n").encode("utf-8")
+        flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | nofollow
+        log_fd = os.open(path, flags, 0o600)
+        try:
+            remaining = memoryview(payload)
+            while remaining:
+                written = os.write(log_fd, remaining)
+                if written <= 0:
+                    raise OSError("restore-drill log append made no progress")
+                remaining = remaining[written:]
+            os.fsync(log_fd)
+        finally:
+            os.close(log_fd)
+        return {
+            "status": "restore_drill_recorded",
+            "drill_id": drill_id,
+            "event_sha256": event["event_sha256"],
+            "production_eligible": False,
+        }
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
 
 
 def audit_backup_retention(

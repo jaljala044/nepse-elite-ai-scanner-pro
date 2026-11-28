@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     environment:
       NEPSE_API_DATABASE: /var/lib/nepse/nepse-api.duckdb
+      NEPSE_PORTFOLIO_DB: /var/lib/nepse/portfolios.sqlite3
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

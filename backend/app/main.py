@@ -600,3 +600,15 @@ import os
 _public_frontend = Path(os.environ.get("NEPSE_PUBLIC_FRONTEND", str(Path(__file__).resolve().parents[2] / "frontend" / "public-build")))
 if (_public_frontend / "index.html").is_file():
     app.mount("/terminal", StaticFiles(directory=str(_public_frontend), html=True), name="terminal")
+
+
+# Private portfolio accounting remains separate from market-data and signal routes.
+from . import portfolio_routes as _portfolio_routes
+app.add_api_route("/v1/portfolios", _portfolio_routes.portfolios, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios", _portfolio_routes.create_portfolio, methods=["POST"], status_code=201, tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.get_portfolio, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.update_portfolio, methods=["PATCH"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.delete_portfolio, methods=["DELETE"], status_code=204, tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/positions", _portfolio_routes.positions, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/transactions", _portfolio_routes.transactions, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/transactions", _portfolio_routes.add_transaction, methods=["POST"], status_code=201, tags=["private-portfolios"])

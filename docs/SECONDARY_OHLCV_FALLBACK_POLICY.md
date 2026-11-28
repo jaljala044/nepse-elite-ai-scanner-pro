@@ -3,8 +3,8 @@
 This earlier OHLCV-only, three-independent-source policy is superseded by
 [Five-year all-equity historical evidence policy](FIVE_YEAR_HISTORICAL_EVIDENCE_POLICY.md).
 
-The current policy collects five years of floorsheet and chart data for every
-equity from ShareHub, NEPSE Alpha, Chukul and ShareSansar, checks available
+The current policy collects 3–5 years of floorsheet and chart data for every
+equity (five years preferred; three years minimum fallback) from ShareHub, NEPSE Alpha, Chukul and ShareSansar, checks available
 NEPSE reference records, and permits a record to be marked COMPLETE_EVIDENCED
 when two lineage-independent sources match exactly. Mero Lagani may be used to
 investigate discrepancies. Pairwise Jaccard date-set overlap greater than 0.98

@@ -102,6 +102,23 @@ class SessionCalendarTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "published_at cannot follow"):
             load_calendar(self.calendar)
 
+    def test_project_accepted_open_is_research_only_not_verified_gate(self):
+        row = {
+            "date": "2026-11-23", "status": "project_accepted_open",
+            "source_id": "SS_ARCHIVE", "evidence_uri": "https://example.invalid/archive",
+            "raw_evidence_sha256": "", "published_at": "", "retrieved_at_utc": "",
+            "verified_at_utc": "", "scope": "project_baseline",
+            "notes": "secondary archive-derived project baseline; not exchange certified",
+        }
+        self.write_calendar([row])
+        self.write_prices([self.row()])
+        report = audit_ohlcv([self.data], self.calendar)
+        self.assertEqual(report["rows_accepted"], 1)
+        self.assertEqual(report["project_accepted_rows"], 1)
+        self.assertEqual(report["verified_rows"], 0)
+        self.assertTrue(report["research_gate_pass"])
+        self.assertFalse(report["gate_pass"])
+
     def test_exceptional_open_session_is_accepted_with_evidence(self):
         self.write_calendar([self.evidence(status="verified_exceptional_open")])
         self.write_prices([self.row()])
@@ -140,7 +157,7 @@ class SessionCalendarTests(unittest.TestCase):
         self.write_calendar([self.evidence(status="verified_closed")])
         self.write_prices([self.row()])
         report = audit_ohlcv([self.data], self.calendar)
-        self.assertIn("date_not_verified_open", report["quarantine"][0]["reason"])
+        self.assertIn("date_not_accepted_open", report["quarantine"][0]["reason"])
 
     def test_conflicting_duplicate_is_quarantined(self):
         self.write_calendar([self.evidence()])

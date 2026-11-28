@@ -27,13 +27,29 @@ def capture_required_historical_datasets(*, source_contract_reports: Mapping[str
     # A missing or duplicate contract for a required dataset type is a planning
     # error, not something to discover after partial source capture has started.
     contract_keys_by_kind = {kind: [] for kind in required_dataset_kinds}
+    invalid_report_keys = []
+    unapproved_contract_keys = []
+    invalid_capture_id_keys = []
+    capture_id_keys = {}
     for key, report in source_contract_reports.items():
-        if not isinstance(report, Mapping):
+        if not isinstance(key, str) or not key or not isinstance(report, Mapping):
+            invalid_report_keys.append(str(key))
             continue
         spec = report.get("capture_spec")
         kind = spec.get("dataset_kind") if isinstance(spec, Mapping) else None
+        if not isinstance(kind, str) or kind not in _ALLOWED_KINDS:
+            invalid_report_keys.append(key)
+            continue
         if kind in contract_keys_by_kind:
             contract_keys_by_kind[kind].append(key)
+            if report.get("status") != "SOURCE_CONTRACT_APPROVED_FOR_CAPTURE" or report.get("capture_allowed") is not True:
+                unapproved_contract_keys.append(key)
+            capture_id = spec.get("capture_id")
+            if not isinstance(capture_id, str) or not capture_id.strip() or capture_id != capture_id.strip():
+                invalid_capture_id_keys.append(key)
+            else:
+                capture_id_keys.setdefault(capture_id, []).append(key)
+    duplicate_capture_ids = {cid: sorted(keys) for cid, keys in capture_id_keys.items() if len(keys) > 1}
     missing_contract_kinds = sorted(kind for kind, keys in contract_keys_by_kind.items() if not keys)
     duplicate_contract_kinds = {
         kind: sorted(keys) for kind, keys in contract_keys_by_kind.items() if len(keys) > 1
@@ -43,7 +59,8 @@ def capture_required_historical_datasets(*, source_contract_reports: Mapping[str
         if len(keys) == 1 and not callable(transports.get(keys[0]))
     )
     missing_dataset_kinds = sorted(set(missing_contract_kinds) | set(missing_transport_kinds))
-    if missing_dataset_kinds or duplicate_contract_kinds:
+    if (missing_dataset_kinds or duplicate_contract_kinds or invalid_report_keys
+            or unapproved_contract_keys or invalid_capture_id_keys or duplicate_capture_ids):
         return {
             "status": "BLOCKED",
             "required_dataset_kinds": list(required_dataset_kinds),
@@ -55,6 +72,10 @@ def capture_required_historical_datasets(*, source_contract_reports: Mapping[str
                 "missing_contract_kinds": missing_contract_kinds,
                 "missing_transport_kinds": missing_transport_kinds,
                 "duplicate_contract_kinds": duplicate_contract_kinds,
+                "invalid_report_keys": sorted(invalid_report_keys),
+                "unapproved_contract_keys": sorted(unapproved_contract_keys),
+                "invalid_capture_id_keys": sorted(invalid_capture_id_keys),
+                "duplicate_capture_ids": duplicate_capture_ids,
             }],
             "all_required_capture_packages_validated": False,
             "publisher_authenticity_proven": False,
@@ -86,7 +107,7 @@ def capture_required_historical_datasets(*, source_contract_reports: Mapping[str
             errors.append({"capture_key":key,"reason":"capture_incomplete"})
             continue
         capture_id = capture["manifest"].get("capture_id")
-        if not isinstance(capture_id,str) or not capture_id or capture_id in seen_capture_ids:
+        if not isinstance(capture_id,str) or not capture_id or capture_id != spec.get("capture_id") or capture_id in seen_capture_ids:
             results[key] = {"status":"CAPTURE_BLOCKED","capture":capture,"errors":[{"reason":"capture_id_missing_or_duplicate"}]}
             errors.append({"capture_key":key,"reason":"capture_id_missing_or_duplicate"})
             continue

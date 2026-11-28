@@ -34,8 +34,25 @@ class ShareSansarEquityHistoryCoverageTests(unittest.TestCase):
         self.assertEqual(result["last_date"], "2026-11-27")
         self.assertFalse(result["meets_3_years"])
 
-    def test_non_array_payload_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "JSON array"):
+    def test_columnar_archive_payload_parses_date_column(self):
+        result = summarize_payload({
+            "symbol": "ABC", "cols": ["d", "o", "h", "l", "c", "vol"],
+            "rows": [["2024-03-04", 1, 2, 1, 2, 10], ["2026-11-27", 2, 3, 2, 3, 20]],
+        }, expected_symbol="ABC")
+        self.assertEqual(result["schema_layout"], "columnar_object")
+        self.assertEqual(result["row_count"], 2)
+        self.assertEqual(result["first_date"], "2024-03-04")
+        self.assertEqual(result["last_date"], "2026-11-27")
+        self.assertFalse(result["meets_3_years"])
+
+    def test_payload_symbol_mismatch_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            summarize_payload({
+                "symbol": "XYZ", "cols": ["d", "o"], "rows": [["2024-01-01", 1]],
+            }, expected_symbol="ABC")
+
+    def test_invalid_payload_shape_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "columnar history payload"):
             summarize_payload({"data": []})
 
     def test_missing_date_bounds_do_not_qualify(self):

@@ -5,6 +5,8 @@ on:
     paths:
       - "backend/validate_holiday_review_index.py"
       - "backend/tests/test_holiday_review_index_guard.py"
+      - "backend/detect_floorsheet_date_echo.py"
+      - "backend/tests/test_floorsheet_date_echo.py"
       - "data/reference/nepse*holiday*.csv"
       - "data/reference/nepse_session_calendar.csv"
       - "backend/audit_nepse_holiday_api_archive.py"
@@ -50,6 +52,8 @@ jobs:
           PY
       - name: Execute holiday review guard regressions
         run: python backend/tests/test_holiday_review_index_guard.py -v
+      - name: Execute floorsheet date-echo regression tests
+        run: python backend/tests/test_floorsheet_date_echo.py -v
       - name: Validate consolidated review index against current calendar
         run: |
           python backend/validate_holiday_review_index.py \

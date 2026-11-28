@@ -132,12 +132,13 @@ def build_verified_sector_rotation(
                 or not _digest(record.get("source_payload_sha256"))):
             continue
         try:
+            available = _aware(record.get("available_at"), "membership_available_at")
             start = date.fromisoformat(record.get("effective_from")).isoformat()
             end = date.fromisoformat(record["effective_to"]).isoformat() if record.get("effective_to") else None
         except (TypeError, ValueError):
             continue
-        if start <= as_of and (end is None or as_of <= end):
-            membership[symbol] = record.get("sector_code")
+        if available <= cutoff and start <= as_of and (end is None or as_of <= end):
+            membership[symbol] = (record.get("sector_code"), start)
 
     def parse_rows(rows, benchmark=False):
         series = {}
@@ -195,15 +196,18 @@ def build_verified_sector_rotation(
 
     sector_results = {}
     for sector, symbols in sorted(normalized_members.items()):
-        mapped = [symbol for symbol in symbols if membership.get(symbol) == sector]
+        mapped = [symbol for symbol in symbols if membership.get(symbol, (None, None))[0] == sector]
         sector_windows = {}
         weighted_excess = []
         all_window_valid = True
         for label, dates in dates_by_window.items():
             start, end = dates[0], dates[-1]
-            stock_returns, excess_returns = [], []
-            missing = []
+            stock_returns, excess_returns, constituents = [], [], []
+            missing = sorted(set(symbols) - set(mapped))
             for symbol in mapped:
+                if membership[symbol][1] > start:
+                    missing.append(symbol)
+                    continue
                 series = stocks.get(symbol, {})
                 if any(day not in series for day in dates):
                     missing.append(symbol)
@@ -212,6 +216,8 @@ def build_verified_sector_rotation(
                 benchmark_return = (benchmark[end] / benchmark[start] - 1) * 100
                 stock_returns.append(stock_return)
                 excess_returns.append(stock_return - benchmark_return)
+                constituents.append({"symbol": symbol, "return_pct": round(stock_return, 4),
+                                     "excess_return_pct": round(stock_return - benchmark_return, 4)})
             coverage = len(stock_returns) / len(symbols)
             observed = coverage >= minimum_member_coverage and bool(stock_returns)
             sector_windows[label] = {
@@ -224,7 +230,8 @@ def build_verified_sector_rotation(
                 "observed_members": len(stock_returns), "expected_members": len(symbols),
                 "coverage_pct": round(coverage * 100, 2),
                 "status": "observed" if observed else "insufficient_evidence",
-                "missing_members": missing,
+                "missing_members": sorted(missing),
+                "constituents": sorted(constituents, key=lambda r: (-r["excess_return_pct"], r["symbol"])) if observed else None,
                 "start_session": start, "end_session": end,
             }
             if observed:
@@ -285,7 +292,7 @@ def build_verified_sector_rotation(
         "signals_enabled": False, "production_score": None, "probability": None,
         "limitations": [
             "Sector returns are median constituent returns, not official sector index returns.",
-            "Sector membership is point-in-time as of the final verified session.",
+            "Membership must be known by cutoff and cover each measured return window; reclassified members are excluded.",
             "No missing stock or benchmark session is skipped, interpolated or forward-filled.",
             "Sector leadership is descriptive and is not a forecast or trade signal.",
             "Broker turnover rotation is a separate evidence stream and must not be inferred here.",

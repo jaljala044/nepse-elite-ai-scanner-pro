@@ -146,5 +146,117 @@ class TrustedArtifactStoreTests(unittest.TestCase):
                       result["index_intelligence"]["rejection_reason"])
 
 
+    def test_daily_participation_requires_complete_verified_cohort(self):
+        payload = json.dumps(dict(status="research_only", coverage=1,
+                                  as_of_session="2026-11-27", signals_enabled=False,
+                                  missing_symbols=[], counts={"advance":1,"decline":0,"unchanged":0},
+                                  pressure=1, sentiment="positive",
+                                  rankings={"gainers":[{"symbol":"A","value":"5"}],
+                                            "losers":[], "volume":[{"symbol":"A","value":"10"}],
+                                            "turnover":[{"symbol":"A","value":"100"}]})).encode()
+        (self.root / "index.json").write_bytes(payload)
+        entry = dict(self.entry, payload_sha256=hashlib.sha256(payload).hexdigest(),
+                     equity_universe_status="verified", expected_symbols=["A"])
+        store = self.store(entry, module="daily_market_participation")
+        snapshot = build_trusted_market_snapshot(store, decision_date="2026-11-27",
+                                                  decision_time="2026-11-27T16:00:00+05:45")
+        self.assertIn("daily_market_participation", snapshot["admitted_modules"])
+        self.assertFalse(snapshot["signals_enabled"])
+        bad = json.loads(payload)
+        bad["pressure"] = -1
+        bad_payload = json.dumps(bad).encode()
+        (self.root / "index.json").write_bytes(bad_payload)
+        entry["payload_sha256"] = hashlib.sha256(bad_payload).hexdigest()
+        result = store.load(decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+                            required_modules=("daily_market_participation",))
+        self.assertEqual(result["daily_market_participation"]["rejection_reason"], "daily_participation_pressure_invalid")
+        entry["coverage_ratio"] = 0.9
+        result = store.load(decision_date="2026-11-27",
+                            decision_time="2026-11-27T16:00:00+05:45",
+                            required_modules=("daily_market_participation",))
+        self.assertEqual(result["daily_market_participation"]["status"], "unavailable")
+
+    def test_index_rotation_requires_complete_evidence(self):
+        data = dict(status="research_only", as_of="2026-11-27", coverage_ratio=1,
+                    missing_indices=[], benchmark="NEPSE", signals_enabled=False,
+                    trade_actions_enabled=False, indices={"NEPSE": {"rotation_trail": [dict(date=f"2026-11-{d:02d}", relative_return_pct=0, momentum_change_pp=0, quadrant="leading") for d in range(22,28)]}})
+        payload = json.dumps(data).encode()
+        (self.root / "index.json").write_bytes(payload)
+        entry = dict(self.entry, payload_sha256=hashlib.sha256(payload).hexdigest(), expected_indices=["NEPSE"])
+        store = self.store(entry, module="index_rotation")
+        snap = build_trusted_market_snapshot(store, decision_date="2026-11-27",
+                                             decision_time="2026-11-27T16:00:00+05:45")
+        self.assertIn("index_rotation", snap["admitted_modules"])
+        self.assertFalse(snap["signals_enabled"])
+        invalid = dict(data, indices={"NEPSE": {"rotation_trail": []}})
+        raw = json.dumps(invalid).encode()
+        (self.root / "index.json").write_bytes(raw)
+        entry["payload_sha256"] = hashlib.sha256(raw).hexdigest()
+        result = store.load(decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45", required_modules=("index_rotation",))
+        self.assertEqual(result["index_rotation"]["rejection_reason"], "rotation_trail_invalid")
+        entry["coverage_ratio"] = 0.5
+        result = store.load(decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+                            required_modules=("index_rotation",))
+        self.assertEqual(result["index_rotation"]["rejection_reason"], "index_rotation_not_complete")
+
+
+    def test_combined_ten_module_alignment_and_fail_closed(self):
+        registry = {}
+        for module in REQUIRED_MODULES:
+            registry[module] = dict(self.entry, evidence_ids=[module],
+                sector_membership_status="verified", sector_membership_version="fixture-v1",
+                broker_code_mapping_status="verified", broker_identity_coverage_ratio=1.0)
+        sector_window = dict(status="observed", end_session="2026-11-27", observed_members=1,
+            expected_members=1, missing_members=[], coverage_pct=100, median_return_pct=5,
+            median_excess_return_pct=3, nepse_return_pct=2,
+            constituents=[dict(symbol="A", return_pct=5, excess_return_pct=3)])
+        sector_data = dict(status="observed", as_of_session="2026-11-27", signals_enabled=False,
+            sectors={"BANK": {"windows": {p: sector_window for p in ("1W","1M","3M","6M")}}})
+        raw_sector = json.dumps(sector_data).encode()
+        (self.root / "sector.json").write_bytes(raw_sector)
+        registry["sector_rotation"].update(payload_path="sector.json",
+            payload_sha256=hashlib.sha256(raw_sector).hexdigest(), expected_sector_members={"BANK":["A"]})
+        participation = dict(status="research_only", coverage=1, as_of_session="2026-11-27",
+            signals_enabled=False, missing_symbols=[], counts=dict(advance=1, decline=0, unchanged=0),
+            pressure=1, sentiment="positive", rankings=dict(gainers=[dict(symbol="A",value="5")],
+            losers=[], volume=[dict(symbol="A",value="10")], turnover=[dict(symbol="A",value="100")]))
+        rotation = dict(status="research_only", as_of="2026-11-27", coverage_ratio=1,
+            missing_indices=[], benchmark="NEPSE", signals_enabled=False, trade_actions_enabled=False,
+            indices={"NEPSE": {"rotation_trail": [dict(date=f"2026-11-{d:02d}",
+            relative_return_pct=0, momentum_change_pp=0, quadrant="leading") for d in range(22,28)]}})
+        for name, data, extra in [
+            ("daily_market_participation", participation, dict(equity_universe_status="verified", expected_symbols=["A"])),
+            ("index_rotation", rotation, dict(expected_indices=["NEPSE"]))]:
+            raw = json.dumps(data).encode()
+            filename = name + ".json"
+            (self.root / filename).write_bytes(raw)
+            registry[name] = dict(self.entry, payload_path=filename,
+                payload_sha256=hashlib.sha256(raw).hexdigest(), evidence_ids=[name], **extra)
+        store = TrustedArtifactStore(self.root, registry)
+        def snapshot():
+            return build_trusted_market_snapshot(store, decision_date="2026-11-27",
+                decision_time="2026-11-27T16:00:00+05:45")
+        result = snapshot()
+        self.assertEqual(result["status"], "research_only")
+        self.assertEqual(result["admitted_module_count"], 10)
+        self.assertFalse(result["signals_enabled"])
+        self.assertFalse(result["trade_actions_enabled"])
+        sector_window["constituents"].append(dict(symbol="A", return_pct=5, excess_return_pct=3))
+        corrupt = json.dumps(sector_data).encode()
+        (self.root / "sector.json").write_bytes(corrupt)
+        registry["sector_rotation"]["payload_sha256"] = hashlib.sha256(corrupt).hexdigest()
+        self.assertIn("sector_rotation", snapshot()["missing_modules"])
+        (self.root / "sector.json").write_bytes(raw_sector)
+        registry["sector_rotation"]["payload_sha256"] = hashlib.sha256(raw_sector).hexdigest()
+        registry["index_rotation"]["session_calendar_id"] = "different-calendar"
+        self.assertEqual(snapshot()["status"], "partial_evidence")
+        registry["index_rotation"]["session_calendar_id"] = self.entry["session_calendar_id"]
+        registry["daily_market_participation"]["payload_sha256"] = "0"*64
+        result = snapshot()
+        self.assertEqual(result["status"], "partial_evidence")
+        self.assertIn("daily_market_participation", result["missing_modules"])
+        self.assertIsNone(result["production_score"])
+
+
 if __name__ == "__main__":
     unittest.main()

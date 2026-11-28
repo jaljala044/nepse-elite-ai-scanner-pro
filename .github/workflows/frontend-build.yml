@@ -5,12 +5,17 @@ on:
       - 'frontend/**'
       - 'backend/app/main.py'
       - '.github/workflows/frontend-build.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'backend/app/main.py'
+      - '.github/workflows/frontend-build.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,9 +29,16 @@ jobs:
         run: |
           npm run check
           npm run build
+          test -s public-build/market-research.js
           test -s public-build/vendor/lightweight-charts.standalone.production.mjs
           test -s public-build/vendor/LICENSE
           test -s public-build/vendor/NOTICE
+      - name: Chromium interaction regression tests
+        working-directory: frontend
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.51.1
+          npx playwright install --with-deps chromium
+          npx playwright test tests/market-research.spec.cjs --workers=1
       - uses: actions/upload-artifact@v4
         with:
           name: nepse-research-terminal

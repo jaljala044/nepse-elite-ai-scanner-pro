@@ -19,6 +19,7 @@ def artifact(name="fixture", *, status="research_only", as_of="2026-11-26",
         "finality_status": "final",
         "evidence_gate_passed": True,
         "data": {"fixture": True},
+        "session_calendar_id": "NEPSE-CALENDAR-v1",
     }
 
 
@@ -174,6 +175,25 @@ class MarketIntelligenceSnapshotTests(unittest.TestCase):
             decision_time="2026-11-27T00:15:00+05:45",
         )
         self.assertTrue(result["modules"]["index_intelligence"]["admitted"])
+
+    def test_all_calendar_identities_missing_blocks_snapshot(self):
+        artifacts = {name: artifact(name) for name in REQUIRED_MODULES}
+        for item in artifacts.values():
+            item.pop("session_calendar_id")
+        result = build_market_intelligence_snapshot(
+            artifacts, decision_date="2026-11-26",
+            decision_time="2026-11-26T15:30:00+05:45",
+        )
+        self.assertEqual(result["status"], "partial_evidence")
+        self.assertIn("session_calendar_identity_missing_or_mismatched",
+                      result["alignment"]["reasons"])
+
+    def test_utc_cutoff_on_next_nepal_day(self):
+        result = build_market_intelligence_snapshot(
+            {}, decision_date="2026-11-27",
+            decision_time="2026-11-26T18:30:00Z",
+        )
+        self.assertEqual(result["status"], "insufficient_evidence")
 
     def test_required_module_list_must_be_unique(self):
         with self.assertRaisesRegex(ValueError, "required_modules_must_be_unique"):

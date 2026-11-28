@@ -62,10 +62,18 @@ def parse_csv_bytes(raw: bytes) -> list[dict[str, str]]:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("export_must_be_utf8_or_utf8_bom") from exc
-    reader = csv.DictReader(io.StringIO(text))
+    reader = csv.DictReader(io.StringIO(text, newline=""), restkey="__extra_fields__", strict=True)
     if not reader.fieldnames:
         raise ValueError("csv_header_required")
-    return [dict(row) for row in reader]
+    rows = []
+    try:
+        for line, row in enumerate(reader, start=2):
+            if row.get("__extra_fields__") is not None or any(row.get(key) is None for key in reader.fieldnames):
+                raise ValueError(f"malformed_csv_row_{line}")
+            rows.append(dict(row))
+    except csv.Error as exc:
+        raise ValueError("malformed_csv:" + str(exc)) from exc
+    return rows
 
 def build_import_manifest(*, provider: str, symbol: str, filename: str, raw: bytes,
                           source_url: str | None, captured_at: str,

@@ -1,0 +1,2 @@
+# Android research foundation
+Build with JDK 17, Gradle 8.9 and Android SDK 35: `gradle :app:assembleDebug` from this directory. No wrapper is bundled yet. The dashboard accepts an HTTPS origin and uses existing market-health and readiness endpoints. No proxy credentials are embedded. Private deployment sign-in, mobile token/session exchange, verified feed, device testing and release signing are not implemented. A 401 fails closed. No production or AI recommendation approval.

@@ -19,7 +19,7 @@ from typing import Any, Iterable
 RECORD_TYPES = {
     "ohlcv", "index_ohlcv", "market_summary", "floorsheet",
     "sector_membership", "sector_price", "corporate_action",
-    "broker_observation",
+    "broker_observation", "source_reliability_event",
 }
 
 REQUIRED_CHECKS = {
@@ -56,6 +56,9 @@ REQUIRED_CHECKS = {
     "broker_observation": {
         "payload_integrity", "source_identity", "schema_mapping",
         "broker_identity", "point_in_time",
+    },
+    "source_reliability_event": {
+        "payload_integrity", "source_identity", "point_in_time",
     },
 }
 

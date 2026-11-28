@@ -74,8 +74,8 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
                 },
             }}
             ap = root / "audit.json"; ap.write_text(json.dumps(audit))
-            cp = root / "calendar.csv"; cp.write_text("date,status\\n2026-01-01,project_accepted_open\\n")
-            up = root / "universe.csv"; up.write_text("symbol,instrument_type,status\\nABC,Equity,Active\\n")
+            cp = root / "calendar.csv"; cp.write_text("date,status\n2026-01-01,project_accepted_open\n")
+            up = root / "universe.csv"; up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n")
             with self.assertRaisesRegex(ValueError, "pinned approved input"):
                 build_report(ap, cp, up)
 

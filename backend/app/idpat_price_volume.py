@@ -23,6 +23,18 @@ def _decimal(value, field: str, *, signed: bool = False) -> Decimal:
     return result
 
 
+def _date(value, field: str) -> date:
+    if not isinstance(value, str):
+        raise IDPATError(f"invalid_{field}")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise IDPATError(f"invalid_{field}") from None
+    if parsed.isoformat() != value:
+        raise IDPATError(f"noncanonical_{field}")
+    return parsed
+
+
 def _timestamp(value, field: str) -> datetime:
     try:
         result = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -58,10 +70,7 @@ def analyze_idpat_price_volume(
     symbol = snapshot.get("symbol")
     if not isinstance(symbol, str) or not symbol.strip():
         raise IDPATError("invalid_symbol")
-    try:
-        cutoff_day = date.fromisoformat(as_of_date)
-    except (TypeError, ValueError):
-        raise IDPATError("invalid_as_of_date") from None
+    cutoff_day = _date(as_of_date, "as_of_date")
     cutoff_time = _timestamp(as_of_timestamp, "as_of_timestamp")
     threshold = _decimal(min_coverage, "min_coverage")
     if threshold <= 0 or threshold > 1:
@@ -92,10 +101,7 @@ def analyze_idpat_price_volume(
     for index, bar in enumerate(bars):
         if not isinstance(bar, dict):
             raise IDPATError("bar_must_be_mapping")
-        try:
-            day = date.fromisoformat(bar.get("date"))
-        except (TypeError, ValueError):
-            raise IDPATError("invalid_bar_date") from None
+        day = _date(bar.get("date"), "bar_date")
         if day > cutoff_day:
             return _withheld(symbol, "bar_after_cutoff", str(coverage))
         if previous_day is not None and day <= previous_day:
@@ -105,6 +111,8 @@ def analyze_idpat_price_volume(
                   ("open", "high", "low", "close", "volume")}
         if min(values[k] for k in ("open", "high", "low", "close")) <= 0:
             raise IDPATError("ohlc_prices_must_be_positive")
+        if values["volume"] <= 0 or values["volume"] != values["volume"].to_integral_value():
+            raise IDPATError("bar_volume_must_be_positive_whole_shares")
         if values["high"] < max(values["open"], values["close"], values["low"]):
             raise IDPATError("invalid_bar_high")
         if values["low"] > min(values["open"], values["close"], values["high"]):

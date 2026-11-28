@@ -138,6 +138,44 @@ class PortfolioRouteTests(unittest.TestCase):
             200,
         )
 
+    def test_holding_preferences_api_is_authenticated_and_owner_scoped(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "Preferences"})
+        portfolio_id = created.json()["id"]
+        response = self.client.put(
+            f"/v1/portfolios/{portfolio_id}/preferences/CFCL",
+            headers=self.headers,
+            json={"horizon": "one_to_three_months", "risk_preference": "capital_protection"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["symbol"], "CFCL")
+        self.assertEqual(response.json()["horizon"], "one_to_three_months")
+        listed = self.client.get(f"/v1/portfolios/{portfolio_id}/preferences", headers=self.headers)
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(len(listed.json()["preferences"]), 1)
+        other = {"x-nepse-proxy-secret": "x" * 40, "x-nepse-subject": "investor-2"}
+        self.assertEqual(
+            self.client.get(f"/v1/portfolios/{portfolio_id}/preferences", headers=other).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.put(f"/v1/portfolios/{portfolio_id}/preferences/CFCL",
+                            headers=other,
+                            json={"horizon": "long_term", "risk_preference": "balanced"}).status_code,
+            404,
+        )
+
+    def test_invalid_holding_preference_is_rejected_by_api(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "Invalid preferences"})
+        portfolio_id = created.json()["id"]
+        response = self.client.put(
+            f"/v1/portfolios/{portfolio_id}/preferences/CFCL",
+            headers=self.headers,
+            json={"horizon": "tomorrow", "risk_preference": "YOLO"},
+        )
+        self.assertEqual(response.status_code, 422)
+
     def test_fractional_share_quantity_is_rejected_at_api_boundary(self):
         created = self.client.post("/v1/portfolios", headers=self.headers,
                                    json={"name": "Whole shares"})

@@ -166,5 +166,32 @@ class Issue5CandidateIntegrityTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(path.read_bytes(), before)
 
+
+    def test_noncanonical_source_paths_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(path="dir//ABC.csv"), row(path="dir/./ABC.csv")])
+            self.assertEqual(len(audit(path)["invalid_source_file_identity"]), 2)
+
+    def test_malformed_rows_remain_in_candidate_total(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row()])
+            lines = path.read_text(encoding="utf-8").splitlines()
+            path.write_text(lines[0] + "\n" + lines[1] + ",extra\n", encoding="utf-8")
+            report = audit(path)
+            self.assertEqual(report["candidate_rows"], 1)
+            self.assertEqual(report["candidate_rows_validated"], 0)
+            self.assertEqual(report["candidate_rows_excluded_malformed"], 1)
+
+    def test_short_csv_rows_are_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row()])
+            lines = path.read_text(encoding="utf-8").splitlines()
+            path.write_text(lines[0] + "\n" + ",".join(lines[1].split(",")[:-1]) + "\n",
+                            encoding="utf-8")
+            self.assertEqual(len(audit(path)["malformed_csv_rows"]), 1)
+
 if __name__ == "__main__":
     unittest.main()

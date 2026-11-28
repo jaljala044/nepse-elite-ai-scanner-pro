@@ -8,7 +8,7 @@ Generated 2026-11-28 from pinned full candidate artifact 15231005676.
 - Candidate CSV SHA-256: `a343c1a4c87fb305415b0ce2b62427753250152e74d69cdbb0558b13153cbef1`
 - Candidate rows: 196,784 across the two pinned archives.
 - Grouping: `current_date` for `date_not_listed_in_project_calendar`.
-- Excluded the 20 date groups already recorded in prior weekly-closure packages.
+- Excluded the 20 date groups already recorded in prior weekly-closure and unknown-session review packages (PRs #356, #367, #370 and #376).
 - Applied the effective weekly schedule: Sunday–Thursday trading before 2026-04-06; Monday–Friday trading from 2026-04-06.
 
 ## Ranked five-date batch

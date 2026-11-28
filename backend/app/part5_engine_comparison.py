@@ -12,7 +12,7 @@ def compare_engines(symbol, rows, sessions, *, start, end, holding_sessions, cos
         raise ValueError("invalid execution assumptions")
     if quality_errors(rows) or sessions!=sorted(set(sessions)):
         raise ValueError("invalid archive or calendar")
-    modes=("minervini","wyckoff","smc","provisional","broker","authentic_idpat","master")
+    modes=("minervini","wyckoff","smc","provisional","broker","authentic_idpat","master","wyckoff_spring","wyckoff_sos","wyckoff_lps","wyckoff_lps_smc","wyckoff_sos_trend")
     results={m:{"eligible_decisions":0,"signals":0,"trades":[],"execution_exclusions":0} for m in modes}
     indexed={str(r["date"]):r for r in rows}
     fields=("open","high","low","close","volume")

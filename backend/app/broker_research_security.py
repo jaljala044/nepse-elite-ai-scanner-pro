@@ -16,7 +16,12 @@ class BrokerResearchSecurity:
             return await self.app(scope,receive,send)
         headers=scope.get("headers",[])
         async def deny(code,detail,headers=None):
-            await JSONResponse({"detail":detail},status_code=code,headers=headers)(scope,receive,send)
+            response_headers = {
+                "Cache-Control": "private, no-store, max-age=0",
+                "Pragma": "no-cache",
+            }
+            response_headers.update(headers or {})
+            await JSONResponse({"detail":detail},status_code=code,headers=response_headers)(scope,receive,send)
         token=os.environ.get("NEPSE_BROKER_RESEARCH_TOKEN","")
         if not token: return await deny(503,"Research access not configured")
         auth=[v for k,v in headers if k.lower()==b"authorization"]
@@ -51,4 +56,17 @@ class BrokerResearchSecurity:
             if delivered: return await receive()
             delivered=True
             return {"type":"http.request","body":bytes(body),"more_body":False}
-        await self.app(scope,replay,send)
+        async def protected_send(message):
+            if message["type"] == "http.response.start":
+                headers = [
+                    (key, value) for key, value in message.get("headers", [])
+                    if key.lower() not in {b"cache-control", b"pragma"}
+                ]
+                headers.extend([
+                    (b"cache-control", b"private, no-store, max-age=0"),
+                    (b"pragma", b"no-cache"),
+                ])
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope,replay,protected_send)

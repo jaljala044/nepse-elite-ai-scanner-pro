@@ -7,12 +7,13 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, date, timezone
 from hashlib import sha256
+import math
 from typing import Any
 
 PROVIDERS = {
-    "sharehub": {"date": ("date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "close_price", "ltp"), "volume": ("volume", "total_traded_quantity", "quantity")},
-    "chukul": {"date": ("date", "trading_date", "session_date"), "open": ("open", "openPrice", "open_price"), "high": ("high", "highPrice", "high_price"), "low": ("low", "lowPrice", "low_price"), "close": ("close", "closePrice", "close_price", "ltp"), "volume": ("volume", "totalVolume", "total_traded_quantity")},
-    "sharesansar": {"date": ("date", "trade_date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "closing_price", "ltp"), "volume": ("volume", "quantity", "total_traded_quantity")},
+    "sharehub": {"date": ("date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "close_price"), "volume": ("volume", "total_traded_quantity", "quantity")},
+    "chukul": {"date": ("date", "trading_date", "session_date"), "open": ("open", "openPrice", "open_price"), "high": ("high", "highPrice", "high_price"), "low": ("low", "lowPrice", "low_price"), "close": ("close", "closePrice", "close_price"), "volume": ("volume", "totalVolume", "total_traded_quantity")},
+    "sharesansar": {"date": ("date", "trade_date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "closing_price"), "volume": ("volume", "quantity", "total_traded_quantity")},
 }
 PREDECESSORS = ("BPW", "JALPA", "KLBSL", "MKLB")
 
@@ -27,7 +28,7 @@ def _session(value: Any) -> str:
         return value.isoformat()
     raw = str(value).strip()
     try:
-        return date.fromisoformat(raw[:10]).isoformat()
+        return date.fromisoformat(raw).isoformat()
     except ValueError:
         for fmt in ("%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y"):
             try:
@@ -52,13 +53,18 @@ def capture_chart_history(*, provider_id: str, symbol: str, rows: list[dict[str,
         try:
             values = {field: _first(row, aliases) for field, aliases in mapping.items()}
             session = _session(values.pop("date"))
+            if any(v is None for v in values.values()):
+                raise ValueError("missing_ohlcv_field")
             numbers = {k: float(v) for k, v in values.items()}
-            if any(v is None for v in values.values()) or any(v < 0 for v in numbers.values()):
+            if any(not math.isfinite(v) for v in numbers.values()):
+                raise ValueError("non_finite_ohlcv")
+            if any(v < 0 for v in numbers.values()):
                 raise ValueError("missing_or_negative_ohlcv")
             if numbers["low"] > min(numbers["open"], numbers["close"]) or numbers["high"] < max(numbers["open"], numbers["close"]) or numbers["low"] > numbers["high"]:
                 raise ValueError("invalid_ohlcv_relationship")
             accepted.append({"symbol": symbol.strip().upper(), "session_date": session, **numbers,
-                             "provider_id": provider, "capture_index": index})
+                             "provider_id": provider, "capture_index": index,
+                             "raw_payload_sha256": sha256(raw_payload.encode("utf-8")).hexdigest()})
         except (ValueError, TypeError) as exc:
             rejected.append({"row_index": index, "reason": str(exc)})
     return {"provider_id": provider, "symbol": symbol.strip().upper(), "source_url": source_url,
@@ -88,6 +94,8 @@ def aggregate_floorsheet(*, symbol: str, trades: list[dict[str, Any]], raw_paylo
             day = _session(_first(trade, ("date", "trade_date", "trading_date", "session_date")))
             qty = float(_first(trade, ("quantity", "qty", "contract_quantity")))
             price = float(_first(trade, ("rate", "price", "contract_rate")))
+            if not math.isfinite(qty) or not math.isfinite(price):
+                raise ValueError("non_finite_trade_quantity_or_price")
             if qty <= 0 or price <= 0:
                 raise ValueError("non_positive_trade_quantity_or_price")
             daily[day]["trade_count"] += 1

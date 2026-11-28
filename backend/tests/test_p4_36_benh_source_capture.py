@@ -34,7 +34,7 @@ class Steps110119Tests(unittest.TestCase):
   self.assertEqual(reconcile_history_sources(chart_captures=[c],floorsheet=f)["status"],"PARTIAL_EVIDENCE")
  def test_116_cross_provider_field_conflict(self):
   a=self.capture(parse_sharehub_chart)
-  brow={"trading_date":"2024-06-03","openPrice":99,"highPrice":101,"lowPrice":98,"closePrice":105,"totalVolume":1200}
+  brow={"trading_date":"2024-06-03","openPrice":99,"highPrice":106,"lowPrice":98,"closePrice":105,"totalVolume":1200}
   b=self.capture(parse_chukul_chart,brow)
   r=reconcile_history_sources(chart_captures=[a,b],floorsheet=None)
   self.assertEqual(r["provider_comparisons"][0]["status"],"CONFLICT_REVIEW")

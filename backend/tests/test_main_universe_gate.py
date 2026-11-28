@@ -46,5 +46,20 @@ class MainUniverseGateTests(unittest.TestCase):
         )
         self.assertIsNone(result["probability"])
 
+    def test_scan_exposes_sector_registry_state_without_promoting_membership(self):
+        result = main.scan(main.ScanRequest(symbols=["ADBL"]))
+        item = result["results"][0]
+        self.assertEqual(item["sector_evidence"]["status"], "not_configured")
+        self.assertIsNone(item["sector_evidence"]["sector_code"])
+        self.assertTrue(item["sector_evidence"]["research_only"])
+        self.assertEqual(item["sector_evidence"]["score_adjustment"], 0)
+        self.assertFalse(item["sector_evidence"]["recommendation_override"])
+
+    def test_readiness_reports_sector_registry_not_configured(self):
+        result = main.research_readiness()
+        self.assertEqual(result["sector_evidence_registry"]["status"], "not_configured")
+        self.assertFalse(result["sector_evidence_registry"]["verified"])
+        self.assertFalse(result["sector_evidence_registry"]["admission_allowed"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -46,36 +46,42 @@ def load_calendar(path: str | Path) -> dict[date, dict[str, str]]:
             status = raw["status"].strip()
             allowed_statuses = {
                 "verified_open", "verified_closed",
-                "verified_exceptional_open", "verified_exceptional_closed",
+                "verified_exceptional_open", "verified_exceptional_closed", "project_accepted_open",
             }
             if status not in allowed_statuses:
                 raise ValueError(f"line {line}: unsupported evidence-backed calendar status {status!r}")
-            if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "raw_evidence_sha256", "retrieved_at_utc", "verified_at_utc", "scope")):
-                raise ValueError(f"line {line}: verified calendar rows require source, URI, raw hash, retrieval/verification timestamps and scope")
-            digest = raw["raw_evidence_sha256"].strip().lower()
-            if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
-                raise ValueError(f"line {line}: raw_evidence_sha256 must be a 64-character hex digest")
-            from datetime import datetime, timezone
-            timestamps = {}
-            for field in ("retrieved_at_utc", "verified_at_utc"):
-                try:
-                    parsed = datetime.fromisoformat(raw[field].strip().replace("Z", "+00:00"))
-                except ValueError as exc:
-                    raise ValueError(f"line {line}: {field} must be an ISO-8601 timestamp") from exc
-                if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
-                    raise ValueError(f"line {line}: {field} must include UTC timezone")
-                timestamps[field] = parsed.astimezone(timezone.utc)
-            if timestamps["verified_at_utc"] < timestamps["retrieved_at_utc"]:
-                raise ValueError(f"line {line}: verified_at_utc cannot precede retrieved_at_utc")
-            if raw["published_at"].strip():
-                try:
-                    published = datetime.fromisoformat(raw["published_at"].strip().replace("Z", "+00:00"))
-                except ValueError as exc:
-                    raise ValueError(f"line {line}: published_at must be an ISO-8601 timestamp when supplied") from exc
-                if published.tzinfo is None:
-                    raise ValueError(f"line {line}: published_at must include timezone")
-                if published.astimezone(timezone.utc) > timestamps["retrieved_at_utc"]:
-                    raise ValueError(f"line {line}: published_at cannot follow retrieved_at_utc")
+            if status == "project_accepted_open":
+                if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "scope", "notes")):
+                    raise ValueError(f"line {line}: project baseline rows require source, URI, scope and explanatory notes")
+                if raw["raw_evidence_sha256"].strip() or raw["retrieved_at_utc"].strip() or raw["verified_at_utc"].strip():
+                    raise ValueError(f"line {line}: project baseline cannot claim primary verification metadata")
+            else:
+                if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "raw_evidence_sha256", "retrieved_at_utc", "verified_at_utc", "scope")):
+                    raise ValueError(f"line {line}: verified calendar rows require source, URI, raw hash, retrieval/verification timestamps and scope")
+                digest = raw["raw_evidence_sha256"].strip().lower()
+                if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+                    raise ValueError(f"line {line}: raw_evidence_sha256 must be a 64-character hex digest")
+                from datetime import datetime, timezone
+                timestamps = {}
+                for field in ("retrieved_at_utc", "verified_at_utc"):
+                    try:
+                        parsed = datetime.fromisoformat(raw[field].strip().replace("Z", "+00:00"))
+                    except ValueError as exc:
+                        raise ValueError(f"line {line}: {field} must be an ISO-8601 timestamp") from exc
+                    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+                        raise ValueError(f"line {line}: {field} must include UTC timezone")
+                    timestamps[field] = parsed.astimezone(timezone.utc)
+                if timestamps["verified_at_utc"] < timestamps["retrieved_at_utc"]:
+                    raise ValueError(f"line {line}: verified_at_utc cannot precede retrieved_at_utc")
+                if raw["published_at"].strip():
+                    try:
+                        published = datetime.fromisoformat(raw["published_at"].strip().replace("Z", "+00:00"))
+                    except ValueError as exc:
+                        raise ValueError(f"line {line}: published_at must be an ISO-8601 timestamp when supplied") from exc
+                    if published.tzinfo is None:
+                        raise ValueError(f"line {line}: published_at must include timezone")
+                    if published.astimezone(timezone.utc) > timestamps["retrieved_at_utc"]:
+                        raise ValueError(f"line {line}: published_at cannot follow retrieved_at_utc")
             if day in entries:
                 raise ValueError(f"line {line}: duplicate calendar date {day}")
             entries[day] = {k: (v or "").strip() for k, v in raw.items()}

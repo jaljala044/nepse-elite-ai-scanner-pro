@@ -39,12 +39,14 @@ def _canonical_day(value):
 
 def quarantine_keys(path, expected_sha256, *, expected_source_commits=None):
     """Load a pinned OHLCV exception ledger. Reject malformed or changed input."""
-    raw = Path(path).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != expected_sha256:
-        raise ValueError("quarantine ledger hash mismatch")
     if not isinstance(expected_sha256, str) or len(expected_sha256) != 64 or any(ch not in "0123456789abcdef" for ch in expected_sha256.lower()):
         raise ValueError("invalid quarantine ledger digest")
+    raw = Path(path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256.lower():
+        raise ValueError("quarantine ledger hash mismatch")
     ledger = json.loads(raw)
+    if not isinstance(ledger, dict):
+        raise ValueError("invalid quarantine ledger schema")
     rows = ledger.get("exceptions") if isinstance(ledger, dict) else None
     source_audit = ledger.get("source_audit") if isinstance(ledger, dict) else None
     repositories = source_audit.get("repositories") if isinstance(source_audit, dict) else None

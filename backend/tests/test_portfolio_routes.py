@@ -171,6 +171,17 @@ class PortfolioRouteTests(unittest.TestCase):
             404,
         )
 
+    def test_preference_for_unheld_symbol_returns_not_found(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "No holding"})
+        portfolio_id = created.json()["id"]
+        response = self.client.put(
+            f"/v1/portfolios/{portfolio_id}/preferences/CFCL",
+            headers=self.headers,
+            json={"horizon": "long_term", "risk_preference": "balanced"},
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_invalid_holding_preference_is_rejected_by_api(self):
         created = self.client.post("/v1/portfolios", headers=self.headers,
                                    json={"name": "Invalid preferences"})

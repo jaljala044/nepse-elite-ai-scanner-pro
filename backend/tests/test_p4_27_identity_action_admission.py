@@ -32,7 +32,7 @@ class IdentityActionAdmissionTests(unittest.TestCase):
             "action_type": "bonus", "announced_at": "2024-01-01T10:00:00+05:45",
             "available_at": "2024-01-01T10:01:00+05:45", "ex_date": "2024-02-01",
             "publisher_id": publisher, "source_id": publisher + "-doc-1",
-            "source_tier": tier, "evidence_sha256": (publisher[0] * 64),
+            "source_tier": tier, "evidence_sha256": ("a" * 64 if publisher == "nepse" else "b" * 64),
             "status": "confirmed", "adjustment_factor": "0.9",
             "factor_methodology_id": "bonus-method-v1",
             "review_status": "approved", "reviewer_id": "independent-reviewer",

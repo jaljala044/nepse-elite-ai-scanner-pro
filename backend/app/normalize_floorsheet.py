@@ -156,6 +156,7 @@ def normalize_floorsheet_csv(
     *,
     source: str,
     max_reject_ratio: float = 0.10,
+    registry: Any | None = None,
 ) -> dict[str, Any]:
     path = Path(input_path).resolve()
     if not path.is_file():
@@ -168,34 +169,55 @@ def normalize_floorsheet_csv(
     rejected: list[dict[str, Any]] = []
     duplicate_rows: list[dict[str, Any]] = []
     row_count = 0
+    cache_hit = False
+    cache_key = None
+    if registry is not None:
+        cache_key = registry.make_key(
+            path,
+            dataset_kind=f"daily_floorsheet:{source}:{path.name}:reject_ratio={max_reject_ratio:.6f}",
+            schema_version="nepse-floorsheet-canonical-v1",
+            validator_version="scanner-floorsheet-normalizer-v1",
+        )
+        cached = registry.lookup(cache_key)
+        if cached is not None:
+            report = cached["report"]
+            accepted = {
+                (row["trade_date"], row["contract_no"]): row
+                for row in report.get("accepted_rows", [])
+            }
+            rejected = report.get("rejected_rows", [])
+            duplicate_rows = report.get("duplicate_rows", [])
+            row_count = int(report.get("row_count", 0))
+            cache_hit = True
 
-    opener = gzip.open if path.name.lower().endswith(".gz") else open
-    with opener(path, "rt", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        if not reader.fieldnames:
-            raise ValueError("CSV has no header")
-        columns = _resolve_columns(reader.fieldnames)
-        for line_no, raw in enumerate(reader, start=2):
-            row_count += 1
-            try:
-                record = _canonical_row(raw, columns, source, path.name, line_no)
-                key = _key(record)
-                previous = accepted.get(key)
-                if previous is not None:
-                    comparable_prev = {k: v for k, v in previous.items() if k not in ("source_file", "source_line")}
-                    comparable_now = {k: v for k, v in record.items() if k not in ("source_file", "source_line")}
-                    if comparable_prev != comparable_now:
-                        raise ValueError(f"conflicting duplicate contract {key[1]}")
-                    duplicate_rows.append({
-                        "source_file": path.name, "source_line": line_no,
-                        "trade_date": key[0], "contract_no": key[1],
-                        "classification": "exact_duplicate_deduplicated",
-                    })
-                    continue
-                accepted[key] = record
-            except Exception as exc:
-                rejected.append({"source_file": path.name, "source_line": line_no,
-                                 "raw": raw, "reason": f"{type(exc).__name__}: {exc}"})
+    if not cache_hit:
+        opener = gzip.open if path.name.lower().endswith(".gz") else open
+        with opener(path, "rt", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames:
+                raise ValueError("CSV has no header")
+            columns = _resolve_columns(reader.fieldnames)
+            for line_no, raw in enumerate(reader, start=2):
+                row_count += 1
+                try:
+                    record = _canonical_row(raw, columns, source, path.name, line_no)
+                    key = _key(record)
+                    previous = accepted.get(key)
+                    if previous is not None:
+                        comparable_prev = {k: v for k, v in previous.items() if k not in ("source_file", "source_line")}
+                        comparable_now = {k: v for k, v in record.items() if k not in ("source_file", "source_line")}
+                        if comparable_prev != comparable_now:
+                            raise ValueError(f"conflicting duplicate contract {key[1]}")
+                        duplicate_rows.append({
+                            "source_file": path.name, "source_line": line_no,
+                            "trade_date": key[0], "contract_no": key[1],
+                            "classification": "exact_duplicate_deduplicated",
+                        })
+                        continue
+                    accepted[key] = record
+                except Exception as exc:
+                    rejected.append({"source_file": path.name, "source_line": line_no,
+                                     "raw": raw, "reason": f"{type(exc).__name__}: {exc}"})
 
     reject_ratio = len(rejected) / row_count if row_count else 0.0
     QUARANTINE.mkdir(parents=True, exist_ok=True)
@@ -212,6 +234,14 @@ def normalize_floorsheet_csv(
             f"Reject ratio {reject_ratio:.2%} exceeds threshold {max_reject_ratio:.2%}; "
             f"accepted rows were not written. Quarantine: {quarantine_path}"
         )
+
+    if registry is not None and cache_key is not None and not cache_hit:
+        registry.record(cache_key, "passed", {
+            "row_count": row_count,
+            "accepted_rows": list(accepted.values()),
+            "rejected_rows": rejected,
+            "duplicate_rows": duplicate_rows,
+        })
 
     by_date: dict[str, list[dict[str, str]]] = defaultdict(list)
     for record in accepted.values():
@@ -256,5 +286,6 @@ def normalize_floorsheet_csv(
         "quarantine_path": str(quarantine_path.relative_to(ROOT)) if quarantine_path else None,
         "sessions_written": written,
         "status": "normalized" if not rejected else "normalized_with_quarantine",
+        "validation_cache_hit": cache_hit,
         "warning": "Broker codes identify exchange execution channels; they do not identify beneficial owners or prove institutional accumulation/distribution.",
     }

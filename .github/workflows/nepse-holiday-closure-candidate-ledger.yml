@@ -3,6 +3,10 @@ name: NEPSE holiday closure-candidate ledger
 on:
   pull_request:
     paths:
+      - "backend/validate_holiday_review_index.py"
+      - "backend/tests/test_holiday_review_index_guard.py"
+      - "data/reference/nepse*holiday*.csv"
+      - "data/reference/nepse_session_calendar.csv"
       - "backend/audit_nepse_holiday_api_archive.py"
       - "backend/build_nepse_holiday_closure_candidate_ledger.py"
       - "backend/tests/test_nepse_holiday_closure_candidate_ledger.py"
@@ -44,6 +48,13 @@ jobs:
           assert all(r["canonical_calendar_promotion_allowed"] == "False" for r in rows)
           print("PASS: 12 captures, 499 preserved rows, one two-record date, zero promotion.")
           PY
+      - name: Execute holiday review guard regressions
+        run: python backend/tests/test_holiday_review_index_guard.py -v
+      - name: Validate consolidated review index against current calendar
+        run: |
+          python backend/validate_holiday_review_index.py \
+            --index data/reference/nepse_consolidated_holiday_review_index_2026-11-28.csv \
+            --calendar data/reference/nepse_session_calendar.csv --as-of 2026-11-28
       - name: Upload closure-candidate ledger
         uses: actions/upload-artifact@v4
         with:

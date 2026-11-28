@@ -5,7 +5,8 @@ import csv
 import hashlib
 import math
 import re
-from datetime import date
+from datetime import date, datetime, timezone
+from urllib.parse import urlsplit
 from io import StringIO
 from typing import Any
 
@@ -18,7 +19,7 @@ def _number(value: Any) -> float:
     if value is None:
         raise ValueError("missing_numeric")
     raw = str(value).strip()
-    if raw.lower() in {"nan", "+nan", "-nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}:
+    if raw.casefold() in {"nan", "+nan", "-nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}:
         raise ValueError("non_finite_numeric")
     if not _NUMBER.fullmatch(raw):
         raise ValueError("malformed_numeric")
@@ -43,20 +44,38 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
         return {"status": "REJECTED", "errors": ["invalid_csv_text"], "records": [],
                 "quarantined_rows": [], "production_admission_allowed": False}
 
+    try:
+        parsed_url = urlsplit(source_url)
+        if (parsed_url.scheme != "https" or not parsed_url.hostname
+                or parsed_url.username or parsed_url.password or parsed_url.fragment):
+            raise ValueError("invalid_source_url")
+    except (TypeError, ValueError):
+        return {"status": "REJECTED", "errors": ["invalid_source_url"], "records": [],
+                "quarantined_rows": [], "production_admission_allowed": False}
+    try:
+        captured = datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
+        if captured.tzinfo is None or captured.utcoffset() is None:
+            raise ValueError("retrieval_timestamp_timezone_missing")
+        captured_utc = captured.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    except (AttributeError, TypeError, ValueError):
+        return {"status": "REJECTED", "errors": ["invalid_retrieved_at_utc"], "records": [],
+                "quarantined_rows": [], "production_admission_allowed": False}
+
+
     raw_bytes = text.encode("utf-8")
     artifact = {
         "sha256": hashlib.sha256(raw_bytes).hexdigest(),
         "byte_count": len(raw_bytes),
         "encoding": "utf-8",
         "source_url": source_url,
-        "retrieved_at": retrieved_at,
+        "retrieved_at": captured_utc,
         "parser_version": PARSER_VERSION,
     }
     errors: list[str] = []
     warnings: list[str] = []
     records: list[dict] = []
     quarantined: list[dict] = []
-    seen: dict[str, int] = {}
+    seen: dict[str, dict] = {}
     reader = csv.DictReader(StringIO(text, newline=""), restkey="__extra_fields__", strict=True)
     headers = reader.fieldnames or []
     missing = [column for column in REQUIRED if column not in headers]
@@ -73,6 +92,24 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
                 errors.append(f"line_{line}_missing_symbol")
                 quarantined.append(_quarantine(line, symbol, raw_row, "missing_symbol"))
                 continue
+            if symbol in seen:
+                previous = seen[symbol]
+                previous_record = next((item for item in records if item["symbol"] == symbol), None)
+                if previous_record is not None:
+                    records.remove(previous_record)
+                    quarantined.append(_quarantine(previous["line"], symbol, previous["raw_row"], "duplicate_symbol"))
+                else:
+                    prior_quarantine = next((item for item in quarantined if item["source_line"] == previous["line"]), None)
+                    if prior_quarantine is not None:
+                        if "duplicate_symbol" not in prior_quarantine["reasons"]:
+                            prior_quarantine["reasons"].append("duplicate_symbol")
+                    else:
+                        quarantined.append(_quarantine(previous["line"], symbol, previous["raw_row"], "duplicate_symbol"))
+                quarantined.append(_quarantine(line, symbol, raw_row, "duplicate_symbol"))
+                errors.append(f"line_{line}_duplicate_symbol_{symbol}")
+                warnings.append(f"symbol_{symbol}_ambiguous_duplicate_rows")
+                continue
+            seen[symbol] = {"line": line, "raw_row": raw_row}
             if row.get("__extra_fields__") is not None:
                 quarantined.append(_quarantine(line, symbol, raw_row, "extra_csv_fields"))
                 warnings.append(f"line_{line}_quarantined_{symbol}:extra_csv_fields")
@@ -82,17 +119,6 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
                 quarantined.append(_quarantine(line, symbol, raw_row, "missing_row_fields:" + ",".join(missing_values)))
                 warnings.append(f"line_{line}_quarantined_{symbol}:missing_row_fields")
                 continue
-            if symbol in seen:
-                previous_line = seen[symbol]
-                previous = next((item for item in records if item["symbol"] == symbol), None)
-                if previous is not None:
-                    records.remove(previous)
-                    quarantined.append(_quarantine(previous_line, symbol, previous["raw_row"], "duplicate_symbol"))
-                quarantined.append(_quarantine(line, symbol, raw_row, "duplicate_symbol"))
-                errors.append(f"line_{line}_duplicate_symbol_{symbol}")
-                warnings.append(f"symbol_{symbol}_ambiguous_duplicate_rows")
-                continue
-            seen[symbol] = line
             try:
                 o, h, low, close = (_number(row[key]) for key in ("Open", "High", "Low", "Close"))
                 volume = _number(row["Vol"])

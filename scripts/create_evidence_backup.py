@@ -20,6 +20,16 @@ sys.path.insert(0, str(REPO_ROOT / "backend"))
 from app.evidence_backup import create_evidence_backup, verify_evidence_backup  # noqa: E402
 
 
+def _require_separate_filesystem(database_device: int, storage_device: int,
+                                 destination_device: int) -> dict[str, str]:
+    if destination_device in {database_device, storage_device}:
+        raise ValueError('backup_destination_must_be_separate_filesystem')
+    return {
+        'filesystem_separation': 'verified_distinct_device',
+        'off_host_status': 'not_verified_operator_confirmation_required',
+    }
+
+
 def validate_backup_destination(database: str | Path, storage_root: str | Path, destination_root: str | Path) -> dict[str, str]:
     database_path = Path(database).expanduser().resolve()
     storage_path = Path(storage_root).expanduser().resolve()
@@ -29,9 +39,9 @@ def validate_backup_destination(database: str | Path, storage_root: str | Path, 
     if not storage_path.is_dir() or not destination_path.is_dir():
         raise ValueError('storage_and_destination_directories_must_exist')
     destination_device = os.stat(destination_path).st_dev
-    source_devices = {os.stat(database_path.parent).st_dev, os.stat(storage_path).st_dev}
-    if destination_device in source_devices:
-        raise ValueError('backup_destination_must_be_separate_filesystem')
+    database_device = os.stat(database_path.parent).st_dev
+    storage_device = os.stat(storage_path).st_dev
+    _require_separate_filesystem(database_device, storage_device, destination_device)
     if destination_path == storage_path or storage_path in destination_path.parents:
         raise ValueError('backup_destination_must_not_be_inside_raw_storage')
     if destination_path == database_path.parent or database_path.parent in destination_path.parents:

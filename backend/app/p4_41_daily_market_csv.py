@@ -5,7 +5,8 @@ import csv
 import hashlib
 import math
 import re
-from datetime import date
+from datetime import date, datetime, timezone
+from urllib.parse import urlsplit
 from io import StringIO
 from typing import Any
 
@@ -43,13 +44,30 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
         return {"status": "REJECTED", "errors": ["invalid_csv_text"], "records": [],
                 "quarantined_rows": [], "production_admission_allowed": False}
 
+    try:
+        parsed_url = urlsplit(source_url)
+        if (parsed_url.scheme != "https" or not parsed_url.hostname
+                or parsed_url.username or parsed_url.password or parsed_url.fragment):
+            raise ValueError("invalid_source_url")
+    except (TypeError, ValueError):
+        return {"status": "REJECTED", "errors": ["invalid_source_url"], "records": [],
+                "quarantined_rows": [], "production_admission_allowed": False}
+    try:
+        captured = datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
+        if captured.tzinfo is None or captured.utcoffset() is None:
+            raise ValueError("retrieval_timestamp_timezone_missing")
+        captured_utc = captured.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    except (AttributeError, TypeError, ValueError):
+        return {"status": "REJECTED", "errors": ["invalid_retrieved_at_utc"], "records": [],
+                "quarantined_rows": [], "production_admission_allowed": False}
+
     raw_bytes = text.encode("utf-8")
     artifact = {
         "sha256": hashlib.sha256(raw_bytes).hexdigest(),
         "byte_count": len(raw_bytes),
         "encoding": "utf-8",
         "source_url": source_url,
-        "retrieved_at": retrieved_at,
+        "retrieved_at": captured_utc,
         "parser_version": PARSER_VERSION,
     }
     errors: list[str] = []
@@ -111,7 +129,7 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
                     "symbol": symbol, "session_date": session, "open": o, "high": h, "low": low, "close": close,
                     "volume": volume, "turnover": turnover, "transactions": transactions,
                     "provider": "sharesansar_scraper_public_archive", "source_url": source_url,
-                    "retrieved_at": retrieved_at, "source_class": "UNOFFICIAL_THIRD_PARTY_ARCHIVE",
+                    "retrieved_at": captured_utc, "source_class": "UNOFFICIAL_THIRD_PARTY_ARCHIVE",
                     "scope": "DAILY_MARKET_WIDE_CSV", "quality": "RESEARCH_ONLY",
                     "source_artifact_sha256": artifact["sha256"], "parser_version": PARSER_VERSION,
                     "source_line": line, "raw_row": raw_row, "production_admission_allowed": False,

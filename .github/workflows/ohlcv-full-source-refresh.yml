@@ -134,7 +134,7 @@ jobs:
               assert store.count() == 0
               # Seed a legacy snapshot before the ledger is enabled, then verify
               # that retrieval under the real ledger refuses it without deleting it.
-              config = {k: os.environ.pop(k) for k in ("NEPSE_QUARANTINE_LEDGER","NEPSE_QUARANTINE_LEDGER_SHA256","NEPSE_REQUIRE_QUARANTINE_LEDGER")}
+              config = {k: os.environ.pop(k) for k in ("NEPSE_QUARANTINE_LEDGER","NEPSE_QUARANTINE_LEDGER_SHA256","NEPSE_REQUIRE_QUARANTINE_LEDGER","NEPSE_QUARANTINE_SOURCE_COMMITS")}
               try:
                   store.append(snap,idempotency_key="legacy-ci")
               finally:

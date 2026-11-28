@@ -189,7 +189,9 @@ def _lineage_groups(valid: list[dict]) -> list[list[int]]:
             a, b = valid[left], valid[right]
             union = a["session_dates"] | b["session_dates"]
             overlap = len(a["session_dates"] & b["session_dates"]) / len(union) if union else 0
-            if (a["publisher_identity"] == b["publisher_identity"]\n                    or a["upstream_feed"] == b["upstream_feed"]\n                    or overlap > 0.98 and a["upstream_feed"] == b["upstream_feed"]):
+            if (a["publisher_identity"] == b["publisher_identity"]
+                    or a["upstream_feed"] == b["upstream_feed"]
+                    or overlap > 0.98 and a["upstream_feed"] == b["upstream_feed"]):
                 root_a, root_b = find(left), find(right)
                 if root_a != root_b:
                     parent[root_b] = root_a

@@ -33,5 +33,17 @@ class PublicExportHardeningTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_csv_bytes(b"date,close\n2026-11-27,10,extra\n")
 
+    def test_duplicate_session_quarantines_both_rows_and_removes_candidate(self):
+        rows = [
+            {"date": "2026-11-27", "open": 99, "high": 101, "low": 98, "close": 100, "volume": 1000},
+            {"date": "2026-11-27", "open": 99, "high": 102, "low": 98, "close": 101, "volume": 1100},
+        ]
+        result = normalize_ohlcv_rows(provider="sharehub", symbol="BENH", rows=rows)
+        self.assertEqual(result["records"], [])
+        self.assertEqual(
+            [(item["row_index"], item["reason"]) for item in result["rejected"]],
+            [(0, "duplicate_symbol_session"), (1, "duplicate_symbol_session")],
+        )
+
 if __name__ == "__main__":
     unittest.main()

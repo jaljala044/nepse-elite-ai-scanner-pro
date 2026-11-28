@@ -5,13 +5,30 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+def _canonical_iso_date(value, field_name: str, *, allow_date_object: bool = False) -> str:
+    """Require canonical YYYY-MM-DD strings; optionally accept typed date values."""
+    if allow_date_object and type(value) is date:
+        return value.isoformat()
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be canonical YYYY-MM-DD")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(f"{field_name} must be canonical YYYY-MM-DD") from None
+    if parsed.isoformat() != value:
+        raise ValueError(f"{field_name} must be canonical YYYY-MM-DD")
+    return value
+
+
 
 def build_historical_coverage_report(records: list[dict], *,
                                     expected_sessions: list[str],
                                     expected_symbols: list[str]) -> dict:
     """Audit a caller-supplied verified session/symbol grid; infer no missing sessions."""
-    sessions = sorted({date.fromisoformat(x).isoformat() for x in expected_sessions})
-    symbols = sorted({x.strip().upper() for x in expected_symbols if x.strip()})
+    sessions = sorted({_canonical_iso_date(x, "expected session") for x in expected_sessions})
+    if any(not isinstance(x, str) or not x.strip() for x in expected_symbols):
+        raise ValueError("expected symbols must be non-empty strings")
+    symbols = sorted({x.strip().upper() for x in expected_symbols})
     if not sessions or not symbols:
         raise ValueError("verified expected_sessions and expected_symbols are required")
     expected = {(d, s) for d in sessions for s in symbols}
@@ -20,12 +37,16 @@ def build_historical_coverage_report(records: list[dict], *,
     unexpected_rows = defaultdict(list)
     for index, row in enumerate(records):
         try:
-            session_date = date.fromisoformat(str(row["session_date"])).isoformat()
-            symbol = str(row["symbol"]).strip().upper()
-            source = str(row["source_id"]).strip()
+            session_date = _canonical_iso_date(row["session_date"], "session_date", allow_date_object=True)
+            raw_symbol = row["symbol"]
+            raw_source = row["source_id"]
+            if not isinstance(raw_symbol, str) or not raw_symbol.strip():
+                raise ValueError("symbol must be a non-empty string")
+            if not isinstance(raw_source, str) or not raw_source.strip():
+                raise ValueError("source_id must be a non-empty string")
+            symbol = raw_symbol.strip().upper()
+            source = raw_source.strip()
             close = Decimal(str(row["close"]))
-            if not source or not symbol:
-                raise ValueError("blank source_id or symbol")
             if not close.is_finite() or close <= 0:
                 raise ValueError("close must be a finite positive decimal")
             key = (session_date, symbol)
@@ -103,8 +124,10 @@ def build_cached_historical_coverage_report(path, *, expected_sessions, expected
     from pathlib import Path
     from nepse_shared_validation import run_cached_validation
 
-    sessions = sorted({date.fromisoformat(x).isoformat() for x in expected_sessions})
-    symbols = sorted({x.strip().upper() for x in expected_symbols if x.strip()})
+    sessions = sorted({_canonical_iso_date(x, "expected session") for x in expected_sessions})
+    if any(not isinstance(x, str) or not x.strip() for x in expected_symbols):
+        raise ValueError("expected symbols must be non-empty strings")
+    symbols = sorted({x.strip().upper() for x in expected_symbols})
     if not sessions or not symbols:
         raise ValueError("verified expected_sessions and expected_symbols are required")
     grid = json.dumps({"sessions": sessions, "symbols": symbols},

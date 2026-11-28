@@ -54,7 +54,21 @@ class MultiSourceCaptureTests(unittest.TestCase):
         report=validate_historical_source_contract(contract=make_contract("official_eod_ohlcv","CAP-1"),decision_cutoff="2025-02-02T00:00:00+05:45")
         out=capture_required_historical_datasets(source_contract_reports={"eod":report},transports={},required_dataset_kinds=["official_eod_ohlcv","official_market_calendar"],captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
         self.assertEqual(out["status"],"BLOCKED")
-        self.assertEqual(out["missing_dataset_kinds"],["official_eod_ohlcv","official_market_calendar"])
+        self.assertEqual(out["missing_dataset_kinds"],["official_market_calendar"])
+        self.assertEqual(out["errors"][0]["missing_contract_kinds"],["official_market_calendar"])
+        self.assertEqual(out["captured_dataset_kinds"],[])
+        self.assertFalse(out["all_required_capture_packages_validated"])
+        self.assertFalse(out["panel_assembly_allowed"])
+
+    def test_missing_transport_with_complete_contract_inventory_blocks(self):
+        kind = "official_eod_ohlcv"
+        report = validate_historical_source_contract(contract=make_contract(kind,"CAP-1"),decision_cutoff="2025-02-02T00:00:00+05:45")
+        out = capture_required_historical_datasets(source_contract_reports={"eod":report},transports={},required_dataset_kinds=[kind],captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(out["status"],"BLOCKED")
+        self.assertEqual(out["missing_dataset_kinds"],[kind])
+        self.assertEqual(out["capture_results"]["eod"]["errors"][0]["reason"],"operator_transport_missing")
+        self.assertFalse(out["panel_assembly_allowed"])
+        self.assertFalse(out["backtest_admission_allowed"])
 
 
 if __name__=="__main__":unittest.main()

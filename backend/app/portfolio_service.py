@@ -65,6 +65,7 @@ def _connect():
             trade_date TEXT NOT NULL,
             idempotency_key TEXT,
             created_at TEXT NOT NULL,
+            ledger_sequence INTEGER,
             UNIQUE(owner, idempotency_key)
         );
         CREATE INDEX IF NOT EXISTS idx_portfolio_tx_order
@@ -73,6 +74,27 @@ def _connect():
     columns = {row["name"] for row in con.execute("PRAGMA table_info(portfolios)")}
     if "deleted_at" not in columns:
         con.execute("ALTER TABLE portfolios ADD COLUMN deleted_at TEXT")
+    tx_columns = {row["name"] for row in con.execute("PRAGMA table_info(portfolio_transactions)")}
+    if "ledger_sequence" not in tx_columns:
+        con.execute("ALTER TABLE portfolio_transactions ADD COLUMN ledger_sequence INTEGER")
+    # Repair any rows left without a sequence by an interrupted additive
+    # migration. BEGIN IMMEDIATE in writers serializes future sequence allocation.
+    next_sequence = con.execute(
+        "SELECT COALESCE(MAX(ledger_sequence), 0) + 1 FROM portfolio_transactions"
+    ).fetchone()[0]
+    pending = con.execute(
+        "SELECT id FROM portfolio_transactions WHERE ledger_sequence IS NULL "
+        "ORDER BY trade_date, created_at, id"
+    ).fetchall()
+    for offset, row in enumerate(pending):
+        con.execute(
+            "UPDATE portfolio_transactions SET ledger_sequence=? WHERE id=?",
+            (next_sequence + offset, row["id"]),
+        )
+    con.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_portfolio_tx_sequence "
+        "ON portfolio_transactions(ledger_sequence)"
+    )
     return con
 
 
@@ -186,11 +208,15 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
             available = Decimal(position["quantity"]) if position else Decimal(0)
             if qty > available:
                 raise ValueError("sell quantity exceeds available shares")
+        ledger_sequence = con.execute(
+            "SELECT COALESCE(MAX(ledger_sequence), 0) + 1 FROM portfolio_transactions"
+        ).fetchone()[0]
         con.execute("""INSERT INTO portfolio_transactions
-            (id,owner,portfolio_id,symbol,side,quantity,price,fees,trade_date,idempotency_key,created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (id,owner,portfolio_id,symbol,side,quantity,price,fees,trade_date,
+             idempotency_key,created_at,ledger_sequence)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (transaction_id, owner, portfolio_id, symbol, side, str(qty), str(unit_price),
-             str(fee), normalized_date, idempotency_key, now))
+             str(fee), normalized_date, idempotency_key, now, ledger_sequence))
         # Recompute the complete chronological ledger before committing. This
         # rejects backdated sells that would make an earlier position negative.
         _calculate_positions(con, owner, portfolio_id)
@@ -208,7 +234,7 @@ def _transaction(row):
 def _calculate_positions(con, owner: str, portfolio_id: str) -> dict[str, dict]:
     rows = con.execute("""SELECT * FROM portfolio_transactions
         WHERE owner=? AND portfolio_id=?
-        ORDER BY trade_date,created_at,rowid""", (owner, portfolio_id)).fetchall()
+        ORDER BY trade_date,ledger_sequence""", (owner, portfolio_id)).fetchall()
     state: dict[str, dict[str, Decimal]] = {}
     for row in rows:
         symbol = row["symbol"]

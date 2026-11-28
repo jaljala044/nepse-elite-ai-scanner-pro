@@ -3,6 +3,7 @@ package com.nepsescanner.research
 import org.junit.Test
 import org.junit.Assert.*
 import java.time.LocalDate
+import java.math.BigDecimal
 
 class VerifiedLiquidityTest {
     private fun rows(n:Int=20)= (0 until n).map { i ->

@@ -34,7 +34,7 @@ jobs:
         run: python -m pip install -r requirements.txt
         working-directory: backend
       - name: Install shared validation package
-        run: python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@122acaae8665fd396d206ea40b66861b9cbd4d6b"
+        run: python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@3c42c510d10b73f332324be7019f0b2d45beb6ef"
       - name: Probe Hugging Face dataset tree response
         run: python probe_hf_dataset.py
         working-directory: backend

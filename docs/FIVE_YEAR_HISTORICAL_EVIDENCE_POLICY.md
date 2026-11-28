@@ -1,4 +1,4 @@
-# Five-year all-equity historical evidence policy
+# 3–5-year all-equity historical evidence policy
 
 Effective policy change: user-directed 2026-11-28. This policy supersedes the
 previous three-source OHLCV fallback threshold for historical chart evidence.
@@ -8,9 +8,15 @@ It does not enable production trading signals.
 ## Collection scope
 
 For every security in the supplied, effective-dated NEPSE equity universe,
-collect five years of:
+collect 3–5 years of:
 - Daily floorsheet transaction records; and
 - Daily chart / OHLCV records.
+
+Five years is the preferred target. If a provider cannot supply five years,
+collect at least three complete years for that equity and data type. Three years
+is the minimum fallback, not the preferred target. If fewer than three years are
+available, retain the partial coverage and missing-period report; do not mark it
+complete or silently substitute a shorter window.
 
 The four collection providers are ShareHub, NEPSE Alpha, Chukul and ShareSansar.
 NEPSE's available historical records are retained as the reference source.
@@ -25,9 +31,9 @@ remain. Use every source that is actually accessible and rights-permitted.
 - The public ShareSansar-derived archive documents a free per-symbol `api/history/{SYMBOL}.json` history endpoint. The collector captures this as a ShareSansar-derived chart archive, not as an official ShareSansar or NEPSE attestation. Its published API description does not list a floorsheet archive endpoint. See https://omitnomis.github.io/ShareSansarScraper/about.html.
 - Mero Lagani exposes a datewise floorsheet page, but a stable documented five-year API/export contract was not verified here. It remains a diagnostic comparison source unless a permitted endpoint or export is supplied. See https://merolagani.com/Floorsheet.aspx.
 
-Consequently, the code can capture ShareSansar-derived chart history now and can capture other provider data through exact configured URL templates or bulk archive URLs. Five-year floorsheet coverage remains blocked where a provider has not documented or supplied an authorized historical archive. Do not treat a missing endpoint as proof that the data does not exist.
+Consequently, the code can capture ShareSansar-derived chart history now and can capture other provider data through exact configured URL templates or bulk archive URLs. A five-year result is preferred; a three-year result is the minimum acceptable fallback. Floorsheet coverage remains blocked where a provider has not documented or supplied an authorized historical archive. Do not treat a missing endpoint as proof that the data does not exist.
 
-The collection window is the five-year period ending on an explicit as-of date.
+The collection window targets five years ending on an explicit as-of date, with a three-year minimum fallback evaluated separately for every equity, provider and data type.
 Do not assume the equity universe, security IDs, source endpoints, session
 calendar, or data coverage. Generate a coverage manifest by equity, source,
 record type and session. A plan is not proof of acquisition.
@@ -35,7 +41,7 @@ record type and session. A plan is not proof of acquisition.
 ## Source order and capture
 
 1. Query NEPSE historical data where available and retain it as a reference.
-2. Acquire available five-year floorsheet and chart archives from each configured
+2. Acquire available 3–5-year floorsheet and chart archives from each configured
    provider using provider-documented public endpoints, authorized access, or
    user-provided exports. Never invent endpoints or bypass access controls.
 3. Preserve raw bytes immutably and record source URL, exact query, retrieval UTC,

@@ -49,3 +49,22 @@ class PrivateAccountsTests(unittest.TestCase):
             for price in ("NaN","-1","1.001"):
                 with self.assertRaises(ValueError):
                     add_alert("alice","NABIL","above",price)
+
+    def test_mobile_sessions(self):
+        from app.private_accounts import issue_mobile_session, mobile_principal, revoke_mobile_session
+        from fastapi import HTTPException
+        import time
+        with tempfile.TemporaryDirectory() as d, patch.dict("os.environ",{"NEPSE_PRIVATE_DB":str(Path(d)/"accounts.db")}):
+            now=int(time.time())
+            a="Bearer "+issue_mobile_session("alice",now)["access_token"]
+            b="Bearer "+issue_mobile_session("bob",now)["access_token"]
+            self.assertEqual(mobile_principal(a,now),"alice")
+            self.assertEqual(mobile_principal(b,now),"bob")
+            with self.assertRaises(HTTPException):
+                mobile_principal(a,now+900)
+            revoke_mobile_session(a)
+            with self.assertRaises(HTTPException):
+                mobile_principal(a,now)
+            self.assertEqual(mobile_principal(b,now),"bob")
+            with self.assertRaises(HTTPException):
+                mobile_principal("Bearer "+"x"*43,now)

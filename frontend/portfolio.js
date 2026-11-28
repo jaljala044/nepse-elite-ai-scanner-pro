@@ -2,11 +2,7 @@
 (() => {
   const byId = id => document.getElementById(id);
   const state = { portfolios: [], activeId: "", generation: 0 };
-  const money = value => {
-    if (value === null || value === undefined || value === "") return "UNKNOWN";
-    const n = Number(value);
-    return Number.isFinite(n) ? "NPR " + n.toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "UNKNOWN";
-  };
+  const money = value => window.NepsePortfolioFormat.money(value);
   const node = (tag, value, className) => {
     const el = document.createElement(tag);
     if (value !== undefined) el.textContent = String(value);

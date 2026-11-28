@@ -16,6 +16,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+          cache-read-only: false
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
@@ -23,4 +24,18 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Compile debug APK
         working-directory: android
-        run: gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            log="$(mktemp)"
+            if gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon >"$log" 2>&1; then
+              cat "$log"; rm "$log"; exit 0
+            fi
+            cat "$log"
+            if ! grep -Eq 'status code 429|Too Many Requests' "$log" || [ "$attempt" -eq 3 ]; then
+              rm "$log"; exit 1
+            fi
+            rm "$log"
+            sleep "$((attempt * 30))"
+          done

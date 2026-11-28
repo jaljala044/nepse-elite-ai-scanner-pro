@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
-from create_evidence_backup import validate_backup_destination
+from create_evidence_backup import validate_backup_destination, _require_separate_filesystem
 
 class BackupDestinationGuardTests(unittest.TestCase):
     def setUp(self):
@@ -27,16 +27,18 @@ class BackupDestinationGuardTests(unittest.TestCase):
             validate_backup_destination(self.db, self.raw, self.dest)
 
     def test_distinct_filesystem_is_reported_without_claiming_off_host(self):
-        real_stat = os.stat
-        def fake_stat(path, *args, **kwargs):
-            result = real_stat(path, *args, **kwargs)
-            if Path(path).resolve() == self.dest.resolve():
-                return SimpleNamespace(st_dev=result.st_dev + 1)
-            return result
-        with patch('create_evidence_backup.os.stat', side_effect=fake_stat):
-            result = validate_backup_destination(self.db, self.raw, self.dest)
-        self.assertEqual(result['filesystem_separation'], 'verified_distinct_device')
-        self.assertEqual(result['off_host_status'], 'not_verified_operator_confirmation_required')
+        result = _require_separate_filesystem(1, 1, 2)
+        self.assertEqual(result["filesystem_separation"], "verified_distinct_device")
+        self.assertEqual(result["off_host_status"], "not_verified_operator_confirmation_required")
+
+    def test_destination_matching_database_device_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "separate_filesystem"):
+            _require_separate_filesystem(1, 2, 1)
+
+    def test_destination_matching_raw_store_device_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "separate_filesystem"):
+            _require_separate_filesystem(1, 2, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

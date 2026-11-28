@@ -37,13 +37,16 @@ jobs:
         env:
           SESSION_DATE: ${{ inputs.session_date }}
           DECISION_TIME: ${{ inputs.decision_time }}
+          NEPSE_INPUT_BUNDLE_PUBLIC_KEY: ${{ vars.NEPSE_INPUT_BUNDLE_PUBLIC_KEY }}
         run: |
           python run_daily_market_handoff.py \
             --bundle-dir ../secure-input-bundles \
+            --signature-dir ../secure-input-signatures \
             --candidate-dir ../market-candidates \
             --trusted-registry ../deployment/market-registry.json \
             --session-date "$SESSION_DATE" \
-            --decision-time "$DECISION_TIME"
+            --decision-time "$DECISION_TIME" \
+            --public-key-env NEPSE_INPUT_BUNDLE_PUBLIC_KEY
       - name: Upload review-only candidate artifacts
         if: success()
         uses: actions/upload-artifact@v4

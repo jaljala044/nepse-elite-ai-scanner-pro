@@ -31,7 +31,7 @@ def reconcile_benh_first_trade(*, chart_records: list[dict[str,Any]],
     if chart_first and floor_first and chart_first!=floor_first: errors.append("chart_and_floorsheet_first_dates_disagree")
     if listing and first_trade and first_trade<listing: status="BLOCKED"
     elif corroborated and floor_complete: status="FIRST_TRADE_CORROBORATED"
-    elif floor_first and floor_complete: status="FLOORSHEET_FIRST_TRADE_CANDIDATE"
+    elif floor_first and floor_complete and not chart_first: status="FLOORSHEET_FIRST_TRADE_CANDIDATE"
     elif chart_first or floor_first: status="PARTIAL_EVIDENCE"
     else: status="NO_EVIDENCE"
     return {"symbol":"BENH","status":status,"chart_first_session":chart_first,

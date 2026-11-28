@@ -52,6 +52,7 @@ def reconcile_trusted_sector_evidence(
             })
             continue
         mapped = dict(row)
+        mapped["original_publisher_id"] = mapped.get("publisher_id")
         mapped["publisher_id"] = decision["ownership_group_id"]
         accepted.append(mapped)
 
@@ -74,7 +75,7 @@ def reconcile_trusted_sector_evidence(
         brand_ids = set()
         for row in accepted:
             if str(row.get("symbol", "")).strip().upper() == symbol:
-                brand_ids.add(str(row.get("publisher_id", "")))
+                brand_ids.add(str(row.get("original_publisher_id", "")))
                 groups.add(str(row.get("publisher_id", "")))
         symbol_result["independent_ownership_group_count"] = len(groups)
         symbol_result["publisher_brand_count"] = len(brand_ids)

@@ -1,12 +1,17 @@
 import unittest
+from pathlib import Path
 from app.p4_41_daily_market_csv import parse_daily_market_csv,find_symbol_record
 
 HEADER="S.No,Symbol,Conf.,Open,High,Low,Close,LTP,Close - LTP,Close - LTP %,VWAP,Vol,Prev. Close,Turnover,Trans.,Diff,Range,Diff %,Range %,VWAP %,120 Days,180 Days,52 Weeks High,52 Weeks Low"
+EVIDENCE=Path(__file__).parents[2]/"data/evidence/benh/2026-11-28/public_daily_csv"
 def line(n,symbol,open_,high,low,close,vol,turnover,trans):
  return f'{n},{symbol},30,{open_},{high},{low},{close},{close},0,0,{close},{vol},100,{turnover},{trans},0,0,0,0,0,0,0,0,0'
 class DailyMarketCSVTests(unittest.TestCase):
  def parse(self,body):
   return parse_daily_market_csv(HEADER+"\n"+body,session_date="2026-10-14",source_url="https://example.test/2026_10_14.csv",retrieved_at="2026-11-28T17:00:00+04:00")
+ def parse_evidence(self,day):
+  raw=(EVIDENCE/f"{day}.csv").read_text()
+  return parse_daily_market_csv(raw,session_date=day,source_url=f"https://raw.githubusercontent.com/OmitNomis/ShareSansarScraper/master/docs/Data/{day.replace('-','_')}.csv",retrieved_at="2026-11-28")
  def test_valid_marketwide_rows(self):
   r=self.parse(line(1,"ADBL",320,328,320,328,"139,162","45,263,784.50",517)+"\n"+line(2,"BENH",273,313.9,273,313.9,90,26634,1))
   self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED"); self.assertEqual(r["row_count"],2)
@@ -27,4 +32,17 @@ class DailyMarketCSVTests(unittest.TestCase):
  def test_invalid_session_rejected(self):
   r=parse_daily_market_csv(HEADER,session_date="bad",source_url="public",retrieved_at="now")
   self.assertIn("invalid_session_date",r["errors"])
+ def test_retained_14_oct_file_has_no_benh_row(self):
+  r=self.parse_evidence("2026-10-14")
+  self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED")
+  self.assertEqual(r["row_count"],354)
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"NOT_PRESENT_IN_ARCHIVE_FILE")
+ def test_retained_15_oct_file_contains_benh_first_observed_row(self):
+  r=self.parse_evidence("2026-10-15")
+  found=find_symbol_record(r,"BENH")
+  self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED")
+  self.assertEqual(r["row_count"],349)
+  self.assertEqual(found["status"],"FOUND")
+  self.assertEqual((found["record"]["open"],found["record"]["high"],found["record"]["low"],found["record"]["close"]),(273.0,313.9,273.0,313.9))
+  self.assertEqual((found["record"]["volume"],found["record"]["turnover"],found["record"]["transactions"]),(90.0,26634.0,9.0))
 if __name__=="__main__": unittest.main()

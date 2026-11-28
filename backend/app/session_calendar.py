@@ -46,36 +46,42 @@ def load_calendar(path: str | Path) -> dict[date, dict[str, str]]:
             status = raw["status"].strip()
             allowed_statuses = {
                 "verified_open", "verified_closed",
-                "verified_exceptional_open", "verified_exceptional_closed",
+                "verified_exceptional_open", "verified_exceptional_closed", "project_accepted_open",
             }
             if status not in allowed_statuses:
                 raise ValueError(f"line {line}: unsupported evidence-backed calendar status {status!r}")
-            if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "raw_evidence_sha256", "retrieved_at_utc", "verified_at_utc", "scope")):
-                raise ValueError(f"line {line}: verified calendar rows require source, URI, raw hash, retrieval/verification timestamps and scope")
-            digest = raw["raw_evidence_sha256"].strip().lower()
-            if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
-                raise ValueError(f"line {line}: raw_evidence_sha256 must be a 64-character hex digest")
-            from datetime import datetime, timezone
-            timestamps = {}
-            for field in ("retrieved_at_utc", "verified_at_utc"):
-                try:
-                    parsed = datetime.fromisoformat(raw[field].strip().replace("Z", "+00:00"))
-                except ValueError as exc:
-                    raise ValueError(f"line {line}: {field} must be an ISO-8601 timestamp") from exc
-                if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
-                    raise ValueError(f"line {line}: {field} must include UTC timezone")
-                timestamps[field] = parsed.astimezone(timezone.utc)
-            if timestamps["verified_at_utc"] < timestamps["retrieved_at_utc"]:
-                raise ValueError(f"line {line}: verified_at_utc cannot precede retrieved_at_utc")
-            if raw["published_at"].strip():
-                try:
-                    published = datetime.fromisoformat(raw["published_at"].strip().replace("Z", "+00:00"))
-                except ValueError as exc:
-                    raise ValueError(f"line {line}: published_at must be an ISO-8601 timestamp when supplied") from exc
-                if published.tzinfo is None:
-                    raise ValueError(f"line {line}: published_at must include timezone")
-                if published.astimezone(timezone.utc) > timestamps["retrieved_at_utc"]:
-                    raise ValueError(f"line {line}: published_at cannot follow retrieved_at_utc")
+            if status == "project_accepted_open":
+                if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "scope", "notes")):
+                    raise ValueError(f"line {line}: project baseline rows require source, URI, scope and explanatory notes")
+                if raw["raw_evidence_sha256"].strip() or raw["retrieved_at_utc"].strip() or raw["verified_at_utc"].strip():
+                    raise ValueError(f"line {line}: project baseline cannot claim primary verification metadata")
+            else:
+                if not all(raw[field].strip() for field in ("source_id", "evidence_uri", "raw_evidence_sha256", "retrieved_at_utc", "verified_at_utc", "scope")):
+                    raise ValueError(f"line {line}: verified calendar rows require source, URI, raw hash, retrieval/verification timestamps and scope")
+                digest = raw["raw_evidence_sha256"].strip().lower()
+                if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+                    raise ValueError(f"line {line}: raw_evidence_sha256 must be a 64-character hex digest")
+                from datetime import datetime, timezone
+                timestamps = {}
+                for field in ("retrieved_at_utc", "verified_at_utc"):
+                    try:
+                        parsed = datetime.fromisoformat(raw[field].strip().replace("Z", "+00:00"))
+                    except ValueError as exc:
+                        raise ValueError(f"line {line}: {field} must be an ISO-8601 timestamp") from exc
+                    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+                        raise ValueError(f"line {line}: {field} must include UTC timezone")
+                    timestamps[field] = parsed.astimezone(timezone.utc)
+                if timestamps["verified_at_utc"] < timestamps["retrieved_at_utc"]:
+                    raise ValueError(f"line {line}: verified_at_utc cannot precede retrieved_at_utc")
+                if raw["published_at"].strip():
+                    try:
+                        published = datetime.fromisoformat(raw["published_at"].strip().replace("Z", "+00:00"))
+                    except ValueError as exc:
+                        raise ValueError(f"line {line}: published_at must be an ISO-8601 timestamp when supplied") from exc
+                    if published.tzinfo is None:
+                        raise ValueError(f"line {line}: published_at must include timezone")
+                    if published.astimezone(timezone.utc) > timestamps["retrieved_at_utc"]:
+                        raise ValueError(f"line {line}: published_at cannot follow retrieved_at_utc")
             if day in entries:
                 raise ValueError(f"line {line}: duplicate calendar date {day}")
             entries[day] = {k: (v or "").strip() for k, v in raw.items()}
@@ -96,6 +102,8 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
     evidence = load_calendar(calendar_path)
     rows_seen = 0
     accepted = 0
+    verified_rows = 0
+    project_accepted_rows = 0
     quarantined: list[dict[str, Any]] = []
     seen: dict[tuple[str, str], dict[str, str]] = {}
     repeats: list[dict[str, Any]] = []
@@ -131,8 +139,12 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
                     if nums["high"] < max(nums["open"], nums["close"], nums["low"]) or nums["low"] > min(nums["open"], nums["close"], nums["high"]):
                         raise ValueError("invalid_ohlc_bounds")
                     cls = classify_date(day, evidence)
-                    if cls["classification"] not in {"verified_open", "verified_exceptional_open"}:
-                        raise ValueError("date_not_verified_open:" + cls["classification"])
+                    if cls["classification"] in {"verified_open", "verified_exceptional_open"}:
+                        verified_rows += 1
+                    elif cls["classification"] == "project_accepted_open":
+                        project_accepted_rows += 1
+                    else:
+                        raise ValueError("date_not_accepted_open:" + cls["classification"])
                     key = (symbol, day.isoformat())
                     comparable = {k: row[k] for k in OHLCV_FIELDS if k != "symbol"}
                     if key in seen:
@@ -149,9 +161,13 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
         "calendar_file": str(calendar_path),
         "calendar_sha256": hashlib.sha256(Path(calendar_path).read_bytes()).hexdigest(),
         "rows_seen": rows_seen, "rows_accepted": accepted, "rows_quarantined": len(quarantined),
-        "verified_calendar_dates": len(evidence), "files": per_file, "quarantine": quarantined,
-        "gate_pass": rows_seen > 0 and not quarantined,
-        "gate_note": "A pass applies only to supplied files and explicit calendar evidence; it is not proof of archive completeness.",
+        "verified_rows": verified_rows, "project_accepted_rows": project_accepted_rows,
+        "verified_calendar_dates": sum(1 for item in evidence.values() if item["status"] != "project_accepted_open"),
+        "project_accepted_calendar_dates": sum(1 for item in evidence.values() if item["status"] == "project_accepted_open"),
+        "files": per_file, "quarantine": quarantined,
+        "gate_pass": rows_seen > 0 and not quarantined and project_accepted_rows == 0,
+        "research_gate_pass": rows_seen > 0 and not quarantined,
+        "gate_note": "gate_pass requires explicit verified-open evidence; research_gate_pass may include project_accepted_open archive dates and is not exchange certification or canonical admission.",
     }
 
 

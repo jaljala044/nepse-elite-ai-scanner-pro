@@ -21,6 +21,20 @@ def audit_archive(root: Path) -> dict:
             year = int(report["requested_year"])
             if year_dir.name[:4] != str(year):
                 raise ValueError("capture directory year does not match requested_year")
+            # A matching payload hash does not authenticate the publisher.
+            # Bind each capture report to the official NEPSE endpoint/year.
+            from urllib.parse import parse_qs, urlsplit
+            source_url = report.get("source_url")
+            parsed_url = urlsplit(source_url if isinstance(source_url, str) else "")
+            if (parsed_url.scheme != "https"
+                    or parsed_url.hostname not in {"nepalstock.com.np", "www.nepalstock.com.np"}
+                    or parsed_url.path != "/api/nots/holiday/list"
+                    or parsed_url.username is not None
+                    or parsed_url.password is not None
+                    or parsed_url.port not in (None, 443)
+                    or parse_qs(parsed_url.query, keep_blank_values=True) != {"year": [str(year)]}
+                    or parsed_url.fragment):
+                raise ValueError("source URL is not the official NEPSE holiday endpoint for requested year")
             body_path = year_dir / "response-body.bin"
             parsed_path = year_dir / "parsed-response.json"
             if not body_path.is_file():
@@ -50,7 +64,14 @@ def audit_archive(root: Path) -> dict:
                 value = item.get("holidayDate")
                 if not isinstance(value, str):
                     raise ValueError(f"record {index} has no holidayDate")
-                day = date.fromisoformat(value)
+                try:
+                    day = date.fromisoformat(value)
+                except ValueError:
+                    raise ValueError(
+                        f"record {index} holidayDate must use canonical YYYY-MM-DD"
+                    ) from None
+                if day.isoformat() != value:
+                    raise ValueError(f"record {index} holidayDate must use canonical YYYY-MM-DD")
                 if day.year != year:
                     raise ValueError(f"record {index} date {value} is outside requested year {year}")
                 dates.append(value)

@@ -31,9 +31,13 @@ class OfficialNepseHolidayCaptureTests(unittest.TestCase):
         self.assertEqual(result["conflict_count"], 0)
         self.assertFalse(result["calendar_population_allowed"])
 
-    def test_canonical_calendar_contains_only_explicit_api_closures(self):
+    def test_calendar_keeps_project_open_baseline_separate_from_official_closures(self):
         calendar = load_calendar(ROOT / "data/reference/nepse_session_calendar.csv")
-        self.assertEqual(len(calendar), 41)
+        self.assertEqual(len(calendar), 3671)
+        self.assertEqual(
+            sum(row["status"] == "project_accepted_open" for row in calendar.values()),
+            3630,
+        )
         self.assertEqual(
             calendar[__import__("datetime").date.fromisoformat("2026-09-21")]["status"],
             "verified_exceptional_closed",
@@ -42,6 +46,9 @@ class OfficialNepseHolidayCaptureTests(unittest.TestCase):
             sum(row["status"] == "verified_closed" for row in calendar.values()),
             40,
         )
+        project_row = calendar[__import__("datetime").date.fromisoformat("2011-01-02")]
+        self.assertEqual(project_row["status"], "project_accepted_open")
+        self.assertEqual(project_row["raw_evidence_sha256"], "")
 
     def test_no_source_session_record_or_market_summary_conflicts_with_holiday_dates(self):
         manifest = json.loads(

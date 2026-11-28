@@ -56,3 +56,18 @@ The workflow artifact was downloaded for this review and checked locally:
 - Duplicate-date scan independently reproduces the sole duplicate key: 2020-04-13 (two distinct holiday descriptions).
 
 This confirms the downloaded artifact's byte integrity and raw-to-parsed consistency. It does **not** establish the endpoint's annual completeness, the legal/exchange scope of every holiday row, or actual open-session dates. The separate 2026 response remains the 41-row capture already recorded in the current calendar and its source hash.
+
+## Review-only closure-candidate ledger — Issue #5 follow-through
+
+A deterministic builder now converts the 12 byte-verified annual API captures (2015–2026) into a row-level JSON/CSV evidence ledger. It preserves all 499 source records, including both distinct records for 2020-04-13, and retains the source URL, capture timestamp, raw response path and SHA-256 for every row.
+
+- 12 annual captures; 499 original records; 498 unique year/date keys; one duplicate-date row.
+- 2018 and 2019 are explicitly flagged as incomplete-looking because their captured ranges end on 2018-11-09 and 2019-10-30.
+- All years remain `not_established` for annual completeness unless separately proven.
+- `instrumentTypeId` and `activeStatus` are retained exactly. Their null values are classified as unknown scope, not silently interpreted as all-market.
+- Every row is `review_only_closure_evidence_candidate`; canonical promotion is false.
+- No holiday absence is interpreted as an open session. This artifact is a closure-evidence review queue, not a complete trading calendar.
+
+New code: `backend/build_nepse_holiday_closure_candidate_ledger.py`; tests: `backend/tests/test_nepse_holiday_closure_candidate_ledger.py`; exact-head workflow: `.github/workflows/nepse-holiday-closure-candidate-ledger.yml`.
+
+The remaining Issue #5 gate is still to acquire and independently verify actual exchange open-session observations and immutable copies of the 2022 and 2026 schedule-change notices, then join those observations to the 196,784 row-adjacency candidates. The new ledger does not claim that step is complete.

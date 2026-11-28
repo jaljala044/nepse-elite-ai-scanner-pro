@@ -164,6 +164,43 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
                           observation("chukul", bad)])
         self.assertEqual(result["status"], "PARTIAL_EVIDENCED")
 
+    def test_same_provider_with_different_feed_labels_is_not_independent(self):
+        result = resolve_record_by_two_source_match(
+            record_type="chart", record_key="AAA|2026-01-02",
+            observations=[observation("sharehub", self.chart(), "feed-a"),
+                          observation("sharehub", self.chart(), "feed-b")])
+        self.assertFalse(result["canonical_candidate"])
+
+    def test_shared_feed_with_low_date_overlap_is_not_independent(self):
+        result = resolve_record_by_two_source_match(
+            record_type="chart", record_key="AAA|2026-01-02",
+            observations=[observation("sharehub", self.chart(), "Feed-X",
+                                      ["2026-01-01", "2026-01-02"]),
+                          observation("chukul", self.chart(), "feed-x",
+                                      ["2026-01-02", "2026-01-03"])])
+        self.assertFalse(result["canonical_candidate"])
+
+    def test_inconsistent_floorsheet_amount_is_rejected(self):
+        result = resolve_record_by_two_source_match(
+            record_type="floorsheet", record_key="2026-01-02|C1",
+            observations=[observation("sharehub", self.floor("99")),
+                          observation("chukul", self.floor("99"))])
+        self.assertFalse(result["canonical_candidate"])
+
+    def test_wrong_record_key_is_rejected(self):
+        result = resolve_record_by_two_source_match(
+            record_type="chart", record_key="BBB|2026-01-02",
+            observations=[observation("sharehub", self.chart()),
+                          observation("chukul", self.chart())])
+        self.assertFalse(result["canonical_candidate"])
+
+    def test_record_date_absent_from_source_dates_is_rejected(self):
+        result = resolve_record_by_two_source_match(
+            record_type="chart", record_key="AAA|2026-01-02",
+            observations=[observation("sharehub", self.chart(), dates=["2026-01-01"]),
+                          observation("chukul", self.chart(), dates=["2026-01-01"])])
+        self.assertFalse(result["canonical_candidate"])
+
 
 if __name__ == "__main__":
     unittest.main()

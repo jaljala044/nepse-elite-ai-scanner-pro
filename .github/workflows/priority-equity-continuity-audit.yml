@@ -1,0 +1,116 @@
+name: Priority equity continuity audit
+on:
+  pull_request:
+    paths:
+      - 'backend/audit_priority_equity_continuity.py'
+      - 'backend/classify_historical_continuity_gaps.py'
+      - 'backend/crosscheck_unresolved_equity_gaps.py'
+      - 'backend/crosscheck_sharesansar_no_trade.py'
+      - 'backend/build_historical_research_overlay.py'
+      - 'backend/build_historical_eligibility_manifest.py'
+      - 'backend/build_research_timeframes.py'
+      - 'backend/audit_indicator_warmup.py'
+      - 'backend/audit_extended_history.py'
+      - 'backend/build_extended_research_inventory.py'
+      - 'backend/classify_extended_history_gaps.py'
+      - 'backend/inventory_corporate_action_sources.py'
+      - 'backend/build_corporate_action_review_queue.py'
+      - 'backend/reconcile_extended_recovery_candidates.py'
+      - 'backend/stage_additional_recovery.py'
+      - 'backend/diagnose_extended_source_exceptions.py'
+      - 'backend/audit_disputed_opening_prices.py'
+      - 'backend/crosscheck_company_price_exceptions.py'
+      - 'backend/diagnose_remaining_recovery_exceptions.py'
+      - 'data/reference/historical_listing_evidence_candidates_2026-11-26.csv'
+      - 'data/reference/pfl_suspension_evidence_2026-11-26.csv'
+      - '.github/workflows/priority-equity-continuity-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire public historical archive
+        run: git clone --mirror https://github.com/jaljala044/nepse-history-starter.git /tmp/nepse-history.git
+      - name: Audit remaining priority equities
+        run: |
+          python backend/audit_priority_equity_continuity.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --output /tmp/audit/remaining_223.csv
+      - name: Audit exception equities
+        run: |
+          python backend/audit_priority_equity_continuity.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --group exception_review --skip 0 --output /tmp/audit/exception_26.csv
+      - name: Classify missing observations
+        run: |
+          python backend/validate_equity_lifecycle_input.py --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --crosswalk data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv
+          python backend/classify_historical_continuity_gaps.py --audits data/reference/historical_continuity_batch_00*_2026-11-26.csv /tmp/audit/remaining_223.csv /tmp/audit/exception_26.csv --lifecycle data/reference/nepse_equity_lifecycle_coverage_input_2026-11-26.csv --july data/reference/july24_separate_volume_observations_2026-11-26.csv --listing data/reference/historical_listing_evidence_candidates_2026-11-26.csv --suspension data/reference/pfl_suspension_evidence_2026-11-26.csv --output /tmp/audit/classified_gaps.csv
+      - name: Crosscheck unresolved observations
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/socrateai-official/nepse-open-data.git /tmp/secondary
+          git -C /tmp/secondary cat-file -e ffb4b0d4b348ed17d07236f914d3efbccac722f6^{commit}
+          python backend/crosscheck_unresolved_equity_gaps.py --gaps /tmp/audit/classified_gaps.csv --repo /tmp/secondary --revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/unresolved_crosscheck.csv
+      - name: Compare separate ShareSansar daily capture
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/srijankarki07/nepse-data.git /tmp/sharesansar
+          python backend/crosscheck_sharesansar_no_trade.py --gaps /tmp/audit/unresolved_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/sharesansar_crosscheck.csv
+      - name: Build separate historical research overlay
+        run: |
+          python backend/build_historical_research_overlay.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --candidates data/reference/july24_historical_recovery_candidates_2026-11-26.csv --secondary /tmp/sharesansar --gaps /tmp/audit/classified_gaps.csv --output /tmp/audit/research_overlay.csv --coverage /tmp/audit/stock_coverage.csv
+      - name: Generate historical eligibility manifest
+        run: |
+          python backend/build_historical_eligibility_manifest.py --coverage /tmp/audit/stock_coverage.csv --gaps /tmp/audit/classified_gaps.csv --overlay /tmp/audit/research_overlay.csv --output /tmp/audit/historical_eligibility_manifest.csv
+      - name: Build research-only weekly and monthly timeframes
+        run: |
+          python backend/build_research_timeframes.py --overlay /tmp/audit/research_overlay.csv --sessions data/reference/historical_120_observed_sessions_review_2026-11-26.csv --weekly /tmp/audit/research_weekly.csv --monthly /tmp/audit/research_monthly.csv
+      - name: Audit indicator warmup availability
+        run: |
+          python backend/audit_indicator_warmup.py --overlay /tmp/audit/research_overlay.csv --weekly /tmp/audit/research_weekly.csv --monthly /tmp/audit/research_monthly.csv --manifest /tmp/audit/historical_eligibility_manifest.csv --output /tmp/audit/indicator_warmup.csv
+      - name: Audit extended historical lookback
+        run: |
+          python backend/audit_extended_history.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/nepse_primary_observed_open_sessions_2025-2026.csv --output /tmp/audit/extended_history.csv
+      - name: Build extended research inventory and warmup
+        run: |
+          python backend/build_extended_research_inventory.py --archive /tmp/nepse-history.git --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --sessions data/reference/nepse_primary_observed_open_sessions_2025-2026.csv --recovery data/reference/july24_historical_recovery_candidates_2026-11-26.csv --output /tmp/audit/extended_research.csv --warmup /tmp/audit/extended_warmup.csv
+      - name: Classify extended historical gaps
+        run: |
+          python backend/classify_extended_history_gaps.py --extended /tmp/audit/extended_history.csv --overlay /tmp/audit/extended_research.csv --prior-gaps /tmp/audit/classified_gaps.csv --prior-crosscheck /tmp/audit/sharesansar_crosscheck.csv --listing data/reference/historical_listing_evidence_candidates_2026-11-26.csv --suspension data/reference/pfl_suspension_evidence_2026-11-26.csv --output /tmp/audit/extended_gap_classification.csv
+      - name: Inventory corporate action evidence
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/SamirWagle/Nepse-All-Scraper.git /tmp/corporate-actions
+          git -C /tmp/corporate-actions cat-file -e 145cd9ae9935d45384c41b0b098c87382f508d12^{commit}
+          python backend/inventory_corporate_action_sources.py --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --queue data/reference/historical_continuity_review_queue_2026-11-26.csv --output /tmp/audit/corporate_action_inventory.csv
+      - name: Crosscheck remaining extended gaps against pinned secondary archives
+        run: |
+          python backend/crosscheck_unresolved_equity_gaps.py --gaps /tmp/audit/extended_gap_classification.csv --repo /tmp/secondary --revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/extended_secondary_crosscheck.csv
+          python backend/crosscheck_sharesansar_no_trade.py --gaps /tmp/audit/extended_secondary_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/extended_sharesansar_crosscheck.csv
+      - name: Build corporate action event review queue
+        run: |
+          python backend/build_corporate_action_review_queue.py --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --inventory /tmp/audit/corporate_action_inventory.csv --output /tmp/audit/corporate_action_review_queue.csv
+      - name: Reconcile extended recovery candidates
+        run: |
+          python backend/reconcile_extended_recovery_candidates.py --gaps /tmp/audit/extended_secondary_crosscheck.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/extended_recovery_reconciliation.csv
+      - name: Stage additional corroborated recovery candidates
+        run: |
+          python backend/stage_additional_recovery.py --reconciliation /tmp/audit/extended_recovery_reconciliation.csv --overlay /tmp/audit/extended_research.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/additional_recovery.csv --coverage /tmp/audit/updated_extended_coverage.csv
+      - name: Diagnose remaining historical recovery exceptions
+        run: |
+          python backend/diagnose_remaining_recovery_exceptions.py --reconciliation /tmp/audit/extended_recovery_reconciliation.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --output /tmp/audit/remaining_exception_diagnostics.csv
+      - name: Diagnose remaining historical source exceptions
+        run: |
+          python backend/diagnose_extended_source_exceptions.py --reconciliation /tmp/audit/extended_recovery_reconciliation.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --secondary /tmp/secondary --secondary-revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/extended_source_exception_diagnostics.csv
+      - name: Audit disputed opening prices
+        run: |
+          python backend/audit_disputed_opening_prices.py --diagnostics /tmp/audit/extended_source_exception_diagnostics.csv --overlay /tmp/audit/extended_research.csv --repo /tmp/sharesansar --revision 688d59c03915dcee73ecad4230d2083a41c61764 --secondary /tmp/secondary --secondary-revision ffb4b0d4b348ed17d07236f914d3efbccac722f6 --output /tmp/audit/disputed_opening_prices.csv
+      - name: Crosscheck company-wise historical prices
+        run: |
+          python backend/crosscheck_company_price_exceptions.py --diagnostics /tmp/audit/extended_source_exception_diagnostics.csv --repo /tmp/corporate-actions --revision 145cd9ae9935d45384c41b0b098c87382f508d12 --output /tmp/audit/company_price_exception_crosscheck.csv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: remaining-223-equity-audit
+          path: /tmp/audit/*.csv
+          if-no-files-found: error

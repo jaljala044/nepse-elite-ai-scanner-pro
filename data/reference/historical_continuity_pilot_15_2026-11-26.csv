@@ -1,0 +1,16 @@
+symbol,archive_blob_sha,reference_dates,valid_structural_rows,missing_dates,invalid_dates,duplicate_dates,error,backtest_promotion_allowed
+AHL,849d48c09dc376d5ea4872dc980358a2b90d4e13,120,,,,,fetch_or_parse_failed,false
+AHPC,003a8c1d99a573cd5ffaf96c17100dbc6251a194,120,,,,,fetch_or_parse_failed,false
+AKJCL,1d9e25da110be52dc7522cded1db4efe31c1b03b,120,,,,,fetch_or_parse_failed,false
+AKPL,8e8359da5117ddda99bba2df20c12e93157b36d5,120,,,,,fetch_or_parse_failed,false
+ALBSL,a5630049b1187498568f812722b4b18aa8786bb4,120,,,,,fetch_or_parse_failed,false
+ALICL,8294b9a368af54b1f2a7f3c2729217f3d685974d,120,,,,,fetch_or_parse_failed,false
+AVYAN,af17f9402241ee6113133211ac7d7bca03dbb7ee,120,,,,,fetch_or_parse_failed,false
+BANDIPUR,a64cd11888cf45e905a89e07eb10702d71e48426,120,,,,,fetch_or_parse_failed,false
+BBC,9567fc34a93e02fdbddb25989fd5c8be9f0e524a,120,,,,,fetch_or_parse_failed,false
+BEDC,24e60f29e5bb01ce8f3dd5c69405799b618c9da1,120,,,,,fetch_or_parse_failed,false
+BFC,150b88bac6345ab608a0afbd95880166bff860ed,120,,,,,fetch_or_parse_failed,false
+BHCL,dd4a4a0276c888ce3bbed2b0ba1cbf05f1673d53,120,,,,,fetch_or_parse_failed,false
+BHL,140bc21ea228bc4b03e73bdb762f86f6747d2118,120,,,,,fetch_or_parse_failed,false
+BHPL,568bcba35188b8032d549e7952729b1ede74500c,120,,,,,fetch_or_parse_failed,false
+BPCL,af76d3d7e742186f652c17e3bb688bc4e08baae1,120,,,,,fetch_or_parse_failed,false

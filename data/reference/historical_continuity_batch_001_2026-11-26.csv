@@ -1,0 +1,9 @@
+symbol,requested_archive_blob_sha,reference_dates,valid_structural_rows,missing_dates,invalid_dates,duplicate_dates,error,backtest_promotion_allowed
+AHL,849d48c09dc376d5ea4872dc980358a2b90d4e13,120,119,2026-07-24,,,,false
+AHPC,003a8c1d99a573cd5ffaf96c17100dbc6251a194,120,119,2026-07-24,,,,false
+AKJCL,1d9e25da110be52dc7522cded1db4efe31c1b03b,120,119,2026-07-24,,,,false
+AKPL,8e8359da5117ddda99bba2df20c12e93157b36d5,120,119,2026-07-24,,,,false
+ALBSL,a5630049b1187498568f812722b4b18aa8786bb4,120,119,2026-07-24,,,,false
+ALICL,8294b9a368af54b1f2a7f3c2729217f3d685974d,120,119,2026-07-24,,,,false
+AVYAN,af17f9402241ee6113133211ac7d7bca03dbb7ee,120,119,2026-07-24,,,,false
+BANDIPUR,a64cd11888cf45e905a89e07eb10702d71e48426,120,119,2026-07-24,,,,false

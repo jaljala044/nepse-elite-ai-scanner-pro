@@ -1,0 +1,13 @@
+symbol,requested_archive_blob_sha,reference_dates,valid_structural_rows,missing_dates,invalid_dates,duplicate_dates,error,backtest_promotion_allowed
+CLI,01ec26339586a6967ad8fe77eb5cc2fcaebd1ef0,120,119,2026-07-24,,,,false
+CORBL,b56de8387b5d6ef6ce0fd5f9cc1b0de7970066a0,120,119,2026-07-24,,,,false
+CREST,a4a3bbded7bfa2790104ac492d0765edfdbae2b5,120,119,2026-07-24,,,,false
+DHEL,bfa72fc9b349bd99ae8dff1880e24c71d70eea84,120,119,2026-07-24,,,,false
+DOLTI,058a12fd16e09d3b290b4bcb4c319e2eb1a8f937,120,119,2026-07-24,,,,false
+DORDI,54051eceded727a7aa247e5995a1b2e3acc195b3,120,119,2026-07-24,,,,false
+EDBL,1157bf6e00de59c313316d86e9084a140a8eb6db,120,119,2026-07-24,,,,false
+EHPL,f51734d563162d157d34a972dd5e84fd3f555d1e,120,119,2026-07-24,,,,false
+FOWAD,e083da8838d90ffc64111da58223c1d6792f135d,120,119,2026-07-24,,,,false
+GBIME,e572dea6396fd85a23eb10ed89ec12beb384cdda,120,119,2026-07-24,,,,false
+GCIL,3b01edc248981333c81400a925d3f9741114cc20,120,119,2026-07-24,,,,false
+GHL,38c708cb136e064febb2b60c069029f85b548bdf,120,119,2026-07-24,,,,false

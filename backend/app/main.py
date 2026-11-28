@@ -469,6 +469,39 @@ def history(symbol: str):
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
 
+@app.get("/v1/history/{symbol}")
+def history_page(symbol: str, offset: int = 0, limit: int = 500, snapshot: str | None = None):
+    import hashlib
+    import json
+    if offset < 0 or not 1 <= limit <= 1000:
+        raise HTTPException(422, "Invalid pagination")
+    rows = DATA.get(symbol.upper())
+    if rows is None:
+        raise HTTPException(404, "Symbol not found")
+    ordered = sorted(rows, key=lambda r: str(r["date"]))
+    digest = hashlib.sha256(json.dumps(ordered, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+    if (offset > 0 and snapshot is None) or (snapshot is not None and snapshot != digest):
+        raise HTTPException(409, "History changed or snapshot missing; restart pagination")
+    if offset > len(ordered):
+        raise HTTPException(422, "Offset outside history")
+    end = min(offset + limit, len(ordered))
+    return {"symbol": symbol.upper(), "rows": ordered[offset:end], "total": len(ordered),
+            "snapshot": digest, "offset": offset, "next_offset": end if end < len(ordered) else None,
+            "status": "observed_history_not_independently_certified"}
+
+@app.get("/v1/portfolio/volume/{symbol}")
+def portfolio_volume_endpoint(symbol: str, as_of: date):
+    from .portfolio_volume import load_portfolio_volume
+    import re
+    symbol = symbol.upper()
+    if not re.fullmatch(r"[A-Z0-9]{1,20}", symbol):
+        raise HTTPException(422, "Invalid symbol")
+    if EQUITY_UNIVERSE is None or symbol not in EQUITY_UNIVERSE["symbols"]:
+        return {"symbol": symbol, "as_of": str(as_of), "status": "unavailable",
+                "reason": "equity_universe_gate", "rows": [],
+                "average_daily_quantity": None, "production_eligible": False}
+    return load_portfolio_volume(symbol, as_of, REVIEWED_ROWS)
+
 @app.get("/v1/volume-profile/{symbol}")
 def volume_profile(symbol: str, start: date, end: date):
     from .volume_profile_store import load_profile
@@ -535,7 +568,33 @@ def reliability():
 
 
 from fastapi import Request, Depends
-from .private_accounts import principal, watchlist, set_watchlist
+from .private_accounts import principal, proxy_principal, issue_mobile_session, revoke_mobile_session, watchlist, set_watchlist, list_alerts, add_alert, delete_alert
+
+@app.post("/v1/account/mobile/session")
+def mobile_session_issue(request: Request, owner: str = Depends(proxy_principal)):
+    # Require a gateway-injected proof separate from its identity header.
+    import hmac
+    proof = os.getenv("NEPSE_MOBILE_GATEWAY_PROOF", "")
+    provided = request.headers.get("x-nepse-mobile-gateway-proof", "")
+    if len(proof)<32 or not hmac.compare_digest(proof.encode(),provided.encode()):
+        raise HTTPException(403,"Trusted mobile exchange required")
+    if os.getenv("NEPSE_MOBILE_EXCHANGE_ENABLED") != "1":
+        raise HTTPException(503,"Mobile identity exchange unavailable")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(issue_mobile_session(owner),headers={"Cache-Control":"no-store"})
+
+@app.post("/v1/account/mobile/logout")
+def mobile_session_logout(request: Request):
+    revoke_mobile_session(request.headers.get("authorization",""))
+    return {"revoked":True}
+
+@app.get("/v1/account/session")
+def account_session(owner: str = Depends(principal)):
+    admins = {s.strip() for s in os.getenv("NEPSE_ADMIN_SUBJECTS", "").split(",") if s.strip()}
+    return {"authenticated": True, "role": "administrator" if owner in admins else "researcher",
+            "permissions": {"watchlist": True, "research": True,
+                            "admin_ingestion": owner in admins, "ai_recommendations": False},
+            "mode": "research_only"}
 
 class WatchlistRequest(BaseModel):
     symbols: list[str] = Field(max_length=300)
@@ -551,6 +610,29 @@ def account_watchlist_update(payload: WatchlistRequest, owner: str = Depends(pri
     except ValueError as exc:
         raise HTTPException(422,str(exc)) from exc
 
+class PriceAlertRequest(BaseModel):
+    symbol: str = Field(max_length=20)
+    direction: str = Field(max_length=5)
+    threshold: str = Field(max_length=32)
+
+@app.get("/v1/account/alerts")
+def account_alerts(owner: str = Depends(principal)):
+    return {"rules": list_alerts(owner), "delivery_enabled": False}
+
+@app.post("/v1/account/alerts")
+def account_alert_add(payload: PriceAlertRequest, owner: str = Depends(principal)):
+    try:
+        return {"rules": add_alert(owner,payload.symbol,payload.direction,payload.threshold), "delivery_enabled": False}
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+
+@app.delete("/v1/account/alerts")
+def account_alert_delete(payload: PriceAlertRequest, owner: str = Depends(principal)):
+    try:
+        return {"rules": delete_alert(owner,payload.symbol,payload.direction,payload.threshold), "delivery_enabled": False}
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+
 @app.middleware("http")
 async def private_deployment_gate(request: Request, call_next):
     # Opt-in development API only. A deployed service must authenticate all non-health routes.
@@ -558,13 +640,15 @@ async def private_deployment_gate(request: Request, call_next):
         try:
             owner = principal(request)
             if request.url.path in {"/v1/ingest/csv","/v1/imports"}:
+                if request.headers.get("authorization"):
+                    raise HTTPException(401,"Proxy authentication required for ingestion")
                 admins = {s.strip() for s in os.getenv("NEPSE_ADMIN_SUBJECTS","").split(",") if s.strip()}
                 if owner not in admins:
                     from fastapi.responses import JSONResponse
                     return JSONResponse({"detail":"Administrator required"},status_code=403)
         except HTTPException:
             from fastapi.responses import JSONResponse
-            return JSONResponse({"detail":"Authentication required"},status_code=401)
+            return JSONResponse({"detail":"Authentication required"},status_code=401,headers={"Cache-Control":"no-store"})
     response=await call_next(request)
     response.headers["X-Content-Type-Options"]="nosniff"
     response.headers["Referrer-Policy"]="no-referrer"

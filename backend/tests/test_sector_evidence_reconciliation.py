@@ -91,6 +91,11 @@ class SectorEvidenceReconciliationTests(unittest.TestCase):
         self.assertEqual(old["results"]["AAA"]["sector_code"], "BANK")
         self.assertEqual(new["results"]["AAA"]["sector_code"], "BANK")
 
+    def test_expired_evidence_is_withheld(self):
+        result = self.reconcile([row(effective_to="2026-11-27")])
+        self.assertEqual(result["results"]["AAA"]["status"], "missing_evidence")
+        self.assertIsNone(result["results"]["AAA"]["sector_code"])
+
     def test_missing_symbol_is_reported_not_neutral(self):
         result = self.reconcile([], symbols=("AAA", "BBB"))
         self.assertEqual(result["results"]["BBB"]["status"], "missing_evidence")

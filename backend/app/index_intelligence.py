@@ -267,3 +267,62 @@ def build_verified_index_intelligence(rows, *, verified_session_dates, index_cod
             "Sub-indices require separately verified index identities and records.",
         ],
     }
+
+
+def build_verified_rotation_dashboard(rows, *, verified_session_dates,
+                                      expected_indices, decision_time):
+    """Gate the existing rotation proxy on exact final point-in-time index rows.
+
+    The caller is a trusted backend with an independently verified calendar
+    and index identities. This is not a proprietary RRG calculation.
+    """
+    cutoff = _aware_utc(decision_time, "decision_time")
+    local_day = cutoff.astimezone(timezone(timedelta(hours=5, minutes=45))).date().isoformat()
+    if (not isinstance(verified_session_dates, list)
+            or any(not isinstance(d, str) or date.fromisoformat(d).isoformat() != d
+                   for d in verified_session_dates)
+            or verified_session_dates != sorted(set(verified_session_dates))):
+        raise ValueError("invalid_verified_calendar")
+    days = [d for d in verified_session_dates if d <= local_day]
+    if (not isinstance(expected_indices, list) or "NEPSE" not in expected_indices
+            or any(not isinstance(k, str) or not k.strip() for k in expected_indices)
+            or len(set(expected_indices)) != len(expected_indices)):
+        raise ValueError("invalid_expected_indices")
+    if not isinstance(rows, list) or any(not isinstance(r, dict) for r in rows):
+        raise ValueError("invalid_index_rows")
+    accepted, seen, sources = [], set(), set()
+    for r in rows:
+        k, day = r.get("index_code"), r.get("session_date")
+        if not isinstance(k, str) or not isinstance(day, str) or k not in expected_indices or day not in days:
+            continue
+        key = (k, day)
+        if key in seen:
+            raise ValueError("duplicate_index_session")
+        seen.add(key)
+        if (r.get("record_type") != "index_ohlcv"
+                or r.get("source_validation_status") != "verified"
+                or r.get("finality_status") != "final"
+                or not isinstance(r.get("source_id"), str) or not r["source_id"].strip()
+                or not _sha256(r.get("source_payload_sha256"))):
+            continue
+        try:
+            if _aware_utc(r.get("available_at"), "available_at") > cutoff:
+                continue
+            if isinstance(r.get("close"), bool):
+                continue
+            close = float(r["close"])
+            if not isfinite(close) or close <= 0:
+                continue
+        except (ValueError, TypeError, KeyError, OverflowError):
+            continue
+        accepted.append(dict(index=k, date=day, close=close, reviewed=True,
+                             evidence_id=r["source_payload_sha256"]))
+        sources.add(r["source_id"])
+    result = index_intelligence(accepted, sessions=days, benchmark="NEPSE",
+                                expected_indices=expected_indices, calendar_verified=True)
+    indices = result.get("indices", {})
+    missing = sorted(k for k in expected_indices if not indices.get(k, {}).get("rotation_trail"))
+    return dict(result, status="research_only" if not missing else "insufficient_evidence",
+                missing_indices=missing, coverage_ratio=(len(expected_indices)-len(missing))/len(expected_indices),
+                source_ids=sorted(sources), signals_enabled=False, trade_actions_enabled=False,
+                production_score=None, probability=None)

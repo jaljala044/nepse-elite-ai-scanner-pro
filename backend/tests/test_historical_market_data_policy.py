@@ -165,5 +165,16 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
         self.assertEqual(result["status"], "PARTIAL_EVIDENCED")
 
 
+    def test_same_publisher_with_different_upstream_labels_is_not_independent(self):
+        first = observation("sharehub", self.chart(), "claimed-feed-a")
+        second = observation("chukul", self.chart(), "claimed-feed-b")
+        second["publisher_identity"] = first["publisher_identity"]
+        result = resolve_record_by_two_source_match(
+            record_type="chart", record_key="AAA|2026-01-02",
+            observations=[first, second])
+        self.assertEqual(result["status"], "PARTIAL_EVIDENCED")
+        self.assertFalse(result["canonical_candidate"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -54,6 +54,7 @@ class PublicExportHardeningTests(unittest.TestCase):
                          ["duplicate_symbol_session", "duplicate_symbol_session"])
         self.assertEqual(result["rejected"][0]["raw_row"], invalid)
         self.assertEqual(result["rejected"][1]["raw_row"], valid)
+        self.assertEqual(result["rejected"][0]["prior_reason"], "invalid_ohlc_relationship")
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,25 @@ from app.feature_pipeline import build_feature_snapshot
 
 
 class FeaturePipelineTests(unittest.TestCase):
+    def test_runtime_quarantine_withholds_entire_symbol_history(self):
+        from unittest.mock import patch
+        rows = []
+        for symbol in ("AAA", "BBB"):
+            for day in ("2026-11-26", "2026-11-28"):
+                rows.append({
+                    "record_type": "ohlcv", "symbol": symbol,
+                    "session_date": day, "available_at": day + "T16:00:00Z",
+                    "open": 10, "high": 11, "low": 9, "close": 10,
+                    "previous_close": 9, "volume": 100,
+                })
+        with patch("app.feature_pipeline.runtime_quarantine_keys",
+                   return_value=frozenset({("AAA", "2026-11-27")})):
+            result = build_feature_snapshot(rows, "2026-11-29T12:00:00Z", ["AAA", "BBB"])
+        self.assertEqual(result["quarantined_input_count"], 2)
+        self.assertNotIn("AAA", result["security_features"])
+        self.assertIn("BBB", result["security_features"])
+        self.assertTrue(result["quarantine_checked"])
+
     def test_future_rows_are_excluded_before_feature_calculation(self):
         rows = [
             {"record_type":"ohlcv","symbol":"AAA","session_date":"2026-11-23",

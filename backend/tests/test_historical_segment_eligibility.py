@@ -99,6 +99,56 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("future_expected_session:" + future, result["reasons"])
         self.assertFalse(result["exploratory_replay_eligible"])
 
+    def _same_day_session_inputs(self, include_finality):
+        day = "2026-01-01"
+        cutoff = "2026-01-01T15:30:00+05:45"
+        statuses = dict(self.statuses, **{day: "traded"})
+        calendar_evidence = {
+            "status": "traded", "source_id": "nepse-calendar-v1",
+            "source_record_ref": f"session:{day}",
+            "source_url": "https://www.nepalstock.com/calendar/2026",
+            "evidence_sha256": "d" * 64, "payload_sha256": "d" * 64,
+            "rights_status": "approved",
+            "available_at": "2026-01-01T15:10:00+05:45",
+            "retrieved_at": "2026-01-01T15:10:00+05:45",
+        }
+        if include_finality:
+            calendar_evidence["session_finality_evidence"] = {
+                "source_id": "nepse-session-finality-v1",
+                "source_record_ref": f"finality:{day}",
+                "source_url": "https://www.nepalstock.com/api/session-finality",
+                "evidence_sha256": "e" * 64, "payload_sha256": "e" * 64,
+                "rights_status": "approved",
+                "available_at": "2026-01-01T15:15:00+05:45",
+                "retrieved_at": "2026-01-01T15:15:00+05:45",
+                "claims": {
+                    "session_date": day, "session_status": "traded",
+                    "finality_status": "complete",
+                    "finalized_at": "2026-01-01T15:15:00+05:45",
+                },
+            }
+        evidence = dict(self.session_evidence, **{day: calendar_evidence})
+        row = dict(self.row(day), available_at="2026-01-01T15:10:00+05:45")
+        return {
+            "expected_sessions": self.sessions + [day],
+            "session_statuses": statuses,
+            "session_evidence": evidence,
+            "records": self.records + [row],
+            "decision_cutoff": cutoff,
+        }
+
+    def test_same_day_session_requires_finality_evidence(self):
+        inputs = self._same_day_session_inputs(include_finality=False)
+        result = self.evaluate(**inputs)
+        self.assertIn("same_day_session_finality_unverified:2026-01-01", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_same_day_session_with_finality_before_cutoff_is_eligible(self):
+        inputs = self._same_day_session_inputs(include_finality=True)
+        result = self.evaluate(**inputs)
+        self.assertTrue(result["exploratory_replay_eligible"])
+        self.assertEqual(result["verified_traded_session_count"], 121)
+
     def test_complete_verified_segment_is_exploratory_only(self):
         result = self.evaluate()
         self.assertTrue(result["exploratory_replay_eligible"])

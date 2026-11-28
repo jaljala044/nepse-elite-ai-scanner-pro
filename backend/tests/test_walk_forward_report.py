@@ -17,6 +17,39 @@ class WalkForwardReportTests(unittest.TestCase):
         self.assertEqual(report["folds"][0]["test_start"], "2026-01-03")
         self.assertEqual(report["folds"][0]["test_rows"], 1)
 
+    def test_quarantine_marker_rejects_forecast_even_without_runtime_ledger(self):
+        rows = [
+            {"observation_date": "2026-01-01", "actual": 1, "probability": 0.8,
+             "quarantined": True},
+            {"observation_date": "2026-01-02", "actual": 0, "probability": 0.2},
+        ]
+        with self.assertRaisesRegex(ValueError, "quarantined forecast input"):
+            build_walk_forward_report(rows, 1, 1)
+
+    def test_runtime_ledger_requires_constituent_session_lineage(self):
+        from unittest.mock import patch
+        rows = [
+            {"observation_date": "2026-01-01", "actual": 1, "probability": 0.8},
+            {"observation_date": "2026-01-02", "actual": 0, "probability": 0.2},
+        ]
+        with patch("app.walk_forward_report.runtime_quarantine_keys",
+                   return_value=frozenset()):
+            with self.assertRaisesRegex(ValueError, "missing forecast constituent-session lineage"):
+                build_walk_forward_report(rows, 1, 1)
+
+    def test_runtime_ledger_rejects_quarantined_constituent_gap(self):
+        from unittest.mock import patch
+        rows = [
+            {"observation_date": "2026-01-01", "actual": 1, "probability": 0.8,
+             "symbol": "AAA", "constituent_sessions": ["2026-01-01", "2026-01-03"]},
+            {"observation_date": "2026-01-02", "actual": 0, "probability": 0.2,
+             "symbol": "BBB", "constituent_sessions": ["2026-01-02"]},
+        ]
+        with patch("app.walk_forward_report.runtime_quarantine_keys",
+                   return_value=frozenset({("AAA", "2026-01-02")})):
+            with self.assertRaisesRegex(ValueError, "quarantined forecast constituent session"):
+                build_walk_forward_report(rows, 1, 1)
+
     def test_insufficient_history_returns_no_folds(self):
         rows = [{"observation_date":"2026-01-01","actual":1,"probability":0.8}]
         self.assertEqual(build_walk_forward_report(rows, 2, 1)["status"], "insufficient_sample")

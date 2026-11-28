@@ -6,8 +6,10 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 
 
-def _canonical_iso_date(value, field_name: str) -> str:
-    """Require an exact YYYY-MM-DD string; reject permissive ISO variants."""
+def _canonical_iso_date(value, field_name: str, *, allow_date_object: bool = False) -> str:
+    """Require canonical YYYY-MM-DD strings; optionally accept typed date values."""
+    if allow_date_object and type(value) is date:
+        return value.isoformat()
     if not isinstance(value, str):
         raise ValueError(f"{field_name} must be canonical YYYY-MM-DD")
     try:
@@ -35,7 +37,7 @@ def build_historical_coverage_report(records: list[dict], *,
     unexpected_rows = defaultdict(list)
     for index, row in enumerate(records):
         try:
-            session_date = _canonical_iso_date(row["session_date"], "session_date")
+            session_date = _canonical_iso_date(row["session_date"], "session_date", allow_date_object=True)
             symbol = str(row["symbol"]).strip().upper()
             source = str(row["source_id"]).strip()
             close = Decimal(str(row["close"]))

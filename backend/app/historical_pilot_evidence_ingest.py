@@ -71,7 +71,12 @@ def ingest_captured_evidence_csv(*, dataset_kind: str, package_report: Mapping[s
         return {"status":"BLOCKED","rows":[],"errors":[{"reason":"capture_package_not_accepted"}],
                 "all_rows_accepted":False,"backtest_admission_allowed":False,"production_enabled":False}
     required = set(schema["required"])
-    if not isinstance(column_map, Mapping) or set(column_map) < required or len(set(column_map.values())) != len(column_map):
+    if not isinstance(column_map, Mapping) or not required.issubset(column_map):
+        raise ValueError("column_map_must_cover_required_semantic_fields_with_unique_source_columns")
+    mapped_columns = list(column_map.values())
+    if (any(not isinstance(key, str) or not key.strip() for key in column_map)
+            or any(not isinstance(value, str) or not value.strip() for value in mapped_columns)
+            or len(set(mapped_columns)) != len(mapped_columns)):
         raise ValueError("column_map_must_cover_required_semantic_fields_with_unique_source_columns")
     try:
         cutoff = _aware(decision_cutoff)

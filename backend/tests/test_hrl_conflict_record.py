@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from backend.validation.hrl_conflict_record import HRLConflictRecord
+from validation.hrl_conflict_record import HRLConflictRecord
 
 
 HISTORY_SHA = "2aaac3df4b8bf236d1d1864fc5af96e6548eac95dc20c23f97cec82d0c972db3"

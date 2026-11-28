@@ -196,12 +196,13 @@ def resolve_record_corrections(records: list[dict], *, decision_time: str) -> di
             by_id[rid] = {**record, "available_at": available}
         else:
             rejected.append({"record_id": rid, "reason": "not_available_at_cutoff"})
-    superseded, children = set(), {}
+    superseded, children, invalid = set(), {}, set()
     for rid, record in by_id.items():
         prior = record.get("supersedes_record_id")
         if prior:
             if prior not in by_id:
                 rejected.append({"record_id": rid, "reason": "superseded_record_missing_at_cutoff"})
+                invalid.add(rid)
                 continue
             if prior == rid or prior in children:
                 raise ValueError("invalid_or_forked_correction_chain")
@@ -214,7 +215,15 @@ def resolve_record_corrections(records: list[dict], *, decision_time: str) -> di
                 raise ValueError("correction_cycle_detected")
             seen.add(cursor)
             cursor = children[cursor]
-    active = [record for rid, record in by_id.items() if rid not in superseded]
+    # A correction with a missing predecessor is not an eligible active record.
+    # Propagate that invalidity through every descendant in its correction chain.
+    for rid in tuple(invalid):
+        cursor = rid
+        while cursor in children:
+            cursor = children[cursor]
+            invalid.add(cursor)
+    active = [record for rid, record in by_id.items()
+              if rid not in superseded and rid not in invalid]
     return {"all_versions": list(by_id.values()), "active_versions": active,
             "superseded_record_ids": sorted(superseded), "rejected": rejected,
             "correction_history_preserved": True, "canonical_correction_applied": False}

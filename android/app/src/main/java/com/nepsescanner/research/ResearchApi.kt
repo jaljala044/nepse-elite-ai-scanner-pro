@@ -4,7 +4,7 @@ import java.net.URI
 import javax.net.ssl.HttpsURLConnection
 import org.json.JSONObject
 
-class ResearchApi(base: String) {
+class ResearchApi(base: String, private val session: MobileSession? = null) {
     private val origin = URI(base.trim()).also {
         require(it.scheme == "https" && it.host != null && it.userInfo == null &&
             it.query == null && it.fragment == null && (it.path.isNullOrEmpty() || it.path == "/"))
@@ -43,19 +43,35 @@ class ResearchApi(base: String) {
         return get("/v1/broker/summary/"+symbolKey(symbol)+"?start="+start+"&end="+end)
     }
     private fun symbolKey(symbol: String): String = symbol.trim().uppercase(java.util.Locale.ROOT).also { require(it.matches(Regex("[A-Z0-9]{1,20}"))) }
-    private fun get(path: String, body: JSONObject? = null): JSONObject {
+    fun accountSession(): JSONObject = get("/v1/account/session")
+    fun watchlist(): JSONObject = get("/v1/account/watchlist")
+    fun saveWatchlist(symbols: List<String>): JSONObject {
+        require(symbols.size<=300)
+        return get("/v1/account/watchlist",JSONObject().put("symbols",org.json.JSONArray(symbols.map(::symbolKey).distinct())),"PUT")
+    }
+    fun alerts(): JSONObject = get("/v1/account/alerts")
+    fun changeAlert(symbol: String, direction: String, threshold: String, remove: Boolean): JSONObject {
+        require(direction in listOf("above","below") && threshold.matches(Regex("[0-9]{1,9}(\\.[0-9]{1,2})?")))
+        return get("/v1/account/alerts",JSONObject().put("symbol",symbolKey(symbol)).put("direction",direction).put("threshold",threshold),if(remove) "DELETE" else "POST")
+    }
+    fun logout(): JSONObject = get("/v1/account/mobile/logout",JSONObject(),"POST")
+    private fun get(path: String, body: JSONObject? = null, method: String = if(body==null) "GET" else "POST"): JSONObject {
         val conn = origin.resolve(path).toURL().openConnection() as HttpsURLConnection
         try {
             conn.instanceFollowRedirects = false
             conn.connectTimeout = 10000
             conn.readTimeout = 10000
             conn.setRequestProperty("Accept", "application/json")
+            conn.useCaches = false
+            if(session!=null) conn.setRequestProperty("Authorization",session.authorizationFor(origin))
+            else check(!path.startsWith("/v1/account/")) { "Authenticated mobile session required" }
             if (body != null) {
-                conn.requestMethod = "POST"
+                conn.requestMethod = method
                 conn.doOutput = true
                 conn.setRequestProperty("Content-Type", "application/json")
                 conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             }
+            if(conn.responseCode==401) session?.clear()
             check(conn.responseCode == 200) { "Research API unavailable (HTTP ${conn.responseCode})" }
             val bytes = conn.inputStream.use { input ->
                 val out = java.io.ByteArrayOutputStream()

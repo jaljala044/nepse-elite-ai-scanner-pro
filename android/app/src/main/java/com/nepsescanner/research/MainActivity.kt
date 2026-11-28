@@ -42,7 +42,28 @@ class MainActivity : Activity() {
         val button = Button(this).apply { text = "Load research" }
         val status = label("Select a research workspace.")
         val chart = CandleView(this).apply { visibility = View.GONE }
-        listOf(title,note,endpoint,tabs,symbol,start,end,button,status).forEach { root.addView(it) }
+        val chartControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
+        val chartRange = label("")
+        val frame = Spinner(this).apply { adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, listOf("Daily", "Weekly", "Monthly", "Quarterly", "Yearly")) }
+        val earlier = Button(this).apply { text = "Earlier candles" }
+        val later = Button(this).apply { text = "Later candles" }
+        val zoomIn = Button(this).apply { text = "Zoom in" }
+        val zoomOut = Button(this).apply { text = "Zoom out" }
+        val latest = Button(this).apply { text = "Latest candles" }
+        listOf(frame,chartRange,earlier,later,zoomIn,zoomOut,latest).forEach { chartControls.addView(it) }
+        var fullHistory = emptyList<Candle>()
+        fun updateRange() { chartRange.text = chart.rangeLabel() }
+        fun changeFrame() { chart.replace(aggregateObserved(fullHistory, frame.selectedItemPosition)); updateRange() }
+        frame.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { changeFrame() }
+            override fun onNothingSelected(parent: AdapterView<*>?) {} 
+        }
+        earlier.setOnClickListener { chart.pan(-1); updateRange() }
+        later.setOnClickListener { chart.pan(1); updateRange() }
+        zoomIn.setOnClickListener { chart.zoom(0.5); updateRange() }
+        zoomOut.setOnClickListener { chart.zoom(2.0); updateRange() }
+        latest.setOnClickListener { chart.latest(); updateRange() }
+        listOf(title,note,endpoint,tabs,symbol,start,end,button,status,chartControls).forEach { root.addView(it) }
         root.addView(chart, LinearLayout.LayoutParams(-1, (280 * resources.displayMetrics.density).toInt()))
         setContentView(ScrollView(this).apply { addView(root) })
         tabs.setOnCheckedChangeListener { _, checked ->
@@ -52,6 +73,8 @@ class MainActivity : Activity() {
             start.visibility = if (mode == 3) View.VISIBLE else View.GONE
             end.visibility = start.visibility
             chart.visibility = View.GONE
+            fullHistory = emptyList()
+            chartControls.visibility = View.GONE
             chart.replace(emptyList())
             status.text = "Ready • " + names.getOrElse(mode) { "Research" }
             button.isEnabled = true
@@ -66,6 +89,8 @@ class MainActivity : Activity() {
             val last = end.text.toString().trim()
             button.isEnabled = false
             chart.visibility = View.GONE
+            fullHistory = emptyList()
+            chartControls.visibility = View.GONE
             chart.replace(emptyList())
             status.text = "Checking research API…"
             worker.execute {
@@ -117,7 +142,9 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     if (!isDestroyed && generation == token) {
                         status.text = result.text
-                        chart.replace(result.candles)
+                        fullHistory = result.candles
+                        changeFrame()
+                        chartControls.visibility = if (fullHistory.isEmpty()) View.GONE else View.VISIBLE
                         chart.visibility = if (result.candles.isEmpty()) View.GONE else View.VISIBLE
                         button.isEnabled = true
                     }
@@ -141,25 +168,49 @@ private fun parseCandles(rows: JSONArray): List<Candle> {
         val o=r.getDouble("open"); val h=r.getDouble("high"); val l=r.getDouble("low"); val c=r.getDouble("close")
         require(listOf(o,h,l,c).all { it.isFinite() && it>0 } && h>=maxOf(o,c,l) && l<=minOf(o,c))
         Candle(date,o,h,l,c)
-    }.sortedBy { it.date }.takeLast(80)
+    }.sortedBy { it.date }
+}
+
+private fun aggregateObserved(rows: List<Candle>, frame: Int): List<Candle> {
+    if (frame == 0) return rows
+    val iso = java.time.temporal.WeekFields.ISO
+    return rows.groupBy { r ->
+        val d = LocalDate.parse(r.date)
+        when(frame) {
+            1 -> "${d.get(iso.weekBasedYear())}-${d.get(iso.weekOfWeekBasedYear())}"
+            2 -> "${d.year}-${d.monthValue}"
+            3 -> "${d.year}-${(d.monthValue-1)/3}"
+            4 -> "${d.year}"
+            else -> r.date
+        }
+    }.values.map { group -> Candle(group.last().date,group.first().open,group.maxOf{it.high},group.minOf{it.low},group.last().close) }
 }
 
 private class CandleView(context: android.content.Context): View(context) {
     private var rows: List<Candle> = emptyList()
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
-    fun replace(data: List<Candle>) { rows=data; invalidate(); contentDescription=if(data.isEmpty()) "No historical chart" else "Historical daily candlestick chart, ${data.size} observations" }
+    private var window = 80
+    private var end = 0
+    fun replace(data: List<Candle>) { rows=data; end=data.size; window=80; invalidate() }
+    fun pan(direction: Int) { if(rows.isNotEmpty()){ end=(end+direction*maxOf(1,window/2)).coerceIn(minOf(window,rows.size),rows.size); invalidate() } }
+    fun zoom(factor: Double) { if(rows.isNotEmpty()){ window=(window*factor).toInt().coerceIn(5,500); end=end.coerceIn(minOf(window,rows.size),rows.size); invalidate() } }
+    fun latest() { end=rows.size; invalidate() }
+    private fun visible() = rows.subList(maxOf(0,end-window),end)
+    fun rangeLabel(): String { val v=visible(); return if(v.isEmpty()) "No observations" else "${v.first().date} to ${v.last().date} | ${v.size} visible / ${rows.size} available (observed periods; completeness not verified)" }
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if(rows.isEmpty() || width<100 || height<100) return
-        val hi=rows.maxOf { it.high }; val lo=rows.minOf { it.low }
+        val shown=visible()
+        if(shown.isEmpty()) return
+        val hi=shown.maxOf { it.high }; val lo=shown.minOf { it.low }
         val span=(hi-lo).takeIf { it>0 } ?: hi*0.01
         val left=8f; val right=width-66f; val top=16f; val bottom=height-30f
-        val step=(right-left)/rows.size
+        val step=(right-left)/shown.size
         fun y(p:Double)= (bottom-(p-lo)/span*(bottom-top)).toFloat()
         paint.color=Color.LTGRAY; paint.textSize=12f
         canvas.drawText("%.2f".format(java.util.Locale.ROOT,hi),right+2,top+10,paint)
         canvas.drawText("%.2f".format(java.util.Locale.ROOT,lo),right+2,bottom,paint)
-        rows.forEachIndexed { i,r ->
+        shown.forEachIndexed { i,r ->
             val x=left+(i+0.5f)*step
             paint.color=if(r.close>=r.open) Color.rgb(69,214,160) else Color.rgb(239,104,116)
             canvas.drawLine(x,y(r.high),x,y(r.low),paint)

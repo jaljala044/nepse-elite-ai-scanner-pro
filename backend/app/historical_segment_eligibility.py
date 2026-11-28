@@ -116,7 +116,7 @@ def _valid_primary_evidence(evidence, cutoff):
 
 
 def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
-                                session_evidence=None, records, required_sessions=120,
+                                session_evidence, records, required_sessions=120,
                                 available_warmup_sessions=0, decision_cutoff, archive_guard=None, require_archive_guard=False):
     """Evaluate a point-in-time segment without imputing missing or inactive dates.
 
@@ -146,6 +146,7 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         raise ValueError("available_warmup_sessions must be a non-negative integer")
 
     cutoff = _aware_datetime(decision_cutoff, "decision_cutoff")
+    market_cutoff_date = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
     reasons = []
     expected = []
     for raw_day in expected_sessions:
@@ -153,7 +154,6 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     if len(expected) != len(set(expected)):
         reasons.append("duplicate_expected_session")
     expected = sorted(set(expected))
-    market_cutoff_date = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
     for session_day in expected:
         if session_day > market_cutoff_date:
             reasons.append(f"future_expected_session:{session_day.isoformat()}")
@@ -348,6 +348,30 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                     pass
             if not evidence_valid:
                 reasons.append(f"session_evidence_unverified:{day_text}")
+        if day == market_cutoff_date:
+            finality = evidence.get("session_finality_evidence") if isinstance(evidence, dict) else None
+            claims = finality.get("claims") if isinstance(finality, dict) else None
+            finality_valid = (
+                _valid_primary_evidence(finality, cutoff)
+                and isinstance(claims, dict)
+                and claims.get("session_date") == day_text
+                and claims.get("session_status") == state
+                and claims.get("finality_status") == "complete"
+            )
+            if finality_valid:
+                try:
+                    finalized_at = _aware_datetime(
+                        claims.get("finalized_at"), "session finality finalized_at"
+                    )
+                    finality_valid = (
+                        finalized_at <= cutoff
+                        and finalized_at.astimezone(ZoneInfo("Asia/Kathmandu")).date() == day
+                    )
+                except ValueError:
+                    finality_valid = False
+            if not finality_valid:
+                reasons.append(f"same_day_session_finality_unverified:{day_text}")
+                evidence_valid = False
         if not evidence_valid:
             # Evaluate row-level rights independently; missing calendar evidence
             # must not hide a known rights violation in the associated candle.

@@ -83,7 +83,7 @@ def summarize_payload(payload: Any, expected_symbol: str | None = None) -> dict[
         layout = "array_of_objects"
     else:
         raise ValueError("history payload root must be a columnar object or JSON array")
-    if expected_symbol and payload_symbol and payload_symbol != expected_symbol.upper():
+    if expected_symbol and payload_symbol != expected_symbol.upper():
         raise ValueError(f"payload symbol {payload_symbol} does not match requested {expected_symbol}")
     first = min(parsed) if parsed else None
     last = max(parsed) if parsed else None

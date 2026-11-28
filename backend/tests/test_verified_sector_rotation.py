@@ -13,7 +13,7 @@ def fixture(count=127):
     membership = {
         symbol: {"status": "verified", "source_id": "master-v1",
                  "source_payload_sha256": DIGEST, "effective_from": dates[0],
-                 "effective_to": None, "sector_code": sector}
+                 "effective_to": None, "sector_code": sector, "available_at": CUTOFF}
         for sector, symbols in members.items() for symbol in symbols
     }
     stock_rows = []
@@ -96,6 +96,24 @@ class VerifiedSectorRotationTests(unittest.TestCase):
         data[0].append(data[0][-1])
         with self.assertRaisesRegex(ValueError, "unique_ascending"):
             self.call(data)
+
+    def test_late_membership_withholds(self):
+        data = fixture()
+        data[2]["AAA"]["available_at"] = "2026-11-26T18:01:00+05:45"
+        self.assertEqual(self.call(data)["sectors"]["BANK"]["score_status"], "insufficient_evidence")
+
+    def test_missing_membership_timestamp_withholds(self):
+        data = fixture()
+        del data[2]["AAA"]["available_at"]
+        self.assertEqual(self.call(data)["sectors"]["BANK"]["score_status"], "insufficient_evidence")
+
+    def test_recent_reclassification_not_backdated(self):
+        data = fixture()
+        data[2]["AAA"]["effective_from"] = data[0][-6]
+        result = self.call(data)["sectors"]["BANK"]["windows"]
+        self.assertEqual(result["1W"]["status"], "observed")
+        self.assertEqual(result["1M"]["status"], "insufficient_evidence")
+        self.assertIn("AAA", result["1M"]["missing_members"])
 
     def test_short_calendar_withholds(self):
         data = fixture(100)

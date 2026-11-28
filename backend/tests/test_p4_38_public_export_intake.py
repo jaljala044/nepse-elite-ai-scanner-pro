@@ -30,7 +30,7 @@ class PublicExportIntakeTests(unittest.TestCase):
   self.assertEqual(len(r["records"]),0)
  def test_chukul_alias_precedence_and_provider_conflict(self):
   a=normalize_ohlcv_rows(provider="sharehub",symbol="BENH",rows=[self.row(100)])
-  b=normalize_ohlcv_rows(provider="chukul",symbol="BENH",rows=[{"trading_date":"2026-11-27","openPrice":99,"highPrice":101,"lowPrice":98,"closePrice":105,"totalVolume":1000}])
+  b=normalize_ohlcv_rows(provider="chukul",symbol="BENH",rows=[{"trading_date":"2026-11-27","openPrice":99,"highPrice":106,"lowPrice":98,"closePrice":105,"totalVolume":1000}])
   self.assertEqual(reconcile_provider_rows([a,b])[0]["status"],"CONFLICT_REVIEW")
  def test_single_provider_not_mislabeled_as_match(self):
   a=normalize_ohlcv_rows(provider="sharehub",symbol="BENH",rows=[self.row()])

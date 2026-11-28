@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - "backend/capture_nepse_market_summary_history.py"
+      - "backend/import_official_market_summary_to_bronze.py"
       - "backend/tests/test_nepse_market_summary_history_capture.py"
+      - "backend/tests/test_official_market_summary_bronze_import.py"
       - ".github/workflows/capture-nepse-market-summary-history.yml"
   workflow_dispatch:
   schedule:
@@ -19,9 +21,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  capture:
+  capture-and-import:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -29,11 +31,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install pinned NEPSE client
-        run: python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
-      - name: Test official market-summary capture parser
+      - name: Install pinned capture client and backend dependencies
+        run: |
+          python -m pip install --disable-pip-version-check "nepse-client==0.1.4"
+          python -m pip install --disable-pip-version-check -r backend/requirements.txt
+      - name: Test capture and bronze importer
         working-directory: backend
-        run: python -m unittest discover -s tests -p 'test_nepse_market_summary_history_capture.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_nepse_market_summary_history_capture.py' -v
+          python -m unittest discover -s tests -p 'test_official_market_summary_bronze_import.py' -v
       - name: Capture official market-summary-history response
         id: capture
         shell: bash
@@ -64,11 +70,21 @@ jobs:
           else
             echo "No new official market-summary history bytes to commit."
           fi
-      - name: Upload capture artifact
+      - name: Import exact capture into provisional bronze evidence
+        if: steps.capture.outputs.capture_exit_code == '0'
+        run: |
+          capture_date="${{ steps.capture.outputs.capture_date }}"
+          python backend/import_official_market_summary_to_bronze.py \
+            --capture-dir "evidence/nepse-market-summary-history/$capture_date" \
+            --storage-root "evidence-store/raw" \
+            --database "evidence-store/evidence.duckdb"
+      - name: Upload capture and bronze evidence bundle
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nepse-market-summary-history-${{ github.run_id }}
-          path: evidence/nepse-market-summary-history/
+          name: nepse-market-summary-evidence-${{ github.run_id }}
+          path: |
+            evidence/nepse-market-summary-history/
+            evidence-store/
           if-no-files-found: warn
           retention-days: 90

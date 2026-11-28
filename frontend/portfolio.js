@@ -75,6 +75,11 @@
     table(byId("portfolio-positions"),
       ["Symbol", "Quantity", "Average cost", "Cost basis", "Realized P&L", "Market value", "Unrealized P&L", "Valuation", "Corporate-action adjustment"],
       positionRows, "No recorded positions in this portfolio.");
+    const allocationRows = allocation(positions.positions || []);
+    table(byId("portfolio-allocation"),
+      ["Symbol", "Ledger cost basis", "Share of recorded cost basis"],
+      allocationRows === null ? [] : allocationRows.map(item => [item.symbol, money(item.cost_basis), window.NepsePortfolioAllocation.percent(item.share_bps)]),
+      allocationRows === null ? "Allocation unavailable: one or more ledger cost-basis values failed validation." : "No positive recorded cost basis to allocate.");
     const transactionRows = (transactions.transactions || []).map(t => [
       t.trade_date, t.symbol, t.side, t.quantity, money(t.price), money(t.fees)
     ]);

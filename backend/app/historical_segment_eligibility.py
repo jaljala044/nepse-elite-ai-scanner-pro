@@ -9,10 +9,7 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
-
-from .issue5_quarantine import Quarantine
-
-ARCHIVE_FIELDS = frozenset({"repository", "commit_sha", "source_file", "source_file_sha256", "target_csv_row", "target_date"})
+from zoneinfo import ZoneInfo
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ALLOWED_SESSION_STATES = {
@@ -102,8 +99,8 @@ def _valid_primary_evidence(evidence, cutoff):
 
 
 def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
-                                session_evidence=None, records, required_sessions=120,
-                                available_warmup_sessions=0, decision_cutoff, archive_guard=None, require_archive_guard=False):
+                                session_evidence, records, required_sessions=120,
+                                available_warmup_sessions=0, decision_cutoff):
     """Evaluate a point-in-time segment without imputing missing or inactive dates.
 
     expected_sessions must be a verified exchange-session list, not weekdays
@@ -118,8 +115,6 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         raise ValueError("segment must be a mapping")
     if not isinstance(session_statuses, dict):
         raise ValueError("session_statuses must be a date-to-status mapping")
-    if session_evidence is None:
-        session_evidence = {}
     if not isinstance(session_evidence, dict):
         raise ValueError("session_evidence must be a date-to-provenance mapping")
     if not isinstance(expected_sessions, (list, tuple)):
@@ -139,6 +134,10 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     if len(expected) != len(set(expected)):
         reasons.append("duplicate_expected_session")
     expected = sorted(set(expected))
+    market_cutoff_date = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
+    for session_day in expected:
+        if session_day > market_cutoff_date:
+            reasons.append(f"future_expected_session:{session_day.isoformat()}")
     if not expected:
         reasons.append("verified_expected_sessions_required")
 
@@ -286,20 +285,9 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             continue
         if day not in expected:
             reasons.append(f"unexpected_bar:{day.isoformat()}")
-        if require_archive_guard or archive_guard is not None or ARCHIVE_FIELDS.intersection(row):
-            if not isinstance(archive_guard, Quarantine):
-                reasons.append(f"archive_quarantine_guard_missing:{day.isoformat()}")
-            elif row.get("target_date") != day.isoformat():
-                reasons.append(f"archive_quarantine_date_binding_missing_or_mismatch:{day.isoformat()}")
-            else:
-                disposition = archive_guard.disposition(row)
-                if disposition != "not_in_overlay_requires_other_gates":
-                    reasons.append(f"archive_quarantine:{disposition}:{day.isoformat()}")
         by_day.setdefault(day, []).append(row)
 
     verified_traded = 0
-    valid_candles = 0
-    eligible_candles = 0
     verified_no_trade = 0
     verified_closed = 0
     verified_suspended = 0
@@ -308,7 +296,6 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     for day in expected:
         day_text = day.isoformat()
         state = normalized_statuses.get(day)
-        rows = by_day.get(day, [])
         if state not in _ALLOWED_SESSION_STATES:
             reasons.append(f"session_status_unverified:{day_text}")
             unknown += 1
@@ -330,14 +317,34 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                     pass
             if not evidence_valid:
                 reasons.append(f"session_evidence_unverified:{day_text}")
+        if day == market_cutoff_date:
+            finality = evidence.get("session_finality_evidence") if isinstance(evidence, dict) else None
+            claims = finality.get("claims") if isinstance(finality, dict) else None
+            finality_valid = (
+                _valid_primary_evidence(finality, cutoff)
+                and isinstance(claims, dict)
+                and claims.get("session_date") == day_text
+                and claims.get("session_status") == state
+                and claims.get("finality_status") == "complete"
+            )
+            if finality_valid:
+                try:
+                    finalized_at = _aware_datetime(
+                        claims.get("finalized_at"), "session finality finalized_at"
+                    )
+                    finality_valid = (
+                        finalized_at <= cutoff
+                        and finalized_at.astimezone(ZoneInfo("Asia/Kathmandu")).date() == day
+                    )
+                except ValueError:
+                    finality_valid = False
+            if not finality_valid:
+                reasons.append(f"same_day_session_finality_unverified:{day_text}")
+                evidence_valid = False
         if not evidence_valid:
-            # Evaluate row-level rights independently; missing calendar evidence
-            # must not hide a known rights violation in the associated candle.
-            for row in rows:
-                if row.get("rights_status") not in _ALLOWED_RIGHTS:
-                    reasons.append(f"source_rights_not_approved:{day_text}")
             unknown += 1
             continue
+        rows = by_day.get(day, [])
         if state == "unknown":
             reasons.append(f"session_status_unverified:{day_text}")
             unknown += 1
@@ -370,9 +377,6 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"duplicate_bar:{day_text}")
             continue
         row = rows[0]
-        candle_reason_start = len(reasons)
-        if _valid_ohlcv(row):
-            valid_candles += 1
         if row.get("symbol") != symbol or row.get("security_id") != security_id:
             reasons.append(f"bar_identity_mismatch:{day_text}")
         if effective_from and day < effective_from or effective_to and day > effective_to:
@@ -413,12 +417,7 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         elif digest != source_digest or digest != payload_digest:
             reasons.append(f"evidence_hash_binding_mismatch:{day_text}")
 
-        if len(reasons) == candle_reason_start and day <= cutoff.date():
-            eligible_candles += 1
-        elif day > cutoff.date():
-            reasons.append(f"future_session:{day.isoformat()}")
-
-    if eligible_candles < required_sessions:
+    if verified_traded < required_sessions:
         reasons.append("insufficient_traded_sessions")
 
     reasons = sorted(set(reasons))
@@ -428,8 +427,6 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         "security_id": security_id,
         "expected_session_count": len(expected),
         "verified_traded_session_count": verified_traded,
-        "valid_ohlcv_candle_count": valid_candles,
-        "eligible_ohlcv_candle_count": eligible_candles,
         "verified_no_trade_count": verified_no_trade,
         "verified_closed_session_count": verified_closed,
         "verified_suspended_session_count": verified_suspended,
@@ -443,11 +440,3 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         "reasons": reasons,
         "policy": "verified_sessions_only_no_imputation_no_cross_identity_splice_no_ohlcv_adjustment",
     }
-
-
-def evaluate_archive_historical_segment(*, archive_guard=None, **kwargs):
-    """Archive entry point: absence of the quarantine guard always fails closed."""
-    kwargs.setdefault("session_evidence", {})
-    return evaluate_historical_segment(
-        archive_guard=archive_guard, require_archive_guard=True, **kwargs
-    )

@@ -143,6 +143,70 @@ def collect_user_github_repos(client: httpx.Client, selected: set[str]) -> list[
     return records
 
 
+def _provider_access_approval(name: str, data_type: str, url: str) -> tuple[bool, str]:
+    """Require a reviewed provider contract before any configured-provider request."""
+    raw = os.getenv("NEPSE_PROVIDER_ACCESS_MANIFEST", "").strip()
+    if not raw:
+        return False, "provider_access_manifest_missing"
+    try:
+        manifest = json.loads(raw)
+        entry = manifest.get("providers", {}).get(name)
+        if not isinstance(entry, dict):
+            return False, "provider_access_approval_missing"
+        from datetime import date
+        if entry.get("status") != "approved":
+            return False, "provider_access_not_approved"
+        allowed_types = entry.get("allowed_data_types")
+        if not isinstance(allowed_types, list) or not all(isinstance(item, str) for item in allowed_types):
+            return False, "provider_access_manifest_invalid"
+        if data_type not in allowed_types:
+            return False, "provider_data_type_not_approved"
+        if entry.get("rights_status") not in {"research_only", "internal_use", "redistribution_permitted"}:
+            return False, "provider_rights_not_approved"
+        required = ("reviewer", "evidence_ref", "contract_ref", "valid_until")
+        if not all(isinstance(entry.get(key), str) and entry[key].strip() for key in required):
+            return False, "provider_approval_evidence_incomplete"
+        if date.fromisoformat(entry["valid_until"]) < date.today():
+            return False, "provider_access_approval_expired"
+        expiry = date.fromisoformat(entry["valid_until"])
+        if expiry.isoformat() != entry["valid_until"]:
+            return False, "provider_access_manifest_invalid"
+        parsed = httpx.URL(url)
+        hosts = entry.get("allowed_hosts")
+        prefixes = entry.get("allowed_path_prefixes")
+        if (not isinstance(hosts, list) or not hosts
+                or not all(isinstance(host, str) and host.strip() == host
+                           and host and "/" not in host and ":" not in host
+                           for host in hosts)
+                or not isinstance(prefixes, list) or not prefixes
+                or not all(isinstance(prefix, str) and prefix.startswith("/")
+                           and not prefix.startswith("//") and "\\\\" not in prefix
+                           and "?" not in prefix and "#" not in prefix
+                           and ".." not in prefix.split("/")
+                           for prefix in prefixes)):
+            return False, "provider_access_manifest_invalid"
+        if (parsed.scheme != "https" or parsed.username or parsed.password
+                or parsed.fragment or parsed.port not in (None, 443)
+                or parsed.host.casefold().rstrip(".") not in
+                   {host.casefold().rstrip(".") for host in hosts}):
+            return False, "provider_endpoint_host_not_approved"
+        # Encoded dot segments, separators and backslashes may be normalized by
+        # upstream proxies after this check. Reject them rather than authorizing
+        # a path whose effective destination could differ from its visible path.
+        if (re.search(r"%(?:2e|2f|5c)", parsed.path, flags=re.IGNORECASE)
+                or "\\" in parsed.path
+                or any(segment in {".", ".."} for segment in parsed.path.split("/"))):
+            return False, "provider_endpoint_path_not_approved"
+        def path_matches(path: str, prefix: str) -> bool:
+            normalized = prefix.rstrip("/")
+            return path == normalized or path.startswith(normalized + "/")
+        if not any(path_matches(parsed.path, prefix) for prefix in prefixes):
+            return False, "provider_endpoint_path_not_approved"
+        return True, "approved"
+    except (ValueError, TypeError, AttributeError):
+        return False, "provider_access_manifest_invalid"
+
+
 def collect_configured_provider(
     client: httpx.Client, name: str, data_type: str, *,
     equities: list[dict] | None = None, session_dates: list[str] | None = None,
@@ -161,6 +225,35 @@ def collect_configured_provider(
     if not template and not bulk_url:
         return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
                  "required": f"{prefix}_{data_type.upper()}_URL_TEMPLATE or {prefix}_{data_type.upper()}_DATA_URL"}]
+    # Treat universe/calendar inputs as untrusted URL-template data.
+    def safe_segment(value: Any) -> bool:
+        return isinstance(value, str) and bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", value))
+
+    if equities is not None:
+        for equity in equities:
+            if (not isinstance(equity, dict)
+                    or not safe_segment(str(equity.get("symbol", "")))
+                    or not safe_segment(str(equity.get("security_id", "")))):
+                return [{"source": name, "data_type": data_type,
+                         "status": "BLOCKED_ACCESS", "error": "invalid_equity_template_value"}]
+    if session_dates is not None:
+        from datetime import date
+        for day in session_dates:
+            try:
+                if not isinstance(day, str) or date.fromisoformat(day).isoformat() != day:
+                    raise ValueError
+            except ValueError:
+                return [{"source": name, "data_type": data_type,
+                         "status": "BLOCKED_ACCESS", "error": "invalid_session_date_template_value"}]
+    for value, field in ((period_start, "period_start"), (period_end, "period_end")):
+        if value is not None:
+            try:
+                from datetime import date
+                if date.fromisoformat(value).isoformat() != value:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return [{"source": name, "data_type": data_type,
+                         "status": "BLOCKED_ACCESS", "error": f"invalid_{field}_template_value"}]
     token = os.getenv(f"{prefix}_API_TOKEN", "").strip()
     api_key = os.getenv(f"{prefix}_API_KEY", "").strip()
     headers = {"Authorization": f"Bearer {token}"} if token else {}
@@ -210,9 +303,13 @@ def collect_configured_provider(
     for label, values in targets:
         try:
             url = template.format(**values) if template else bulk_url
-            if not url.startswith("https://"):
-                raise ValueError("provider URL must use HTTPS")
-            response = client.get(url, headers=headers)
+            approved, approval_reason = _provider_access_approval(name, data_type, url)
+            if not approved:
+                records.append({"source": name, "data_type": data_type, "target": label,
+                                "status": "BLOCKED_ACCESS", "url": url,
+                                "error": approval_reason})
+                continue
+            response = client.get(url, headers=headers, follow_redirects=False)
             response.raise_for_status()
             if len(response.content) > 250 * 1024 * 1024:
                 raise ValueError("response exceeded 250 MiB safety limit")

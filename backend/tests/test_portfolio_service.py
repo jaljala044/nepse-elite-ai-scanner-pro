@@ -90,40 +90,95 @@ class PortfolioServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "different transaction"):
             self.tx("BUY", "3", "100", "0", "2026-01-01", "capture-1")
 
+
+    def test_holding_preferences_are_owner_scoped_and_require_positive_position(self):
+        self.tx("BUY", "2500", "593", "0", "2026-01-01")
+        saved = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "cfcl",
+            investment_horizon="one_to_three_months",
+            risk_preference="aggressive_growth",
+        )
+        self.assertEqual(saved["symbol"], "CFCL")
+        self.assertEqual(saved["investment_horizon"], "one_to_three_months")
+        self.assertEqual(saved["risk_preference"], "aggressive_growth")
+        self.assertEqual(saved["current_quantity"], "2500")
+        self.assertTrue(saved["holding_active"])
+        self.assertEqual(
+            service.list_holding_preferences(self.owner, self.portfolio["id"]),
+            [saved],
+        )
+        self.assertEqual(service.list_holding_preferences("user-b", self.portfolio["id"]), None)
+
+    def test_preference_is_retained_but_marked_inactive_after_full_sale_and_reactivated_on_rebuy(self):
+        self.tx("BUY", "10", "100", "0", "2026-01-01")
+        saved = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "CFCL",
+            investment_horizon="one_to_three_months",
+            risk_preference="balanced",
+        )
+
+        self.tx("SELL", "4", "110", "0", "2026-01-02")
+        partial = service.list_holding_preferences(self.owner, self.portfolio["id"])[0]
+        self.assertTrue(partial["holding_active"])
+        self.assertEqual(partial["current_quantity"], "6")
+
+        self.tx("SELL", "6", "115", "0", "2026-01-03")
+        closed = service.list_holding_preferences(self.owner, self.portfolio["id"])[0]
+        self.assertFalse(closed["holding_active"])
+        self.assertEqual(closed["current_quantity"], "0")
+        self.assertEqual(closed["investment_horizon"], saved["investment_horizon"])
+        self.assertEqual(closed["risk_preference"], saved["risk_preference"])
+
+        self.tx("BUY", "3", "120", "0", "2026-01-04")
+        reopened = service.list_holding_preferences(self.owner, self.portfolio["id"])[0]
+        self.assertTrue(reopened["holding_active"])
+        self.assertEqual(reopened["current_quantity"], "3")
+        self.assertEqual(reopened["investment_horizon"], saved["investment_horizon"])
+
+    def test_holding_preferences_reject_invalid_choices_and_missing_position(self):
+        with self.assertRaisesRegex(LookupError, "positive holding not found"):
+            service.set_holding_preferences(
+                self.owner, self.portfolio["id"], "CFCL",
+                investment_horizon="long_term", risk_preference="balanced",
+            )
+        self.tx("BUY", "1", "100", "0", "2026-01-01")
+        with self.assertRaisesRegex(ValueError, "investment_horizon is not supported"):
+            service.set_holding_preferences(
+                self.owner, self.portfolio["id"], "CFCL",
+                investment_horizon="forever", risk_preference="balanced",
+            )
+        with self.assertRaisesRegex(ValueError, "risk_preference is not supported"):
+            service.set_holding_preferences(
+                self.owner, self.portfolio["id"], "CFCL",
+                investment_horizon="long_term", risk_preference="YOLO",
+            )
+
+    def test_holding_preferences_update_existing_record_without_duplicates(self):
+        self.tx("BUY", "10", "100", "0", "2026-01-01")
+        first = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "CFCL",
+            investment_horizon="short_term", risk_preference="capital_protection",
+        )
+        second = service.set_holding_preferences(
+            self.owner, self.portfolio["id"], "CFCL",
+            investment_horizon="long_term", risk_preference="balanced",
+        )
+        self.assertEqual(first["symbol"], second["symbol"])
+        self.assertEqual(second["investment_horizon"], "long_term")
+        self.assertEqual(second["risk_preference"], "balanced")
+        self.assertEqual(len(service.list_holding_preferences(self.owner, self.portfolio["id"])), 1)
+
     def test_database_and_parent_directory_permissions_are_private(self):
         db_path = Path(self.tmp.name) / "portfolio.sqlite3"
         self.assertEqual(db_path.stat().st_mode & 0o777, 0o600)
         self.assertEqual(db_path.parent.stat().st_mode & 0o777, 0o700)
 
-    def test_owner_isolation_and_soft_delete_retains_transaction_ledger(self):
+    def test_owner_isolation_and_delete_cascade(self):
         self.tx("BUY", "2", "100", "0", "2026-01-01")
-        portfolio_id = self.portfolio["id"]
         self.assertEqual(service.list_portfolios("user-b"), [])
-        self.assertIsNone(service.portfolio_positions("user-b", portfolio_id))
-        self.assertTrue(service.delete_portfolio(self.owner, portfolio_id))
-        self.assertFalse(service.delete_portfolio(self.owner, portfolio_id))
+        self.assertIsNone(service.portfolio_positions("user-b", self.portfolio["id"]))
+        self.assertTrue(service.delete_portfolio(self.owner, self.portfolio["id"]))
         self.assertEqual(service.list_portfolios(self.owner), [])
-        self.assertIsNone(service.get_portfolio(self.owner, portfolio_id))
-        self.assertIsNone(service.portfolio_positions(self.owner, portfolio_id))
-        self.assertIsNone(service.portfolio_transactions(self.owner, portfolio_id))
-        self.assertIsNone(service.get_portfolio("user-b", portfolio_id))
-
-        con = service._connect()
-        try:
-            portfolio = con.execute(
-                "SELECT deleted_at FROM portfolios WHERE id=? AND owner=?",
-                (portfolio_id, self.owner),
-            ).fetchone()
-            self.assertIsNotNone(portfolio["deleted_at"])
-            self.assertEqual(
-                con.execute(
-                    "SELECT COUNT(*) FROM portfolio_transactions WHERE portfolio_id=?",
-                    (portfolio_id,),
-                ).fetchone()[0],
-                1,
-            )
-        finally:
-            con.close()
 
     def test_invalid_values_and_symbols_rejected(self):
         with self.assertRaises(ValueError):

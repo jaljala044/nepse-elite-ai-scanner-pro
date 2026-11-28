@@ -26,6 +26,11 @@ class PortfolioTransactionCreate(BaseModel):
     trade_date: str
     idempotency_key: str | None = Field(default=None, max_length=200)
 
+class HoldingPreferencesUpdate(BaseModel):
+    investment_horizon: str
+    risk_preference: str
+
+
 
 def _owner(request: Request) -> str:
     return principal(request)
@@ -103,3 +108,30 @@ def add_transaction(portfolio_id: str, payload: PortfolioTransactionCreate, requ
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@router.get("/{portfolio_id}/holding-preferences")
+def holding_preferences(portfolio_id: str, request: Request):
+    result = service.list_holding_preferences(_owner(request), portfolio_id)
+    if result is None:
+        raise HTTPException(404, "Portfolio not found")
+    return {"portfolio_id": portfolio_id, "preferences": result}
+
+
+@router.put("/{portfolio_id}/holding-preferences/{symbol}")
+def update_holding_preferences(
+    portfolio_id: str, symbol: str, payload: HoldingPreferencesUpdate, request: Request
+):
+    try:
+        result = service.set_holding_preferences(
+            _owner(request), portfolio_id, symbol,
+            investment_horizon=payload.investment_horizon,
+            risk_preference=payload.risk_preference,
+        )
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    if result is None:
+        raise HTTPException(404, "Portfolio not found")
+    return result

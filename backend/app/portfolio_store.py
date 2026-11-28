@@ -233,6 +233,15 @@ def add_transaction(owner_id: str, portfolio_id: str, holding_id: str, *,
                                 WHERE holding_id=? AND owner_id=?""", [holding_id, owner]).fetchone()[0]
         if latest is not None and date.fromisoformat(day) < latest:
             raise ValueError("transactions must be chronological")
+        if transaction_type == "sell":
+            available = con.execute("""SELECT COALESCE(SUM(
+                                          CASE WHEN transaction_type='buy' THEN quantity ELSE -quantity END
+                                      ), 0)
+                                      FROM portfolio_transactions
+                                      WHERE holding_id=? AND owner_id=?""",
+                                    [holding_id, owner]).fetchone()[0]
+            if quantity > available:
+                raise ValueError("sell quantity exceeds available shares")
         con.execute("""INSERT INTO portfolio_transactions
                        (transaction_id, holding_id, portfolio_id, owner_id, transaction_type,
                         trade_date, quantity, unit_price, fees)

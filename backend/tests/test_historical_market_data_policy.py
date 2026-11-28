@@ -84,7 +84,7 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
     def test_third_source_mismatch_requires_reason_and_evidence_reference(self):
         observations = [observation("sharehub", self.chart()),
                         observation("chukul", self.chart()),
-                        observation("sharesansar", self.chart(close="12"))]
+                        observation("sharesansar", self.chart(close="10.5"))]
         unresolved = resolve_record_by_two_source_match(
             record_type="chart", record_key="AAA|2026-01-02",
             observations=observations)
@@ -118,7 +118,7 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
         self.assertEqual(set(policy.canonical_record_types), {"ohlcv", "floorsheet"})
 
     def test_secondary_provider_cannot_supply_canonical_sector_or_broker_records(self):
-        with self.assertRaisesRegex(ValueError, "OHLCV and floorsheet only"):
+        with self.assertRaisesRegex(ValueError, "canonical OHLCV and floorsheet records only"):
             SourcePolicy(
                 source_id="sharehub", publisher_name="ShareHub",
                 trust_tier="secondary_publisher",

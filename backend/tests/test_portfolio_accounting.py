@@ -75,6 +75,24 @@ class PortfolioAccountingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-negative"):
             calculate_position([{"id": "b1", "type": "buy", "trade_date": "2026-01-01", "quantity": 1, "unit_price": "100", "fees": "-1"}])
 
+    def test_cfcl_owner_acceptance_fixture_matches_hand_calculation(self):
+        result = calculate_position(
+            [{
+                "id": "cfcl-buy-1", "type": "buy", "trade_date": "2026-01-01",
+                "quantity": 2500, "unit_price": "593", "fees": "0",
+            }],
+            market_mark={
+                "price": "561", "as_of": "2026-01-02",
+                "verified": True, "source_ref": "fixture:CFCL:561",
+            },
+        )
+        self.assertEqual(result["share_quantity"], Decimal("2500"))
+        self.assertEqual(result["remaining_cost_basis"], Decimal("1482500"))
+        self.assertEqual(result["average_cost_per_share"], Decimal("593"))
+        self.assertEqual(result["market_value"], Decimal("1402500"))
+        self.assertEqual(result["unrealized_pnl"], Decimal("-80000"))
+        self.assertEqual(result["market_mark_status"], "VERIFIED_MARK")
+
 
 if __name__ == "__main__":
     unittest.main()

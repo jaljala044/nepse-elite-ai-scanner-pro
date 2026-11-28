@@ -35,7 +35,8 @@ def five_year_start(as_of_date: str) -> str:
     return start.isoformat()
 
 
-def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict]) -> dict:
+def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
+                                    session_dates: list[str] | None = None) -> dict:
     """Create a coverage plan; it does not claim data was acquired."""
     start = five_year_start(as_of_date)
     if not isinstance(equities, list) or not equities:
@@ -51,24 +52,35 @@ def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict]) ->
         seen.add((symbol, security_id))
         normalized.append({"symbol": symbol, "security_id": security_id})
     normalized.sort(key=lambda item: (item["symbol"], item["security_id"]))
+    if session_dates is not None:
+        if not isinstance(session_dates, list) or any(not isinstance(day, str) for day in session_dates):
+            raise ValueError("session_dates must be a list of ISO dates")
+        for day in session_dates:
+            if date.fromisoformat(day).isoformat() != day:
+                raise ValueError("session_dates must be zero-padded ISO dates")
+        if len(session_dates) != len(set(session_dates)):
+            raise ValueError("session_dates must not contain duplicates")
     providers = (*PROVIDERS, *REFERENCE_PROVIDERS)
     return {
         "schema_version": 1, "as_of_date": as_of_date,
         "period_start": start, "period_end": as_of_date,
         "equity_count": len(normalized), "equities": normalized,
+        "session_calendar_count": len(session_dates or []),
         "required_collections": [
             {"provider": provider, "data_type": data_type,
              "period_start": start, "period_end": as_of_date,
              "equity_count": len(normalized),
              "role": "reference" if provider in REFERENCE_PROVIDERS else "secondary_collection",
-             "status": "BLOCKED_ACCESS"}
+             "status": ("BLOCKED_DEPENDENCY" if data_type == "floorsheet" and not session_dates
+                        else "BLOCKED_ACCESS")}
             for provider in providers for data_type in DATA_TYPES
         ],
         "coverage_matrix": [
             {"symbol": equity["symbol"], "security_id": equity["security_id"],
              "provider": provider, "data_type": data_type,
              "period_start": start, "period_end": as_of_date,
-             "status": "BLOCKED_ACCESS"}
+             "status": ("BLOCKED_DEPENDENCY" if data_type == "floorsheet" and not session_dates
+                        else "BLOCKED_ACCESS")}
             for equity in normalized for provider in providers for data_type in DATA_TYPES
         ],
         "diagnostic_sources": list(DIAGNOSTIC_PROVIDERS),

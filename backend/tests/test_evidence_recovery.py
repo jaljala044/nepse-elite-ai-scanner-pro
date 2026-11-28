@@ -1,5 +1,8 @@
 import hashlib
+import shutil
 import tempfile
+
+import duckdb
 import unittest
 from pathlib import Path
 
@@ -66,6 +69,43 @@ class EvidenceRecoveryAuditTests(unittest.TestCase):
             {issue["code"] for issue in report["issues"]},
         )
         self.assertEqual(payload_path.read_bytes(), b"tampered")
+        self.assertFalse(report["mutated_storage"])
+
+    def test_catalog_payload_path_outside_storage_root_is_rejected(self):
+        outside = self.base / "outside-payload.bin"
+        outside.write_bytes(self.payload)
+        con = duckdb.connect(str(self.db))
+        try:
+            con.execute("UPDATE raw_source_objects SET payload_path=?", [str(outside)])
+        finally:
+            con.close()
+
+        report = self.audit()
+        self.assertEqual(report["status"], "integrity_issues")
+        self.assertIn(
+            "raw_payload_path_outside_storage_root",
+            {issue["code"] for issue in report["issues"]},
+        )
+        self.assertEqual(outside.read_bytes(), self.payload)
+        self.assertFalse(report["mutated_storage"])
+
+    def test_catalog_manifest_path_outside_storage_root_is_rejected(self):
+        original = next(self.root.rglob("manifest.json"))
+        outside = self.base / "outside-manifest.json"
+        shutil.copy2(original, outside)
+        con = duckdb.connect(str(self.db))
+        try:
+            con.execute("UPDATE source_captures SET manifest_path=?", [str(outside)])
+        finally:
+            con.close()
+
+        report = self.audit()
+        self.assertEqual(report["status"], "integrity_issues")
+        self.assertIn(
+            "capture_manifest_path_outside_storage_root",
+            {issue["code"] for issue in report["issues"]},
+        )
+        self.assertTrue(outside.is_file())
         self.assertFalse(report["mutated_storage"])
 
     def test_unindexed_payload_is_reported_and_preserved(self):

@@ -225,6 +225,35 @@ def collect_configured_provider(
     if not template and not bulk_url:
         return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
                  "required": f"{prefix}_{data_type.upper()}_URL_TEMPLATE or {prefix}_{data_type.upper()}_DATA_URL"}]
+    # Treat universe/calendar inputs as untrusted URL-template data.
+    def safe_segment(value: Any) -> bool:
+        return isinstance(value, str) and bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", value))
+
+    if equities is not None:
+        for equity in equities:
+            if (not isinstance(equity, dict)
+                    or not safe_segment(str(equity.get("symbol", "")))
+                    or not safe_segment(str(equity.get("security_id", "")))):
+                return [{"source": name, "data_type": data_type,
+                         "status": "BLOCKED_ACCESS", "error": "invalid_equity_template_value"}]
+    if session_dates is not None:
+        from datetime import date
+        for day in session_dates:
+            try:
+                if not isinstance(day, str) or date.fromisoformat(day).isoformat() != day:
+                    raise ValueError
+            except ValueError:
+                return [{"source": name, "data_type": data_type,
+                         "status": "BLOCKED_ACCESS", "error": "invalid_session_date_template_value"}]
+    for value, field in ((period_start, "period_start"), (period_end, "period_end")):
+        if value is not None:
+            try:
+                from datetime import date
+                if date.fromisoformat(value).isoformat() != value:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return [{"source": name, "data_type": data_type,
+                         "status": "BLOCKED_ACCESS", "error": f"invalid_{field}_template_value"}]
     token = os.getenv(f"{prefix}_API_TOKEN", "").strip()
     api_key = os.getenv(f"{prefix}_API_KEY", "").strip()
     headers = {"Authorization": f"Bearer {token}"} if token else {}

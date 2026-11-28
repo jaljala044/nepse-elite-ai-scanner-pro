@@ -146,7 +146,6 @@ def build_lifecycle_eligibility_manifest(
             declared_status = row.get("observation_status")
             if declared_status == "no_trade":
                 status = "no_trade"
-                no_trade_count += 1
                 if row.get("ohlcv") not in (None, {}, ""):
                     reasons.append("no_trade_must_not_contain_imputed_ohlcv")
                     status = "invalid_no_trade_record"
@@ -154,6 +153,8 @@ def build_lifecycle_eligibility_manifest(
                     reasons.append("no_trade_evidence_or_source_hash_missing")
                 else:
                     data_hashes.add(row["source_sha256"])
+                if row.get("rights_status") != "approved":
+                    reasons.append("no_trade_source_rights_not_approved")
                 try:
                     available = datetime.fromisoformat(str(row.get("available_at", "")).replace("Z", "+00:00"))
                     if available.tzinfo is None or available.utcoffset() is None:
@@ -162,6 +163,8 @@ def build_lifecycle_eligibility_manifest(
                         reasons.append("lookahead_available_after_cutoff")
                 except ValueError:
                     reasons.append("available_at_missing_or_invalid")
+                if not reasons:
+                    no_trade_count += 1
             elif declared_status == "traded":
                 status = "traded"
                 values = row.get("ohlcv")

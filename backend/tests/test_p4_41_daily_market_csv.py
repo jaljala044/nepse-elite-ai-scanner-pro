@@ -1,3 +1,5 @@
+import csv
+import io
 import unittest
 from pathlib import Path
 from app.p4_41_daily_market_csv import parse_daily_market_csv,find_symbol_record
@@ -5,7 +7,9 @@ from app.p4_41_daily_market_csv import parse_daily_market_csv,find_symbol_record
 HEADER="S.No,Symbol,Conf.,Open,High,Low,Close,LTP,Close - LTP,Close - LTP %,VWAP,Vol,Prev. Close,Turnover,Trans.,Diff,Range,Diff %,Range %,VWAP %,120 Days,180 Days,52 Weeks High,52 Weeks Low"
 EVIDENCE=Path(__file__).parents[2]/"data/evidence/benh/2026-11-28/public_daily_csv"
 def line(n,symbol,open_,high,low,close,vol,turnover,trans):
- return f'{n},{symbol},30,{open_},{high},{low},{close},{close},0,0,{close},{vol},100,{turnover},{trans},0,0,0,0,0,0,0,0,0'
+ stream=io.StringIO()
+ csv.writer(stream,lineterminator="").writerow([n,symbol,30,open_,high,low,close,close,0,0,close,vol,100,turnover,trans,0,0,0,0,0,0,0,0,0])
+ return stream.getvalue()
 class DailyMarketCSVTests(unittest.TestCase):
  def parse(self,body):
   return parse_daily_market_csv(HEADER+"\n"+body,session_date="2026-10-14",source_url="https://example.test/2026_10_14.csv",retrieved_at="2026-11-28T17:00:00+04:00")

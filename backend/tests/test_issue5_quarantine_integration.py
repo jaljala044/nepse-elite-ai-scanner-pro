@@ -83,3 +83,14 @@ class ArchiveGuardIntegrationTests(unittest.TestCase):
         self.assertFalse(result["exploratory_replay_eligible"])
         self.assertIn("source_rights_not_approved:"+self.day,result["reasons"])
         self.assertFalse(result["production_promotion_allowed"])
+
+    def test_unreviewed_archive_revision_is_held(self):
+        self.assert_blocked(
+            self.evaluate(dict(self.row, commit_sha="e"*40), self.guard(True)),
+            "archive_quarantine:hold_unreviewed_archive_revision")
+
+    def test_unlisted_row_cannot_bypass_known_file_hash(self):
+        self.assert_blocked(
+            self.evaluate(dict(self.row, target_csv_row=3, source_file_sha256="d"*64),
+                          self.guard(True)),
+            "archive_quarantine:hold_provenance_conflict")

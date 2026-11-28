@@ -612,3 +612,5 @@ app.add_api_route("/v1/portfolios/{portfolio_id}", _portfolio_routes.delete_port
 app.add_api_route("/v1/portfolios/{portfolio_id}/positions", _portfolio_routes.positions, methods=["GET"], tags=["private-portfolios"])
 app.add_api_route("/v1/portfolios/{portfolio_id}/transactions", _portfolio_routes.transactions, methods=["GET"], tags=["private-portfolios"])
 app.add_api_route("/v1/portfolios/{portfolio_id}/transactions", _portfolio_routes.add_transaction, methods=["POST"], status_code=201, tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/preferences", _portfolio_routes.holding_preferences, methods=["GET"], tags=["private-portfolios"])
+app.add_api_route("/v1/portfolios/{portfolio_id}/preferences/{symbol}", _portfolio_routes.update_holding_preference, methods=["PUT"], tags=["private-portfolios"])

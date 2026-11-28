@@ -1,0 +1,60 @@
+{
+  "symbol":"BENH",
+  "capture_date":"2026-11-28",
+  "provider":"ShareSansarScraper public archive",
+  "provider_disclosure":"Unofficial third-party archive; README states daily CSV files are generated from ShareSansar daily price table and are not affiliated with NEPSE or ShareSansar.",
+  "records":[
+    {
+      "session_date":"2026-10-14",
+      "url":"https://raw.githubusercontent.com/OmitNomis/ShareSansarScraper/master/docs/Data/2026_10_14.csv",
+      "retained_path":"data/evidence/benh/2026-11-28/public_daily_csv/2026-10-14.csv",
+      "parsed_data_rows":354,
+      "symbol":"BENH",
+      "result":"NOT_PRESENT_IN_ARCHIVE_FILE",
+      "conclusion":"No BENH row in this third-party daily file. This is not proof of zero trades unless file completeness and listing-day coverage are independently established."
+    },
+    {
+      "session_date":"2026-10-15",
+      "url":"https://raw.githubusercontent.com/OmitNomis/ShareSansarScraper/master/docs/Data/2026_10_15.csv",
+      "retained_path":"data/evidence/benh/2026-11-28/public_daily_csv/2026-10-15.csv",
+      "parsed_data_rows":349,
+      "symbol":"BENH",
+      "result":"FOUND",
+      "row_number":17,
+      "open":273.0,
+      "high":313.9,
+      "low":273.0,
+      "close":313.9,
+      "volume":90,
+      "turnover":26634.0,
+      "transactions":9,
+      "vwap":295.93
+    }
+  ],
+  "independent_cross_check":{
+    "source":"NEPSE official stockWisePrices public page",
+    "url":"https://www.nepalstock.com/stockWisePrices",
+    "session_date":"2026-10-15",
+    "observed_close":313.9,
+    "observed_volume":90,
+    "status":"MATCHES_CLOSE_AND_VOLUME"
+  },
+  "listing_context":{
+    "source":"ShareSansar BENH listing event",
+    "url":"https://www.sharesansar.com/company/benh",
+    "listing_date":"2026-10-13",
+    "scheduled_trading_commencement":"2026-10-14",
+    "status":"SECONDARY_LISTING_CONTEXT"
+  },
+  "first_observed_trade_date":"2026-10-15",
+  "first_ever_trade_date":"NOT_FULLY_VERIFIED",
+  "data_quality":"MEDIUM",
+  "production_admission_allowed":false,
+  "hash_status":"NOT_COMPUTED",
+  "notes":[
+    "The 14-Oct CSV is retained verbatim as returned by the public raw GitHub URL and parsed successfully.",
+    "The 15-Oct row matches the official NEPSE public close and volume, providing independent corroboration for the first observed row.",
+    "A complete exchange-native 14-Oct BENH floorsheet or equivalent first-session record is still needed to conclusively prove no trading occurred on 14-Oct.",
+    "No SHA-256 hash is asserted because this runtime did not expose a supported digest implementation."
+  ]
+}

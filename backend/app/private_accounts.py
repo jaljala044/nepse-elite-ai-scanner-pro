@@ -70,3 +70,36 @@ def delete_alert(owner,symbol,direction,threshold):
     with _connect() as c:
         c.execute("DELETE FROM price_alerts WHERE owner=? AND symbol=? AND direction=? AND threshold=?",(owner,*key))
     return list_alerts(owner)
+
+def evaluate_price_alerts(owner, observation):
+    """Internal research evaluation only; upstream must attest provenance.
+    Never expose this as a client-supplied price or live delivery endpoint.
+    """
+    from datetime import date
+    from decimal import Decimal, InvalidOperation
+    if not isinstance(observation,dict) or observation.get("source_validation_status")!="verified" or observation.get("finality_status")!="final":
+        return []
+    symbol=observation.get("symbol")
+    session=observation.get("session_date")
+    digest=observation.get("source_payload_sha256")
+    if not isinstance(symbol,str) or not re.fullmatch(r"[A-Z0-9]{1,20}",symbol) or not isinstance(digest,str) or not re.fullmatch(r"[a-fA-F0-9]{64}",digest) or not isinstance(observation.get("source_id"),str) or not observation["source_id"].strip():
+        return []
+    try:
+        if date.fromisoformat(session).isoformat()!=session:
+            return []
+        close=Decimal(str(observation.get("close")))
+        if not close.is_finite() or close<=0:
+            return []
+    except (ValueError,TypeError,InvalidOperation):
+        return []
+    events=[]
+    with _connect() as c:
+        c.execute("BEGIN IMMEDIATE")
+        for direction,threshold in c.execute("SELECT direction,threshold FROM price_alerts WHERE owner=? AND symbol=?",(owner,symbol)).fetchall():
+            p=Decimal(threshold)
+            if not (close>=p if direction=="above" else close<=p):
+                continue
+            result=c.execute("INSERT OR IGNORE INTO price_alert_events VALUES (?,?,?,?,?)",(owner,symbol,direction,threshold,session))
+            if result.rowcount==1:
+                events.append({"symbol":symbol,"direction":direction,"threshold":threshold,"session":session,"close":str(close),"delivery_enabled":False})
+    return events

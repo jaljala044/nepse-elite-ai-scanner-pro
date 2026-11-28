@@ -6,6 +6,27 @@ class ConstraintTests(unittest.TestCase):
     def test_settlement(self):
         self.assertEqual(settlement_date("2025-01-02",["2025-01-05","2025-01-06"]),date(2025,1,6))
         self.assertIsNone(settlement_date("2025-01-02",None))
+
+    def test_settlement_dates_must_be_canonical(self):
+        for trade_day, settlement_days in (
+            ("20250102", ["2025-01-05", "2025-01-06"]),
+            ("2025-01-02", ["20250105", "2025-01-06"]),
+            ("2025-01-02", ["2025/01/05", "2025-01-06"]),
+        ):
+            with self.subTest(trade_day=trade_day, settlement_days=settlement_days):
+                with self.assertRaisesRegex(ValueError, "date_must_be_canonical_YYYY_MM_DD"):
+                    settlement_date(trade_day, settlement_days)
+
+    def test_price_band_requires_canonical_date(self):
+        for day in ("20260420", "2026/04/20", "2026-4-20"):
+            with self.subTest(day=day):
+                with self.assertRaisesRegex(ValueError, "date_must_be_canonical_YYYY_MM_DD"):
+                    price_band(day, preopen_reference=100, ordinary_session=True)
+
+    def test_settlement_days_reject_string_instead_of_date_collection(self):
+        with self.assertRaisesRegex(ValueError, "verified_settlement_days_must_be_a_date_collection"):
+            settlement_date("2025-01-02", "2025-01-05")
+
     def test_regime(self):
         self.assertAlmostEqual(price_band("2026-04-19",previous_close=100,ordinary_session=True)["lower"],90)
         self.assertIsNone(price_band("2026-04-20",previous_close=100,ordinary_session=True))

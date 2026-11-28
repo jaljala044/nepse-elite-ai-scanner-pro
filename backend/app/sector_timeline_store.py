@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -76,7 +76,28 @@ def persist_sector_timeline_batch(
             for row in existing
         ):
             raise ValueError(f"event_id_already_persisted:{event_id}")
-        _required_text(event.get("effective_from"), f"event_{index}_effective_from")
+        effective_from = _required_text(event.get("effective_from"), f"event_{index}_effective_from")
+        try:
+            effective_start = date.fromisoformat(effective_from)
+        except ValueError as exc:
+            raise ValueError(f"event_{index}_effective_from_invalid") from exc
+        if effective_start.isoformat() != effective_from:
+            raise ValueError(f"event_{index}_effective_from_invalid")
+        effective_to = event.get("effective_to")
+        if effective_to is not None:
+            if not isinstance(effective_to, str):
+                raise ValueError(f"event_{index}_effective_to_invalid")
+            try:
+                effective_end = date.fromisoformat(effective_to)
+            except ValueError as exc:
+                raise ValueError(f"event_{index}_effective_to_invalid") from exc
+            if effective_end.isoformat() != effective_to or effective_end < effective_start:
+                raise ValueError(f"event_{index}_effective_to_invalid")
+        for field in ("source_id", "publisher_id", "source_class", "evidence_ref"):
+            _required_text(event.get(field), f"event_{index}_{field}")
+        digest = _required_text(event.get("payload_sha256"), f"event_{index}_payload_sha256")
+        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest.lower()):
+            raise ValueError(f"event_{index}_payload_sha256_invalid")
         captured = _aware_utc(event.get("captured_at"), f"event_{index}_captured_at")
         available = _aware_utc(event.get("available_at"), f"event_{index}_available_at")
         if available < captured:

@@ -88,5 +88,19 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
                 summarize(self.write(root, []))
 
 
+    def test_date_ranking_counts_unique_symbols_not_source_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = summarize(self.write(root, [
+                self.row(SMC, "ABC", "2026-01-02"),
+                self.row(HISTORY, "ABC", "2026-01-02"),
+                self.row(SMC, "XYZ", "2026-01-02"),
+            ]))
+            self.assertEqual(report["top_dates"][0]["unique_symbol_gaps"], 2)
+            self.assertEqual(report["top_dates"][0]["smc_symbol_gaps"], 2)
+            self.assertEqual(report["top_dates"][0]["history_starter_symbol_gaps"], 1)
+            self.assertEqual(report["top_dates"][0]["both_source_symbol_gaps"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

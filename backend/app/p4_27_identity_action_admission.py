@@ -54,6 +54,14 @@ def resolve_effective_dated_identities(
 ) -> dict[str, Any]:
     """Resolve symbol/security identity intervals only from archived primary evidence."""
     cutoff = _timestamp(decision_cutoff, "decision_cutoff")
+    if archive_report.get("status") != "PRIMARY_NOTICE_ARCHIVE_VERIFIED":
+        return {
+            "status": "IDENTITY_INTERVALS_BLOCKED", "accepted_interval_count": 0,
+            "accepted_intervals": [], "missing_symbols": sorted({x.strip().upper() for x in required_symbols}),
+            "errors": [{"reason": "primary_notice_archive_not_fully_verified"}],
+            "historical_universe_join_allowed": False,
+            "note": "A fully verified primary archive is required before identity resolution.",
+        }
     docs = {x.get("event_id"): x for x in archive_report.get("verified_documents", [])}
     accepted: list[dict[str, Any]] = []
     errors: list[dict[str, Any]] = []

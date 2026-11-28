@@ -1,0 +1,18 @@
+date,description,scope,source_url,existing_calendar_status,disposition,canonical_promotion_allowed
+2018-11-11,Phalgunanda Jayanti,restricted,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2018-11-13,Chhath,community,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2018-11-23,Guru Nanak Jayanti,restricted,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,unlisted,bank_calendar_candidate_only,false
+2018-12-03,International Disability Day,restricted,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2018-12-22,Udhauli Yomari,community,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,unlisted,bank_calendar_candidate_only,false
+2018-12-25,Christmas,restricted,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2018-12-30,Tamu Lhosar,community,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2019-01-15,Maghi,community,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2019-02-05,Sonam Losar,community,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2019-03-04,Mahashivaratri,bank_full_holiday,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,unlisted,bank_calendar_candidate_only,false
+2019-03-07,Gyalbo Losar,community,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2019-03-08,International Women's Day,bank_full_holiday,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,unlisted,bank_calendar_candidate_only,false
+2019-03-20,Holi Kathmandu and Pokhara,regional,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,unlisted,bank_calendar_candidate_only,false
+2019-03-21,Holi other offices,regional,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,project_accepted_open,bank_calendar_candidate_only,false
+2019-04-05,Ghode Jatra,regional,https://www.nrb.org.np/contents/uploads/2019/12/English_Leave_2075024.pdf,unlisted,bank_calendar_candidate_only,false
+2019-02-28,Public holiday,exchange_closure_report,https://kathmandupost.com/money/2019/03/03/stock-investors-less-than-impressed-with-government-policies-nepse-down-754pts,unlisted,secondary_exchange_closure_candidate,false
+2019-03-20,Holi,exchange_closure_report,https://kathmandupost.com/money/2019/03/24/nepses-two-week-winning-streak-ends-on-transaction-downfall,unlisted,secondary_exchange_closure_candidate,false

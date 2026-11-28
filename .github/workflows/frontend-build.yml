@@ -5,6 +5,11 @@ on:
       - 'frontend/**'
       - 'backend/app/main.py'
       - '.github/workflows/frontend-build.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'backend/app/main.py'
+      - '.github/workflows/frontend-build.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,6 +29,7 @@ jobs:
         run: |
           npm run check
           npm run build
+          test -s public-build/market-research.js
           test -s public-build/vendor/lightweight-charts.standalone.production.mjs
           test -s public-build/vendor/LICENSE
           test -s public-build/vendor/NOTICE

@@ -13,6 +13,10 @@
 
 ## Public sources
 NEPSE Alpha: https://nepsealpha.com/search?q=BENH and https://nepsealpha.com/nepse-data/
+NepView daily BENH history: https://nepview.com/explore/BENH
+ShareHub BENH page: https://sharehubnepal.com/company/BENH
+NEPSE Quant BENH broker/floorsheet summary: https://nepsequant.com/stocks/BENH/brokers
+NEPSE Portfolio Tracker broker activity: https://nepseportfoliotracker.app/script/benh-beni-hydropower-project-limited/brokers
 NEPSE stockWisePrices: https://www.nepalstock.com/stockWisePrices
 ShareSansar: https://www.sharesansar.com/company/benh and https://www.sharesansar.com/sectorwise-share-price
 Share Gyan: https://sharegyannepal.com/company/BENH/price-history/ ; https://sharegyannepal.com/company/BENH/ ; https://www.sharegyannepal.com/company/BENH/floorsheet/
@@ -23,11 +27,11 @@ Hugging Face NEPSE dataset: https://huggingface.co/datasets/AnkitSanjyal/nepse-m
 Listing date: 2026-10-13. Scheduled trading start: 2026-10-14. First observed official NEPSE stockWisePrices record: 2026-10-15 (O/H/L/C 273/313.9/273/313.9; volume 90). A complete 14 Oct floorsheet archive was not located, so first-ever trade date remains unverified.
 
 ## Conflicts and exclusions
-18 Nov: Share Gyan close 856.4 vs NEPSEDATA close-only 837; quarantine.
-25 Nov: Share Gyan 12:05 snapshot; not EOD.
-26 Nov: Share Gyan summary reports 27,640 shares while its floorsheet page says no transaction rows; quarantine.
-23–24 Nov: OHLC only in surfaced Share Gyan excerpt; volume unavailable.
-27 Nov: three-site OHLC/close/volume agreement; research evidence only pending original file capture/hash and complete session provenance.
+18 Nov: Share Gyan/NepView/NEPSE Alpha close 856.4 vs NEPSEDATA close-only 837; quarantine the NEPSEDATA value. NEPSE Alpha open differs from Share Gyan/NepView and remains field-level conflict.
+25 Nov: Share Gyan 12:05 snapshot is intraday; NepView provides completed EOD row 798/828.8/776/828.8, volume 65,798.
+26 Nov: Share Gyan floorsheet page failed to show rows; NepView and NEPSE Quant independently report 27,640 shares. Do not treat page failure as zero trading.
+27 Nov: five-source OHLC/close/volume agreement; research evidence only pending original file capture/hash and complete session provenance.
+2–5, 13, 17–19 Nov: field-level open-price differences between NEPSE Alpha and other public sources; preserve source-specific values and do not silently choose one.
 
 ## Important limits
 The rows in the companion JSON were manually transcribed from public indexed web results. They are not raw downloads, not a complete history and not production data. Primary merger notices/security IDs still need review. No production identity mapping is approved.

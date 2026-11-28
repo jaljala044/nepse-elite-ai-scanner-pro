@@ -236,6 +236,9 @@ def research_readiness():
         decision_time=decision_time,
         review_registry_path=os.getenv("NEPSE_SOURCE_QUALITY_REVIEW_REGISTRY_PATH"),
         hmac_key=os.getenv("NEPSE_SOURCE_QUALITY_REVIEW_HMAC_KEY"),
+        publisher_registry_path=os.getenv("NEPSE_PUBLISHER_TRUST_REGISTRY_PATH"),
+        freshness_policy_path=os.getenv("NEPSE_EVIDENCE_FRESHNESS_POLICY_PATH"),
+        publisher_hmac_key=os.getenv("NEPSE_PUBLISHER_TRUST_HMAC_KEY"),
     )
     return {
         "mode": "research_only",

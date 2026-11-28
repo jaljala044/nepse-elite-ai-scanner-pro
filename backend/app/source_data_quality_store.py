@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .evidence_store import load_evidence_records, persist_evidence_batch
+from .publisher_trust import assess_publisher_evidence, load_evidence_freshness_policy, load_publisher_trust_registry
 from .source_quality_review import load_source_quality_review_registry, validate_review_attestation
 from .source_data_quality_gate import (
     assess_source_capture_completeness,
@@ -165,6 +166,8 @@ def load_source_data_quality_evidence(
 def replay_source_data_quality(
     rows: list[dict[str, Any]], *, decision_time: str,
     review_registry: dict[str, Any] | None = None, hmac_key: str | None = None,
+    publisher_registry: dict[str, Any] | None = None,
+    freshness_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Replay only evidence available by cutoff; missing inputs remain unknown."""
     cutoff = _instant(decision_time, "decision_time")
@@ -211,8 +214,36 @@ def replay_source_data_quality(
         reliability_events=grouped["source_lifecycle_event"],
     )
     try:
-        reconciliation = reconcile_source_observations(grouped["market_observation"])
-        invalid_observation_count = 0
+        raw_reconciliation = reconcile_source_observations(grouped["market_observation"])
+    except (TypeError, ValueError):
+        raw_reconciliation = {"results": [], "conflict_count": 0, "promotion_allowed": False}
+    trust_inputs = []
+    for row in grouped["market_observation"]:
+        if isinstance(row, dict):
+            trust_inputs.append({
+                "publisher_id": row.get("publisher_id"),
+                "source_url": row.get("source_url"),
+                "source_class": row.get("source_class"),
+                "captured_at": row.get("captured_at"),
+            })
+        else:
+            trust_inputs.append(row)
+    publisher_assessment = assess_publisher_evidence(
+        trust_inputs,
+        registry=publisher_registry or {"status": "not_configured", "publishers": {}},
+        freshness_policy=freshness_policy or {"status": "unconfigured", "max_age_seconds": {}},
+        decision_time=decision_time,
+    )
+    trusted_observations = []
+    for row, trust in zip(grouped["market_observation"], publisher_assessment["observations"]):
+        if trust.get("eligible_for_independence_count") and isinstance(row, dict):
+            trusted = dict(row)
+            trusted["source_id"] = trust["ownership_group_id"]
+            trusted["ownership_group_id"] = trust["ownership_group_id"]
+            trusted_observations.append(trusted)
+    try:
+        reconciliation = reconcile_source_observations(trusted_observations)
+        invalid_observation_count = len(grouped["market_observation"]) - len(trusted_observations)
     except (TypeError, ValueError):
         reconciliation = {"results": [], "conflict_count": 0, "promotion_allowed": False}
         invalid_observation_count = len(grouped["market_observation"])
@@ -229,13 +260,16 @@ def replay_source_data_quality(
         calendar=calendar, completeness=completeness,
         reconciliation=reconciliation, record_corrections=corrections,
     )
-    if invalid_policy_count or invalid_observation_count or correction_history_invalid:
+    if invalid_policy_count or correction_history_invalid:
         report["reasons"].append("persisted_evidence_validation_failed")
         report["data_quality"] = "LOW"
         report["confidence"] = "LOW"
-    # Two distinct source IDs are required before a row is described as
-    # cross-source corroborated. This does not prove publisher independence;
-    # ownership-group review remains a separate trust gate.
+    if invalid_observation_count:
+        report["reasons"].append("publisher_trust_or_freshness_incomplete")
+        report["data_quality"] = "LOW"
+        report["confidence"] = "LOW"
+    # Distinct reviewed ownership groups, not publisher IDs, are the
+    # corroboration unit. Related publisher brands count once.
     single_source_groups = sum(
         item.get("status") == "single_source_only"
         for item in reconciliation.get("results", [])
@@ -265,6 +299,8 @@ def replay_source_data_quality(
         },
         "capture_completeness": completeness,
         "cross_source_reconciliation": reconciliation,
+        "untrusted_source_comparison": raw_reconciliation,
+        "publisher_trust": publisher_assessment,
         "correction_history": corrections,
         "invalid_capture_policy_count": invalid_policy_count,
         "invalid_observation_count": invalid_observation_count,
@@ -283,6 +319,9 @@ def replay_source_data_quality(
 def source_data_quality_readiness(
     *, database_path: str | Path | None, decision_time: str,
     review_registry_path: str | Path | None = None, hmac_key: str | None = None,
+    publisher_registry_path: str | Path | None = None,
+    freshness_policy_path: str | Path | None = None,
+    publisher_hmac_key: str | None = None,
 ) -> dict[str, Any]:
     """Read-only readiness. An absent DB is not created as a side effect."""
     path = Path(database_path).expanduser() if database_path else None
@@ -295,6 +334,8 @@ def source_data_quality_readiness(
             "confidence": "LOW",
             "missing_reason": "persistent_calendar_capture_policy_store_not_configured",
             "review_registry_status": "not_configured",
+            "publisher_registry_status": "not_configured",
+            "freshness_policy_status": "not_configured",
             "production_admission_allowed": False,
             "recommendation_override": False,
         }
@@ -302,9 +343,16 @@ def source_data_quality_readiness(
     review_registry = load_source_quality_review_registry(
         review_registry_path, hmac_key, decision_time=decision_time,
     )
+    publisher_registry = load_publisher_trust_registry(
+        publisher_registry_path, publisher_hmac_key, decision_time=decision_time,
+    )
+    freshness_policy = load_evidence_freshness_policy(
+        freshness_policy_path, publisher_hmac_key, decision_time=decision_time,
+    )
     replay = replay_source_data_quality(
         loaded["rows"], decision_time=decision_time,
         review_registry=review_registry, hmac_key=hmac_key,
+        publisher_registry=publisher_registry, freshness_policy=freshness_policy,
     )
     return {
         "status": replay["status"],
@@ -315,6 +363,8 @@ def source_data_quality_readiness(
         "confidence": replay["data_quality_report"]["confidence"],
         "replay": replay,
         "review_registry_status": review_registry["status"],
+        "publisher_registry_status": publisher_registry["status"],
+        "freshness_policy_status": freshness_policy["status"],
         "production_admission_allowed": False,
         "recommendation_override": False,
     }

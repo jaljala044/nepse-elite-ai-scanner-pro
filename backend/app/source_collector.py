@@ -162,7 +162,10 @@ def collect_configured_provider(
         return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
                  "required": f"{prefix}_{data_type.upper()}_URL_TEMPLATE or {prefix}_{data_type.upper()}_DATA_URL"}]
     token = os.getenv(f"{prefix}_API_TOKEN", "").strip()
+    api_key = os.getenv(f"{prefix}_API_KEY", "").strip()
     headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if api_key:
+        headers["X-Api-Key"] = api_key
     targets: list[tuple[str, dict[str, str]]] = []
     if template:
         fields = set(re.findall(r"\{([a-z_]+)\}", template))

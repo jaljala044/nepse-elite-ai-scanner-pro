@@ -75,9 +75,13 @@ def test_option_a_resolution_keeps_both_values_and_promotion_disabled():
 
 
 def test_option_c_stays_quarantined():
-    record = make_record(chosen_option="C")
+    record = make_record(
+        chosen_option="C", decided_by="owner", decision_date="2026-11-28",
+        justification="Retain the source conflict without canonical promotion.",
+    )
     assert record.status == "QUARANTINED"
     assert record.chosen_option == "C"
+    assert record.decided_by == "owner"
 
 
 def test_no_silent_replacement_in_serialized_record():

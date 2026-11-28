@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.point_in_time import build_as_of_snapshot
+from app.quarantine_guard import filter_quarantined_feature_rows, runtime_quarantine_keys
 from app.footprint_features import market_breadth, security_footprint, broker_participation_summary, broker_footprint_features
 from app.trend_features import minervini_trend_template
 from app.volume_vsa_features import volume_vsa_features
@@ -20,7 +21,9 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
                            session_dates: list[str] | None = None) -> dict:
     """Filter every input by availability before deriving any feature."""
     snapshot = build_as_of_snapshot(records, decision_time)
-    rows = snapshot["records"]
+    keys = runtime_quarantine_keys()
+    rows = filter_quarantined_feature_rows(snapshot["records"], keys)
+    quarantined_input_count = len(snapshot["records"]) - len(rows)
     raw_prices = [r for r in rows if r.get("record_type") == "ohlcv"]
     raw_broker_rows = [r for r in rows if r.get("record_type") == "broker"]
 
@@ -324,6 +327,8 @@ def build_feature_snapshot(records: list[dict], decision_time: str,
         latest = sorted(items, key=lambda r: (r.get("session_date", ""), r.get("available_at", "")))[-1]
         latest_by_symbol.append(latest)
     return {
+        "quarantine_checked": keys is not None,
+        "quarantined_input_count": quarantined_input_count,
         "decision_time": snapshot["decision_time"],
         "input_contracts": input_contracts,
         "included_input_count": snapshot["included_count"],

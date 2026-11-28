@@ -25,6 +25,7 @@ def report(rows):
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
         available_at="2026-11-25T10:00:00+05:45",
         verified_session_finality={r["session_date"]: r["session_date"] + "T16:00:00+05:45" for r in rows},
+        source_rights_evidence=rights_evidence(),
         source_rights_evidence=rights_evidence())
 
 class BrokerMemoryPromotionTests(unittest.TestCase):

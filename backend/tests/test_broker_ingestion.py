@@ -166,6 +166,16 @@ class BrokerIngestionTests(unittest.TestCase):
         self.assertEqual(accepted["source_rights_evidence_id"], "RIGHTS-1")
         self.assertEqual(accepted["source_rights_document_sha256"], "c" * 64)
 
+    def test_source_inventories_must_be_identifier_sets(self):
+        with self.assertRaisesRegex(IngestionError, "invalid_source_inventory"):
+            run(expected_source_ids="SRC-A")
+        with self.assertRaisesRegex(IngestionError, "invalid_source_inventory"):
+            run(received_source_ids="SRC-A")
+
+    def test_broker_inventory_must_be_clean_identifier_set(self):
+        with self.assertRaisesRegex(IngestionError, "invalid_verified_broker_inventory"):
+            run(verified_brokers={"BROKER-1", " "})
+
     def test_availability_timezone_is_required(self):
         with self.assertRaises(IngestionError):
             run(available_at="2026-11-26T09:00:00")

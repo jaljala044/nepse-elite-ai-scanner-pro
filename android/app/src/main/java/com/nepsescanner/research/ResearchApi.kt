@@ -43,6 +43,28 @@ class ResearchApi(base: String, private val session: MobileSession? = null) {
         return get("/v1/broker/summary/"+symbolKey(symbol)+"?start="+start+"&end="+end)
     }
     private fun symbolKey(symbol: String): String = symbol.trim().uppercase(java.util.Locale.ROOT).also { require(it.matches(Regex("[A-Z0-9]{1,20}"))) }
+    internal fun portfolioVolume(symbol: String, asOf: java.time.LocalDate): List<DatedVolumeEvidence> {
+        val key=symbolKey(symbol)
+        val r=get("/v1/portfolio/volume/"+key+"?as_of="+asOf)
+        check(r.getString("symbol")==key && r.getString("as_of")==asOf.toString())
+        check(r.has("production_eligible") && !r.getBoolean("production_eligible"))
+        if(r.getString("status")=="unavailable") return emptyList()
+        check(r.getString("status")=="research_only" && r.getInt("session_count")==20)
+        val rows=r.getJSONArray("rows")
+        check(rows.length()==20)
+        val evidence=(0 until rows.length()).map { i ->
+            val row=rows.getJSONObject(i)
+            val day=java.time.LocalDate.parse(row.getString("session_date"))
+            check(row.getString("symbol")==key && !day.isAfter(asOf))
+            val quantity=java.math.BigDecimal(row.getString("quantity")).longValueExact()
+            DatedVolumeEvidence(key,day,quantity,row.getString("source_id"),
+                row.getString("source_payload_sha256"),row.getString("source_validation_status"),row.getString("finality_status"))
+        }
+        val computed=checkNotNull(eligibleAverageDailyVolume(key,evidence))
+        val reported=java.math.BigDecimal(r.getString("average_daily_quantity"))
+        check(computed.compareTo(reported)==0)
+        return evidence
+    }
     fun accountSession(): JSONObject = get("/v1/account/session")
     fun watchlist(): JSONObject = get("/v1/account/watchlist")
     fun saveWatchlist(symbols: List<String>): JSONObject {

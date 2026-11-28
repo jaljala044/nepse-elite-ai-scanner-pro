@@ -160,5 +160,23 @@ class SourceCollectorPolicyTests(unittest.TestCase):
                 (False, "provider_access_manifest_invalid"))
 
 
+    def test_manifest_rejects_encoded_path_traversal_and_separators(self):
+        manifest = {"providers": {"sharehub": {
+            "status": "approved", "allowed_data_types": ["chart"],
+            "rights_status": "research_only", "reviewer": "reviewer",
+            "evidence_ref": "evidence:sharehub", "contract_ref": "contract:sharehub",
+            "valid_until": "2099-12-31", "allowed_hosts": ["sharehubnepal.com"],
+            "allowed_path_prefixes": ["/data/export"],
+        }}}
+        urls = (
+            "https://sharehubnepal.com/data/export/%2e%2e/admin",
+            "https://sharehubnepal.com/data/export%2f..%2fadmin",
+            "https://sharehubnepal.com/data/export/%5cadmin",
+        )
+        with patch.dict(os.environ, {"NEPSE_PROVIDER_ACCESS_MANIFEST": __import__("json").dumps(manifest)}, clear=True):
+            for url in urls:
+                self.assertEqual(_provider_access_approval("sharehub", "chart", url),
+                                 (False, "provider_endpoint_path_not_approved"))
+
 if __name__ == "__main__":
     unittest.main()

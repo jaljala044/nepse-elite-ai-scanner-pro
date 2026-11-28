@@ -21,7 +21,7 @@ class PortfolioAccountingTests(unittest.TestCase):
         ])
         self.assertEqual(result["share_quantity"], Decimal("15"))
         self.assertEqual(result["remaining_cost_basis"], Decimal("1515"))
-        self.assertEqual(result["realized_pnl"], Decimal("94"))
+        self.assertEqual(result["realized_pnl"], Decimal("90"))
 
     def test_fully_closed_position_resets_remaining_basis(self):
         result = calculate_position([

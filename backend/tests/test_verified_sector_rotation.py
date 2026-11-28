@@ -55,6 +55,15 @@ class VerifiedSectorRotationTests(unittest.TestCase):
         self.assertEqual(result["sectors"]["HYDRO"]["classification"], "Lagging")
         self.assertIsNotNone(result["sectors"]["BANK"]["windows"]["1W"]["median_return_pct"])
 
+    def test_constituent_rankings_and_withholding(self):
+        data = fixture()
+        result = self.call(data)
+        rows = result["sectors"]["BANK"]["windows"]["1M"]["constituents"]
+        self.assertEqual([r["symbol"] for r in rows], ["AAA", "BBB"])
+        self.assertGreater(rows[0]["excess_return_pct"], rows[1]["excess_return_pct"])
+        data[2]["AAA"]["status"] = "unverified"
+        self.assertIsNone(self.call(data)["sectors"]["BANK"]["windows"]["1M"]["constituents"])
+
     def test_unverified_membership_withholds_sector_score(self):
         data = fixture()
         data[2]["AAA"]["status"] = "unverified"

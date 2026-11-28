@@ -44,7 +44,7 @@ class AdjustedFeaturePipelineTests(unittest.TestCase):
 class DatasetAdmissionTests(unittest.TestCase):
     def base(self):
         cutoff="2024-09-30T23:00:00Z"
-        return dict(panel_qualification={"status":"PANEL_EVIDENCE_QUALIFIED_FOR_HUMAN_REVIEW","backtest_admission_allowed":False},
+        return dict(panel_qualification={"status":"PANEL_EVIDENCE_QUALIFIED_FOR_HUMAN_REVIEW","backtest_admission_allowed":False,"dataset_fingerprint":"f"*64},
             dataset_manifest={"dataset_fingerprint":"f"*64,"decision_time":cutoff,"corporate_action_review_status":"verified","input_lineage_status":"complete"},
             records=[{"record_id":"r1","available_at":"2024-09-30T10:00:00Z","feature_available_at":"2024-09-30T10:00:00Z"}],
             decision_time=cutoff,expected_dataset_fingerprint="f"*64,train_end="2024-06-30T00:00:00Z",

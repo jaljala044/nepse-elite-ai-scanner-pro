@@ -124,8 +124,10 @@ def build_cached_historical_coverage_report(path, *, expected_sessions, expected
     from pathlib import Path
     from nepse_shared_validation import run_cached_validation
 
-    sessions = sorted({date.fromisoformat(x).isoformat() for x in expected_sessions})
-    symbols = sorted({x.strip().upper() for x in expected_symbols if x.strip()})
+    sessions = sorted({_canonical_iso_date(x, "expected session") for x in expected_sessions})
+    if any(not isinstance(x, str) or not x.strip() for x in expected_symbols):
+        raise ValueError("expected symbols must be non-empty strings")
+    symbols = sorted({x.strip().upper() for x in expected_symbols})
     if not sessions or not symbols:
         raise ValueError("verified expected_sessions and expected_symbols are required")
     grid = json.dumps({"sessions": sessions, "symbols": symbols},

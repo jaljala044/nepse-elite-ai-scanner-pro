@@ -32,38 +32,54 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _required_text(row: dict, field: str, line: int) -> str:
+    value = row.get(field)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} must be a non-empty string at line {line}")
+    return value.strip()
+
+
 def summarize(input_csv: Path) -> dict:
     source_rows = Counter()
     pair_sources: dict[tuple[str, str], set[str]] = defaultdict(set)
-    symbol_sources: dict[str, set[str]] = defaultdict(set)
     symbol_dates: dict[str, set[str]] = defaultdict(set)
+    symbol_source_dates: dict[str, dict[str, set[str]]] = defaultdict(
+        lambda: {SMC: set(), HISTORY: set()}
+    )
     date_symbols: dict[str, set[str]] = defaultdict(set)
     seen = set()
 
     with input_csv.open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        missing = REQUIRED - set(reader.fieldnames or [])
+        headers = reader.fieldnames or []
+        if len(headers) != len(set(headers)):
+            raise ValueError("gap CSV contains duplicate column headers")
+        missing = REQUIRED - set(headers)
         if missing:
             raise ValueError("gap CSV missing columns: " + ", ".join(sorted(missing)))
         for line, row in enumerate(reader, start=2):
-            repository = row["repository"]
-            symbol = row["symbol"].strip().upper()
-            day = row["trade_date"]
+            if None in row:
+                raise ValueError(f"unexpected extra CSV fields at line {line}")
+            repository = _required_text(row, "repository", line)
+            raw_symbol = _required_text(row, "symbol", line)
+            day = _required_text(row, "trade_date", line)
+            gap_status = _required_text(row, "gap_status", line)
+            promotion = _required_text(row, "canonical_promotion_allowed", line)
+            modified = _required_text(row, "raw_source_modified", line)
+            symbol = raw_symbol.upper()
             if repository not in REPOSITORIES:
                 raise ValueError(f"unknown repository at line {line}: {repository!r}")
-            if not symbol:
-                raise ValueError(f"blank symbol at line {line}")
             try:
                 parsed = date.fromisoformat(day)
             except (TypeError, ValueError):
                 raise ValueError(f"invalid trade date at line {line}: {day!r}") from None
             if parsed.isoformat() != day:
                 raise ValueError(f"noncanonical trade date at line {line}: {day!r}")
-            if row["gap_status"] != GAP_STATUS:
+            if gap_status != GAP_STATUS:
                 raise ValueError(f"unexpected gap status at line {line}")
-            if row["canonical_promotion_allowed"].lower() != "false":
+            if promotion.casefold() != "false":
                 raise ValueError(f"promotion flag must be false at line {line}")
-            if row["raw_source_modified"].lower() != "false":
+            if modified.casefold() != "false":
                 raise ValueError(f"raw-source mutation flag must be false at line {line}")
             key = (repository, symbol, day)
             if key in seen:
@@ -71,8 +87,8 @@ def summarize(input_csv: Path) -> dict:
             seen.add(key)
             source_rows[repository] += 1
             pair_sources[(symbol, day)].add(repository)
-            symbol_sources[symbol].add(repository)
             symbol_dates[symbol].add(day)
+            symbol_source_dates[symbol][repository].add(day)
             date_symbols[day].add(symbol)
 
     if not seen:
@@ -102,8 +118,8 @@ def summarize(input_csv: Path) -> dict:
 
     top_symbols = []
     for symbol, days in symbol_dates.items():
-        smc_days = {day for (sym, day), sources in pair_sources.items() if sym == symbol and SMC in sources}
-        history_days = {day for (sym, day), sources in pair_sources.items() if sym == symbol and HISTORY in sources}
+        smc_days = symbol_source_dates[symbol][SMC]
+        history_days = symbol_source_dates[symbol][HISTORY]
         top_symbols.append({
             "symbol": symbol,
             "unique_gap_dates": len(days),

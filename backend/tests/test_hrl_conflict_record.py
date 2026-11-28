@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import pytest
+import unittest
 
 from backend.validation.hrl_conflict_record import HRLConflictRecord
 
@@ -38,76 +38,74 @@ def make_record(**kw):
     return HRLConflictRecord(**base)
 
 
-def test_both_values_and_both_raw_source_rows_preserved():
-    record = make_record()
-    assert record.raw_low == 480.00
-    assert record.project_designated_low == 483.90
-    assert record.source_rows["nepse-history-starter"]["low"] == "480"
-    assert record.source_rows["nepse-smc-data"]["low"] == "480"
-    assert record.source_rows["nepse-history-starter"]["close"] == "483.9"
-    assert record.source_rows["nepse-smc-data"]["close"] == "486"
+class HRLConflictRecordTests(unittest.TestCase):
+    def test_both_values_and_both_raw_source_rows_preserved(self):
+        record = make_record()
+        self.assertEqual(record.raw_low, 480.00)
+        self.assertEqual(record.project_designated_low, 483.90)
+        self.assertEqual(record.source_rows["nepse-history-starter"]["low"], "480")
+        self.assertEqual(record.source_rows["nepse-smc-data"]["low"], "480")
+        self.assertEqual(record.source_rows["nepse-history-starter"]["close"], "483.9")
+        self.assertEqual(record.source_rows["nepse-smc-data"]["close"], "486")
+
+    def test_raw_geometry_valid(self):
+        self.assertTrue(make_record().geometry_valid_for_raw())
+
+    def test_project_geometry_invalid(self):
+        self.assertFalse(make_record().geometry_valid_for_project())
+
+    def test_default_quarantined_no_promotion(self):
+        record = make_record()
+        self.assertEqual(record.status, "QUARANTINED")
+        self.assertFalse(record.canonical_promotion_allowed)
+
+    def test_option_a_resolution_keeps_both_values_and_promotion_disabled(self):
+        record = make_record(
+            status="RESOLVED", chosen_option="A", decided_by="owner",
+            decision_date="2026-11-28",
+            justification="Adopt raw low; retain project value in provenance.",
+        )
+        self.assertEqual(record.status, "RESOLVED")
+        self.assertEqual(record.raw_low, 480.00)
+        self.assertEqual(record.project_designated_low, 483.90)
+        self.assertFalse(record.canonical_promotion_allowed)
+
+    def test_option_c_stays_quarantined(self):
+        record = make_record(
+            chosen_option="C", decided_by="owner", decision_date="2026-11-28",
+            justification="Retain the source conflict without canonical promotion.",
+        )
+        self.assertEqual(record.status, "QUARANTINED")
+        self.assertEqual(record.chosen_option, "C")
+        self.assertEqual(record.decided_by, "owner")
+
+    def test_no_silent_replacement_in_serialized_record(self):
+        data = make_record().to_dict()
+        self.assertNotEqual(data["raw_low"], data["project_designated_low"])
+        self.assertIn("raw_low", data)
+        self.assertIn("project_designated_low", data)
+        self.assertEqual(set(data["source_rows"]), {"nepse-history-starter", "nepse-smc-data"})
+
+    def test_incomplete_or_unsafe_decisions_fail_closed(self):
+        invalid = [
+            {"status": "RESOLVED", "chosen_option": "A"},
+            {"status": "RESOLVED", "chosen_option": "C", "decided_by": "owner",
+             "decision_date": "2026-11-28", "justification": "Keep conflict."},
+            {"canonical_promotion_allowed": True},
+            {"chosen_option": "B"},
+        ]
+        for kwargs in invalid:
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                make_record(**kwargs)
+
+    def test_invalid_archive_hash_rejected(self):
+        with self.assertRaisesRegex(ValueError, "SHA-256"):
+            make_record(raw_archive_sha256="<sha>")
+
+    def test_only_hrl_identity_accepted(self):
+        with self.assertRaisesRegex(ValueError, "symbol_id"):
+            make_record(symbol_id="API")
 
 
-def test_raw_geometry_valid():
-    assert make_record().geometry_valid_for_raw() is True
-
-
-def test_project_geometry_invalid():
-    assert make_record().geometry_valid_for_project() is False
-
-
-def test_default_quarantined_no_promotion():
-    record = make_record()
-    assert record.status == "QUARANTINED"
-    assert record.canonical_promotion_allowed is False
-
-
-def test_option_a_resolution_keeps_both_values_and_promotion_disabled():
-    record = make_record(
-        status="RESOLVED", chosen_option="A", decided_by="owner",
-        decision_date="2026-11-28",
-        justification="Adopt raw low; retain project value in provenance.",
-    )
-    assert record.status == "RESOLVED"
-    assert record.raw_low == 480.00
-    assert record.project_designated_low == 483.90
-    assert record.canonical_promotion_allowed is False
-
-
-def test_option_c_stays_quarantined():
-    record = make_record(
-        chosen_option="C", decided_by="owner", decision_date="2026-11-28",
-        justification="Retain the source conflict without canonical promotion.",
-    )
-    assert record.status == "QUARANTINED"
-    assert record.chosen_option == "C"
-    assert record.decided_by == "owner"
-
-
-def test_no_silent_replacement_in_serialized_record():
-    data = make_record().to_dict()
-    assert data["raw_low"] != data["project_designated_low"]
-    assert "raw_low" in data and "project_designated_low" in data
-    assert set(data["source_rows"]) == {"nepse-history-starter", "nepse-smc-data"}
-
-
-@pytest.mark.parametrize("kwargs", [
-    {"status": "RESOLVED", "chosen_option": "A"},
-    {"status": "RESOLVED", "chosen_option": "C", "decided_by": "owner",
-     "decision_date": "2026-11-28", "justification": "Keep conflict."},
-    {"canonical_promotion_allowed": True},
-    {"chosen_option": "B"},
-])
-def test_incomplete_or_unsafe_decisions_fail_closed(kwargs):
-    with pytest.raises(ValueError):
-        make_record(**kwargs)
-
-
-def test_invalid_archive_hash_rejected():
-    with pytest.raises(ValueError, match="SHA-256"):
-        make_record(raw_archive_sha256="<sha>")
-
-
-def test_only_hrl_identity_accepted():
-    with pytest.raises(ValueError, match="symbol_id"):
-        make_record(symbol_id="API")
+if __name__ == "__main__":
+    unittest.main()

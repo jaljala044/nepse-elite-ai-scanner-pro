@@ -46,6 +46,7 @@ def setup(rows, controls=None, security_registry=None, **kwargs):
         "expected_source_ids":{"SRC-A"},"received_source_ids":{"SRC-A"},
         "available_at":"2026-11-26T09:00:00+05:45",
         "source_rights_evidence":rights_evidence(),
+        "source_rights_evidence":rights_evidence(),
     }
     default.update(kwargs)
     return adapt_floorsheet_parties_to_broker_batch(join,**default)

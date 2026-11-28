@@ -80,7 +80,12 @@ def rank_batches(input_csv: Path, exclusion_csv: Path, limit: int = 5) -> dict:
             if row["session_pair_classification"] != CLASSIFICATION:
                 continue
             repository = row["repository"]
-            symbol = row["symbol"].strip().upper()
+            raw_symbol = row["symbol"]
+            if not repository or not repository.strip():
+                raise ValueError(f"blank repository at line {line}")
+            if raw_symbol is None or not raw_symbol.strip():
+                raise ValueError(f"blank symbol at line {line}")
+            symbol = raw_symbol.strip().upper()
             if repository not in REPOSITORIES:
                 raise ValueError(f"unknown repository at line {line}: {repository!r}")
             if not symbol:

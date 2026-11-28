@@ -26,7 +26,7 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tuple[dict, list[dict]]:
+def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,\n                 expected_active_equity_count: int | None = None) -> tuple[dict, list[dict]]:
     audit = json.loads(audit_json.read_text(encoding="utf-8"))
     with calendar_csv.open(encoding="utf-8-sig", newline="") as stream:
         calendar_rows = list(csv.DictReader(stream))

@@ -52,6 +52,18 @@ The pinned-source gap-inventory workflow completed successfully:
 | nepse-history-starter | 155,746 | 154,061 | 1,685 | 0 | 0 | 0 |
 | **Total** | **331,214** | **326,452** | **4,762** | **0** | **0** | **0** |
 
+### Automated target-universe and concordance controls
+
+The full-source gap-inventory CLI now defaults to an exact target of **281 unique active equities** and fails closed if the supplied active-equity manifest has a different count. Focused unit tests may override the expected count; the production workflow retains the 281 default. The manifest remains a project research baseline, not NEPSE certification.
+
+The generated JSON report also records:
+- expected versus observed active-equity count and whether the target-count gate passed;
+- unique symbol/date gap keys across both archives;
+- gap keys present in both archives versus only one archive;
+- distinct symbols with gaps and the top 20 symbols by source-gap row count.
+
+Cross-archive agreement is not independent publisher confirmation because the two archives may share upstream data. These summaries prioritize review only and do not classify any gap as a missing trade.
+
 The 4,762 are source-specific unclassified gaps, not 4,762 proven missing trades. They involve 278 distinct equities. A symbol/date gap appears in both repositories for 1,640 keys and in only one repository for 1,482 keys (3,122 unique symbol/date gap keys across the union).
 
 Largest combined source-gap counts:

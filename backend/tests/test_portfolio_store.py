@@ -55,6 +55,12 @@ class PortfolioStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "chronological"):
             store.add_transaction("owner", p["portfolio_id"], h["holding_id"], transaction_id="two",
                                   transaction_type="buy", trade_date="2026-01-01", quantity=1, unit_price="10")
+        with self.assertRaisesRegex(ValueError, "exceeds available shares"):
+            store.add_transaction("owner", p["portfolio_id"], h["holding_id"], transaction_id="oversell",
+                                  transaction_type="sell", trade_date="2026-01-02", quantity=2, unit_price="10")
+        disposal = store.add_transaction("owner", p["portfolio_id"], h["holding_id"], transaction_id="full-exit",
+                                         transaction_type="sell", trade_date="2026-01-02", quantity=1, unit_price="10")
+        self.assertEqual(disposal["quantity"], 1)
 
     def test_owner_id_is_mandatory_and_portfolio_delete_cascades(self):
         with self.assertRaisesRegex(ValueError, "owner_id"):

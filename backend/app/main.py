@@ -559,7 +559,12 @@ from .private_accounts import principal, proxy_principal, issue_mobile_session, 
 
 @app.post("/v1/account/mobile/session")
 def mobile_session_issue(request: Request, owner: str = Depends(proxy_principal)):
-    # The authenticated gateway must explicitly enable this exchange and enforce CSRF.
+    # Require a gateway-injected proof separate from its identity header.
+    import hmac
+    proof = os.getenv("NEPSE_MOBILE_GATEWAY_PROOF", "")
+    provided = request.headers.get("x-nepse-mobile-gateway-proof", "")
+    if len(proof)<32 or not hmac.compare_digest(proof.encode(),provided.encode()):
+        raise HTTPException(403,"Trusted mobile exchange required")
     if os.getenv("NEPSE_MOBILE_EXCHANGE_ENABLED") != "1":
         raise HTTPException(503,"Mobile identity exchange unavailable")
     from fastapi.responses import JSONResponse
@@ -630,7 +635,7 @@ async def private_deployment_gate(request: Request, call_next):
                     return JSONResponse({"detail":"Administrator required"},status_code=403)
         except HTTPException:
             from fastapi.responses import JSONResponse
-            return JSONResponse({"detail":"Authentication required"},status_code=401)
+            return JSONResponse({"detail":"Authentication required"},status_code=401,headers={"Cache-Control":"no-store"})
     response=await call_next(request)
     response.headers["X-Content-Type-Options"]="nosniff"
     response.headers["Referrer-Policy"]="no-referrer"

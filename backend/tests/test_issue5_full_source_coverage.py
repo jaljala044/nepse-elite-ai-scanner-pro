@@ -58,6 +58,10 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             self.assertEqual({g["trade_date"] for g in gaps}, {"2026-01-02"})
             self.assertTrue(all(g["gap_status"].startswith("UNCLASSIFIED") for g in gaps))
             self.assertFalse(report["canonical_or_training_promotion"])
+            self.assertEqual(report["gap_concordance"]["unique_symbol_date_gap_keys"], 1)
+            self.assertEqual(report["gap_concordance"]["gap_keys_present_in_both_sources"], 1)
+            self.assertEqual(report["gap_concordance"]["gap_keys_present_in_one_source"], 0)
+            self.assertEqual(report["gap_concordance"]["distinct_symbols_with_gaps"], 1)
 
     def test_unpinned_source_commit_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -300,12 +300,12 @@ been copied into this private repository.
 The main scanner's floorsheet normalizer accepts an optional `--validation-registry`
 argument. The package is published from `jaljala044/nepse-smc-data` and is pinned in
 CI to the tested source commit
-`fd604c893cf13a8d3daf9ae6f685ac6a841cc82d`.
+`edbdfcff33afe0b6711639a0a56cbce0d32ea9fb`.
 
 Install it in the scanner environment:
 
 ```bash
-python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@fd604c893cf13a8d3daf9ae6f685ac6a841cc82d"
+python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@edbdfcff33afe0b6711639a0a56cbce0d32ea9fb"
 ```
 
 Then run normalization with a shared, durable registry path:

@@ -17,6 +17,39 @@ class MultiSourceCaptureTests(unittest.TestCase):
         out=capture_required_historical_datasets(source_contract_reports=reports,transports=transports,required_dataset_kinds=["official_eod_ohlcv","official_market_calendar"],captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")
         self.assertEqual(out["status"],"REQUIRED_DATASET_CAPTURE_SET_VALIDATED",msg=repr(out["errors"]))
         self.assertFalse(out["backtest_admission_allowed"])
+
+    def test_duplicate_required_dataset_contracts_block_before_transport(self):
+        reports = {
+            "eod-a": validate_historical_source_contract(
+                contract=make_contract("official_eod_ohlcv","CAP-EOD-A"),
+                decision_cutoff="2025-02-02T00:00:00+05:45"),
+            "eod-b": validate_historical_source_contract(
+                contract=dict(make_contract("official_eod_ohlcv","CAP-EOD-B"),source_id="SRC-EOD-B"),
+                decision_cutoff="2025-02-02T00:00:00+05:45"),
+        }
+        calls = []
+        transports = {
+            key: (lambda url: calls.append(url)) for key in reports
+        }
+        out = capture_required_historical_datasets(
+            source_contract_reports=reports, transports=transports,
+            required_dataset_kinds=["official_eod_ohlcv","official_market_calendar"],
+            captured_at="2025-02-01T11:00:00+05:45",
+            decision_cutoff="2025-02-02T00:00:00+05:45")
+        self.assertEqual(out["status"],"BLOCKED")
+        self.assertEqual(calls,[])
+        self.assertEqual(out["errors"][0]["reason"],"required_capture_contract_cardinality_invalid")
+        self.assertEqual(out["missing_dataset_kinds"],["official_market_calendar"])
+        self.assertIn("official_eod_ohlcv",out["errors"][0]["duplicate_contract_kinds"])
+
+    def test_invalid_dataset_kind_list_is_rejected_cleanly(self):
+        with self.assertRaisesRegex(ValueError,"required_dataset_kinds must be a nonempty unique list"):
+            capture_required_historical_datasets(
+                source_contract_reports={},transports={},
+                required_dataset_kinds=[["official_eod_ohlcv"]],
+                captured_at="2025-02-01T11:00:00+05:45",
+                decision_cutoff="2025-02-02T00:00:00+05:45")
+
     def test_missing_dataset_or_transport_blocks_set(self):
         report=validate_historical_source_contract(contract=make_contract("official_eod_ohlcv","CAP-1"),decision_cutoff="2025-02-02T00:00:00+05:45")
         out=capture_required_historical_datasets(source_contract_reports={"eod":report},transports={},required_dataset_kinds=["official_eod_ohlcv","official_market_calendar"],captured_at="2025-02-01T11:00:00+05:45",decision_cutoff="2025-02-02T00:00:00+05:45")

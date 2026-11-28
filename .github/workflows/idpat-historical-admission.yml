@@ -1,0 +1,39 @@
+name: IDPAT historical admission regression
+
+on:
+  push:
+    branches:
+      - idpat-5-scanner-integration
+  pull_request:
+    paths:
+      - "backend/app/historical_segment_eligibility.py"
+      - "backend/app/historical_dataset_admission.py"
+      - "backend/app/historical_pilot_panel_qualification.py"
+      - "backend/app/issue5_quarantine.py"
+      - "backend/tests/test_historical_*.py"
+      - "backend/scripts/verify_issue5_overlay.py"
+      - ".github/workflows/idpat-historical-admission.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  historical-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run historical eligibility and admission regression suites
+        working-directory: backend
+        env:
+          PYTHONPATH: backend:tests
+        run: |
+          python -m unittest discover -s tests -p 'test_historical_segment_eligibility.py' -v
+          python -m unittest discover -s tests -p 'test_historical_dataset_fingerprint.py' -v
+          python -m unittest discover -s tests -p 'test_historical_dataset_admission_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_historical_pilot_panel_qualification.py' -v
+          python -m unittest discover -s tests -p 'test_historical_replay_admission_integration.py' -v

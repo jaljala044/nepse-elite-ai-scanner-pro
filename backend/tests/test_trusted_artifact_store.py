@@ -176,5 +176,29 @@ class TrustedArtifactStoreTests(unittest.TestCase):
                             required_modules=("daily_market_participation",))
         self.assertEqual(result["daily_market_participation"]["status"], "unavailable")
 
+    def test_index_rotation_requires_complete_evidence(self):
+        data = dict(status="research_only", as_of="2026-11-27", coverage_ratio=1,
+                    missing_indices=[], benchmark="NEPSE", signals_enabled=False,
+                    trade_actions_enabled=False, indices={"NEPSE": {"rotation_trail": [dict(date=f"2026-11-{d:02d}", relative_return_pct=0, momentum_change_pp=0, quadrant="leading") for d in range(22,28)]}})
+        payload = json.dumps(data).encode()
+        (self.root / "index.json").write_bytes(payload)
+        entry = dict(self.entry, payload_sha256=hashlib.sha256(payload).hexdigest(), expected_indices=["NEPSE"])
+        store = self.store(entry, module="index_rotation")
+        snap = build_trusted_market_snapshot(store, decision_date="2026-11-27",
+                                             decision_time="2026-11-27T16:00:00+05:45")
+        self.assertIn("index_rotation", snap["admitted_modules"])
+        self.assertFalse(snap["signals_enabled"])
+        invalid = dict(data, indices={"NEPSE": {"rotation_trail": []}})
+        raw = json.dumps(invalid).encode()
+        (self.root / "index.json").write_bytes(raw)
+        entry["payload_sha256"] = hashlib.sha256(raw).hexdigest()
+        result = store.load(decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45", required_modules=("index_rotation",))
+        self.assertEqual(result["index_rotation"]["rejection_reason"], "rotation_trail_invalid")
+        entry["coverage_ratio"] = 0.5
+        result = store.load(decision_date="2026-11-27", decision_time="2026-11-27T16:00:00+05:45",
+                            required_modules=("index_rotation",))
+        self.assertEqual(result["index_rotation"]["rejection_reason"], "index_rotation_not_complete")
+
+
 if __name__ == "__main__":
     unittest.main()

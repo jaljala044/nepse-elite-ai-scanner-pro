@@ -114,7 +114,7 @@ class RepeatedAdjacentTests(unittest.TestCase):
             root = Path(tmp)
             calendar = root / "calendar.csv"
             calendar.write_text(
-                "date,status\\n2026-01-01,project_accepted_open\\n",
+                "date,status\n2026-01-01,project_accepted_open\n",
                 encoding="utf-8",
             )
             rows = [{

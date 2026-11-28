@@ -317,6 +317,30 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                     pass
             if not evidence_valid:
                 reasons.append(f"session_evidence_unverified:{day_text}")
+        if day == market_cutoff_date:
+            finality = evidence.get("session_finality_evidence") if isinstance(evidence, dict) else None
+            claims = finality.get("claims") if isinstance(finality, dict) else None
+            finality_valid = (
+                _valid_primary_evidence(finality, cutoff)
+                and isinstance(claims, dict)
+                and claims.get("session_date") == day_text
+                and claims.get("session_status") == state
+                and claims.get("finality_status") == "complete"
+            )
+            if finality_valid:
+                try:
+                    finalized_at = _aware_datetime(
+                        claims.get("finalized_at"), "session finality finalized_at"
+                    )
+                    finality_valid = (
+                        finalized_at <= cutoff
+                        and finalized_at.astimezone(ZoneInfo("Asia/Kathmandu")).date() == day
+                    )
+                except ValueError:
+                    finality_valid = False
+            if not finality_valid:
+                reasons.append(f"same_day_session_finality_unverified:{day_text}")
+                evidence_valid = False
         if not evidence_valid:
             unknown += 1
             continue

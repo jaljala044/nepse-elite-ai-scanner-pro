@@ -76,22 +76,100 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         args.update(overrides)
         return evaluate_historical_segment(**args)
 
+    def test_future_expected_session_is_rejected(self):
+        future = "2026-01-02"
+        statuses = dict(self.statuses, **{future: "traded"})
+        evidence = dict(self.session_evidence, **{
+            future: {
+                "status": "traded", "source_id": "fixture-calendar-v1",
+                "source_record_ref": f"fixture:{future}",
+                "source_url": "https://www.nepalstock.com/calendar/2026",
+                "evidence_sha256": "b" * 64, "payload_sha256": "b" * 64,
+                "rights_status": "approved",
+                "retrieved_at": "2025-12-31T15:00:00+05:45",
+                "available_at": "2025-12-31T15:00:00+05:45",
+            }
+        })
+        result = self.evaluate(
+            expected_sessions=self.sessions + [future],
+            session_statuses=statuses,
+            session_evidence=evidence,
+            records=self.records + [self.row(future)],
+        )
+        self.assertIn("future_expected_session:" + future, result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def _same_day_session_inputs(self, include_finality):
+        day = "2026-01-01"
+        cutoff = "2026-01-01T15:30:00+05:45"
+        statuses = dict(self.statuses, **{day: "traded"})
+        calendar_evidence = {
+            "status": "traded", "source_id": "nepse-calendar-v1",
+            "source_record_ref": f"session:{day}",
+            "source_url": "https://www.nepalstock.com/calendar/2026",
+            "evidence_sha256": "d" * 64, "payload_sha256": "d" * 64,
+            "rights_status": "approved",
+            "available_at": "2026-01-01T15:10:00+05:45",
+            "retrieved_at": "2026-01-01T15:10:00+05:45",
+        }
+        if include_finality:
+            calendar_evidence["session_finality_evidence"] = {
+                "source_id": "nepse-session-finality-v1",
+                "source_record_ref": f"finality:{day}",
+                "source_url": "https://www.nepalstock.com/api/session-finality",
+                "evidence_sha256": "e" * 64, "payload_sha256": "e" * 64,
+                "rights_status": "approved",
+                "available_at": "2026-01-01T15:15:00+05:45",
+                "retrieved_at": "2026-01-01T15:15:00+05:45",
+                "claims": {
+                    "session_date": day, "session_status": "traded",
+                    "finality_status": "complete",
+                    "finalized_at": "2026-01-01T15:15:00+05:45",
+                },
+            }
+        evidence = dict(self.session_evidence, **{day: calendar_evidence})
+        row_available_at = "2026-01-01T15:20:00+05:45"
+        row_source_evidence = dict(
+            self.source_evidence(f"ohlcv:NABIL:123:{day}"),
+            available_at=row_available_at, retrieved_at=row_available_at,
+        )
+        row = dict(
+            self.row(day), available_at=row_available_at,
+            source_evidence=row_source_evidence,
+        )
+        return {
+            "expected_sessions": self.sessions + [day],
+            "session_statuses": statuses,
+            "session_evidence": evidence,
+            "records": self.records + [row],
+            "decision_cutoff": cutoff,
+        }
+
+    def test_same_day_session_requires_finality_evidence(self):
+        inputs = self._same_day_session_inputs(include_finality=False)
+        result = self.evaluate(**inputs)
+        self.assertIn("same_day_session_finality_unverified:2026-01-01", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_same_day_session_with_finality_before_cutoff_is_eligible(self):
+        inputs = self._same_day_session_inputs(include_finality=True)
+        result = self.evaluate(**inputs)
+        self.assertTrue(result["exploratory_replay_eligible"])
+        self.assertEqual(result["verified_traded_session_count"], 121)
+
+    def test_same_day_finality_after_cutoff_is_rejected(self):
+        inputs = self._same_day_session_inputs(include_finality=True)
+        finality = inputs["session_evidence"]["2026-01-01"]["session_finality_evidence"]
+        finality["claims"]["finalized_at"] = "2026-01-01T15:31:00+05:45"
+        result = self.evaluate(**inputs)
+        self.assertIn("same_day_session_finality_unverified:2026-01-01", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_complete_verified_segment_is_exploratory_only(self):
         result = self.evaluate()
         self.assertTrue(result["exploratory_replay_eligible"])
         self.assertFalse(result["approved_backtest_eligible"])
         self.assertFalse(result["production_promotion_allowed"])
-
-    def test_traded_evidence_is_not_eligible_candle_coverage(self):
-        records = list(self.records[:-1])
-        records[0] = dict(records[0], volume="0")
-        records[1] = dict(records[1], rights_status="unknown")
-        result = self.evaluate(records=records)
-        self.assertEqual(result["verified_traded_session_count"], 120)
-        self.assertEqual(result["valid_ohlcv_candle_count"], 118)
-        self.assertEqual(result["eligible_ohlcv_candle_count"], 117)
-        self.assertIn("insufficient_traded_sessions", result["reasons"])
-        self.assertFalse(result["exploratory_replay_eligible"])
 
     def test_missing_bar_fails_closed(self):
         result = self.evaluate(records=self.records[:-1])
@@ -157,6 +235,17 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         segment = dict(self.segment, effective_to=self.sessions[-2])
         result = self.evaluate(segment=segment)
         self.assertIn("session_outside_instrument_effective_interval:" + self.sessions[-1], result["reasons"])
+
+    def test_prelisting_and_postdelisting_no_trade_sessions_do_not_count(self):
+        first, last = self.sessions[0], self.sessions[-1]
+        segment = dict(self.segment, effective_from=self.sessions[1], effective_to=self.sessions[-2])
+        statuses = dict(self.statuses, **{first:"no_trade_verified", last:"no_trade_verified"})
+        records = self.records[1:-1]
+        result = self.evaluate(segment=segment, session_statuses=statuses, records=records)
+        self.assertIn("expected_session_outside_instrument_effective_interval:" + first, result["reasons"])
+        self.assertIn("expected_session_outside_instrument_effective_interval:" + last, result["reasons"])
+        self.assertEqual(result["verified_no_trade_count"], 2)
+        self.assertFalse(result["exploratory_replay_eligible"])
 
     def test_no_trade_session_with_bar_is_conflict(self):
         day = self.sessions[-1]

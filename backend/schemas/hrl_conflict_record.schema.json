@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jaljala044/nepse-elite-ai-scanner-pro/blob/main/backend/schemas/hrl_conflict_record.schema.json",
+  "title": "HRL OHLCV source-conflict record",
+  "description": "Structural validation for the HRL 2026-11-19 source conflict. This schema does not adjudicate source truth, validate OHLC inequalities, or authorize canonical promotion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "symbol_id",
+    "trade_date",
+    "raw_low",
+    "project_designated_low",
+    "open",
+    "high",
+    "close",
+    "raw_archive_sha256",
+    "status",
+    "chosen_option",
+    "decided_by",
+    "decision_date",
+    "justification",
+    "canonical_promotion_allowed",
+    "source_archive_sha256",
+    "source_rows"
+  ],
+  "properties": {
+    "symbol_id": {
+      "const": "HRL"
+    },
+    "trade_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "raw_low": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "project_designated_low": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "open": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "high": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "close": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "raw_archive_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "status": {
+      "enum": [
+        "QUARANTINED",
+        "RESOLVED"
+      ]
+    },
+    "chosen_option": {
+      "enum": [
+        "A",
+        "B",
+        "C",
+        null
+      ]
+    },
+    "decided_by": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "decision_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "justification": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "canonical_promotion_allowed": {
+      "const": false
+    },
+    "source_archive_sha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nepse-history-starter",
+        "nepse-smc-data"
+      ],
+      "properties": {
+        "nepse-history-starter": {
+          "$ref": "#/$defs/sha256"
+        },
+        "nepse-smc-data": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "source_rows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nepse-history-starter",
+        "nepse-smc-data"
+      ],
+      "properties": {
+        "nepse-history-starter": {
+          "$ref": "#/$defs/sourceRow"
+        },
+        "nepse-smc-data": {
+          "$ref": "#/$defs/sourceRow"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sourceRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "source_csv_line"
+      ],
+      "properties": {
+        "open": {
+          "type": "string"
+        },
+        "high": {
+          "type": "string"
+        },
+        "low": {
+          "type": "string"
+        },
+        "close": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "string"
+        },
+        "source_csv_line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "QUARANTINED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "chosen_option": {
+            "enum": [
+              null,
+              "C"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "chosen_option": {
+                  "const": null
+                }
+              },
+              "required": [
+                "chosen_option"
+              ]
+            },
+            "then": {
+              "properties": {
+                "decided_by": {
+                  "type": "null"
+                },
+                "decision_date": {
+                  "type": "null"
+                },
+                "justification": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "chosen_option": {
+                  "const": "C"
+                }
+              },
+              "required": [
+                "chosen_option"
+              ]
+            },
+            "then": {
+              "required": [
+                "decided_by",
+                "decision_date",
+                "justification"
+              ],
+              "properties": {
+                "decided_by": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "decision_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "justification": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "RESOLVED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "decided_by",
+          "decision_date",
+          "justification"
+        ],
+        "properties": {
+          "chosen_option": {
+            "enum": [
+              "A",
+              "B"
+            ]
+          },
+          "decided_by": {
+            "type": "string",
+            "minLength": 1
+          },
+          "decision_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  ]
+}

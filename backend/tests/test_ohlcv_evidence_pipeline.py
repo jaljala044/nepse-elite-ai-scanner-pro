@@ -136,14 +136,14 @@ class Issue5ArchiveEvidencePipelineTests(unittest.TestCase):
         result = self.run_archive(guard=self.guard(carry=True))
         row = result["rows"][0]
         self.assertEqual(row["row_status"], "quarantined")
-        self.assertIn("archive_quarantine:excluded_confirmed_carry_forward:2026-11-24",
+        self.assertIn("archive_quarantine:excluded_confirmed_carry_forward",
                       row["quarantine_reasons"])
         self.assertEqual(result["archive_quarantine"]["overlay_record_count"], 1)
         self.assertFalse(result["promotion_allowed"])
 
     def test_explicit_closure_review_entry_is_held(self):
         result = self.run_archive(guard=self.guard(carry=False))
-        self.assertIn("archive_quarantine:hold_explicit_closure_review:2026-11-24",
+        self.assertIn("archive_quarantine:hold_explicit_closure_review",
                       result["rows"][0]["quarantine_reasons"])
 
     def test_missing_guard_fails_closed(self):

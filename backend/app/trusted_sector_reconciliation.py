@@ -10,6 +10,7 @@ from .publisher_trust import (
     load_publisher_trust_registry,
 )
 from .sector_evidence_reconciliation import reconcile_sector_evidence
+from .sector_historical_timeline import build_sector_timeline_snapshot
 
 
 def reconcile_trusted_sector_evidence(
@@ -180,4 +181,143 @@ def build_evidence_completeness_report(
         "eligible_observation_count": len(eligible_indices),
         "expectation_set_provenance": "operator_supplied_not_exchange_verified",
         "production_admission_allowed": False,
+    }
+
+
+
+def replay_trusted_sector_timeline(
+    events: list[dict[str, Any]],
+    *,
+    as_of_date: str,
+    decision_time: str,
+    allowed_sector_codes: set[str],
+    known_security_ids: set[str],
+    registry_path: str | Path | None,
+    freshness_policy_path: str | Path | None,
+    hmac_key: str | None,
+) -> dict[str, Any]:
+    """Replay only timeline events passing point-in-time publisher and freshness gates.
+
+    Missing source_url is intentionally rejected: a publisher label without a
+    host that can be matched to the reviewed registry is not trusted evidence.
+    The registry and policy are loaded at decision_time, so future versions are
+    rejected by their loaders rather than applied retroactively.
+    """
+    registry = load_publisher_trust_registry(
+        registry_path, hmac_key, decision_time=decision_time
+    )
+    freshness = load_evidence_freshness_policy(
+        freshness_policy_path, hmac_key, decision_time=decision_time
+    )
+    observations = []
+    valid_event_indexes = []
+    rejected = []
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            rejected.append({"index": index, "reason": "event_not_object"})
+            continue
+        source_url = event.get("source_url")
+        if not isinstance(source_url, str) or not source_url.strip():
+            rejected.append({"index": index, "event_id": event.get("event_id"),
+                             "reason": "source_url_missing_host_unverifiable"})
+            continue
+        observations.append({
+            "publisher_id": event.get("publisher_id"),
+            "source_url": source_url,
+            "source_class": event.get("source_class"),
+            "captured_at": event.get("captured_at"),
+        })
+        valid_event_indexes.append(index)
+    assessment = assess_publisher_evidence(
+        observations, registry=registry, freshness_policy=freshness,
+        decision_time=decision_time,
+    )
+    accepted_events = []
+    for assessment_row, event_index in zip(assessment["observations"], valid_event_indexes):
+        event = dict(events[event_index])
+        if not assessment_row.get("eligible_for_independence_count"):
+            rejected.append({
+                "index": event_index, "event_id": event.get("event_id"),
+                "reason": assessment_row.get("independence_status", "not_eligible"),
+                "freshness_status": assessment_row.get("freshness_status"),
+                "approved_host_match": assessment_row.get("approved_host_match", False),
+            })
+            continue
+        # Timeline corroboration counts independently reviewed ownership groups,
+        # not multiple brands operated by the same group.
+        event["publisher_id"] = assessment_row["ownership_group_id"]
+        accepted_events.append(event)
+    result = build_sector_timeline_snapshot(
+        accepted_events, as_of_date=as_of_date, decision_time=decision_time,
+        allowed_sector_codes=allowed_sector_codes,
+        known_security_ids=known_security_ids,
+    )
+    result["publisher_trust_replay"] = {
+        "registry_status": registry["status"],
+        "registry_sha256": registry.get("registry_sha256"),
+        "registry_generated_at": registry.get("generated_at"),
+        "freshness_policy_status": freshness["status"],
+        "freshness_policy_sha256": freshness.get("policy_sha256"),
+        "freshness_policy_generated_at": freshness.get("generated_at"),
+        "input_event_count": len(events),
+        "eligible_event_count": len(accepted_events),
+        "rejected_event_count": len(rejected),
+        "rejected_events": rejected,
+        "eligible_ownership_group_count": assessment["eligible_independent_ownership_group_count"],
+    }
+    configured = registry["status"] == "reviewed_registry_loaded" and freshness["status"] == "reviewed_policy_loaded"
+    result["status"] = result["status"] if configured else "insufficient_evidence"
+    result["verified"] = False
+    result["admission_allowed"] = False
+    result["production_admission_allowed"] = False
+    result["limitations"] = list(result.get("limitations", [])) + [
+        "Historical trust replay uses the reviewed registry and freshness policy visible at decision_time.",
+        "Events without source_url are excluded because publisher hostname cannot be independently matched.",
+        "This research replay does not establish legal ownership or official NEPSE membership.",
+    ]
+    return result
+
+
+def build_historical_trust_version_report(
+    *,
+    registry_path: str | Path | None,
+    freshness_policy_path: str | Path | None,
+    hmac_key: str | None,
+    decision_times: list[str],
+) -> dict[str, Any]:
+    """Report which signed registry/policy versions are usable at each cutoff."""
+    if not isinstance(decision_times, list) or not decision_times:
+        raise ValueError("decision_times_must_be_non_empty_list")
+    rows = []
+    for cutoff in decision_times:
+        registry = load_publisher_trust_registry(
+            registry_path, hmac_key, decision_time=cutoff
+        )
+        policy = load_evidence_freshness_policy(
+            freshness_policy_path, hmac_key, decision_time=cutoff
+        )
+        rows.append({
+            "decision_time": cutoff,
+            "registry_status": registry["status"],
+            "registry_sha256": registry.get("registry_sha256"),
+            "registry_generated_at": registry.get("generated_at"),
+            "freshness_policy_status": policy["status"],
+            "freshness_policy_sha256": policy.get("policy_sha256"),
+            "freshness_policy_generated_at": policy.get("generated_at"),
+            "historical_replay_eligible": (
+                registry["status"] == "reviewed_registry_loaded"
+                and policy["status"] == "reviewed_policy_loaded"
+            ),
+        })
+    return {
+        "status": "assessed",
+        "cutoff_count": len(rows),
+        "versions": rows,
+        "version_selection_mode": "single_configured_signed_snapshot_per_path",
+        "historical_archive_search_supported": False,
+        "production_admission_allowed": False,
+        "limitations": [
+            "This deployment selects one configured signed snapshot per path; it does not search an archived version directory.",
+            "A snapshot generated after a historical decision cutoff is rejected, not backfilled.",
+        ],
     }

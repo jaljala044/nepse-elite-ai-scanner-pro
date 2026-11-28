@@ -32,13 +32,24 @@ class MainActivity : Activity() {
         val note = label("Research only • No verified live feed • AI recommendations OFF")
         val endpoint = input("HTTPS research API origin").apply { inputType = 17 }
         val tabs = RadioGroup(this).apply { orientation = RadioGroup.VERTICAL }
-        val names = listOf("Market", "Historical chart", "Research scanner", "Broker flow")
+        val names = listOf("Market", "Historical chart", "Research scanner", "Broker flow", "Portfolio (offline)")
         names.forEachIndexed { i, name ->
             tabs.addView(RadioButton(this).apply { id = i + 100; text = name; setTextColor(Color.WHITE) })
         }
         val symbol = input("Stock symbol")
         val start = input("Start YYYY-MM-DD")
         val end = input("End YYYY-MM-DD")
+        val portfolioInput = EditText(this).apply {
+            hint = "SYMBOL,quantity,cost,price,YYYY-MM-DD,sector (optional)"
+            setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 4; maxLines = 10
+            visibility = View.GONE
+            filters = arrayOf(android.text.InputFilter.LengthFilter(60000))
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            isSaveEnabled = false
+        }
+        val portfolioNote = label("Manual prices only, one holding per line. No data is sent or saved. Fees and taxes excluded.").apply { visibility = View.GONE }
         val button = Button(this).apply { text = "Load research" }
         val status = label("Select a research workspace.")
         val chart = CandleView(this).apply { visibility = View.GONE }
@@ -88,13 +99,17 @@ class MainActivity : Activity() {
         zoomIn.setOnClickListener { chart.zoom(0.5); updateRange() }
         zoomOut.setOnClickListener { chart.zoom(2.0); updateRange() }
         latest.setOnClickListener { chart.latest(); updateRange() }
-        listOf(title,note,endpoint,tabs,symbol,start,end,button,status,chartControls).forEach { root.addView(it) }
+        listOf(title,note,endpoint,tabs,symbol,start,end,portfolioNote,portfolioInput,button,status,chartControls).forEach { root.addView(it) }
         root.addView(chart, LinearLayout.LayoutParams(-1, (280 * resources.displayMetrics.density).toInt()))
         setContentView(ScrollView(this).apply { addView(root) })
         tabs.setOnCheckedChangeListener { _, checked ->
             generation++
             val mode = checked - 100
-            symbol.visibility = if (mode == 0) View.GONE else View.VISIBLE
+            symbol.visibility = if (mode in 1..3) View.VISIBLE else View.GONE
+            endpoint.visibility = if(mode==4) View.GONE else View.VISIBLE
+            portfolioInput.visibility = if(mode==4) View.VISIBLE else View.GONE
+            portfolioNote.visibility = portfolioInput.visibility
+            button.text = if(mode==4) "Calculate offline" else "Load research"
             start.visibility = if (mode == 3) View.VISIBLE else View.GONE
             end.visibility = start.visibility
             chart.visibility = View.GONE
@@ -108,6 +123,25 @@ class MainActivity : Activity() {
         button.setOnClickListener {
             val token = ++generation
             val mode = tabs.checkedRadioButtonId - 100
+            if (mode == 4) {
+                status.text = runCatching {
+                    val lines=portfolioInput.text.toString().lines().filter { it.isNotBlank() }
+                    require(lines.size in 1..300)
+                    val holdings=lines.map { line ->
+                        val a=line.split(",").map { it.trim() }
+                        require(a.size in 5..6)
+                        val date=LocalDate.parse(a[4])
+                        require(date.toString()==a[4] && !date.isAfter(LocalDate.now(java.time.ZoneId.of("Asia/Kathmandu"))))
+                        Holding(a[0].uppercase(java.util.Locale.ROOT),a[1].toLong(),java.math.BigDecimal(a[2]),java.math.BigDecimal(a[3]),date,a.getOrNull(5)?.takeIf { it.isNotBlank() })
+                    }
+                    val p=PortfolioMath.calculate(holdings)
+                    fun money(v: java.math.BigDecimal)=v.setScale(2,java.math.RoundingMode.HALF_UP).toPlainString()
+                    "Manual valuation • not live • NPR\nCost: ${money(p.cost)}\nValue: ${money(p.value)}\nUnrealized P/L: ${money(p.pnl)}\n\nHoldings:\n"+p.holdings.joinToString("\n") {
+                        "${it.symbol} | Value ${money(it.value)} | P/L ${money(it.pnl)} | Weight ${it.weightPct}% | Price date ${it.priceDate}"
+                    }+"\n\nSector weights (user supplied):\n"+p.sectorWeights.entries.sortedByDescending { it.value }.joinToString("\n") { "${it.key}: ${it.value}%" }+"\nLiquidity risk not assessed. Fees and taxes excluded."
+                }.getOrElse { "Invalid holdings. Check dates, symbols, duplicate entries, quantities and positive prices." }
+                return@setOnClickListener
+            }
             val base = endpoint.text.toString()
             val stock = symbol.text.toString().trim().uppercase(java.util.Locale.ROOT)
             val first = start.text.toString().trim()

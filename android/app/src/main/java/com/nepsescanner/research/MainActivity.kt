@@ -50,9 +50,13 @@ class MainActivity : Activity() {
         val zoomIn = Button(this).apply { text = "Zoom in" }
         val zoomOut = Button(this).apply { text = "Zoom out" }
         val latest = Button(this).apply { text = "Latest candles" }
-        listOf(frame,chartRange,earlier,later,zoomIn,zoomOut,latest).forEach { chartControls.addView(it) }
+        val expand = Button(this).apply { text = "Expand chart" }
+        var expanded = false
+        expand.setOnClickListener { expanded = !expanded; chart.layoutParams = chart.layoutParams.apply { height = ((if(expanded) 560 else 280)*resources.displayMetrics.density).toInt() }; expand.text = if(expanded) "Reduce chart" else "Expand chart" }
+        listOf(frame,chartRange,earlier,later,zoomIn,zoomOut,latest,expand).forEach { chartControls.addView(it) }
         var fullHistory = emptyList<Candle>()
         fun updateRange() { chartRange.text = chart.rangeLabel() }
+        chart.onRangeChanged = { updateRange() }
         fun changeFrame() { chart.replace(aggregateObserved(fullHistory, frame.selectedItemPosition)); updateRange() }
         frame.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { changeFrame() }
@@ -191,6 +195,23 @@ private class CandleView(context: android.content.Context): View(context) {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
     private var window = 80
     private var end = 0
+    var onRangeChanged: (() -> Unit)? = null
+    private var dragX = 0f
+    private val scaleDetector = android.view.ScaleGestureDetector(context, object : android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: android.view.ScaleGestureDetector): Boolean { zoom(1.0/detector.scaleFactor); onRangeChanged?.invoke(); return true }
+    })
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        if(rows.isEmpty()) return false
+        scaleDetector.onTouchEvent(event)
+        when(event.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { dragX=event.x; parent.requestDisallowInterceptTouchEvent(true) }
+            android.view.MotionEvent.ACTION_POINTER_UP -> { dragX=event.getX(if(event.actionIndex==0) 1 else 0) }
+            android.view.MotionEvent.ACTION_MOVE -> if(!scaleDetector.isInProgress && event.pointerCount==1) { val step=(width-74f)/maxOf(1,visible().size); if(step>0){val shift=((event.x-dragX)/step).toInt(); if(shift!=0){end=(end-shift).coerceIn(minOf(window,rows.size),rows.size); dragX+=shift*step; invalidate(); onRangeChanged?.invoke()}} }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { parent.requestDisallowInterceptTouchEvent(false); if(event.actionMasked==android.view.MotionEvent.ACTION_UP) performClick() }
+        }
+        return true
+    }
+    override fun performClick(): Boolean { super.performClick(); return true }
     fun replace(data: List<Candle>) { rows=data; end=data.size; window=80; invalidate() }
     fun pan(direction: Int) { if(rows.isNotEmpty()){ end=(end+direction*maxOf(1,window/2)).coerceIn(minOf(window,rows.size),rows.size); invalidate() } }
     fun zoom(factor: Double) { if(rows.isNotEmpty()){ window=(window*factor).toInt().coerceIn(5,500); end=end.coerceIn(minOf(window,rows.size),rows.size); invalidate() } }

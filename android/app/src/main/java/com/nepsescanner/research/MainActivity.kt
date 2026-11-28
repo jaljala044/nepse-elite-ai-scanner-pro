@@ -33,7 +33,7 @@ class MainActivity : Activity() {
         val note = label("Research only • No verified live feed • AI recommendations OFF")
         val endpoint = input("HTTPS research API origin").apply { inputType = 17 }
         val tabs = RadioGroup(this).apply { orientation = RadioGroup.VERTICAL }
-        val names = listOf("Market", "Historical chart", "Research scanner", "Broker flow", "Portfolio (offline)", "Private account")
+        val names = listOf("Market", "Historical chart", "Research scanner", "Broker flow", "Portfolio (offline)", "Private account", "Portfolio (reviewed volume)")
         names.forEachIndexed { i, name ->
             tabs.addView(RadioButton(this).apply { id = i + 100; text = name; setTextColor(Color.WHITE) })
         }
@@ -181,9 +181,10 @@ class MainActivity : Activity() {
             val mode = checked - 100
             symbol.visibility = if (mode in 1..3) View.VISIBLE else View.GONE
             endpoint.visibility = if(mode==4) View.GONE else View.VISIBLE
-            portfolioInput.visibility = if(mode==4) View.VISIBLE else View.GONE
+            portfolioInput.visibility = if(mode==4 || mode==6) View.VISIBLE else View.GONE
             portfolioNote.visibility = portfolioInput.visibility
-            button.text = if(mode==4) "Calculate offline" else "Load research"
+            portfolioNote.text = if(mode==6) "Manual valuation. Only symbol and price date are sent to your research API for reviewed volume. Manual volume is ignored." else "Manual prices only, one holding per line. No data is sent or saved. Fees and taxes excluded."
+            button.text = if(mode==4) "Calculate offline" else if(mode==6) "Load reviewed liquidity" else "Load research"
             accountPanel.visibility=if(mode==5) View.VISIBLE else View.GONE
             button.visibility=if(mode==5) View.GONE else View.VISIBLE
             start.visibility = if (mode == 3) View.VISIBLE else View.GONE
@@ -199,8 +200,8 @@ class MainActivity : Activity() {
         button.setOnClickListener {
             val token = ++generation
             val mode = tabs.checkedRadioButtonId - 100
-            if (mode == 4) {
-                status.text = runCatching {
+            if (mode == 4 || mode == 6) {
+                val parsed = runCatching {
                     val lines=portfolioInput.text.toString().lines().filter { it.isNotBlank() }
                     require(lines.size in 1..300)
                     val holdings=lines.map { line ->
@@ -210,6 +211,29 @@ class MainActivity : Activity() {
                         require(date.toString()==a[4] && !date.isAfter(LocalDate.now(java.time.ZoneId.of("Asia/Kathmandu"))))
                         Holding(a[0].uppercase(java.util.Locale.ROOT),a[1].toLong(),java.math.BigDecimal(a[2]),java.math.BigDecimal(a[3]),date,a.getOrNull(5)?.takeIf { it.isNotBlank() },a.getOrNull(6)?.takeIf { it.isNotBlank() }?.let { java.math.BigDecimal(it) })
                     }
+                    PortfolioMath.calculate(holdings)
+                    holdings
+                }
+                val holdings=parsed.getOrElse { status.text="Invalid holdings. Check dates, symbols, quantities and prices."; return@setOnClickListener }
+                if(mode==6) {
+                    if(holdings.size>30) { status.text="Reviewed liquidity: maximum 30 holdings per request."; return@setOnClickListener }
+                    val base=endpoint.text.toString()
+                    val session=mobileSession
+                    button.isEnabled=false
+                    status.text="Loading reviewed volume…"
+                    worker.execute {
+                        val result=runCatching {
+                            val api=ResearchApi(base,session)
+                            val evidence=holdings.associate { h -> h.symbol to runCatching { api.portfolioVolume(h.symbol,h.priceDate) }.getOrDefault(emptyList()) }
+                            val admitted=applyVerifiedLiquidityEvidence(holdings,evidence)
+                            val risk=exposureRisk(admitted,java.math.BigDecimal("10"))
+                            "Manual valuation; reviewed historical volume only; 10% assumed participation; no execution guarantee.\n"+admitted.zip(risk.liquidity).joinToString("\n") { (h,estimate) -> "${h.symbol} | As of ${h.priceDate} | ADV ${h.averageDailyQuantity ?: "Unavailable"} | Liquidation sessions ${estimate.estimatedSessions ?: "Unknown"}" }
+                        }
+                        runOnUiThread { if(!isDestroyed && token==generation) { button.isEnabled=true; status.text=result.getOrElse { "Reviewed liquidity unavailable" } } }
+                    }
+                    return@setOnClickListener
+                }
+                status.text=runCatching {
                     val p=PortfolioMath.calculate(holdings)
                     val risk=exposureRisk(holdings,java.math.BigDecimal("10"))
                     fun money(v: java.math.BigDecimal)=v.setScale(2,java.math.RoundingMode.HALF_UP).toPlainString()

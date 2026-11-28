@@ -39,3 +39,19 @@ and admission gates.
 The workflow intentionally fails when the public key or signed bundle is
 absent. It remains manual and research-only. No source authorization, registry
 promotion, or trading-signal enablement is implied by signature verification.
+
+## Protected bundle transport configuration
+
+The manual workflow downloads the date-scoped JSON bundle and detached signature
+from a configured HTTPS evidence-store base URL. Configure:
+- Actions variable `NEPSE_INPUT_BUNDLE_BASE_URL`: HTTPS base URL whose
+  `YYYY-MM-DD.json` and `YYYY-MM-DD.sig` objects are protected by the store.
+- Actions secret `NEPSE_INPUT_BUNDLE_ACCESS_TOKEN`: read-only bearer credential
+  for that evidence store.
+- Actions variable `NEPSE_INPUT_BUNDLE_PUBLIC_KEY`: PEM Ed25519 public key
+  corresponding to the independent bundle-signing custodian.
+
+The workflow enforces HTTPS, bounded download sizes and exact session-specific
+object names. The bundle signature is verified locally before candidate
+generation. Configure the base URL and read-only token only for an approved
+evidence store; do not use a personal account token.

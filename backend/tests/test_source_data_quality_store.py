@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from app.source_quality_review import load_source_quality_review_registry, sign_review_attestation, sign_review_registry
 from app.source_data_quality_store import (
     persist_source_data_quality_batch,
     replay_source_data_quality,
@@ -12,6 +13,7 @@ HASH = "a" * 64
 CAPTURED = "2026-11-28T10:00:00Z"
 RECEIVED = "2026-11-28T10:05:00Z"
 DECISION = "2026-11-28T12:00:00Z"
+KEY = "unit-test-review-key-with-at-least-32-characters"
 
 
 def sample_bundle():
@@ -144,11 +146,43 @@ class SourceDataQualityStoreTests(unittest.TestCase):
         self.assertFalse(absent.exists())
         self.assertFalse(result["production_admission_allowed"])
 
+    def test_signed_calendar_and_policy_reviews_enable_diagnostic_quality(self):
+        bundle = sample_bundle()
+        for scope, field in (("calendar_session", "calendar_sessions"),
+                             ("capture_policy", "capture_policies")):
+            for item in bundle[field]:
+                item["review_attestation"] = sign_review_attestation(
+                    item, reviewer_id="reviewer-1", scope=scope,
+                    reviewed_at="2026-11-28T10:00:00Z", key=KEY,
+                )
+        self.persist(bundle)
+        registry = sign_review_registry({
+            "schema_version": 1,
+            "generated_at": "2026-11-28T10:00:00Z",
+            "reviewers": [{
+                "reviewer_id": "reviewer-1",
+                "allowed_scopes": ["calendar_session", "capture_policy"],
+                "status": "approved",
+            }],
+        }, KEY)
+        registry_path = self.root / "review-registry.json"
+        import json
+        registry_path.write_text(json.dumps(registry), encoding="utf-8")
+        result = source_data_quality_readiness(
+            database_path=self.db, decision_time=DECISION,
+            review_registry_path=registry_path, hmac_key=KEY,
+        )
+        self.assertEqual(result["review_registry_status"], "review_registry_loaded")
+        self.assertEqual(result["data_quality"], "HIGH")
+        self.assertEqual(result["replay"]["review_attestation"]["calendar_reviewed_count"], 1)
+        self.assertFalse(result["production_admission_allowed"])
+
     def test_ready_store_remains_diagnostic_only(self):
         self.persist()
         result = source_data_quality_readiness(database_path=self.db, decision_time=DECISION)
         self.assertEqual(result["status"], "assessed")
-        self.assertEqual(result["data_quality"], "HIGH")
+        self.assertEqual(result["data_quality"], "LOW")
+        self.assertEqual(result["review_registry_status"], "not_configured")
         self.assertFalse(result["production_admission_allowed"])
         self.assertFalse(result["recommendation_override"])
 

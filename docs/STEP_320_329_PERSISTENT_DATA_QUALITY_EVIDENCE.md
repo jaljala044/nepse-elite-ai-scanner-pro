@@ -18,3 +18,13 @@
 All persisted rows remain `review_required` / `provisional`. A HIGH diagnostic requires reviewed calendar/policy inputs, fresh expected captures, correction history and at least two distinct source IDs agreeing for each observed group. It does not prove publisher ownership-group independence and is not NEPSE first-party attestation, publisher certification, canonical OHLCV/floorsheet approval or trade authorization. Cross-source disagreement is retained and no majority value is promoted. Missing calendar, policy, capture, correction or source observations remain unknown/LOW confidence. No live source data, exchange sessions or capture policies are fabricated.
 
 The readiness endpoint does not accept client-supplied paths or trust settings. This adapter is descriptive only: canonical promotion, OHLCV/floorsheet admission and recommendations remain disabled.
+
+
+## Steps 330–339 — Signed review attestation gate
+
+The follow-on review gate adds a server-owned HMAC-signed reviewer registry. Calendar-session and capture-policy rows count as reviewed only when their per-row attestation has a valid signature, an allowed reviewer/scope, an exact evidence-payload hash and a review timestamp no later than the replay cutoff. Registry and key are read only from server configuration:
+
+- `NEPSE_SOURCE_QUALITY_REVIEW_REGISTRY_PATH`
+- `NEPSE_SOURCE_QUALITY_REVIEW_HMAC_KEY`
+
+Without the registry, calendar and policy evidence remain excluded from trusted replay and quality stays LOW. HMAC is an internal integrity control only; it does not authenticate a person's real-world identity, establish NEPSE authority, or certify publisher ownership. No production admission is enabled.

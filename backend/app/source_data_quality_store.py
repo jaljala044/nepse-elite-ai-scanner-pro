@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .evidence_store import load_evidence_records, persist_evidence_batch
+from .source_quality_review import load_source_quality_review_registry, validate_review_attestation
 from .source_data_quality_gate import (
     assess_source_capture_completeness,
     build_data_quality_report,
@@ -163,6 +164,7 @@ def load_source_data_quality_evidence(
 
 def replay_source_data_quality(
     rows: list[dict[str, Any]], *, decision_time: str,
+    review_registry: dict[str, Any] | None = None, hmac_key: str | None = None,
 ) -> dict[str, Any]:
     """Replay only evidence available by cutoff; missing inputs remain unknown."""
     cutoff = _instant(decision_time, "decision_time")
@@ -183,6 +185,19 @@ def replay_source_data_quality(
             continue
         selected.append((kind, body))
     grouped = {kind: [body for row_kind, body in selected if row_kind == kind] for kind in EVIDENCE_KINDS}
+    review_results = {"calendar_session": [], "capture_policy": []}
+    reviewed_inputs = {"calendar_session": [], "capture_policy": []}
+    for kind in review_results:
+        for body in grouped[kind]:
+            result = validate_review_attestation(
+                body, scope=kind, registry=review_registry or {},
+                hmac_key=hmac_key, decision_time=decision_time,
+            )
+            review_results[kind].append(result)
+            if result.get("eligible"):
+                reviewed_inputs[kind].append(body)
+    grouped["calendar_session"] = reviewed_inputs["calendar_session"]
+    grouped["capture_policy"] = reviewed_inputs["capture_policy"]
     calendar = validate_calendar_sessions(grouped["calendar_session"], decision_time=decision_time)
     policies, invalid_policy_count = [], 0
     for item in grouped["capture_policy"]:
@@ -235,6 +250,14 @@ def replay_source_data_quality(
         "selected_evidence_count": len(selected),
         "excluded_future_or_invalid_count": excluded,
         "evidence_kind_counts": {kind: len(values) for kind, values in grouped.items()},
+        "review_attestation": {
+            "registry_status": (review_registry or {}).get("status", "not_configured"),
+            "calendar_reviewed_count": len(reviewed_inputs["calendar_session"]),
+            "calendar_rejected_count": len(review_results["calendar_session"]) - len(reviewed_inputs["calendar_session"]),
+            "capture_policy_reviewed_count": len(reviewed_inputs["capture_policy"]),
+            "capture_policy_rejected_count": len(review_results["capture_policy"]) - len(reviewed_inputs["capture_policy"]),
+            "verified": False,
+        },
         "calendar": {
             "status": calendar["status"],
             "accepted_session_count": calendar["accepted_session_count"],
@@ -259,6 +282,7 @@ def replay_source_data_quality(
 
 def source_data_quality_readiness(
     *, database_path: str | Path | None, decision_time: str,
+    review_registry_path: str | Path | None = None, hmac_key: str | None = None,
 ) -> dict[str, Any]:
     """Read-only readiness. An absent DB is not created as a side effect."""
     path = Path(database_path).expanduser() if database_path else None
@@ -270,11 +294,18 @@ def source_data_quality_readiness(
             "data_quality": "LOW",
             "confidence": "LOW",
             "missing_reason": "persistent_calendar_capture_policy_store_not_configured",
+            "review_registry_status": "not_configured",
             "production_admission_allowed": False,
             "recommendation_override": False,
         }
     loaded = load_source_data_quality_evidence(database_path=path)
-    replay = replay_source_data_quality(loaded["rows"], decision_time=decision_time)
+    review_registry = load_source_quality_review_registry(
+        review_registry_path, hmac_key, decision_time=decision_time,
+    )
+    replay = replay_source_data_quality(
+        loaded["rows"], decision_time=decision_time,
+        review_registry=review_registry, hmac_key=hmac_key,
+    )
     return {
         "status": replay["status"],
         "store_configured": True,
@@ -283,6 +314,7 @@ def source_data_quality_readiness(
         "data_quality": replay["data_quality_report"]["data_quality"],
         "confidence": replay["data_quality_report"]["confidence"],
         "replay": replay,
+        "review_registry_status": review_registry["status"],
         "production_admission_allowed": False,
         "recommendation_override": False,
     }

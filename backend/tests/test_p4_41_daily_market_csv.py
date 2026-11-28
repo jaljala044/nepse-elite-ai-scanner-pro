@@ -1,0 +1,30 @@
+import unittest
+from app.p4_41_daily_market_csv import parse_daily_market_csv,find_symbol_record
+
+HEADER="S.No,Symbol,Conf.,Open,High,Low,Close,LTP,Close - LTP,Close - LTP %,VWAP,Vol,Prev. Close,Turnover,Trans.,Diff,Range,Diff %,Range %,VWAP %,120 Days,180 Days,52 Weeks High,52 Weeks Low"
+def line(n,symbol,open_,high,low,close,vol,turnover,trans):
+ return f'{n},{symbol},30,{open_},{high},{low},{close},{close},0,0,{close},{vol},100,{turnover},{trans},0,0,0,0,0,0,0,0,0'
+class DailyMarketCSVTests(unittest.TestCase):
+ def parse(self,body):
+  return parse_daily_market_csv(HEADER+"\n"+body,session_date="2026-10-14",source_url="https://example.test/2026_10_14.csv",retrieved_at="2026-11-28T17:00:00+04:00")
+ def test_valid_marketwide_rows(self):
+  r=self.parse(line(1,"ADBL",320,328,320,328,"139,162","45,263,784.50",517)+"\n"+line(2,"BENH",273,313.9,273,313.9,90,26634,1))
+  self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED"); self.assertEqual(r["row_count"],2)
+  self.assertEqual(find_symbol_record(r,"benh")["record"]["volume"],90)
+ def test_symbol_absence_is_not_zero_trade(self):
+  r=self.parse(line(1,"ADBL",320,328,320,328,10,1000,2))
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"NOT_PRESENT_IN_ARCHIVE_FILE")
+ def test_duplicate_symbol_flagged(self):
+  row=line(1,"ADBL",320,328,320,328,10,1000,2)
+  r=self.parse(row+"\n"+row.replace("1,ADBL","2,ADBL"))
+  self.assertIn("line_3_duplicate_symbol_ADBL",r["errors"])
+ def test_invalid_ohlc_row_rejected(self):
+  r=self.parse(line(1,"ADBL",320,310,320,328,10,1000,2))
+  self.assertEqual(r["status"],"REJECTED")
+ def test_missing_required_column_rejected(self):
+  r=parse_daily_market_csv("Symbol,Open,High,Low,Close\nADBL,1,2,1,2",session_date="2026-10-14",source_url="public",retrieved_at="now")
+  self.assertIn("missing_columns",r["errors"][0])
+ def test_invalid_session_rejected(self):
+  r=parse_daily_market_csv(HEADER,session_date="bad",source_url="public",retrieved_at="now")
+  self.assertIn("invalid_session_date",r["errors"])
+if __name__=="__main__": unittest.main()

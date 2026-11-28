@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,18 @@ def _required_text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field}_required")
     return value.strip()
+
+
+def _aware_utc(value: Any, field: str) -> datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field}_timezone_aware_required")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"{field}_timezone_aware_required") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field}_timezone_aware_required")
+    return parsed.astimezone(timezone.utc)
 
 
 def persist_sector_timeline_batch(
@@ -39,6 +52,10 @@ def persist_sector_timeline_batch(
     batch_id = _required_text(batch_id, "batch_id")
     _required_text(requested_at_utc, "requested_at_utc")
     _required_text(received_at_utc, "received_at_utc")
+    received = _aware_utc(received_at_utc, "received_at_utc")
+    requested = _aware_utc(requested_at_utc, "requested_at_utc")
+    if requested > received:
+        raise ValueError("requested_at_after_received_at")
     if not isinstance(events, list) or not events:
         raise ValueError("events_must_be_non_empty_list")
 
@@ -60,8 +77,12 @@ def persist_sector_timeline_batch(
         ):
             raise ValueError(f"event_id_already_persisted:{event_id}")
         _required_text(event.get("effective_from"), f"event_{index}_effective_from")
-        _required_text(event.get("captured_at"), f"event_{index}_captured_at")
-        _required_text(event.get("available_at"), f"event_{index}_available_at")
+        captured = _aware_utc(event.get("captured_at"), f"event_{index}_captured_at")
+        available = _aware_utc(event.get("available_at"), f"event_{index}_available_at")
+        if available < captured:
+            raise ValueError(f"event_{index}_available_before_capture")
+        if available > received:
+            raise ValueError(f"event_{index}_available_after_batch_receipt")
 
     payload = json.dumps(
         {"batch_id": batch_id, "events": events},

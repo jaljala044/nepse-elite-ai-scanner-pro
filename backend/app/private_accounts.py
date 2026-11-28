@@ -23,6 +23,8 @@ def _connect():
     path.parent.mkdir(parents=True,exist_ok=True)
     c=sqlite3.connect(path)
     c.execute("CREATE TABLE IF NOT EXISTS watchlists (owner TEXT NOT NULL, symbol TEXT NOT NULL, PRIMARY KEY(owner,symbol))")
+    c.execute("CREATE TABLE IF NOT EXISTS price_alerts (owner TEXT NOT NULL, symbol TEXT NOT NULL, direction TEXT NOT NULL, threshold TEXT NOT NULL, PRIMARY KEY(owner,symbol,direction,threshold))")
+    c.execute("CREATE TABLE IF NOT EXISTS price_alert_events (owner TEXT NOT NULL, symbol TEXT NOT NULL, direction TEXT NOT NULL, threshold TEXT NOT NULL, session TEXT NOT NULL, PRIMARY KEY(owner,symbol,direction,threshold,session))")
     return c
 
 def watchlist(owner):
@@ -36,3 +38,35 @@ def set_watchlist(owner,symbols):
         c.execute("DELETE FROM watchlists WHERE owner=?",(owner,))
         c.executemany("INSERT INTO watchlists VALUES (?,?)",[(owner,s) for s in sorted(set(symbols))])
     return watchlist(owner)
+
+def normalize_alert(symbol, direction, threshold):
+    from decimal import Decimal, InvalidOperation
+    if not isinstance(symbol,str) or not re.fullmatch(r"[A-Z0-9]{1,20}",symbol) or direction not in ("above","below"):
+        raise ValueError("Invalid alert")
+    try:
+        p=Decimal(str(threshold))
+        if not p.is_finite() or p<=0 or p>100000000 or p!=p.quantize(Decimal("0.01")):
+            raise ValueError("Invalid threshold")
+        return symbol,direction,format(p,".2f")
+    except (InvalidOperation,TypeError):
+        raise ValueError("Invalid threshold") from None
+
+def list_alerts(owner):
+    with _connect() as c:
+        return [{"symbol":s,"direction":d,"threshold":p} for s,d,p in c.execute("SELECT symbol,direction,threshold FROM price_alerts WHERE owner=? ORDER BY symbol,direction,threshold",(owner,))]
+
+def add_alert(owner,symbol,direction,threshold):
+    key=normalize_alert(symbol,direction,threshold)
+    with _connect() as c:
+        c.execute("BEGIN IMMEDIATE")
+        exists=c.execute("SELECT 1 FROM price_alerts WHERE owner=? AND symbol=? AND direction=? AND threshold=?",(owner,*key)).fetchone()
+        if not exists and c.execute("SELECT COUNT(*) FROM price_alerts WHERE owner=?",(owner,)).fetchone()[0]>=300:
+            raise ValueError("Alert limit reached")
+        c.execute("INSERT OR IGNORE INTO price_alerts VALUES (?,?,?,?)",(owner,*key))
+    return list_alerts(owner)
+
+def delete_alert(owner,symbol,direction,threshold):
+    key=normalize_alert(symbol,direction,threshold)
+    with _connect() as c:
+        c.execute("DELETE FROM price_alerts WHERE owner=? AND symbol=? AND direction=? AND threshold=?",(owner,*key))
+    return list_alerts(owner)

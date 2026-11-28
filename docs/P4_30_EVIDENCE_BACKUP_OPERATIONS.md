@@ -20,8 +20,10 @@ python scripts/create_evidence_backup.py \
   --writers-quiesced
 ```
 
-The destination must already exist **and be an actual mounted filesystem**;
-an ordinary directory on the application volume is rejected. The runner also
+The destination must already exist **and be an actual mounted filesystem on a distinct device**;
+an ordinary directory or a bind mount that shares the source device is rejected.
+The runner compares the destination device with both the database parent and
+raw-storage root. A distinct device still does not prove off-host placement. The runner also
 rejects overlapping source/destination trees and a source database located
 inside the backup destination. These checks prevent a backup from recursively
 copying its own output or mistaking a same-volume directory for an independent

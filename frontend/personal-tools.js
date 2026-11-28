@@ -43,5 +43,28 @@ if(typeof document!=="undefined"){
   finally{watchBusy=false;el("watch-load").disabled=false;el("watch-save").disabled=!watchLoaded;}
  }
  el("watch-load").addEventListener("click",()=>watch(false));el("watch-save").addEventListener("click",()=>watch(true));
+
+ let alertBusy=false;
+ async function alerts(method="GET"){
+  if(alertBusy)return;alertBusy=true;
+  const buttons=["alert-load","alert-add","alert-delete"].map(el);buttons.forEach(b=>b.disabled=true);
+  put("alert-status","Working…");el("alert-result").replaceChildren();
+  try{
+   let opts={method};
+   if(method!=="GET"){
+    const symbol=el("alert-symbol").value.trim().toUpperCase(),direction=el("alert-direction").value,threshold=el("alert-threshold").value.trim();
+    if(!/^[A-Z0-9]{1,20}$/.test(symbol)||!["above","below"].includes(direction)||!/^\d{1,9}(\.\d{1,2})?$/.test(threshold)||Number(threshold)<=0||Number(threshold)>100000000)throw Error("Invalid alert inputs");
+    opts={method,headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol,direction,threshold})};
+   }
+   const r=await request("/v1/account/alerts",opts);
+   if(!Array.isArray(r.rules)||r.delivery_enabled!==false)throw Error("Unexpected alert response");
+   for(const rule of r.rules){
+    const p=document.createElement("p");p.textContent=String(rule.symbol)+" · "+String(rule.direction)+" · NPR "+String(rule.threshold);el("alert-result").append(p);
+   }
+   put("alert-status",r.rules.length+" saved rules. Notification delivery disabled.");
+  }catch(e){put("alert-status",e.message);}
+  finally{alertBusy=false;buttons.forEach(b=>b.disabled=false);}
+ }
+ el("alert-load").addEventListener("click",()=>alerts());el("alert-add").addEventListener("click",()=>alerts("POST"));el("alert-delete").addEventListener("click",()=>alerts("DELETE"));
  el("calc-run").addEventListener("click",()=>{try{const ids=["calc-qty","calc-buy","calc-sell","calc-buycost","calc-sellcost","calc-tax"];const values=ids.map(id=>{const v=el(id).value;if(v.trim()==="")throw Error("Enter all inputs");return Number(v);});const r=tradeEstimate(...values);put("calc-result",Object.entries(r).map(([k,v])=>k+": "+v.toFixed(2)+(k==="returnPct"?"%":" NPR")).join("\n"));}catch(e){put("calc-result",e.message);}});
 }

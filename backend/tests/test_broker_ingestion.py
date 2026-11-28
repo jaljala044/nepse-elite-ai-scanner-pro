@@ -14,12 +14,25 @@ def make_row(**overrides):
     row.update(overrides)
     return row
 
+def rights_evidence(**overrides):
+    value = {
+        "source_id": "SRC-A", "evidence_id": "RIGHTS-1", "status": "approved",
+        "document_sha256": "c" * 64,
+        "scope": ["electronic_storage", "aggregation"],
+        "effective_from": "2026-01-01", "effective_to": None,
+        "available_at": "2026-11-24T10:00:00+05:45",
+    }
+    value.update(overrides)
+    return value
+
+
 def run(rows=None, **kwargs):
     defaults = dict(batch_id="B-1", rows=rows or [make_row()],
         verified_brokers={"BROKER-1"}, verified_sessions={"2026-11-25"},
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
         available_at="2026-11-26T09:00:00+05:45",
-        verified_session_finality={"2026-11-25": "2026-11-25T16:00:00+05:45"})
+        verified_session_finality={"2026-11-25": "2026-11-25T16:00:00+05:45"},
+        source_rights_evidence={"SRC-A": rights_evidence()})
     defaults.update(kwargs)
     return reconcile_broker_batch(**defaults)
 
@@ -103,6 +116,38 @@ class BrokerIngestionTests(unittest.TestCase):
         self.assertEqual(unknown.coverage_status, "unknown")
         self.assertFalse(partial.memory_eligible)
         self.assertFalse(unknown.memory_eligible)
+
+    def test_missing_source_rights_evidence_blocks_batch(self):
+        result = run(source_rights_evidence={})
+        self.assertFalse(result.memory_eligible)
+        self.assertTrue(any("source_rights_unverified:SRC-A" in reason
+                            for item in result.quarantined for reason in item["reasons"]))
+
+    def test_denied_source_rights_blocks_batch(self):
+        result = run(source_rights_evidence={"SRC-A": rights_evidence(status="denied")})
+        self.assertFalse(result.memory_eligible)
+        self.assertTrue(any("source_rights_unverified:SRC-A" in reason
+                            for item in result.quarantined for reason in item["reasons"]))
+
+    def test_insufficient_source_rights_scope_blocks_batch(self):
+        result = run(source_rights_evidence={"SRC-A": rights_evidence(scope=["display"])})
+        self.assertFalse(result.memory_eligible)
+        self.assertTrue(any("source_rights_scope_insufficient" in reason
+                            for item in result.quarantined for reason in item["reasons"]))
+
+    def test_late_source_rights_evidence_blocks_batch(self):
+        result = run(source_rights_evidence={"SRC-A": rights_evidence(
+            available_at="2026-11-27T10:00:00+05:45")})
+        self.assertFalse(result.memory_eligible)
+        self.assertTrue(any("source_rights_evidence_not_yet_available" in reason
+                            for item in result.quarantined for reason in item["reasons"]))
+
+    def test_rights_effective_date_must_cover_trade_session(self):
+        result = run(source_rights_evidence={"SRC-A": rights_evidence(
+            effective_from="2026-11-26")})
+        self.assertFalse(result.memory_eligible)
+        self.assertIn("source_rights_not_effective_for_session",
+                      result.quarantined[0]["reasons"])
 
     def test_availability_timezone_is_required(self):
         with self.assertRaises(IngestionError):

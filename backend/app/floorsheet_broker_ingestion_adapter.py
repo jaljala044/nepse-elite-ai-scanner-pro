@@ -62,6 +62,7 @@ def adapt_floorsheet_parties_to_broker_batch(
     expected_source_ids: set[str],
     received_source_ids: set[str],
     available_at: str,
+    source_rights_evidence: Mapping[str, Mapping[str, Any]] | None = None,
     capture_batch_id: str | None = None,
     identity_coverage_threshold: Decimal = Decimal("0.95"),
 ) -> dict:
@@ -199,6 +200,7 @@ def adapt_floorsheet_parties_to_broker_batch(
         expected_source_ids=expected_ids, received_source_ids=received_ids,
         available_at=available_at,
         verified_session_finality=verified_session_finality,
+        source_rights_evidence=source_rights_evidence,
     )
 
     adapter_failures = []

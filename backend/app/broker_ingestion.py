@@ -9,6 +9,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
+import re
 from typing import Any, Iterable, Mapping
 
 COVERAGE_THRESHOLD = Decimal("0.95")
@@ -44,6 +45,40 @@ def _canonical_session_date(value: Any, field_name: str) -> str:
 def payload_hash(payload: Mapping[str, Any]) -> str:
     return hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
 
+
+def _approved_rights(source_id: str, evidence: Any, available_by: datetime) -> tuple[bool, str | None]:
+    """Require dated, pre-available evidence covering storage and aggregation."""
+    if not isinstance(evidence, Mapping):
+        return False, "missing_source_rights_evidence"
+    required = ("source_id", "evidence_id", "status", "document_sha256",
+                "effective_from", "available_at")
+    if any(not isinstance(evidence.get(key), str) or not evidence[key].strip()
+           for key in required):
+        return False, "incomplete_source_rights_evidence"
+    if evidence["source_id"] != source_id or evidence["status"] != "approved":
+        return False, "source_rights_not_approved"
+    if not re.fullmatch(r"[0-9a-f]{64}", evidence["document_sha256"]):
+        return False, "invalid_source_rights_document_hash"
+    scope = evidence.get("scope")
+    if (not isinstance(scope, (list, tuple, set, frozenset)) or
+            not {"electronic_storage", "aggregation"}.issubset(set(scope))):
+        return False, "source_rights_scope_insufficient"
+    try:
+        start = _canonical_session_date(evidence["effective_from"], "rights_effective_from")
+        end = evidence.get("effective_to")
+        if end is not None:
+            end = _canonical_session_date(end, "rights_effective_to")
+            if end < start:
+                return False, "invalid_source_rights_effective_range"
+        captured = datetime.fromisoformat(evidence["available_at"].replace("Z", "+00:00"))
+        if captured.tzinfo is None or captured.utcoffset() is None:
+            return False, "source_rights_timestamp_not_timezone_aware"
+        if captured > available_by:
+            return False, "source_rights_evidence_not_yet_available"
+    except (IngestionError, TypeError, ValueError):
+        return False, "invalid_source_rights_evidence"
+    return True, None
+
 @dataclass(frozen=True)
 class ContractTotal:
     security_id: str
@@ -73,6 +108,7 @@ def reconcile_broker_batch(
     verified_sessions: set[str], expected_source_ids: set[str] | None,
     received_source_ids: set[str], available_at: str,
     verified_session_finality: Mapping[str, str] | None = None,
+    source_rights_evidence: Mapping[str, Mapping[str, Any]] | None = None,
     contracts: Iterable[ContractTotal] | None = None,
     seen_natural_keys: Mapping[str, str] | None = None,
     coverage_threshold: Decimal = COVERAGE_THRESHOLD,
@@ -119,6 +155,18 @@ def reconcile_broker_batch(
         coverage_status = "complete" if ratio_decimal >= threshold else "partial"
 
     report = IngestionReport(batch_id, coverage_status, ratio)
+    rights = source_rights_evidence if isinstance(source_rights_evidence, Mapping) else {}
+    approved_rights = set()
+    for source_id in sorted(expected):
+        valid, reason = _approved_rights(source_id, rights.get(source_id), availability)
+        if valid:
+            approved_rights.add(source_id)
+        else:
+            report.quarantined.append({
+                "batch_id": batch_id,
+                "reasons": [f"source_rights_unverified:{source_id}:{reason}"],
+            })
+
     prior = dict(seen_natural_keys or {})
     staged: list[dict[str, Any]] = []
     batch_keys: dict[str, str] = {}
@@ -151,6 +199,18 @@ def reconcile_broker_batch(
             reasons.append("unverified_broker_identity")
         if str(raw["source_id"]) not in expected or str(raw["source_id"]) not in received:
             reasons.append("source_not_in_verified_inventory")
+        elif str(raw["source_id"]) not in approved_rights:
+            reasons.append("source_rights_not_approved")
+        else:
+            rights_item = rights[str(raw["source_id"])]
+            try:
+                session_day = date.fromisoformat(session_text)
+                rights_start = date.fromisoformat(rights_item["effective_from"])
+                rights_end = date.fromisoformat(rights_item["effective_to"]) if rights_item.get("effective_to") else None
+                if session_day < rights_start or (rights_end is not None and session_day > rights_end):
+                    reasons.append("source_rights_not_effective_for_session")
+            except (TypeError, ValueError):
+                reasons.append("invalid_source_rights_effective_range")
         side = str(raw["side"]).upper()
         if side not in SIDES:
             reasons.append("invalid_side")

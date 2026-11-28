@@ -157,6 +157,14 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertTrue(result["exploratory_replay_eligible"])
         self.assertEqual(result["verified_traded_session_count"], 121)
 
+    def test_same_day_finality_after_cutoff_is_rejected(self):
+        inputs = self._same_day_session_inputs(include_finality=True)
+        finality = inputs["session_evidence"]["2026-01-01"]["session_finality_evidence"]
+        finality["claims"]["finalized_at"] = "2026-01-01T15:31:00+05:45"
+        result = self.evaluate(**inputs)
+        self.assertIn("same_day_session_finality_unverified:2026-01-01", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_complete_verified_segment_is_exploratory_only(self):
         result = self.evaluate()
         self.assertTrue(result["exploratory_replay_eligible"])

@@ -5,6 +5,10 @@ need a provider account, a licence, or an exact endpoint supplied by the provide
 
 ## Collection tiers
 
+For five-year floorsheet and chart collection across every equity, follow [Five-year all-equity historical evidence policy](FIVE_YEAR_HISTORICAL_EVIDENCE_POLICY.md). Two lineage-independent sources matching exactly can establish a COMPLETE_EVIDENCED historical record; NEPSE remains a reference source where available, and Mero Lagani is available for mismatch investigation. The prior three-source OHLCV-only policy is superseded.
+
+
+
 | Source | Data/use | Access status | Collector status |
 |---|---|---|---|
 | OmitNomis ShareSansarScraper | Historical daily OHLCV archive, latest session, symbols | Public JSON archive; unofficial ShareSansar-derived data | Verified JSON snapshot endpoints implemented |
@@ -300,12 +304,12 @@ been copied into this private repository.
 The main scanner's floorsheet normalizer accepts an optional `--validation-registry`
 argument. The package is published from `jaljala044/nepse-smc-data` and is pinned in
 CI to the tested source commit
-`122acaae8665fd396d206ea40b66861b9cbd4d6b`.
+`edbdfcff33afe0b6711639a0a56cbce0d32ea9fb`.
 
 Install it in the scanner environment:
 
 ```bash
-python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@122acaae8665fd396d206ea40b66861b9cbd4d6b"
+python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@edbdfcff33afe0b6711639a0a56cbce0d32ea9fb"
 ```
 
 Then run normalization with a shared, durable registry path:

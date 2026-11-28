@@ -1,5 +1,9 @@
+import tempfile
 import unittest
-from app.historical_coverage import build_historical_coverage_report
+from pathlib import Path
+
+from nepse_shared_validation import ValidationRegistry
+from app.historical_coverage import build_historical_coverage_report, build_cached_historical_coverage_report
 
 
 def row(source, symbol, close, day="2026-11-24"):
@@ -65,6 +69,63 @@ class HistoricalCoverageTests(unittest.TestCase):
     def test_empty_expected_grid_rejected(self):
         with self.assertRaisesRegex(ValueError, "verified expected"):
             build_historical_coverage_report([], expected_sessions=[], expected_symbols=["NABIL"])
+
+    def test_identical_file_reuses_cached_coverage_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first, second = root / "a.csv", root / "b.csv"
+            first.write_bytes(b"same source bytes")
+            second.write_bytes(first.read_bytes())
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            calls = []
+            def load_records(path):
+                calls.append(path)
+                return [row("A", "NABIL", "100")]
+            kwargs = dict(expected_sessions=["2026-11-24"], expected_symbols=["NABIL"],
+                          load_records=load_records, registry=registry)
+            a = build_cached_historical_coverage_report(first, **kwargs)
+            b = build_cached_historical_coverage_report(second, **kwargs)
+            self.assertFalse(a["cache_hit"])
+            self.assertTrue(b["cache_hit"])
+            self.assertEqual(a["report"], b["report"])
+            self.assertEqual(len(calls), 1)
+
+    def test_changed_expected_grid_invalidates_cached_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "history.csv"
+            source.write_bytes(b"same source bytes")
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            calls = []
+            def load_records(path):
+                calls.append(path)
+                return [row("A", "NABIL", "100")]
+            common = dict(expected_symbols=["NABIL"], load_records=load_records, registry=registry)
+            first = build_cached_historical_coverage_report(source, expected_sessions=["2026-11-24"], **common)
+            second = build_cached_historical_coverage_report(source, expected_sessions=["2026-11-24", "2026-11-25"], **common)
+            self.assertFalse(first["cache_hit"])
+            self.assertFalse(second["cache_hit"])
+            self.assertEqual(len(calls), 2)
+
+    def test_changed_file_bytes_revalidate_coverage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "history.csv"
+            source.write_bytes(b"first")
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            calls = []
+            def load_records(path):
+                calls.append(path.read_bytes())
+                return [row("A", "NABIL", "100")]
+            kwargs = dict(expected_sessions=["2026-11-24"], expected_symbols=["NABIL"],
+                          load_records=load_records, registry=registry)
+            first = build_cached_historical_coverage_report(source, **kwargs)
+            source.write_bytes(b"second")
+            second = build_cached_historical_coverage_report(source, **kwargs)
+            self.assertFalse(first["cache_hit"])
+            self.assertFalse(second["cache_hit"])
+            self.assertEqual(calls, [b"first", b"second"])
+            self.assertFalse(second["report"]["coverage_report"]["canonical_promotion_allowed"])
 
 
 if __name__ == "__main__":

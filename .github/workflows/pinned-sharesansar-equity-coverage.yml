@@ -1,0 +1,42 @@
+name: pinned-sharesansar-equity-history-coverage
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/audit_sharesansar_equity_history.py"
+      - "data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv"
+      - ".github/workflows/pinned-sharesansar-equity-coverage.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install HTTP client
+        run: python -m pip install "httpx>=0.27,<1"
+      - name: Build pinned per-equity coverage inventory
+        working-directory: backend
+        run: |
+          python audit_sharesansar_equity_history.py \
+            --crosswalk ../data/reference/nepse_equity_security_id_crosswalk_2026-11-26.csv \
+            --output-dir ../data/reports
+      - name: Upload coverage inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharesansar-equity-history-coverage
+          path: |
+            data/reports/sharesansar_equity_history_coverage.csv
+            data/reports/sharesansar_equity_history_coverage.json
+          if-no-files-found: warn
+          retention-days: 30

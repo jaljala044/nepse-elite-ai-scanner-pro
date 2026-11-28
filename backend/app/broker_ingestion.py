@@ -29,6 +29,18 @@ def _decimal(value: Any, field_name: str) -> Decimal:
         raise IngestionError(f"invalid_{field_name}")
     return result
 
+
+def _canonical_session_date(value: Any, field_name: str) -> str:
+    if not isinstance(value, str):
+        raise IngestionError(f"invalid_{field_name}")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise IngestionError(f"invalid_{field_name}") from None
+    if parsed.isoformat() != value:
+        raise IngestionError(f"noncanonical_{field_name}")
+    return value
+
 def payload_hash(payload: Mapping[str, Any]) -> str:
     return hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
 
@@ -87,6 +99,11 @@ def reconcile_broker_batch(
     if not threshold.is_finite() or not (Decimal("0") < threshold <= Decimal("1")):
         raise IngestionError("invalid_coverage_threshold")
 
+    if not isinstance(verified_sessions, (set, frozenset)) or any(
+            not isinstance(item, str) or _canonical_session_date(item, "verified_session") != item
+            for item in verified_sessions):
+        raise IngestionError("invalid_verified_session_inventory")
+
     expected = set(expected_source_ids or set())
     received = set(received_source_ids or set())
     if any(not isinstance(item, str) or not item.strip() for item in expected | received):
@@ -117,13 +134,15 @@ def reconcile_broker_batch(
             continue
 
         try:
-            session = date.fromisoformat(str(raw["session_date"]))
-        except ValueError:
+            session_text = _canonical_session_date(raw["session_date"], "session_date")
+            session = date.fromisoformat(session_text)
+        except IngestionError:
+            session_text = None
             session = None
         for identity_field in ("security_id", "broker_id", "source_id", "evidence_id"):
             if not isinstance(raw[identity_field], str) or not raw[identity_field].strip():
                 reasons.append("blank_required_identity:" + identity_field)
-        if session is None or str(raw["session_date"]) not in verified_sessions:
+        if session is None or session_text not in verified_sessions:
             reasons.append("unverified_or_invalid_session")
         if str(raw["broker_id"]) not in verified_brokers:
             reasons.append("unverified_broker_identity")

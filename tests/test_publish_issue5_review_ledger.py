@@ -76,8 +76,14 @@ class PublishIssue5ReviewLedgerTests(unittest.TestCase):
             row = ["repo/a","a"*40,"x.csv","b"*64,"AAA","2024-01-01","2024-01-02","2","3","1","True"]
             with source.open("w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f); writer.writerow(fields); writer.writerow(row); writer.writerow(row)
-            with self.assertRaises(ValueError):
-                MODULE.build(source, root / "out.csv", root / "missing-validator.json")
+            report = root / "validator.json"
+            report.write_text(json.dumps({
+                "input_sha256": MODULE.sha256(source), "candidate_rows": 2,
+                "unique_source_occurrences": 1, "structural_findings": 0,
+                "finding_counts": {},
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate candidate occurrence"):
+                MODULE.build(source, root / "out.csv", report)
 
 if __name__ == "__main__":
     unittest.main()

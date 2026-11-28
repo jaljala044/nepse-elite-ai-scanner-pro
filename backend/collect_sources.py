@@ -1,4 +1,5 @@
 import argparse
+import csv
 import json
 from pathlib import Path
 
@@ -11,13 +12,25 @@ def main():
                         help="Source name; repeat to select multiple. Defaults to all.")
     parser.add_argument("--as-of-date", help="Explicit ISO date ending the five-year collection window")
     parser.add_argument("--equity-universe", type=Path,
-                        help="JSON array of effective-dated equity objects containing symbol and security_id")
+                        help="JSON array or CSV manifest containing symbol and security_id; current active-equity CSVs should include instrument_type and status")
     parser.add_argument("--session-calendar", type=Path,
                         help="JSON array of exchange-verified ISO trading dates for daily floorsheet capture")
     args = parser.parse_args()
     equities = None
     if args.equity_universe:
-        equities = json.loads(args.equity_universe.read_text(encoding="utf-8"))
+        if args.equity_universe.suffix.lower() == ".csv":
+            with args.equity_universe.open(encoding="utf-8-sig", newline="") as stream:
+                reader = csv.DictReader(stream)
+                if not reader.fieldnames or not {"symbol", "security_id"} <= set(reader.fieldnames):
+                    parser.error("equity CSV must contain symbol and security_id columns")
+                rows = list(reader)
+            if {"instrument_type", "status"} <= set(reader.fieldnames):
+                rows = [row for row in rows if row["instrument_type"].strip().casefold() == "equity"
+                        and row["status"].strip().casefold() == "active"]
+            equities = [{"symbol": row["symbol"], "security_id": row["security_id"]}
+                        for row in rows]
+        else:
+            equities = json.loads(args.equity_universe.read_text(encoding="utf-8"))
     session_dates = None
     if args.session_calendar:
         calendar_payload = json.loads(args.session_calendar.read_text(encoding="utf-8"))

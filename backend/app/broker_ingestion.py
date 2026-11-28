@@ -144,9 +144,19 @@ def reconcile_broker_batch(
     except IngestionError:
         raise IngestionError("invalid_verified_session_inventory") from None
 
+    if not isinstance(verified_brokers, (set, frozenset)) or any(
+        not isinstance(item, str) or not item.strip() or item != item.strip()
+        for item in verified_brokers
+    ):
+        raise IngestionError("invalid_verified_broker_inventory")
+    if expected_source_ids is not None and not isinstance(expected_source_ids, (set, frozenset)):
+        raise IngestionError("invalid_source_inventory")
+    if not isinstance(received_source_ids, (set, frozenset)):
+        raise IngestionError("invalid_source_inventory")
     expected = set(expected_source_ids or set())
-    received = set(received_source_ids or set())
-    if any(not isinstance(item, str) or not item.strip() for item in expected | received):
+    received = set(received_source_ids)
+    if any(not isinstance(item, str) or not item.strip() or item != item.strip()
+           for item in expected | received):
         raise IngestionError("invalid_source_inventory")
     if not expected or not received:
         coverage_status, ratio = "unknown", None

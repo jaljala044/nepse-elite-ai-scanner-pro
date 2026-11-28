@@ -131,3 +131,8 @@ GitHub Actions workflow: [backend-tests.yml](.github/workflows/backend-tests.yml
 - Do not enable scheduled scans until each data feed is tested, licensed/authorized where required, and reconciled against an authoritative exchange source.
 
 See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md), [docs/ANALYSIS_METHOD.md](docs/ANALYSIS_METHOD.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
+
+## Mandatory multi-agent work rules
+
+All agents and contributors must read [`AGENTS.md`](AGENTS.md) before working. The no-duplicate rule is mandatory across web, mobile, backend, data, research and infrastructure: preserve all passed, approved, merged and completed work; inspect open/running work and continue only its exact unfinished scope; start only verified pending or not-started work. See [Agent Work Ownership and No-Duplicate Protocol](docs/AGENT_WORK_OWNERSHIP.md).

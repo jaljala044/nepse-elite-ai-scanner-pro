@@ -213,7 +213,10 @@ def replay_source_data_quality(
         decision_time=decision_time,
         reliability_events=grouped["source_lifecycle_event"],
     )
-    raw_reconciliation = reconcile_source_observations(grouped["market_observation"])
+    try:
+        raw_reconciliation = reconcile_source_observations(grouped["market_observation"])
+    except (TypeError, ValueError):
+        raw_reconciliation = {"results": [], "conflict_count": 0, "promotion_allowed": False}
     trust_inputs = []
     for row in grouped["market_observation"]:
         if isinstance(row, dict):
@@ -257,13 +260,16 @@ def replay_source_data_quality(
         calendar=calendar, completeness=completeness,
         reconciliation=reconciliation, record_corrections=corrections,
     )
-    if invalid_policy_count or invalid_observation_count or correction_history_invalid:
+    if invalid_policy_count or correction_history_invalid:
         report["reasons"].append("persisted_evidence_validation_failed")
         report["data_quality"] = "LOW"
         report["confidence"] = "LOW"
-    # Two distinct source IDs are required before a row is described as
-    # cross-source corroborated. This does not prove publisher independence;
-    # ownership-group review remains a separate trust gate.
+    if invalid_observation_count:
+        report["reasons"].append("publisher_trust_or_freshness_incomplete")
+        report["data_quality"] = "LOW"
+        report["confidence"] = "LOW"
+    # Distinct reviewed ownership groups, not publisher IDs, are the
+    # corroboration unit. Related publisher brands count once.
     single_source_groups = sum(
         item.get("status") == "single_source_only"
         for item in reconciliation.get("results", [])

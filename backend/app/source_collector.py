@@ -173,6 +173,11 @@ def collect_configured_provider(
         if not fields <= allowed:
             return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
                      "error": "unsupported_url_template_placeholder"}]
+        permitted_for_type = ({"symbol", "security_id", "from", "to"} if data_type == "chart"
+                              else {"date", "symbol", "security_id", "from", "to"})
+        if not fields <= permitted_for_type or (data_type == "floorsheet" and "date" in fields and "symbol" in fields):
+            return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
+                     "error": "template_placeholders_conflict_with_data_type"}]
         if data_type == "chart" and "symbol" in fields:
             if not equities:
                 return [{"source": name, "data_type": data_type, "status": "BLOCKED_DEPENDENCY",
@@ -277,7 +282,8 @@ def collect(sources: list[str] | None = None, *, as_of_date: str | None = None,
     if as_of_date is not None or equities is not None:
         if as_of_date is None or equities is None:
             raise ValueError("as_of_date and complete equities universe must be supplied together")
-        plan = build_five_year_collection_plan(as_of_date=as_of_date, equities=equities)
+        plan = build_five_year_collection_plan(as_of_date=as_of_date, equities=equities,
+                                               session_dates=session_dates)
         period_start, period_end = plan["period_start"], plan["period_end"]
     if session_dates is not None:
         if not isinstance(session_dates, list) or any(not isinstance(day, str) for day in session_dates):

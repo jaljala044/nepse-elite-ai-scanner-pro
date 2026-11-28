@@ -12,7 +12,7 @@ python scripts/rank_issue5_weekly_closure_batches.py \
   --limit 5
 ```
 
-The exclusion CSV must contain a `current_date` column listing every date already registered in prior batches. The selector rejects malformed dates, unknown repositories, duplicate repository/symbol/date rows, and previous dates that are not earlier than current dates. A date is eligible only when both approved archives are represented and every pair row agrees on one previous date.
+The checked-in exclusion register `data/reference/issue5_registered_weekly_closure_dates.csv` contains 25 previously reviewed dates from PRs #356, #367, #370, #376 and #417. It includes both weekly-closure batches and the five separately tracked unknown-session dates from PR #370 so they are not repeatedly queued. The exclusion CSV must contain a `current_date` column listing every date already registered in prior batches. The selector rejects malformed dates, unknown repositories, duplicate repository/symbol/date rows, and previous dates that are not earlier than current dates. A date is eligible only when both approved archives are represented and every pair row agrees on one previous date.
 
 The schedule boundary is 2026-04-06: Friday/Saturday closures before the change, Saturday/Sunday closures from the change onward. Ranking is by candidate-pair incidence, then ascending date. The report preserves pair counts and unique-symbol counts separately.
 

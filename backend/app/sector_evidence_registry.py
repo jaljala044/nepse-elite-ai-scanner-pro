@@ -112,7 +112,7 @@ def load_sector_evidence_registry(
         if (not isinstance(reviewer, str) or not reviewer.strip()
                 or scope != "sector_membership_research"
                 or decision != "approved_for_research"
-                or reviewed_at > cutoff or reviewed_at < generated_at):
+                or reviewed_at > cutoff):
             return {**empty, "status": "rejected", "reason": f"entry_{index}_reviewer_attestation_invalid"}
         try:
             audit = audit_sector_membership_manifest(

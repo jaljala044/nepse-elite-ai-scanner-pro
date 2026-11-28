@@ -75,4 +75,43 @@ class MultiSourceCaptureTests(unittest.TestCase):
         self.assertFalse(out["backtest_admission_allowed"])
 
 
+    def test_preflight_blocks_invalid_report_sets_without_transport(self):
+        kinds = ["official_eod_ohlcv", "official_market_calendar"]
+        cutoff = "2025-02-02T00:00:00+05:45"
+        for case in ("rejected", "duplicate_id", "malformed_kind", "missing_id"):
+            with self.subTest(case=case):
+                reports = {
+                    key: validate_historical_source_contract(
+                        contract=make_contract(kind, "CAP-" + key),
+                        decision_cutoff=cutoff)
+                    for key, kind in zip(("a", "b"), kinds)
+                }
+                if case == "rejected":
+                    reports["b"]["capture_allowed"] = False
+                    expected = "unapproved_contract_keys"
+                elif case == "duplicate_id":
+                    reports["b"]["capture_spec"]["capture_id"] = "CAP-a"
+                    expected = "duplicate_capture_ids"
+                elif case == "malformed_kind":
+                    reports["b"]["capture_spec"]["dataset_kind"] = []
+                    expected = "invalid_report_keys"
+                else:
+                    reports["b"]["capture_spec"]["capture_id"] = None
+                    expected = "invalid_capture_id_keys"
+                calls = []
+                out = capture_required_historical_datasets(
+                    source_contract_reports=reports,
+                    transports={key: lambda url: calls.append(url) for key in reports},
+                    required_dataset_kinds=kinds,
+                    captured_at="2025-02-01T11:00:00+05:45",
+                    decision_cutoff=cutoff)
+                self.assertEqual(out["status"], "BLOCKED")
+                self.assertTrue(out["errors"][0][expected])
+                self.assertEqual(calls, [])
+                self.assertEqual(out["capture_results"], {})
+                self.assertFalse(out["panel_assembly_allowed"])
+                self.assertFalse(out["backtest_admission_allowed"])
+                self.assertFalse(out["production_enabled"])
+
+
 if __name__=="__main__":unittest.main()

@@ -12,6 +12,8 @@ CLI = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
 SPEC.loader.exec_module(CLI)
 
+from app.evidence_backup import _validate_backup_source_destination
+
 
 class EvidenceBackupOperatorPathTests(unittest.TestCase):
     def setUp(self):
@@ -61,6 +63,16 @@ class EvidenceBackupOperatorPathTests(unittest.TestCase):
         with patch.object(CLI.os.path, "ismount", return_value=True):
             with self.assertRaisesRegex(ValueError, "database source"):
                 CLI.validate_backup_paths(str(nested_db), str(self.source), str(self.destination))
+
+    def test_core_backup_rejects_recursive_destination(self):
+        nested = self.source / "backup-output"
+        with self.assertRaisesRegex(ValueError, "must not overlap"):
+            _validate_backup_source_destination(self.database, self.source, nested)
+
+    def test_core_backup_rejects_database_inside_destination(self):
+        nested_db = self.destination / "evidence.duckdb"
+        with self.assertRaisesRegex(ValueError, "database source"):
+            _validate_backup_source_destination(nested_db, self.source, self.destination)
 
 
 if __name__ == "__main__":

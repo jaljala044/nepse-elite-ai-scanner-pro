@@ -45,6 +45,73 @@ def _safe_payload_path(root: Path, relative: Any) -> Path:
     return path
 
 
+def _validate_daily_participation(data, expected_symbols):
+    """Validate descriptive payload structure; source truth remains upstream."""
+    from decimal import Decimal, InvalidOperation
+    def numeric(value):
+        if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+            raise TrustedArtifactError("daily_participation_invalid_number")
+        try:
+            n = Decimal(str(value))
+        except InvalidOperation:
+            raise TrustedArtifactError("daily_participation_invalid_number") from None
+        if not n.is_finite():
+            raise TrustedArtifactError("daily_participation_invalid_number")
+        return n
+    if (not isinstance(expected_symbols, list) or not expected_symbols
+            or any(not isinstance(s, str) or not s or s != s.strip().upper() for s in expected_symbols)
+            or len(set(expected_symbols)) != len(expected_symbols)):
+        raise TrustedArtifactError("daily_participation_universe_invalid")
+    counts = data.get("counts")
+    keys = {"advance", "decline", "unchanged"}
+    if (not isinstance(counts, dict) or set(counts) != keys
+            or any(type(v) is not int or v < 0 for v in counts.values())
+            or sum(counts.values()) != len(expected_symbols)
+            or data.get("missing_symbols") != []):
+        raise TrustedArtifactError("daily_participation_counts_invalid")
+    a, d = counts["advance"], counts["decline"]
+    sentiment = "positive" if a > d else "negative" if a < d else "balanced"
+    if (data.get("sentiment") != sentiment
+            or abs(numeric(data.get("pressure")) - Decimal(a-d)/len(expected_symbols)) > Decimal("0.000000000001")):
+        raise TrustedArtifactError("daily_participation_pressure_invalid")
+    def ranking(rows, descending, sign, maximum, integral=False):
+        if not isinstance(rows, list) or len(rows) > min(maximum, 100):
+            raise TrustedArtifactError("daily_participation_ranking_invalid")
+        seen, order = set(), []
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {"symbol", "value"}:
+                raise TrustedArtifactError("daily_participation_ranking_invalid")
+            symbol = row["symbol"]
+            if not isinstance(symbol, str) or symbol not in expected_symbols or symbol in seen:
+                raise TrustedArtifactError("daily_participation_ranking_symbol_invalid")
+            seen.add(symbol)
+            v = numeric(row["value"])
+            if v * sign <= 0 or (integral and v != v.to_integral_value()):
+                raise TrustedArtifactError("daily_participation_ranking_value_invalid")
+            order.append((-v if descending else v, symbol))
+        if order != sorted(order):
+            raise TrustedArtifactError("daily_participation_ranking_order_invalid")
+        return seen
+    ranks = data.get("rankings")
+    if not isinstance(ranks, dict) or set(ranks) != {"gainers", "losers", "volume", "turnover"}:
+        raise TrustedArtifactError("daily_participation_rankings_invalid")
+    gain = ranking(ranks["gainers"], True, 1, a)
+    loss = ranking(ranks["losers"], False, -1, d)
+    if gain & loss:
+        raise TrustedArtifactError("daily_participation_conflicting_direction")
+    ranking(ranks["volume"], True, 1, len(expected_symbols), True)
+    ranking(ranks["turnover"], True, 1, len(expected_symbols))
+    relative = data.get("benchmark_relative")
+    if relative is not None:
+        if not isinstance(relative, dict) or relative.get("benchmark") != "NEPSE":
+            raise TrustedArtifactError("daily_participation_benchmark_invalid")
+        numeric(relative.get("benchmark_return_pct"))
+        leaders = ranking(relative.get("leaders"), True, 1, len(expected_symbols))
+        laggards = ranking(relative.get("laggards"), False, -1, len(expected_symbols))
+        if leaders & laggards:
+            raise TrustedArtifactError("daily_participation_conflicting_benchmark_direction")
+
+
 class TrustedArtifactStore:
     """Load only artifacts pinned by server-owned registry configuration.
 
@@ -147,6 +214,7 @@ class TrustedArtifactStore:
                         raise TrustedArtifactError("daily_participation_not_complete")
                     if entry.get("equity_universe_status") != "verified":
                         raise TrustedArtifactError("equity_universe_unverified")
+                    _validate_daily_participation(data, entry.get("expected_symbols"))
                 if module in {"sector_rotation", "broker_sector_rotation"}:
                     membership_status = entry.get("sector_membership_status")
                     membership_version = entry.get("sector_membership_version")

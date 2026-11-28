@@ -64,7 +64,7 @@ class LifecycleEligibilityTests(unittest.TestCase):
         records[5]["observation_status"] = "no_trade"
         records[5]["ohlcv"] = None
         records[5].pop("adjustment_basis")
-        records[5].pop("rights_status")
+        records[5]["rights_status"] = "approved"
         report = build(sessions, records)
         self.assertEqual(report["rows"][5]["classification"], "no_trade")
         self.assertEqual(report["explicit_no_trade_session_count"], 1)
@@ -75,7 +75,7 @@ class LifecycleEligibilityTests(unittest.TestCase):
         records[5]["observation_status"] = "no_trade"
         records[5]["ohlcv"] = None
         records[5].pop("adjustment_basis")
-        records[5].pop("rights_status")
+        records[5]["rights_status"] = "approved"
         records[5]["available_at"] = "2026-11-29T00:00:00+04:00"
         report = build(sessions, records)
         self.assertIn("lookahead_available_after_cutoff",
@@ -85,9 +85,29 @@ class LifecycleEligibilityTests(unittest.TestCase):
         sessions, records = fixture()
         records[5]["observation_status"] = "no_trade"
         records[5].pop("adjustment_basis")
-        records[5].pop("rights_status")
+        records[5]["rights_status"] = "approved"
         report = build(sessions, records)
         self.assertIn("no_trade_must_not_contain_imputed_ohlcv",
+                      {item["reason"] for item in report["blockers"]})
+
+    def test_invalid_no_trade_evidence_does_not_inflate_count(self):
+        sessions, records = fixture()
+        records[5]["observation_status"] = "no_trade"
+        records[5]["ohlcv"] = None
+        records[5]["rights_status"] = "pending"
+        report = build(sessions, records)
+        self.assertEqual(report["explicit_no_trade_session_count"], 0)
+        self.assertIn("no_trade_source_rights_not_approved",
+                      {item["reason"] for item in report["blockers"]})
+
+    def test_no_trade_requires_approved_source_rights(self):
+        sessions, records = fixture()
+        records[5]["observation_status"] = "no_trade"
+        records[5]["ohlcv"] = None
+        records[5].pop("rights_status")
+        report = build(sessions, records)
+        self.assertEqual(report["explicit_no_trade_session_count"], 0)
+        self.assertIn("no_trade_source_rights_not_approved",
                       {item["reason"] for item in report["blockers"]})
 
     def test_prelisting_and_delisted_sessions_are_not_missing(self):

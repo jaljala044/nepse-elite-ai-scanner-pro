@@ -156,7 +156,10 @@ def _provider_access_approval(name: str, data_type: str, url: str) -> tuple[bool
         from datetime import date
         if entry.get("status") != "approved":
             return False, "provider_access_not_approved"
-        if data_type not in entry.get("allowed_data_types", []):
+        allowed_types = entry.get("allowed_data_types")
+        if not isinstance(allowed_types, list) or not all(isinstance(item, str) for item in allowed_types):
+            return False, "provider_access_manifest_invalid"
+        if data_type not in allowed_types:
             return False, "provider_data_type_not_approved"
         if entry.get("rights_status") not in {"research_only", "internal_use", "redistribution_permitted"}:
             return False, "provider_rights_not_approved"
@@ -166,10 +169,16 @@ def _provider_access_approval(name: str, data_type: str, url: str) -> tuple[bool
         if date.fromisoformat(entry["valid_until"]) < date.today():
             return False, "provider_access_approval_expired"
         parsed = httpx.URL(url)
-        if parsed.scheme != "https" or parsed.host not in entry.get("allowed_hosts", []):
+        hosts = entry.get("allowed_hosts")
+        prefixes = entry.get("allowed_path_prefixes")
+        if (not isinstance(hosts, list) or not hosts
+                or not all(isinstance(host, str) and host for host in hosts)
+                or not isinstance(prefixes, list) or not prefixes
+                or not all(isinstance(prefix, str) and prefix.startswith("/") for prefix in prefixes)):
+            return False, "provider_access_manifest_invalid"
+        if parsed.scheme != "https" or parsed.host not in {host.casefold() for host in hosts}:
             return False, "provider_endpoint_host_not_approved"
-        prefixes = entry.get("allowed_path_prefixes", [])
-        if not any(isinstance(prefix, str) and parsed.path.startswith(prefix) for prefix in prefixes):
+        if not any(parsed.path.startswith(prefix) for prefix in prefixes):
             return False, "provider_endpoint_path_not_approved"
         return True, "approved"
     except (ValueError, TypeError, AttributeError):
@@ -332,7 +341,7 @@ def collect(sources: list[str] | None = None, *, as_of_date: str | None = None,
         if len(session_dates) != len(set(session_dates)):
             raise ValueError("session_dates must not contain duplicates")
     records: list[dict[str, Any]] = []
-    with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=False) as client:
+    with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=True) as client:
         records.extend(collect_public_archives(client, selected))
         records.extend(collect_user_github_repos(client, selected))
         if "sharesansar" in selected:

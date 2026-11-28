@@ -223,11 +223,7 @@
               ]
             },
             "then": {
-              "required": [
-                "decided_by",
-                "decision_date",
-                "justification"
-              ],
+              "required": [],
               "properties": {
                 "decided_by": {
                   "type": "string",
@@ -241,7 +237,43 @@
                   "type": "string",
                   "minLength": 1
                 }
-              }
+              },
+              "anyOf": [
+                {
+                  "properties": {
+                    "decided_by": {
+                      "type": "null"
+                    },
+                    "decision_date": {
+                      "type": "null"
+                    },
+                    "justification": {
+                      "type": "null"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "decided_by",
+                    "decision_date",
+                    "justification"
+                  ],
+                  "properties": {
+                    "decided_by": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "decision_date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "justification": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              ]
             }
           }
         ]

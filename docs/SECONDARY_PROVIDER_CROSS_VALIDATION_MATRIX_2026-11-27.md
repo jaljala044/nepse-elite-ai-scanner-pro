@@ -1,3 +1,7 @@
+> **Policy status update — 2026-11-28:** This file is a historical evidence/audit record. Its former universal **4-of-6 providers plus two independent lineages** threshold is no longer the prerequisite for preliminary collection or project-level preferred-source approval. The operative policy is [Preferred-source floorsheet and chart evidence policy](PREFERRED_SOURCE_FLOORSHEET_CHART_EVIDENCE_POLICY.md): collect from any accessible one of ShareHub, Chukul, NepseAlpha, or ShareSansar; use chart and floorsheet evidence; ShareHub/Chukul may receive field-specific preferred-source approval when supported. The old 4-of-6 rule may be cited only as a historical secondary-consensus method, not as a mandatory blocker. Existing raw-evidence, field-semantics, unresolved-conflict, canonical eligibility, and T1/T2/T3 safeguards remain in force. Historical audit observations below describe evidence available at their recorded dates and are not automatically current provider-access status.
+
+---
+
 # Secondary NEPSE data-provider cross-validation matrix — 2026-11-27
 
 ## User-approved acceptance policy

@@ -31,7 +31,7 @@ class PublishIssue5ReviewLedgerTests(unittest.TestCase):
             self.assertEqual(manifest1["output_sha256"], manifest2["output_sha256"])
             self.assertEqual(manifest1["counts"]["candidate_rows"], 3)
             self.assertEqual(manifest1["counts"]["invalid_ohlc_geometry"], 1)
-            self.assertEqual(manifest1["counts"]["multi_day_or_unparseable_date_gap"], 1)
+            self.assertEqual(manifest1["counts"]["multi_day_date_gap"], 1)
             self.assertFalse(manifest1["counts"]["canonical_promotion_allowed"])
 
     def test_duplicate_source_occurrence_rejected(self):
@@ -72,7 +72,7 @@ class PublishIssue5ReviewLedgerTests(unittest.TestCase):
                    "x.csv","b"*64,"AAA","2024-1-1","2024-01-02","2","3","1","True"]
             with source.open("w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f); writer.writerow(fields); writer.writerow(row)
-            with self.assertRaisesRegex(ValueError, "noncanonical previous_date"):
+            with self.assertRaisesRegex(ValueError, "invalid previous_date|noncanonical previous_date"):
                 MODULE.build(source, root / "out.csv")
 
 

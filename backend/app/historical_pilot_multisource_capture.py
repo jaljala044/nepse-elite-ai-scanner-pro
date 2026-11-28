@@ -13,11 +13,51 @@ _ALLOWED_KINDS = {
 
 def capture_required_historical_datasets(*, source_contract_reports: Mapping[str, Mapping[str, object]], transports: Mapping[str, Callable[[str], Mapping[str, object]]], required_dataset_kinds: list[str], captured_at: str, decision_cutoff: str) -> dict:
     """Capture each required dataset using only its own approved contract and transport."""
-    if not isinstance(required_dataset_kinds, list) or not required_dataset_kinds or len(required_dataset_kinds) != len(set(required_dataset_kinds)):
+    if (not isinstance(required_dataset_kinds, list) or not required_dataset_kinds
+            or any(not isinstance(kind, str) or not kind for kind in required_dataset_kinds)
+            or len(required_dataset_kinds) != len(set(required_dataset_kinds))):
         raise ValueError("required_dataset_kinds must be a nonempty unique list")
     unsupported = sorted(set(required_dataset_kinds) - _ALLOWED_KINDS)
     if unsupported:
         raise ValueError(f"unsupported required dataset kinds: {unsupported}")
+    if not isinstance(source_contract_reports, Mapping) or not isinstance(transports, Mapping):
+        raise ValueError("source_contract_reports_and_transports_must_be_mappings")
+
+    # Validate the contract inventory before invoking any injected transport.
+    # A missing or duplicate contract for a required dataset type is a planning
+    # error, not something to discover after partial source capture has started.
+    contract_keys_by_kind = {kind: [] for kind in required_dataset_kinds}
+    for key, report in source_contract_reports.items():
+        if not isinstance(report, Mapping):
+            continue
+        spec = report.get("capture_spec")
+        kind = spec.get("dataset_kind") if isinstance(spec, Mapping) else None
+        if kind in contract_keys_by_kind:
+            contract_keys_by_kind[kind].append(key)
+    missing_contract_kinds = sorted(kind for kind, keys in contract_keys_by_kind.items() if not keys)
+    duplicate_contract_kinds = {
+        kind: sorted(keys) for kind, keys in contract_keys_by_kind.items() if len(keys) > 1
+    }
+    if missing_contract_kinds or duplicate_contract_kinds:
+        return {
+            "status": "BLOCKED",
+            "required_dataset_kinds": list(required_dataset_kinds),
+            "captured_dataset_kinds": [],
+            "missing_dataset_kinds": missing_contract_kinds,
+            "capture_results": {},
+            "errors": [{
+                "reason": "required_capture_contract_cardinality_invalid",
+                "missing_contract_kinds": missing_contract_kinds,
+                "duplicate_contract_kinds": duplicate_contract_kinds,
+            }],
+            "all_required_capture_packages_validated": False,
+            "publisher_authenticity_proven": False,
+            "exchange_completeness_proven": False,
+            "panel_assembly_allowed": False,
+            "backtest_admission_allowed": False,
+            "production_enabled": False,
+        }
+
     results, errors, seen_capture_ids = {}, [], set()
     for key in sorted(source_contract_reports):
         report = source_contract_reports[key]

@@ -239,7 +239,8 @@ class PortfolioRouteTests(unittest.TestCase):
 
 
     def test_private_portfolio_responses_are_never_cacheable(self):
-        unauthorized = self.client.get("/v1/portfolios")
+        with patch.dict(os.environ, {"NEPSE_DEPLOYMENT_MODE": "private"}):
+            unauthorized = self.client.get("/v1/portfolios")
         self.assertEqual(unauthorized.status_code, 401)
         self.assertEqual(unauthorized.headers.get("cache-control"), "private, no-store, max-age=0")
         self.assertEqual(unauthorized.headers.get("pragma"), "no-cache")

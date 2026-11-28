@@ -52,6 +52,13 @@ class PortfolioServiceTests(unittest.TestCase):
         self.assertEqual(2500 * reference_price - 1482500, -80000)
         self.assertAlmostEqual((-80000 / 1482500) * 100, -5.39629, places=4)
 
+    def test_fractional_share_quantities_are_rejected(self):
+        for quantity in ("0.5", "1.25", "10.0001"):
+            with self.subTest(quantity=quantity):
+                with self.assertRaisesRegex(ValueError, "whole share count"):
+                    self.tx("BUY", quantity, "100", "0", "2026-01-01")
+        self.assertEqual(service.portfolio_transactions(self.owner, self.portfolio["id"]), [])
+
     def test_oversell_is_rejected(self):
         self.tx("BUY", "5", "100", "0", "2026-01-01")
         with self.assertRaisesRegex(ValueError, "exceeds available"):

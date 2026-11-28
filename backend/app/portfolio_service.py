@@ -321,6 +321,12 @@ def set_holding_preference(owner: str, portfolio_id: str, *, symbol: str, horizo
         exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL", (portfolio_id, owner)).fetchone()
         if exists is None:
             raise LookupError("portfolio not found")
+        holding = con.execute(
+            "SELECT 1 FROM portfolio_transactions WHERE owner=? AND portfolio_id=? AND symbol=? LIMIT 1",
+            (owner, portfolio_id, ticker),
+        ).fetchone()
+        if holding is None:
+            raise LookupError("holding not found")
         con.execute("INSERT INTO portfolio_holding_preferences (owner,portfolio_id,symbol,horizon,risk_preference,created_at,updated_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(owner,portfolio_id,symbol) DO UPDATE SET horizon=excluded.horizon,risk_preference=excluded.risk_preference,updated_at=excluded.updated_at", (owner, portfolio_id, ticker, horizon, risk_preference, now, now))
         row = con.execute("SELECT symbol,horizon,risk_preference,created_at,updated_at FROM portfolio_holding_preferences WHERE owner=? AND portfolio_id=? AND symbol=?", (owner, portfolio_id, ticker)).fetchone()
     return dict(row)

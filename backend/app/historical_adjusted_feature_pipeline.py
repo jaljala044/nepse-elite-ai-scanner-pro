@@ -54,7 +54,16 @@ def build_adjusted_versioned_feature_snapshot(records: list[dict],decision_time:
     for event in events: by_symbol.setdefault(event["symbol"],[]).append(event)
     adjusted_records=[]; applied=[]
     for index,original in enumerate(records):
-        row=dict(original); symbol=str(row.get("symbol","")).strip().upper()
+        row=dict(original)
+        if row.get("record_type") != "ohlcv":
+            adjusted_records.append(row); continue
+        try:
+            row_available=_aware(str(row.get("available_at","")),"record.available_at")
+            if row_available>cutoff:
+                adjusted_records.append(row); continue
+        except ValueError:
+            adjusted_records.append(row); continue
+        symbol=str(row.get("symbol","")).strip().upper()
         try: session_day=date.fromisoformat(str(row.get("session_date")))
         except (TypeError,ValueError):
             adjusted_records.append(row); continue

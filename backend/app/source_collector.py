@@ -168,17 +168,32 @@ def _provider_access_approval(name: str, data_type: str, url: str) -> tuple[bool
             return False, "provider_approval_evidence_incomplete"
         if date.fromisoformat(entry["valid_until"]) < date.today():
             return False, "provider_access_approval_expired"
+        expiry = date.fromisoformat(entry["valid_until"])
+        if expiry.isoformat() != entry["valid_until"]:
+            return False, "provider_access_manifest_invalid"
         parsed = httpx.URL(url)
         hosts = entry.get("allowed_hosts")
         prefixes = entry.get("allowed_path_prefixes")
         if (not isinstance(hosts, list) or not hosts
-                or not all(isinstance(host, str) and host for host in hosts)
+                or not all(isinstance(host, str) and host.strip() == host
+                           and host and "/" not in host and ":" not in host
+                           for host in hosts)
                 or not isinstance(prefixes, list) or not prefixes
-                or not all(isinstance(prefix, str) and prefix.startswith("/") for prefix in prefixes)):
+                or not all(isinstance(prefix, str) and prefix.startswith("/")
+                           and not prefix.startswith("//") and "\\\\" not in prefix
+                           and "?" not in prefix and "#" not in prefix
+                           and ".." not in prefix.split("/")
+                           for prefix in prefixes)):
             return False, "provider_access_manifest_invalid"
-        if parsed.scheme != "https" or parsed.host not in {host.casefold() for host in hosts}:
+        if (parsed.scheme != "https" or parsed.username or parsed.password
+                or parsed.fragment or parsed.port not in (None, 443)
+                or parsed.host.casefold().rstrip(".") not in
+                   {host.casefold().rstrip(".") for host in hosts}):
             return False, "provider_endpoint_host_not_approved"
-        if not any(parsed.path.startswith(prefix) for prefix in prefixes):
+        def path_matches(path: str, prefix: str) -> bool:
+            normalized = prefix.rstrip("/")
+            return path == normalized or path.startswith(normalized + "/")
+        if not any(path_matches(parsed.path, prefix) for prefix in prefixes):
             return False, "provider_endpoint_path_not_approved"
         return True, "approved"
     except (ValueError, TypeError, AttributeError):

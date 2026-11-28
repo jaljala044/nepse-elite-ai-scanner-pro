@@ -1,0 +1,41 @@
+name: Issue 5 full-source gap inventory
+on:
+  pull_request:
+    paths:
+      - "backend/audit_issue5_source_archive_coverage.py"
+      - "backend/tests/test_issue5_full_source_coverage.py"
+      - ".github/workflows/issue5-full-source-gap-inventory.yml"
+      - "data/reference/nepse_session_calendar.csv"
+      - "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  full-source-gap-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download pinned source audit artifact from PR #355
+        uses: actions/download-artifact@v4
+        with:
+          name: ohlcv-row-level-exception-ledger
+          run-id: 46171839262
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/ohlcv-ledger
+      - name: Build unclassified equity session-gap inventory
+        run: |
+          python backend/audit_issue5_source_archive_coverage.py \
+            --audit-json artifacts/ohlcv-ledger/ohlcv-archive-audit.json \
+            --calendar-csv data/reference/nepse_session_calendar.csv \
+            --universe-csv data/reference/nepse_active_equity_manifest_2026-11-26.csv \
+            --output-dir output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: issue5-full-source-gap-inventory
+          path: output/
+          if-no-files-found: error
+          retention-days: 90

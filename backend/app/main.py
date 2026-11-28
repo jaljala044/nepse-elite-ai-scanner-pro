@@ -21,6 +21,7 @@ from .sector_intelligence_confluence import build_sector_intelligence_confluence
 from .sector_evidence_registry import load_sector_evidence_registry
 from .trusted_sector_reconciliation import publisher_trust_readiness
 from .source_reliability_store import source_reliability_readiness
+from .source_data_quality_store import source_data_quality_readiness
 
 def _sector_registry_snapshot(decision_time: str):
     expected = EQUITY_UNIVERSE["symbols"] if EQUITY_UNIVERSE else []
@@ -230,9 +231,14 @@ def research_readiness():
         decision_time=decision_time,
         expected_source_ids=expected_source_ids,
     )
+    source_data_quality = source_data_quality_readiness(
+        database_path=os.getenv("NEPSE_SOURCE_DATA_QUALITY_DB_PATH"),
+        decision_time=decision_time,
+    )
     return {
         "mode": "research_only",
         "source_reliability": source_reliability,
+        "source_data_quality": source_data_quality,
         "sector_evidence_registry": {
             "status": registry["status"],
             "coverage_pct": registry.get("coverage_pct", 0.0),

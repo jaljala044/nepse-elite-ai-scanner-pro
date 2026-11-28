@@ -43,7 +43,7 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
             self.assertEqual(report["source_gap_rows"], 4)
             self.assertEqual(report["unique_symbol_date_keys"], 3)
             self.assertEqual(report["overlap_classification_counts"], {
-                "both_source_gap": 1,
+                "both_sources_gap": 1,
                 "history_starter_only_gap": 1,
                 "smc_only_gap": 1,
             })
@@ -63,7 +63,7 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
     def test_noncanonical_date_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            with self.assertRaisesRegex(ValueError, "noncanonical trade date"):
+            with self.assertRaisesRegex(ValueError, "invalid trade date"):
                 summarize(self.write(root, [self.row(SMC, "ABC", "2026-1-2")]))
 
     def test_unknown_source_fails(self):

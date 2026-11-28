@@ -124,6 +124,22 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("quarantined_bar:" + self.sessions[0], result["reasons"])
         self.assertFalse(result["exploratory_replay_eligible"])
 
+    def test_explicit_quarantine_marker_blocks_traded_bar(self):
+        records = list(self.records)
+        records[0] = dict(records[0], quarantined=True)
+        result = self.evaluate(records=records)
+        self.assertIn("quarantined_bar:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+        self.assertEqual(result["verified_traded_session_count"], 119)
+
+    def test_blocked_no_trade_session_cannot_bridge_window(self):
+        day = self.sessions[-1]
+        result = self.evaluate(session_statuses=dict(self.statuses, **{day: "no_trade_verified"}),
+                               records=self.records[:-1], required_sessions=119,
+                               blocked_keys={("NABIL", day)})
+        self.assertIn("quarantined_session_in_window", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
 
 if __name__ == "__main__":
     unittest.main()

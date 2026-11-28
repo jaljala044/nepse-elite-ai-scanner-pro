@@ -3,6 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import re
 from .issue5_quarantine import Quarantine
+from .quarantine_guard import is_quarantined, runtime_quarantine_keys, quarantine_gap_symbols
 
 ARCHIVE_FIELDS = frozenset({'repository', 'commit_sha', 'source_file', 'source_file_sha256', 'target_csv_row', 'target_date'})
 
@@ -19,12 +20,18 @@ def instant(value):
 
 def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,records,
                                 required_sessions,available_warmup_sessions,decision_cutoff,
-                                archive_guard=None, require_archive_guard=False):
+                                archive_guard=None, require_archive_guard=False, blocked_keys=None):
     reasons=[]
     traded=no_trade=0
     def reject(reason):
         if reason not in reasons:
             reasons.append(reason)
+    try:
+        configured = runtime_quarantine_keys()
+        blocked_keys = frozenset(blocked_keys or ()) | (configured or frozenset())
+    except (ValueError, TypeError):
+        reject("runtime_quarantine_ledger_invalid")
+        blocked_keys = frozenset()
     if segment.get("identity_verified") is not True or not segment.get("security_id") or not segment.get("symbol"):
         reject("instrument_identity_not_verified")
     if segment.get("boundary_reviewed") is not True:
@@ -42,13 +49,15 @@ def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,rec
         if end is not None and end<start:
             raise ValueError("inverted interval")
         sessions=[day(d) for d in expected_sessions]
-        if not sessions or len(sessions)!=len(set(sessions)):
+        if not sessions or sessions != sorted(set(sessions)):
             reject("invalid_expected_sessions")
         if type(required_sessions) is not int or required_sessions<=0:
             raise ValueError("invalid required sessions")
         warmup=segment["minimum_warmup_sessions"]
         if type(warmup) is not int or warmup<0 or type(available_warmup_sessions) is not int or available_warmup_sessions<warmup:
             reject("insufficient_causal_warmup")
+        if quarantine_gap_symbols(((str(segment.get("symbol", "")), d) for d in sessions), blocked_keys):
+            reject("quarantined_session_in_window")
         expected=set(sessions)
         by_day={}
         for row in records:
@@ -79,6 +88,8 @@ def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,rec
                 nonlocal valid
                 valid=False
                 reject(reason+":"+d)
+            if is_quarantined(row) or (str(segment.get("symbol", "")).strip().upper(), d) in blocked_keys:
+                bad("quarantined_bar")
             if require_archive_guard or archive_guard is not None or ARCHIVE_FIELDS.intersection(row):
                 if not isinstance(archive_guard, Quarantine):
                     bad("archive_quarantine_guard_missing")
@@ -124,3 +135,18 @@ def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,rec
 def evaluate_archive_historical_segment(*, archive_guard=None, **kwargs):
     """Archive entry point: absence of guard/provenance always fails closed."""
     return evaluate_historical_segment(archive_guard=archive_guard, require_archive_guard=True, **kwargs)
+
+
+def evaluate_runtime_historical_segment(**kwargs):
+    """Require server-pinned ledger; caller exclusions cannot override it."""
+    try:
+        keys = runtime_quarantine_keys(required=True)
+        if keys is None:
+            raise ValueError("missing runtime ledger")
+        kwargs["blocked_keys"] = keys | frozenset(kwargs.get("blocked_keys") or ())
+    except (ValueError, TypeError):
+        return {"reasons": ["runtime_quarantine_ledger_missing_or_invalid"],
+                "verified_traded_session_count": 0, "verified_no_trade_count": 0,
+                "exploratory_replay_eligible": False, "approved_backtest_eligible": False,
+                "production_promotion_allowed": False}
+    return evaluate_historical_segment(**kwargs)

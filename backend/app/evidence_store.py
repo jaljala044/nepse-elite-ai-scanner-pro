@@ -21,7 +21,7 @@ from .raw_capture import persist_capture
 RECORD_TYPES = {
     "ohlcv", "index_ohlcv", "market_summary", "floorsheet",
     "sector_membership", "sector_price", "corporate_action",
-    "broker_observation", "broker",
+    "broker_observation", "broker", "source_reliability_event",
 }
 
 

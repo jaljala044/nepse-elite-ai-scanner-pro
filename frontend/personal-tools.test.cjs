@@ -1,0 +1,10 @@
+const {test}=require("node:test");
+const assert=require("node:assert/strict");
+const {symbolsFrom,compareHistory,tradeEstimate}=require("./personal-tools.js");
+test("watchlist deduplication",()=>assert.deepEqual(symbolsFrom("nabil, NABIL hdl"),["NABIL","HDL"]));
+test("invalid symbol rejected",()=>assert.throws(()=>symbolsFrom("NABIL!")));
+test("comparison common dates only",()=>{const a={symbol:"A",rows:[{date:"2026-01-01",close:50},{date:"2026-01-02",close:100},{date:"2026-01-03",close:120}]};const b={symbol:"B",rows:[{date:"2026-01-02",close:100},{date:"2026-01-03",close:110}]};const r=compareHistory([a,b]);assert.equal(r.count,2);assert.ok(Math.abs(r.rows[0].returnPct-20)<1e-8);});
+test("no common interval rejected",()=>assert.throws(()=>compareHistory([{rows:[]},{rows:[]}])));
+test("gain and costs",()=>{const r=tradeEstimate(10,100,120,10,10,10);assert.equal(r.tax,18);assert.equal(r.net,162);});
+test("loss has no estimated gain tax",()=>assert.equal(tradeEstimate(10,100,90,10,10,10).tax,0));
+test("invalid quantity",()=>assert.throws(()=>tradeEstimate(1.5,100,120,0,0,0)));

@@ -1,0 +1,10 @@
+const {test}=require("node:test");
+const assert=require("node:assert/strict");
+const {sectorView}=require("./sector-rotation.js");
+const w=(excess,ret,coverage=90)=>({status:"observed",median_excess_return_pct:excess,median_return_pct:ret,coverage_pct:coverage});
+const report={mode:"descriptive_only",status:"observed",signals_enabled:false,sectors:{Bank:{windows:{"1M":w(5,7),"3M":w(9,12)}}}};
+test("transparent proxy and heat",()=>assert.deepEqual(sectorView(report),[{name:"Bank",ratio:9,momentum:2,heat:7,coverage:90}]));
+test("reject nonobserved report and signals",()=>{assert.deepEqual(sectorView({...report,status:"insufficient_evidence"}),[]);assert.deepEqual(sectorView({...report,signals_enabled:true}),[]);});
+test("missing window remains unknown",()=>assert.equal(sectorView(report,"1W")[0].heat,null));
+test("low coverage withheld",()=>{const r={...report,sectors:{Bank:{windows:{"1M":w(5,7,79),"3M":w(9,12)}}}};assert.equal(sectorView(r)[0].heat,null);assert.equal(sectorView(r)[0].momentum,null);});
+test("invalid window rejected",()=>assert.throws(()=>sectorView(report,"2W")));

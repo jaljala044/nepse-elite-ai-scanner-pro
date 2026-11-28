@@ -101,7 +101,10 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
         try:
             fields = PROFILES[provider]
             day = _day(_pick(row, fields["date"]))
-            vals = {key: float(_pick(row, aliases)) for key, aliases in fields.items() if key != "date"}
+            raw_values = {key: _pick(row, aliases) for key, aliases in fields.items() if key != "date"}
+            if any(value is None for value in raw_values.values()):
+                raise ValueError("missing_ohlcv_field")
+            vals = {key: float(value) for key, value in raw_values.items()}
             if any(v is None for v in vals.values()):
                 raise ValueError("missing_ohlcv_field")
             if any(not math.isfinite(v) for v in vals.values()):

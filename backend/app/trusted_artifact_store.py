@@ -11,6 +11,7 @@ from hashlib import sha256
 import json
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
+from zoneinfo import ZoneInfo
 
 from .market_intelligence_snapshot import REQUIRED_MODULES
 
@@ -72,7 +73,7 @@ class TrustedArtifactStore:
         except (TypeError, ValueError):
             raise TrustedArtifactError("decision_date_must_be_iso_date") from None
         cutoff = _timestamp(decision_time, "decision_time")
-        if cutoff.date() < cutoff_date:
+        if cutoff.astimezone(ZoneInfo('Asia/Kathmandu')).date() < cutoff_date:
             raise TrustedArtifactError("decision_time_precedes_decision_date")
         if not isinstance(self.registry, Mapping):
             raise TrustedArtifactError("server_registry_invalid")
@@ -130,13 +131,22 @@ class TrustedArtifactStore:
                 context = {"session_calendar_id": calendar_id}
                 price_modules = {
                     "market_health", "index_intelligence", "sector_rotation",
-                    "relative_strength", "wyckoff", "market_structure",
+                    "relative_strength", "wyckoff", "market_structure", "daily_market_participation",
                 }
                 if module in price_modules:
                     action_status = entry.get("corporate_action_status")
                     if action_status not in {"verified", "confirmed_none"}:
                         raise TrustedArtifactError("corporate_action_status_unverified")
                     context["corporate_action_status"] = action_status
+                if module == "daily_market_participation":
+                    if (coverage != 1 or data.get("status") != "research_only"
+                            or data.get("coverage") != 1
+                            or data.get("as_of_session") != as_of.isoformat()
+                            or data.get("signals_enabled") is not False
+                            or not isinstance(data.get("rankings"), dict)):
+                        raise TrustedArtifactError("daily_participation_not_complete")
+                    if entry.get("equity_universe_status") != "verified":
+                        raise TrustedArtifactError("equity_universe_unverified")
                 if module in {"sector_rotation", "broker_sector_rotation"}:
                     membership_status = entry.get("sector_membership_status")
                     membership_version = entry.get("sector_membership_version")
@@ -182,7 +192,8 @@ def build_trusted_market_snapshot(store: TrustedArtifactStore, *,
     """Load pinned server-side artifacts and pass only admitted envelopes onward."""
     from .market_intelligence_snapshot import build_market_intelligence_snapshot
 
-    artifacts = store.load(decision_date=decision_date, decision_time=decision_time)
+    modules = REQUIRED_MODULES + ("daily_market_participation",)
+    artifacts = store.load(decision_date=decision_date, decision_time=decision_time, required_modules=modules)
     return build_market_intelligence_snapshot(
-        artifacts, decision_date=decision_date, decision_time=decision_time
+        artifacts, decision_date=decision_date, decision_time=decision_time, required_modules=modules
     )

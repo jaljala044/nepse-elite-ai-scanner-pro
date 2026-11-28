@@ -103,3 +103,31 @@ def add_transaction(portfolio_id: str, payload: PortfolioTransactionCreate, requ
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+
+class HoldingPreferenceUpdate(BaseModel):
+    horizon: str
+    risk_preference: str
+
+
+@router.get("/{portfolio_id}/preferences")
+def holding_preferences(portfolio_id: str, request: Request):
+    result = service.list_holding_preferences(_owner(request), portfolio_id)
+    if result is None:
+        raise HTTPException(404, "Portfolio not found")
+    return {"portfolio_id": portfolio_id, "preferences": result}
+
+
+@router.put("/{portfolio_id}/preferences/{symbol}")
+def update_holding_preference(portfolio_id: str, symbol: str,
+                              payload: HoldingPreferenceUpdate, request: Request):
+    try:
+        return service.set_holding_preference(
+            _owner(request), portfolio_id, symbol=symbol,
+            horizon=payload.horizon, risk_preference=payload.risk_preference,
+        )
+    except LookupError as exc:
+        raise HTTPException(404, "Portfolio not found") from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc

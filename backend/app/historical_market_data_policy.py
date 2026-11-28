@@ -231,7 +231,8 @@ def resolve_record_by_two_source_match(
             "selected_record": None, "reason_codes": reasons,
             "rejected_observations": rejected,
             "lineage_independent_source_count": len(lineages),
-            "source_observations": observations, "promotion": "BLOCKED",
+            "source_observations": observations, "canonical_candidate": False,
+            "promotion": "BLOCKED",
         }
 
     signature, groups = qualifying[0]
@@ -271,7 +272,8 @@ def resolve_record_by_two_source_match(
         and isinstance(investigation.get("evidence_refs"), list)
         and bool(investigation["evidence_refs"])
     )
-    status = "COMPLETE_EVIDENCED" if not conflicts or investigation_complete else "PARTIAL_EVIDENCED"
+    status = ("COMPLETE_EVIDENCED" if (not conflicts and not rejected) or
+              (investigation_complete and (conflicts or rejected)) else "PARTIAL_EVIDENCED")
     return {
         "status": status, "record_key": record_key, "selected_record": selected,
         "selected_source_ids": sorted({valid[index]["source_id"] for index in selected_indices}),
@@ -283,7 +285,7 @@ def resolve_record_by_two_source_match(
                          ["two_independent_sources_match",
                           "source_mismatch_investigation_recorded" if investigation_complete
                           else "source_mismatch_investigation_required"]),
-        "source_observations": observations,
+        "source_observations": observations, "rejected_observations": rejected,
         "canonical_candidate": status == "COMPLETE_EVIDENCED",
         "promotion": "BLOCKED",
     }

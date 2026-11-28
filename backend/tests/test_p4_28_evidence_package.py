@@ -21,7 +21,7 @@ class EvidencePackageTests(unittest.TestCase):
  def test_unapproved_host_and_path_traversal_block(self):
   rows=[self.artifact(source_url="https://example.com/x"),self.artifact(artifact_id="BADPATH",archive_path="../notice.bin")]
   r=verify_raw_evidence_archive(artifacts=rows,archive_root=self.root,decision_cutoff=self.cutoff,required_artifact_ids=["NEPSE-LIST-1"])
-  self.assertEqual(r["status"],"RAW_EVIDENCE_ARCHIVE_BLOCKED"); self.assertEqual(len(r["errors"]),2)
+  self.assertEqual(r["status"],"RAW_EVIDENCE_ARCHIVE_BLOCKED"); self.assertEqual(len(r["errors"]),3); self.assertIn("required_raw_artifacts_missing",{e.get("reason") for e in r["errors"]})
  def test_future_evidence_blocks(self):
   r=verify_raw_evidence_archive(artifacts=[self.artifact(available_at="2026-12-01T00:00:00+05:45")],archive_root=self.root,decision_cutoff=self.cutoff,required_artifact_ids=["NEPSE-LIST-1"])
   self.assertEqual(r["status"],"RAW_EVIDENCE_ARCHIVE_BLOCKED")

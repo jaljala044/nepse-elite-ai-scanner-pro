@@ -2,6 +2,7 @@ import unittest
 from datetime import date, timedelta
 
 from app.idpat_accumulation_distribution import analyze_idpat_accumulation_distribution
+from app.idpat_price_volume import IDPATError
 
 
 def make_snapshot(last_overrides=None, volume=1000):
@@ -82,6 +83,37 @@ class IDPATAccumulationDistributionTests(unittest.TestCase):
         })
         result = self.analyze(data)
         self.assertTrue(result["signals"]["possible_selling_climax"])
+
+    def test_duplicate_or_overlapping_session_window_is_rejected(self):
+        data = make_snapshot()
+        data["price_volume"]["bars"][-1] = dict(data["price_volume"]["bars"][-2])
+        with self.assertRaisesRegex(IDPATError, "bars_must_be_unique_and_ascending"):
+            self.analyze(data)
+
+    def test_non_finite_and_negative_ohlcv_are_rejected(self):
+        for field, value in (("volume", "NaN"), ("volume", "-1"), ("close", "Infinity"), ("low", "-0.1")):
+            with self.subTest(field=field, value=value):
+                data = make_snapshot()
+                data["price_volume"]["bars"][-1][field] = value
+                with self.assertRaises(IDPATError):
+                    self.analyze(data)
+
+    def test_timezone_naive_availability_is_rejected(self):
+        data = make_snapshot()
+        data["price_volume"]["available_at"] = "2026-11-26T15:00:00"
+        with self.assertRaisesRegex(IDPATError, "timezone_aware"):
+            self.analyze(data)
+
+    def test_symbol_and_security_identity_change_is_rejected(self):
+        data = make_snapshot()
+        data["security_id"] = "SEC-1"
+        data["price_volume"]["bars"][10]["security_id"] = "SEC-2"
+        with self.assertRaisesRegex(IDPATError, "bar_security_identity_mismatch"):
+            self.analyze(data)
+        data = make_snapshot()
+        data["price_volume"]["bars"][10]["symbol"] = "OTHER"
+        with self.assertRaisesRegex(IDPATError, "bar_symbol_identity_mismatch"):
+            self.analyze(data)
 
     def test_future_bar_is_withheld_by_upstream_validator(self):
         data = make_snapshot()

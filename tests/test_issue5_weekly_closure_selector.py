@@ -23,7 +23,7 @@ class WeeklyClosureSelectorTests(unittest.TestCase):
         return {
             "repository": repository, "symbol": symbol,
             "previous_date": previous, "current_date": current,
-            "session_pair_classification": CLASSIFICATION,
+            "session_join_classification": CLASSIFICATION,
         }
 
     def test_checked_in_exclusion_register_has_unique_prior_review_dates(self):

@@ -3,10 +3,13 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-from audit_sharesansar_equity_history import classify_span, load_crosswalk, summarize_payload
+from audit_sharesansar_equity_history import _git_blob_sha, classify_span, load_crosswalk, summarize_payload
 
 
 class ShareSansarEquityHistoryCoverageTests(unittest.TestCase):
+    def test_git_blob_sha_uses_git_object_header(self):
+        self.assertEqual(_git_blob_sha(b"hello\n"), "ce013625030ba8dba906f756967f9e9ca394464a")
+
     def test_three_and_five_year_thresholds_are_calendar_based(self):
         three = classify_span(date(2021, 3, 1), date(2024, 3, 1))
         five = classify_span(date(2021, 3, 1), date(2026, 3, 1))

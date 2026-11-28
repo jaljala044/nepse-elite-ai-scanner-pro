@@ -54,11 +54,20 @@ def _timestamp(value: str, field: str) -> datetime:
 def _read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
     with path.open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        missing = required - set(reader.fieldnames or [])
+        headers = reader.fieldnames or []
+        if not headers or any(not isinstance(name, str) or not name.strip() for name in headers):
+            raise ValueError("CSV headers must be nonblank")
+        if len(headers) != len(set(headers)):
+            raise ValueError("duplicate CSV headers")
+        missing = required - set(headers)
         if missing:
             raise ValueError("missing columns: " + ", ".join(sorted(missing)))
-        return [{key: (value or "").strip() for key, value in row.items()}
-                for row in reader]
+        rows = []
+        for line, row in enumerate(reader, start=2):
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(f"malformed CSV row at line {line}")
+            rows.append({key: (value or "").strip() for key, value in row.items()})
+        return rows
 
 
 def adjudicate(gap_csv: Path, evidence_csv: Path, *, decision_cutoff: str | None = None) -> dict:
@@ -76,7 +85,9 @@ def adjudicate(gap_csv: Path, evidence_csv: Path, *, decision_cutoff: str | None
         symbol = row["symbol"].upper()
         day = row["trade_date"]
         _day(day, f"gap line {line} trade_date")
-        if not symbol or row["gap_status"] != GAP_STATUS:
+        if (not row["repository"] or row["repository"] not in {
+                "jaljala044/nepse-smc-data", "jaljala044/nepse-history-starter"}
+                or not symbol or row["gap_status"] != GAP_STATUS):
             raise ValueError(f"invalid gap identity or status at line {line}")
         key = (symbol, day)
         source_key = (row["repository"], symbol, day)

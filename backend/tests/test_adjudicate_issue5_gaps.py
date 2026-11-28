@@ -47,6 +47,43 @@ class Issue5EvidenceAdjudicationTests(unittest.TestCase):
             evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, evidence_rows)
             return adjudicate(gaps, evidence, decision_cutoff=cutoff)
 
+    def test_duplicate_csv_headers_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = root / "gaps.csv"
+            gaps.write_text(
+                "repository,repository,symbol,trade_date,gap_status\n"
+                f"{SMC},{SMC},ABC,2026-01-02,{STATUS}\n",
+                encoding="utf-8",
+            )
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])
+            with self.assertRaisesRegex(ValueError, "duplicate CSV headers"):
+                adjudicate(gaps, evidence)
+
+    def test_extra_csv_columns_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = root / "gaps.csv"
+            gaps.write_text(
+                "repository,symbol,trade_date,gap_status\n"
+                f"{SMC},ABC,2026-01-02,{STATUS},EXTRA\n",
+                encoding="utf-8",
+            )
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])
+            with self.assertRaisesRegex(ValueError, "malformed CSV row"):
+                adjudicate(gaps, evidence)
+
+    def test_unknown_gap_repository_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = self.write(root / "gaps.csv", GAP_FIELDS, [{
+                "repository": "untrusted/mirror", "symbol": "ABC",
+                "trade_date": "2026-01-02", "gap_status": STATUS,
+            }])
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])
+            with self.assertRaisesRegex(ValueError, "invalid gap identity"):
+                adjudicate(gaps, evidence)
+
     def test_explicit_official_no_trade_is_narrowly_classified(self):
         report = self.run_case([self.evidence()])
         row = report["results"][0]

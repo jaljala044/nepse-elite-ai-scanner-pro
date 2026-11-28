@@ -145,7 +145,7 @@ def record_restore_drill(
             "previous_event_sha256": previous,
         }
         event["event_sha256"] = _event_hash(event)
-        payload = (json.dumps(event, sort_keys=True, separators=(",", ":")) + "\\n").encode("utf-8")
+        payload = (json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
         flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | nofollow
         log_fd = os.open(path, flags, 0o600)
         try:

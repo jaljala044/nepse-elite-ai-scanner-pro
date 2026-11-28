@@ -52,7 +52,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
                 "symbol,instrument_type,status\nABC,Equity,Active\nFUND,Mutual Fund,Active\n",
                 encoding="utf-8",
             )
-            report, gaps = build_report(audit_path, calendar_path, universe_path)
+            report, gaps = build_report(audit_path, calendar_path, universe_path, expected_active_equity_count=1)
             self.assertEqual(report["active_equity_count"], 1)
             self.assertEqual(report["unclassified_gap_count"], 2)
             self.assertEqual({g["trade_date"] for g in gaps}, {"2026-01-02"})
@@ -77,7 +77,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             cp = root / "calendar.csv"; cp.write_text("date,status\n2026-01-01,project_accepted_open\n")
             up = root / "universe.csv"; up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n")
             with self.assertRaisesRegex(ValueError, "pinned approved input"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
     def test_duplicate_calendar_date_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -90,7 +90,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             cp.write_text("date,status\n2026-01-01,project_accepted_open\n2026-01-01,project_accepted_open\n")
             up = root / "universe.csv"; up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n")
             with self.assertRaisesRegex(ValueError, "canonical and unique"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
 
     def _minimal_inputs(self, root):
@@ -126,6 +126,13 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
         )
         return audit, audit_path, calendar_path, universe_path
 
+    def test_active_equity_count_must_match_expected_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _, ap, cp, up = self._minimal_inputs(root)
+            with self.assertRaisesRegex(ValueError, "active equity universe count mismatch"):
+                build_report(ap, cp, up, expected_active_equity_count=281)
+
     def test_duplicate_date_coverage_key_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -135,7 +142,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             )
             ap.write_text(json.dumps(audit), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "duplicate date coverage key"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
     def test_unknown_symbol_in_date_coverage_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -144,7 +151,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"][0]["symbols"].append("GHOST")
             ap.write_text(json.dumps(audit), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "unknown source symbol"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
     def test_observed_date_outside_source_file_range_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -155,7 +162,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             )
             ap.write_text(json.dumps(audit), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "outside file range"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
     def test_duplicate_active_equity_symbol_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -166,7 +173,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "active equity symbols must be unique"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
     def test_nonzero_duplicate_source_date_count_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -175,7 +182,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             audit["repositories"]["jaljala044/nepse-smc-data"]["duplicate_date_count"] = 1
             ap.write_text(json.dumps(audit), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "duplicate source dates remain"):
-                build_report(ap, cp, up)
+                build_report(ap, cp, up, expected_active_equity_count=1)
 
 
 if __name__ == "__main__":

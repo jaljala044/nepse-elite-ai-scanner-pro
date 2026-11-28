@@ -23,6 +23,16 @@ def candidates(rows, *, broker_db=None, symbol=None, broker_sessions=None):
          "smc":any(e["session_date"]==last and e["direction"]=="bullish" for e in smc.get("timeframes",{}).get("daily",{}).get("events",[])) if smc.get("timeframes",{}).get("daily",{}).get("status")=="observed" else None,
          "provisional":provisional.get("score")==100 if provisional.get("score") is not None else None,
          "broker":None,"authentic_idpat":None,"master":None}
+    events=wy.get("events",[])
+    today={e["event"] for e in events if e["session_date"]==last and e["direction"]=="bullish"}
+    observed=wy.get("status")=="observed"
+    out.update({
+        "wyckoff_spring": "spring" in today if observed else None,
+        "wyckoff_sos": "sos" in today if observed else None,
+        "wyckoff_lps": "lps" in today if observed else None,
+        "wyckoff_lps_smc": ("lps" in today and out["smc"]) if observed and out["smc"] is not None else None,
+        "wyckoff_sos_trend": ("sos" in today and out["minervini"]) if observed and out["minervini"] is not None else None,
+    })
     if broker_db is not None and broker_sessions and symbol:
         if list(broker_sessions)!=sorted(set(broker_sessions)) or broker_sessions[-1]>last:
             raise ValueError("future or invalid broker sessions")

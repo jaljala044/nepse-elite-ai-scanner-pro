@@ -68,7 +68,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             ap = root / "audit.json"; ap.write_text(json.dumps(audit))
             cp = root / "calendar.csv"
             cp.write_text("date,status\n2026-01-01,project_accepted_open\n2026-01-01,project_accepted_open\n")
-            up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n,Equity,Active\n", encoding="utf-8")
+            up = root / "universe.csv"; up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "canonical and unique"):
                 build_report(ap, cp, up)
 

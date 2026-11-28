@@ -76,7 +76,7 @@ def connect():
     """)
     con.execute("""
         CREATE TABLE IF NOT EXISTS portfolio_transactions (
-            transaction_id VARCHAR PRIMARY KEY,
+            transaction_id VARCHAR NOT NULL,
             holding_id VARCHAR NOT NULL,
             portfolio_id VARCHAR NOT NULL,
             owner_id VARCHAR NOT NULL,
@@ -85,7 +85,8 @@ def connect():
             quantity BIGINT NOT NULL,
             unit_price DECIMAL(24, 8) NOT NULL,
             fees DECIMAL(24, 8) NOT NULL DEFAULT 0,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
+            created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+            PRIMARY KEY(owner_id, transaction_id)
         )
     """)
     con.execute("CREATE INDEX IF NOT EXISTS idx_portfolios_owner ON portfolios(owner_id)")

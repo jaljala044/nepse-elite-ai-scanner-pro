@@ -79,6 +79,29 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         args.update(overrides)
         return evaluate_historical_segment(**args)
 
+    def test_future_expected_session_is_rejected(self):
+        future = "2026-01-02"
+        statuses = dict(self.statuses, **{future: "traded"})
+        evidence = dict(self.session_evidence, **{
+            future: {
+                "status": "traded", "source_id": "fixture-calendar-v1",
+                "source_record_ref": f"fixture:{future}",
+                "source_url": "https://www.nepalstock.com/calendar/2026",
+                "evidence_sha256": "b" * 64, "payload_sha256": "b" * 64,
+                "rights_status": "approved",
+                "retrieved_at": "2025-12-31T15:00:00+05:45",
+                "available_at": "2025-12-31T15:00:00+05:45",
+            }
+        })
+        result = self.evaluate(
+            expected_sessions=self.sessions + [future],
+            session_statuses=statuses,
+            session_evidence=evidence,
+            records=self.records + [self.row(future)],
+        )
+        self.assertIn("future_expected_session:" + future, result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_complete_verified_segment_is_exploratory_only(self):
         result = self.evaluate()
         self.assertTrue(result["exploratory_replay_eligible"])

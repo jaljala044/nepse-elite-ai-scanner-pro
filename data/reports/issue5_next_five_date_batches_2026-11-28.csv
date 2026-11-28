@@ -1,0 +1,6 @@
+"current_date","candidate_pairs","unique_symbols","weekday","review_disposition","evidence_tier_limit","canonical_promotion_allowed"
+"2026-06-21","677","351","Sunday","UNKNOWN_EXCHANGE_SESSION","T2/T3 calendar context only; no direct T1 exchange record retained","false"
+"2026-06-06","665","345","Saturday","UNKNOWN_EXCHANGE_SESSION","T2 calendar context only; no direct T1 exchange record retained","false"
+"2026-06-07","665","345","Sunday","UNKNOWN_EXCHANGE_SESSION","T2/T3 calendar context only; no direct T1 exchange record retained","false"
+"2026-03-20","657","341","Friday","UNKNOWN_EXCHANGE_SESSION","T2 holiday framework only; no date-matched T1 exchange record retained","false"
+"2026-03-21","657","341","Saturday","UNKNOWN_EXCHANGE_SESSION","T2 calendar context only; no direct T1 exchange record retained","false"

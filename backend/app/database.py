@@ -12,6 +12,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import duckdb
+from app.quarantine_guard import ledger_blocked, quarantine_gap_symbols, runtime_quarantine_keys
 
 DEFAULT_DB = Path(__file__).resolve().parents[1] / "data" / "nepse-api.duckdb"
 
@@ -51,6 +52,7 @@ def connect():
 
 
 def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
+    keys = runtime_quarantine_keys()
     con = connect()
     try:
         bars = con.execute("""
@@ -64,7 +66,12 @@ def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
     finally:
         con.close()
     data: dict[str, list[dict]] = {}
+    blocked_symbols = {symbol.strip().upper() for symbol, d, *_ in bars
+                       if ledger_blocked({"date": d}, keys, symbol)}
+    blocked_symbols.update(quarantine_gap_symbols(((symbol, d) for symbol, d, *_ in bars), keys))
     for symbol, d, o, h, l, c, v in bars:
+        if symbol.strip().upper() in blocked_symbols:
+            continue
         data.setdefault(symbol, []).append({
             "date": d, "open": o, "high": h, "low": l, "close": c, "volume": v
         })
@@ -78,6 +85,10 @@ def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
 
 
 def persist_import(source: str, parsed: dict[str, list[dict]]) -> dict:
+    keys = runtime_quarantine_keys()
+    if any(ledger_blocked({"date": row.get("date")}, keys, symbol)
+           for symbol, values in parsed.items() for row in values):
+        raise ValueError("Quarantined OHLCV input")
     rows = [(symbol, row["date"], row["open"], row["high"], row["low"],
              row["close"], row["volume"])
             for symbol, values in parsed.items() for row in values]

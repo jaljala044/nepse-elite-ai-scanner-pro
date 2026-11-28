@@ -1,0 +1,1 @@
+This branch is based on `fix/main-historical-segment-ci-dependency`, which restores `backend/app/historical_segment_eligibility.py` required by the repository-wide backend test suite. This note triggers fresh pull-request validation against the updated dependency base. It does not change mutual-fund source evidence, identity, or canonical-universe status.

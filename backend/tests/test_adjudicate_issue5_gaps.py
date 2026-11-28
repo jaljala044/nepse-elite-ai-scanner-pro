@@ -86,6 +86,22 @@ class Issue5EvidenceAdjudicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "rights not approved"):
             self.run_case([self.evidence(rights_status="unknown")])
 
+    def test_orphan_evidence_and_non_https_source_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = self.write(root / "gaps.csv", GAP_FIELDS, [self.gap()])
+            orphan = self.evidence(symbol="XYZ")
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [orphan])
+            with self.assertRaisesRegex(ValueError, "orphan evidence"):
+                adjudicate(gaps, evidence)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = self.write(root / "gaps.csv", GAP_FIELDS, [self.gap()])
+            bad = self.evidence(source_url="http://example.invalid/evidence")
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [bad])
+            with self.assertRaisesRegex(ValueError, "must use HTTPS"):
+                adjudicate(gaps, evidence)
+
     def test_effective_range_must_cover_trade_date(self):
         with self.assertRaisesRegex(ValueError, "does not cover"):
             self.run_case([self.evidence(effective_from="2026-01-03")])

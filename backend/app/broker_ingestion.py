@@ -51,7 +51,7 @@ def _approved_rights(source_id: str, evidence: Any, available_by: datetime) -> t
     if not isinstance(evidence, Mapping):
         return False, "missing_source_rights_evidence"
     required = ("source_id", "evidence_id", "status", "document_sha256",
-                "scope", "effective_from", "available_at")
+                "effective_from", "available_at")
     if any(not isinstance(evidence.get(key), str) or not evidence[key].strip()
            for key in required):
         return False, "incomplete_source_rights_evidence"

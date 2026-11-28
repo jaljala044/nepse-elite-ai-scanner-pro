@@ -86,7 +86,7 @@ def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
 
 def persist_import(source: str, parsed: dict[str, list[dict]]) -> dict:
     keys = runtime_quarantine_keys()
-    if any(ledger_blocked({"date": row.get("date")}, keys, symbol)
+    if any(ledger_blocked(row, keys, symbol)
            for symbol, values in parsed.items() for row in values):
         raise ValueError("Quarantined OHLCV input")
     rows = [(symbol, row["date"], row["open"], row["high"], row["low"],

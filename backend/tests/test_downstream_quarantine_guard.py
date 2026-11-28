@@ -18,6 +18,22 @@ class DownstreamQuarantineTests(unittest.TestCase):
                 "close": 11, "volume": 100, "row_status": "quarantined"
             }]})
 
+    def test_database_rejects_each_quarantine_marker_before_opening(self):
+        markers = [
+            {"row_status": "quarantined"},
+            {"disposition": "quarantined_unresolved"},
+            {"quarantine_status": "quarantined"},
+            {"quarantined": True},
+            {"quarantine_reasons": ["source_conflict"]},
+        ]
+        for marker in markers:
+            with self.subTest(marker=marker):
+                with self.assertRaisesRegex(ValueError, "Quarantined"):
+                    persist_import("test", {"AAA": [{
+                        "date": "2026-11-27", "open": 10, "high": 12, "low": 9,
+                        "close": 11, "volume": 100, **marker,
+                    }]})
+
     def test_broker_rejects_marked_row(self):
         report = IngestionReport("test", "complete", "1", accepted=[{"status":"descriptive_only","quarantined":True}])
         with self.assertRaisesRegex(PromotionRejected, "quarantined"):

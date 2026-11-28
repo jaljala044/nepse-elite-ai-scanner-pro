@@ -293,3 +293,37 @@ been copied into this private repository.
   and nepse.link still need direct confirmation before integration.
 - Unofficial clients and scraped archives can break, lag, or change schema without notice.
 - A broker represents many clients, so broker-level flow cannot identify the underlying investor.
+
+
+## Shared validation registry integration
+
+The main scanner's floorsheet normalizer accepts an optional `--validation-registry`
+argument. The package is published from `jaljala044/nepse-smc-data` and is pinned in
+CI to the tested source commit
+`122acaae8665fd396d206ea40b66861b9cbd4d6b`.
+
+Install it in the scanner environment:
+
+```bash
+python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@122acaae8665fd396d206ea40b66861b9cbd4d6b"
+```
+
+Then run normalization with a shared, durable registry path:
+
+```bash
+python normalize_floorsheet_csv.py <input-file-or-directory> \
+  --source <source-name> \
+  --validation-registry /shared/nepse/validation/registry.sqlite3
+```
+
+The registry reuses deterministic parsing results only when the file SHA-256, source/schema
+context and validator version match. The normalizer still performs the existing silver
+upsert/conflict checks and preserves source metadata. A cache hit does not establish source
+authorization, archive completeness, trading-session coverage, cross-source agreement or
+canonical promotion.
+
+A common SQLite path is required for actual cross-repository reuse. Separate hosted CI
+runners do not share local files automatically. Do not treat per-runner databases or
+evictable CI caches as a central evidence store. Production-wide reuse remains pending a
+durable shared filesystem or registry service with backup, access control and concurrency
+management.

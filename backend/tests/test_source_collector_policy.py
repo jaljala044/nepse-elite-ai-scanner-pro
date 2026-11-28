@@ -115,5 +115,25 @@ class SourceCollectorPolicyTests(unittest.TestCase):
                 (False, "provider_endpoint_path_not_approved"))
 
 
+    def test_untrusted_symbol_cannot_inject_path_into_provider_template(self):
+        with patch.dict(os.environ, {
+            "SHAREHUB_CHART_URL_TEMPLATE": "https://provider.example/chart/{symbol}"
+        }, clear=True):
+            result = collect_configured_provider(
+                NoNetworkClient(), "sharehub", "chart",
+                equities=[{"symbol": "AAA/../../admin", "security_id": "1"}])
+        self.assertEqual(result[0]["status"], "BLOCKED_ACCESS")
+        self.assertEqual(result[0]["error"], "invalid_equity_template_value")
+
+    def test_noncanonical_session_date_is_blocked_before_request(self):
+        with patch.dict(os.environ, {
+            "SHAREHUB_FLOORSHEET_URL_TEMPLATE": "https://provider.example/floorsheet/{date}"
+        }, clear=True):
+            result = collect_configured_provider(
+                NoNetworkClient(), "sharehub", "floorsheet",
+                session_dates=["2026-1-2"])
+        self.assertEqual(result[0]["status"], "BLOCKED_ACCESS")
+        self.assertEqual(result[0]["error"], "invalid_session_date_template_value")
+
 if __name__ == "__main__":
     unittest.main()

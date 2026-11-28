@@ -91,6 +91,27 @@ class SectorTimelineStoreTests(unittest.TestCase):
         self.assertFalse(result["production_admission_allowed"])
 
 
+    def test_invalid_effective_date_is_rejected_before_persistence(self):
+        invalid = {**EVENT, "effective_from": "2026-01-01garbage"}
+        with self.assertRaisesRegex(ValueError, "effective_from_invalid"):
+            self.persist([invalid])
+
+    def test_reversed_effective_interval_is_rejected_before_persistence(self):
+        invalid = {**EVENT, "effective_to": "2025-12-31"}
+        with self.assertRaisesRegex(ValueError, "effective_to_invalid"):
+            self.persist([invalid])
+
+    def test_missing_original_publisher_provenance_is_rejected(self):
+        invalid = {**EVENT}
+        invalid.pop("publisher_id")
+        with self.assertRaisesRegex(ValueError, "publisher_id_required"):
+            self.persist([invalid])
+
+    def test_malformed_payload_digest_is_rejected(self):
+        invalid = {**EVENT, "payload_sha256": "not-a-digest"}
+        with self.assertRaisesRegex(ValueError, "payload_sha256_invalid"):
+            self.persist([invalid])
+
     def test_event_available_after_capture_receipt_is_rejected(self):
         future = {**EVENT, "available_at": "2026-11-29T10:01:00Z"}
         with self.assertRaisesRegex(ValueError, "available_after_batch_receipt"):

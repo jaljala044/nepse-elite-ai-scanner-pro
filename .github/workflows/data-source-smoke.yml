@@ -69,8 +69,8 @@ jobs:
           if not floorsheet or not indices:
               raise SystemExit(f"Manifest lacks downloaded sample paths: floorsheet={len(floorsheet)}, indices={len(indices)}")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"floorsheet_dir={Path(floorsheet[0]).parent.as_posix()}\n")
-              out.write(f"indices_dir={Path(indices[0]).parent.as_posix()}\n")
+              out.write(f"floorsheet_dir={(Path("..") / Path(floorsheet[0]).parent).as_posix()}\n")
+              out.write(f"indices_dir={(Path("..") / Path(indices[0]).parent).as_posix()}\n")
           print(f"Resolved pinned commit {dataset.get('revision')} with {len(floorsheet)} floorsheet and {len(indices)} index file(s)")
           PY
       - name: Normalize sample floorsheet

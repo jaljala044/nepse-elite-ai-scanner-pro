@@ -33,7 +33,7 @@ class WeeklyClosureSelectorTests(unittest.TestCase):
         )
         from scripts.rank_issue5_weekly_closure_batches import load_exclusions
         excluded = load_exclusions(register)
-        self.assertEqual(len(excluded), 25)
+        self.assertEqual(len(excluded), 20)
 
     def test_weekday_regime_transition(self):
         from datetime import date

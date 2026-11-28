@@ -20,7 +20,13 @@ def instant(value):
 
 def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,records,
                                 required_sessions,available_warmup_sessions,decision_cutoff,
-                                archive_guard=None, require_archive_guard=False, blocked_keys=None):
+                                archive_guard=None, require_archive_guard=False, blocked_keys=None, session_evidence=None):
+    if session_evidence is not None:
+        from .historical_evidence_eligibility import evaluate_historical_segment as evidence_gate
+        return evidence_gate(segment=segment, expected_sessions=expected_sessions, session_statuses=session_statuses,
+                             session_evidence=session_evidence, records=records, required_sessions=required_sessions,
+                             available_warmup_sessions=available_warmup_sessions, decision_cutoff=decision_cutoff,
+                             archive_guard=archive_guard, require_archive_guard=require_archive_guard, blocked_keys=blocked_keys)
     reasons=[]
     traded=no_trade=0
     def reject(reason):

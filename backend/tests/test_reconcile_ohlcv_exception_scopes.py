@@ -74,7 +74,7 @@ class CrossScopeLedgerJoinTests(unittest.TestCase):
     def test_duplicate_csv_headers_are_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "duplicate.csv"
-            path.write_text("symbol,symbol,trade_date\\nAPI,API,2026-01-01\\n", encoding="utf-8")
+            path.write_text("symbol,symbol,trade_date\nAPI,API,2026-01-01\n", encoding="utf-8")
             right = self.write(Path(tmp), "right.csv", [{"symbol": "API", "trade_date": "2026-01-01"}])
             with self.assertRaisesRegex(ValueError, "duplicate column"):
                 reconcile(path, right, left_name="left", right_name="right")
@@ -82,7 +82,7 @@ class CrossScopeLedgerJoinTests(unittest.TestCase):
     def test_ragged_csv_rows_are_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ragged.csv"
-            path.write_text("symbol,trade_date\\nAPI,2026-01-01,EXTRA\\n", encoding="utf-8")
+            path.write_text("symbol,trade_date\nAPI,2026-01-01,EXTRA\n", encoding="utf-8")
             right = self.write(Path(tmp), "right.csv", [{"symbol": "API", "trade_date": "2026-01-01"}])
             with self.assertRaisesRegex(ValueError, "malformed CSV field count"):
                 reconcile(path, right, left_name="left", right_name="right")

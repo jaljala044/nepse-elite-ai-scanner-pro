@@ -18,6 +18,8 @@ def _number(value: Any) -> float:
     if value is None:
         raise ValueError("missing_numeric")
     raw = str(value).strip()
+    if raw.lower() in {"nan", "+nan", "-nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}:
+        raise ValueError("non_finite_numeric")
     if not _NUMBER.fullmatch(raw):
         raise ValueError("malformed_numeric")
     parsed = float(raw.replace(",", ""))

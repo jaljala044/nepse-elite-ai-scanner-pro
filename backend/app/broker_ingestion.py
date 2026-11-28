@@ -99,10 +99,13 @@ def reconcile_broker_batch(
     if not threshold.is_finite() or not (Decimal("0") < threshold <= Decimal("1")):
         raise IngestionError("invalid_coverage_threshold")
 
-    if not isinstance(verified_sessions, (set, frozenset)) or any(
-            not isinstance(item, str) or _canonical_session_date(item, "verified_session") != item
-            for item in verified_sessions):
+    if not isinstance(verified_sessions, (set, frozenset)):
         raise IngestionError("invalid_verified_session_inventory")
+    try:
+        for item in verified_sessions:
+            _canonical_session_date(item, "verified_session")
+    except IngestionError:
+        raise IngestionError("invalid_verified_session_inventory") from None
 
     expected = set(expected_source_ids or set())
     received = set(received_source_ids or set())

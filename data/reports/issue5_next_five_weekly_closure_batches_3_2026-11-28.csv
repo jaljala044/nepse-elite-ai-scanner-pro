@@ -1,0 +1,6 @@
+current_date,weekday,candidate_pairs,unique_symbols,previous_date,previous_dates,repositories,review_disposition,evidence_tier_limit,canonical_promotion_allowed
+2026-02-13,Friday,646,335,2026-02-12,1,2,WEEKLY_CLOSED_BEFORE_2026-04-06,T2/T3 weekly schedule context; no retained first-party NEPSE payload,false
+2026-02-14,Saturday,646,335,2026-02-13,1,2,WEEKLY_CLOSED_BEFORE_2026-04-06,T2 Saturday weekly-holiday context; no retained first-party NEPSE payload,false
+2026-02-27,Friday,646,335,2026-02-26,1,2,WEEKLY_CLOSED_BEFORE_2026-04-06,T2/T3 weekly schedule context; no retained first-party NEPSE payload,false
+2026-02-28,Saturday,646,335,2026-02-27,1,2,WEEKLY_CLOSED_BEFORE_2026-04-06,T2 Saturday weekly-holiday context; no retained first-party NEPSE payload,false
+2026-04-11,Saturday,645,335,2026-04-10,1,2,WEEKLY_CLOSED_AFTER_2026-04-06,T2/T3 weekly schedule context; no retained first-party NEPSE payload,false

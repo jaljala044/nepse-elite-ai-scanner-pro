@@ -40,7 +40,7 @@ class MainActivity : Activity() {
         val start = input("Start YYYY-MM-DD")
         val end = input("End YYYY-MM-DD")
         val portfolioInput = EditText(this).apply {
-            hint = "SYMBOL,quantity,cost,price,YYYY-MM-DD,sector (optional)"
+            hint = "SYMBOL,quantity,cost,price,YYYY-MM-DD,sector,avg daily qty (optional)"
             setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 4; maxLines = 10
@@ -129,16 +129,17 @@ class MainActivity : Activity() {
                     require(lines.size in 1..300)
                     val holdings=lines.map { line ->
                         val a=line.split(",").map { it.trim() }
-                        require(a.size in 5..6)
+                        require(a.size in 5..7)
                         val date=LocalDate.parse(a[4])
                         require(date.toString()==a[4] && !date.isAfter(LocalDate.now(java.time.ZoneId.of("Asia/Kathmandu"))))
-                        Holding(a[0].uppercase(java.util.Locale.ROOT),a[1].toLong(),java.math.BigDecimal(a[2]),java.math.BigDecimal(a[3]),date,a.getOrNull(5)?.takeIf { it.isNotBlank() })
+                        Holding(a[0].uppercase(java.util.Locale.ROOT),a[1].toLong(),java.math.BigDecimal(a[2]),java.math.BigDecimal(a[3]),date,a.getOrNull(5)?.takeIf { it.isNotBlank() },a.getOrNull(6)?.takeIf { it.isNotBlank() }?.let { java.math.BigDecimal(it) })
                     }
                     val p=PortfolioMath.calculate(holdings)
+                    val risk=exposureRisk(holdings,java.math.BigDecimal("10"))
                     fun money(v: java.math.BigDecimal)=v.setScale(2,java.math.RoundingMode.HALF_UP).toPlainString()
                     "Manual valuation • not live • NPR\nCost: ${money(p.cost)}\nValue: ${money(p.value)}\nUnrealized P/L: ${money(p.pnl)}\n\nHoldings:\n"+p.holdings.joinToString("\n") {
                         "${it.symbol} | Value ${money(it.value)} | P/L ${money(it.pnl)} | Weight ${it.weightPct}% | Price date ${it.priceDate}"
-                    }+"\n\nSector weights (user supplied):\n"+p.sectorWeights.entries.sortedByDescending { it.value }.joinToString("\n") { "${it.key}: ${it.value}%" }+"\nLiquidity risk not assessed. Fees and taxes excluded."
+                    }+"\n\nSector weights (user supplied):\n"+p.sectorWeights.entries.sortedByDescending { it.value }.joinToString("\n") { "${it.key}: ${it.value}%" }+"\n\nLargest stock: ${risk.largestStockPct}% | Top three: ${risk.topThreeStockPct}%\nLargest classified sector: ${risk.largestSectorPct ?: "Unknown"}% | Unclassified: ${risk.unclassifiedPct}%\nEstimated liquidation sessions (manual average volume, assumed 10% participation, no execution guarantee):\n"+risk.liquidity.joinToString("\n") { "${it.symbol}: ${it.estimatedSessions ?: "Unknown"}" }+"\nFees and taxes excluded."
                 }.getOrElse { "Invalid holdings. Check dates, symbols, duplicate entries, quantities and positive prices." }
                 return@setOnClickListener
             }

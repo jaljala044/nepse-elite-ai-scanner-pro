@@ -15,6 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlparse
 
 ALLOWED_HOSTS = {
+    "nepalstock.com", "www.nepalstock.com",
     "nepalstock.com.np", "www.nepalstock.com.np",
     "sebon.gov.np", "www.sebon.gov.np",
 }

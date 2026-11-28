@@ -91,7 +91,7 @@ def load_crosswalk(path: Path, expected_count: int = 281) -> list[dict[str, str]
 
 
 def _git_blob_sha(content: bytes) -> str:
-    return hashlib.sha1(f"blob {len(content)}\\0".encode("ascii") + content).hexdigest()
+    return hashlib.sha1(f"blob {len(content)}\0".encode("ascii") + content).hexdigest()
 
 
 def _fetch_one(client: httpx.Client, revision: str, symbol: str,

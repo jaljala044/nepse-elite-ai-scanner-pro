@@ -85,7 +85,9 @@ def adjudicate(gap_csv: Path, evidence_csv: Path, *, decision_cutoff: str | None
         symbol = row["symbol"].upper()
         day = row["trade_date"]
         _day(day, f"gap line {line} trade_date")
-        if (not row["repository"] or row["repository"] not in {\n                "jaljala044/nepse-smc-data", "jaljala044/nepse-history-starter"}\n                or not symbol or row["gap_status"] != GAP_STATUS):
+        if (not row["repository"] or row["repository"] not in {
+                "jaljala044/nepse-smc-data", "jaljala044/nepse-history-starter"}
+                or not symbol or row["gap_status"] != GAP_STATUS):
             raise ValueError(f"invalid gap identity or status at line {line}")
         key = (symbol, day)
         source_key = (row["repository"], symbol, day)

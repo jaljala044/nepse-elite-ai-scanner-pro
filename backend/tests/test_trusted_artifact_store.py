@@ -206,6 +206,16 @@ class TrustedArtifactStoreTests(unittest.TestCase):
             registry[module] = dict(self.entry, evidence_ids=[module],
                 sector_membership_status="verified", sector_membership_version="fixture-v1",
                 broker_code_mapping_status="verified", broker_identity_coverage_ratio=1.0)
+        sector_window = dict(status="observed", end_session="2026-11-27", observed_members=1,
+            expected_members=1, missing_members=[], coverage_pct=100, median_return_pct=5,
+            median_excess_return_pct=3, nepse_return_pct=2,
+            constituents=[dict(symbol="A", return_pct=5, excess_return_pct=3)])
+        sector_data = dict(status="observed", as_of_session="2026-11-27", signals_enabled=False,
+            sectors={"BANK": {"windows": {p: sector_window for p in ("1W","1M","3M","6M")}}})
+        raw_sector = json.dumps(sector_data).encode()
+        (self.root / "sector.json").write_bytes(raw_sector)
+        registry["sector_rotation"].update(payload_path="sector.json",
+            payload_sha256=hashlib.sha256(raw_sector).hexdigest(), expected_sector_members={"BANK":["A"]})
         participation = dict(status="research_only", coverage=1, as_of_session="2026-11-27",
             signals_enabled=False, missing_symbols=[], counts=dict(advance=1, decline=0, unchanged=0),
             pressure=1, sentiment="positive", rankings=dict(gainers=[dict(symbol="A",value="5")],
@@ -231,6 +241,13 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertEqual(result["admitted_module_count"], 10)
         self.assertFalse(result["signals_enabled"])
         self.assertFalse(result["trade_actions_enabled"])
+        sector_window["constituents"].append(dict(symbol="A", return_pct=5, excess_return_pct=3))
+        corrupt = json.dumps(sector_data).encode()
+        (self.root / "sector.json").write_bytes(corrupt)
+        registry["sector_rotation"]["payload_sha256"] = hashlib.sha256(corrupt).hexdigest()
+        self.assertIn("sector_rotation", snapshot()["missing_modules"])
+        (self.root / "sector.json").write_bytes(raw_sector)
+        registry["sector_rotation"]["payload_sha256"] = hashlib.sha256(raw_sector).hexdigest()
         registry["index_rotation"]["session_calendar_id"] = "different-calendar"
         self.assertEqual(snapshot()["status"], "partial_evidence")
         registry["index_rotation"]["session_calendar_id"] = self.entry["session_calendar_id"]

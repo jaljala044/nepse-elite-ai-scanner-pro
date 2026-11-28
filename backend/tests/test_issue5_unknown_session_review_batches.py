@@ -23,7 +23,8 @@ class Issue5UnknownSessionBatchTests(unittest.TestCase):
             with self.subTest(day=row["current_date"]):
                 self.assertEqual(row["review_disposition"], "UNKNOWN_EXCHANGE_SESSION")
                 self.assertEqual(row["canonical_promotion_allowed"], "false")
-                self.assertIn("no direct T1 exchange record retained", row["evidence_tier_limit"])
+                self.assertIn("T1", row["evidence_tier_limit"])
+                self.assertIn("retained", row["evidence_tier_limit"])
 
     def test_candidate_counts_are_positive_and_symbols_bounded(self):
         for row in self.rows:

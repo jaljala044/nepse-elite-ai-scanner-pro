@@ -2,7 +2,14 @@ from datetime import date, datetime, timezone, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from .broker_context_server import server_context
+from .broker_mode_research import mode_research
+from .broker_strategy_confluence import unified_research
+from .broker_research_leaderboards import research_leaderboards
+from .broker_ledger_profiles import ledger_profiles
+from .broker_research_security import BrokerResearchSecurity
+from .broker_context_metrics import concentration, sector_rotation
 from .market_structure import add_event_evidence, detect_structure
 from .scanner import analyze
 from .structure_timeframes import evaluate_timeframes
@@ -20,6 +27,7 @@ from .sector_intelligence_confluence import build_sector_intelligence_confluence
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
+app.add_middleware(BrokerResearchSecurity)
 
 _UNIVERSE_PATH = Path(__file__).resolve().parents[2] / "data/reference/nepse_active_equity_manifest_2026-11-26.csv"
 try:
@@ -40,6 +48,137 @@ class BrokerDashboardRequest(BaseModel):
     source_manifest: dict
     sector_rotation_by_window: dict = Field(default_factory=dict)
     candidates: list[dict] = Field(default_factory=list)
+
+
+class BrokerContextRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    snapshot: dict
+    prices: list[dict] = Field(max_length=100000)
+    memberships: list[dict] = Field(max_length=10000)
+    sector_prices: list[dict] = Field(max_length=100000)
+    decision_time: str
+    expected_sessions: list[str] = Field(min_length=5, max_length=252)
+
+
+@app.post("/v1/research/broker-context")
+def broker_context_research(request: BrokerContextRequest):
+    """Research-only context. Calendar and quarantine are server-owned."""
+    try:
+        return server_context(
+            request.snapshot, request.prices, request.memberships, request.sector_prices,
+            decision_time=request.decision_time, expected_sessions=request.expected_sessions,
+        )
+    except OSError as exc:
+        raise HTTPException(503, "Server evidence unavailable") from exc
+    except (ValueError, TypeError, KeyError, AttributeError) as exc:
+        raise HTTPException(422, "Invalid broker context evidence") from exc
+
+
+@app.post("/v1/research/broker-leaderboards")
+def broker_leaderboards(request: BrokerContextRequest):
+    try:
+        return research_leaderboards(broker_context_research(request))
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(422, "Invalid leaderboard evidence") from exc
+
+
+class BrokerModeRequest(BrokerContextRequest):
+    mode: str
+
+
+@app.post("/v1/research/broker-mode")
+def broker_mode(request: BrokerModeRequest):
+    try:
+        return mode_research(
+            request.snapshot, request.prices, request.memberships, request.sector_prices,
+            mode=request.mode, decision_time=request.decision_time,
+            expected_sessions=request.expected_sessions,
+        )
+    except OSError as exc:
+        raise HTTPException(503, "Server evidence unavailable") from exc
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(422, "Invalid broker mode evidence") from exc
+
+
+class UnifiedResearchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    symbol: str
+    as_of: date
+    mode: str
+    ohlcv: list[dict] = Field(max_length=10000)
+    smc_result: dict
+    ict_result: dict
+    idpat_result: dict
+    broker_result: dict
+
+
+@app.post("/v1/research/unified-broker-confluence")
+def unified_broker_confluence(request: UnifiedResearchRequest):
+    try:
+        return unified_research(
+            symbol=request.symbol, as_of=request.as_of.isoformat(), mode=request.mode,
+            ohlcv=request.ohlcv, smc_result=request.smc_result,
+            ict_result=request.ict_result, idpat_result=request.idpat_result,
+            broker_result=request.broker_result,
+        )
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(422, "Invalid unified research evidence") from exc
+
+
+class BrokerConcentrationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    rows: list[dict] = Field(max_length=1000)
+    matched_turnover: str
+
+
+class BrokerRotationContextRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    prior: BrokerContextRequest
+    current: BrokerContextRequest
+
+
+@app.post("/v1/research/broker-concentration")
+def broker_concentration_research(request: BrokerConcentrationRequest):
+    try:
+        result = concentration(request.rows, matched_turnover=request.matched_turnover)
+        return {**result, "source_authentication_performed": False, "signals_enabled": False}
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(422, "Invalid concentration evidence") from exc
+
+
+@app.post("/v1/research/broker-context-rotation")
+def broker_context_rotation_research(request: BrokerRotationContextRequest):
+    try:
+        prior = broker_context_research(request.prior)
+        current = broker_context_research(request.current)
+        if not prior.get("profiles") or not current.get("profiles"):
+            return {
+                "status": "insufficient_evidence", "reason": "context_unavailable",
+                "production_eligible": False, "signals_enabled": False,
+            }
+        return sector_rotation(prior, current)
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(422, "Invalid rotation evidence") from exc
+
+
+class BrokerLedgerRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    as_of_date: date
+    decision_time: str
+    window: str = "weekly"
+
+
+@app.post("/v1/research/broker-ledger-profiles")
+def broker_ledger_research(request: BrokerLedgerRequest):
+    try:
+        return ledger_profiles(
+            as_of_date=request.as_of_date.isoformat(),
+            decision_time=request.decision_time, window=request.window,
+        )
+    except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+        raise HTTPException(422, "Invalid ledger evidence") from exc
+    except OSError as exc:
+        raise HTTPException(503, "Ledger evidence unavailable") from exc
 
 class EarlySignalRequest(BaseModel):
     as_of_date: date

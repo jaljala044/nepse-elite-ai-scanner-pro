@@ -43,7 +43,7 @@ class ArchiveGuardIntegrationTests(unittest.TestCase):
     def evaluate(self, row, guard=None, archive=True):
         fn = evaluate_archive_historical_segment if archive else evaluate_historical_segment
         return fn(segment=self.segment, expected_sessions=[self.day],
-                  session_statuses={self.day:"traded"}, records=[row], required_sessions=1,
+                  session_statuses={self.day:"traded"}, session_evidence={}, records=[row], required_sessions=1,
                   available_warmup_sessions=0, decision_cutoff="2025-01-02T00:00:00+05:45",
                   archive_guard=guard)
 

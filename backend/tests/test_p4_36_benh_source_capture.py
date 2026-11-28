@@ -23,6 +23,17 @@ class Steps110119Tests(unittest.TestCase):
  def test_113_invalid_chart_rows_quarantined(self):
   c=self.capture(parse_sharehub_chart,{"date":"bad","open":1,"high":2,"low":0.5,"close":1,"volume":10})
   self.assertEqual(c["status"],"NO_VALID_ROWS"); self.assertEqual(len(c["rejected"]),1)
+ def test_non_finite_chart_values_are_rejected(self):
+  for value in (float("nan"), float("inf"), float("-inf")):
+   c=self.capture(parse_sharehub_chart,{"date":"2024-06-03","open":99,"high":101,"low":98,"close":100,"volume":value})
+   self.assertEqual(c["status"],"NO_VALID_ROWS")
+   self.assertEqual(c["rejected"][0]["reason"],"non_finite_ohlcv")
+ def test_session_date_suffix_is_not_silently_truncated(self):
+  c=self.capture(parse_sharehub_chart,{"date":"2024-06-03garbage","open":99,"high":101,"low":98,"close":100,"volume":1200})
+  self.assertEqual(c["status"],"NO_VALID_ROWS")
+ def test_chart_rows_bind_raw_payload_digest(self):
+  c=self.capture(parse_sharehub_chart)
+  self.assertEqual(c["records"][0]["raw_payload_sha256"],c["raw_payload_sha256"])
  def test_114_floorsheet_daily_aggregation(self):
   f=aggregate_floorsheet(symbol="BENH",trades=[{"trade_date":"2024-06-03","quantity":10,"rate":100},{"trade_date":"2024-06-03","qty":5,"price":110}],
    raw_payload="trades",source_url="https://example.invalid/floorsheet",captured_at="2026-11-28T08:00:00+00:00")

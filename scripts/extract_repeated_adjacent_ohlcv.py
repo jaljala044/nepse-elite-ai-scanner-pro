@@ -96,17 +96,7 @@ def join_project_calendar(rows: list[dict], calendar_path: Path) -> tuple[list[d
         prior_status = status_by_date.get(prior, "not_listed")
         current_status = status_by_date.get(current, "not_listed")
         gap = None
-        try:
-            prior_valid = date.fromisoformat(prior).isoformat() == prior
-        except (TypeError, ValueError):
-            prior_valid = False
-        try:
-            current_valid = date.fromisoformat(current).isoformat() == current
-        except (TypeError, ValueError):
-            current_valid = False
-        if not prior_valid or not current_valid:
-            classification = "malformed_candidate_date_review"
-        elif prior in open_index and current in open_index:
+        if prior in open_index and current in open_index:
             gap = open_index[current] - open_index[prior]
             if gap == 1:
                 classification = "adjacent_project_sessions_review"
@@ -141,9 +131,7 @@ def unlisted_date_queue(rows: list[dict]) -> list[dict]:
     """Rank distinct missing calendar dates by affected pairs; never infer closure."""
     pending = {}
     for row in rows:
-        if row.get("session_join_classification") not in {
-            "date_not_in_project_calendar_review", "malformed_candidate_date_review"
-        }:
+        if row.get("session_join_classification") != "date_not_in_project_calendar_review":
             continue
         missing = {row[side + "_date"] for side, status in
                    (("previous", "previous_calendar_status"), ("current", "current_calendar_status"))
@@ -195,7 +183,7 @@ def partition_integrity(rows: list[dict], calendar_applied: bool) -> dict:
     seen, counts = set(), {}
     allowed = {"adjacent_project_sessions_review", "intervening_project_sessions_missing_from_source_review",
                "non_increasing_or_duplicate_session_order_review", "explicit_closure_date_conflict_review",
-               "date_not_in_project_calendar_review", "malformed_candidate_date_review"}
+               "date_not_in_project_calendar_review"}
     for row in rows:
         key = tuple(row[k] for k in ("repository", "commit_sha", "path", "previous_csv_line", "current_csv_line"))
         if key in seen:

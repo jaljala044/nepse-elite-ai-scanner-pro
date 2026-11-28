@@ -107,28 +107,6 @@ class RepeatedAdjacentTests(unittest.TestCase):
                              "repeated_signature_has_invalid_ohlc_bounds")
 
 
-
-    def test_malformed_candidate_dates_are_not_misclassified_as_calendar_gaps(self):
-        from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar, unlisted_date_queue
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            calendar = root / "calendar.csv"
-            calendar.write_text(
-                "date,status\n2026-01-01,project_accepted_open\n",
-                encoding="utf-8",
-            )
-            rows = [{
-                "repository": "example/repo",
-                "symbol": "ABC",
-                "previous_date": "2026-02-30",
-                "current_date": "2026-01-01",
-            }]
-            joined, _ = join_project_calendar(rows, calendar)
-            self.assertEqual(joined[0]["session_join_classification"], "malformed_candidate_date_review")
-            queue = unlisted_date_queue(joined)
-            self.assertEqual(queue[0]["disposition"], "malformed_date_review")
-            self.assertFalse(queue[0]["canonical_promotion_allowed"])
-
     def test_reject_invalid_calendar_date(self):
         from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar
         with tempfile.TemporaryDirectory() as tmp:

@@ -15,6 +15,7 @@ import org.json.JSONArray
 class MainActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     private var generation = 0
+    private var mobileSession: MobileSession? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = LinearLayout(this).apply {
@@ -32,7 +33,7 @@ class MainActivity : Activity() {
         val note = label("Research only • No verified live feed • AI recommendations OFF")
         val endpoint = input("HTTPS research API origin").apply { inputType = 17 }
         val tabs = RadioGroup(this).apply { orientation = RadioGroup.VERTICAL }
-        val names = listOf("Market", "Historical chart", "Research scanner", "Broker flow", "Portfolio (offline)")
+        val names = listOf("Market", "Historical chart", "Research scanner", "Broker flow", "Portfolio (offline)", "Private account")
         names.forEachIndexed { i, name ->
             tabs.addView(RadioButton(this).apply { id = i + 100; text = name; setTextColor(Color.WHITE) })
         }
@@ -52,6 +53,79 @@ class MainActivity : Activity() {
         val portfolioNote = label("Manual prices only, one holding per line. No data is sent or saved. Fees and taxes excluded.").apply { visibility = View.GONE }
         val button = Button(this).apply { text = "Load research" }
         val status = label("Select a research workspace.")
+        val accountPanel = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; visibility=View.GONE }
+        val accountNote=label("Development session only. Obtain a short-lived token from your trusted HTTPS gateway. Never enter a proxy secret or password here.")
+        val sessionToken=input("Gateway-issued access token").apply {
+            inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            isSaveEnabled=false; importantForAutofill=View.IMPORTANT_FOR_AUTOFILL_NO
+        }
+        val connect=Button(this).apply { text="Connect existing session" }
+        val logout=Button(this).apply { text="Log out" }
+        val watchInput=input("Watchlist symbols, comma-separated").apply { isSaveEnabled=false }
+        val watchLoad=Button(this).apply { text="Load watchlist" }
+        val watchSave=Button(this).apply { text="Save watchlist"; isEnabled=false }
+        val alertSymbol=input("Alert symbol")
+        val alertDirection=Spinner(this).apply { adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,listOf("above","below")) }
+        val alertThreshold=input("Alert threshold NPR")
+        val alertLoad=Button(this).apply { text="Load alerts" }
+        val alertAdd=Button(this).apply { text="Add alert rule" }
+        val alertRemove=Button(this).apply { text="Delete matching alert rule" }
+        val accountStatus=label("Not connected")
+        val accountButtons=listOf(connect,logout,watchLoad,watchSave,alertLoad,alertAdd,alertRemove)
+        var watchLoaded=false
+        var accountBusy=false
+        var accountGeneration=0
+        fun resetAccount() { mobileSession?.clear(); mobileSession=null; watchLoaded=false; watchInput.text.clear(); sessionToken.text.clear(); accountStatus.text="Not connected"; watchSave.isEnabled=false }
+        fun accountAction(action: (ResearchApi) -> String, completed: (String) -> Unit = { accountStatus.text=it }) {
+            if(accountBusy) return
+            val session=mobileSession ?: run { accountStatus.text="Connect an authorized session first."; return }
+            val base=endpoint.text.toString()
+            val epoch=accountGeneration
+            accountBusy=true; accountButtons.forEach{it.isEnabled=false}
+            worker.execute {
+                val result=runCatching { action(ResearchApi(base,session)) }
+                runOnUiThread {
+                    if(!isDestroyed && epoch==accountGeneration) {
+                        accountBusy=false; accountButtons.forEach{it.isEnabled=true}
+                        if(result.isSuccess) completed(result.getOrThrow()) else { watchLoaded=false; watchInput.text.clear(); accountStatus.text="Account request unavailable. Check session, gateway and inputs." }
+                        watchSave.isEnabled=watchLoaded
+                    }
+                }
+            }
+        }
+        connect.setOnClickListener {
+            if(accountBusy)return@setOnClickListener
+            val base=endpoint.text.toString(); val token=sessionToken.text.toString()
+            resetAccount()
+            mobileSession=runCatching { MobileSession(base,token,900) }.getOrElse { accountStatus.text="Invalid session or HTTPS origin"; return@setOnClickListener }
+            accountAction({ api -> val r=api.accountSession(); check(r.optBoolean("authenticated",false) && r.optString("mode")=="research_only"); "Authenticated research session" })
+        }
+        logout.setOnClickListener {
+            accountAction({api -> check(api.logout().optBoolean("revoked",false)); "Session revoked" }, { resetAccount(); accountStatus.text=it })
+        }
+        fun watchText(r: JSONObject): String {
+            val rows=r.getJSONArray("symbols")
+            return (0 until rows.length()).map { rows.getString(it) }.also { require(it.size<=300 && it.all { x -> x.matches(Regex("[A-Z0-9]{1,20}")) }) }.joinToString(", ")
+        }
+        watchLoad.setOnClickListener { accountAction({ watchText(it.watchlist()) }, { watchInput.setText(it); watchLoaded=true; accountStatus.text="Watchlist loaded" }) }
+        watchSave.setOnClickListener {
+            if(!watchLoaded)return@setOnClickListener
+            val symbols=watchInput.text.toString().split(",").map{it.trim()}.filter{it.isNotEmpty()}
+            accountAction({ watchText(it.saveWatchlist(symbols)) }, {watchInput.setText(it); watchLoaded=true; accountStatus.text="Watchlist saved"})
+        }
+        fun alertText(r: JSONObject): String {
+            check(r.has("delivery_enabled") && !r.getBoolean("delivery_enabled"))
+            val rules=r.getJSONArray("rules")
+            return (0 until rules.length()).joinToString("\n") { i -> val a=rules.getJSONObject(i); "${a.getString("symbol")} ${a.getString("direction")} NPR ${a.getString("threshold")}" }+"\nNotification delivery disabled."
+        }
+        alertLoad.setOnClickListener { accountAction({alertText(it.alerts())}) }
+        fun changeAlert(remove:Boolean) {
+            val stock=alertSymbol.text.toString(); val dir=alertDirection.selectedItem.toString(); val price=alertThreshold.text.toString()
+            accountAction({alertText(it.changeAlert(stock,dir,price,remove))})
+        }
+        alertAdd.setOnClickListener { changeAlert(false) }; alertRemove.setOnClickListener { changeAlert(true) }
+        listOf(accountNote,sessionToken,connect,logout,watchInput,watchLoad,watchSave,alertSymbol,alertDirection,alertThreshold,alertLoad,alertAdd,alertRemove,accountStatus).forEach{accountPanel.addView(it)}
+
         val chart = CandleView(this).apply { visibility = View.GONE }
         val chartControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
         val chartRange = label("")
@@ -99,7 +173,7 @@ class MainActivity : Activity() {
         zoomIn.setOnClickListener { chart.zoom(0.5); updateRange() }
         zoomOut.setOnClickListener { chart.zoom(2.0); updateRange() }
         latest.setOnClickListener { chart.latest(); updateRange() }
-        listOf(title,note,endpoint,tabs,symbol,start,end,portfolioNote,portfolioInput,button,status,chartControls).forEach { root.addView(it) }
+        listOf(title,note,endpoint,tabs,symbol,start,end,portfolioNote,portfolioInput,accountPanel,button,status,chartControls).forEach { root.addView(it) }
         root.addView(chart, LinearLayout.LayoutParams(-1, (280 * resources.displayMetrics.density).toInt()))
         setContentView(ScrollView(this).apply { addView(root) })
         tabs.setOnCheckedChangeListener { _, checked ->
@@ -110,6 +184,8 @@ class MainActivity : Activity() {
             portfolioInput.visibility = if(mode==4) View.VISIBLE else View.GONE
             portfolioNote.visibility = portfolioInput.visibility
             button.text = if(mode==4) "Calculate offline" else "Load research"
+            accountPanel.visibility=if(mode==5) View.VISIBLE else View.GONE
+            button.visibility=if(mode==5) View.GONE else View.VISIBLE
             start.visibility = if (mode == 3) View.VISIBLE else View.GONE
             end.visibility = start.visibility
             chart.visibility = View.GONE
@@ -212,7 +288,7 @@ class MainActivity : Activity() {
             }
         }
     }
-    override fun onDestroy() { generation++; worker.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { generation++; mobileSession?.clear(); worker.shutdownNow(); super.onDestroy() }
 }
 
 private fun updateChartRange(label: TextView, chart: CandleView) { label.text = chart.rangeLabel() }

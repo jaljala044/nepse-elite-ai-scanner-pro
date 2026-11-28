@@ -39,6 +39,12 @@ class Quarantine:
             self.rows[k]=row
         if len(self.rows)!=EXPECTED_COUNT:
             raise ValueError('Overlay count mismatch')
+        self.revisions = {(k[0], k[1]) for k in self.rows}
+        self.file_hashes = {}
+        for k, row in self.rows.items():
+            previous = self.file_hashes.setdefault(k[:3], row['source_file_sha256'])
+            if previous != row['source_file_sha256']:
+                raise ValueError('Inconsistent overlay file hash')
     def disposition(self, observation):
         """Never admits a record; absent rows still require other gates."""
         try:
@@ -49,6 +55,11 @@ class Quarantine:
             return 'hold_missing_provenance'
         row=self.rows.get(k)
         if row is None:
+            if k[:2] not in self.revisions:
+                return 'hold_unreviewed_archive_revision'
+            expected_hash = self.file_hashes.get(k[:3])
+            if expected_hash is not None and observation['source_file_sha256'] != expected_hash:
+                return 'hold_provenance_conflict'
             return 'not_in_overlay_requires_other_gates'
         if any(observation.get(field)!=row[field] for field in ('source_file_sha256','symbol','target_date')):
             return 'hold_provenance_conflict'

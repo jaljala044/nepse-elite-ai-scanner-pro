@@ -22,6 +22,17 @@ class QualifiedAdmissionBridgeTests(unittest.TestCase):
                 test_start="2026-02-01T00:00:00+00:00",
                 test_end="2026-03-01T00:00:00+00:00")
 
+    def test_empty_dataset(self):
+        result = self.call([])
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("empty_historical_dataset", [x["reason"] for x in result["issues"]])
+
+    def test_archive_locator_without_flag(self):
+        result = self.call([{"row_status": "eligible_for_review",
+            "historical_segment_eligible": True, "repository": "owner/archive"}])
+        self.assertIn("archive_quarantine_disposition_missing", [x["reason"] for x in result["issues"]])
+        self.assertEqual(result["status"], "BLOCKED")
+
     def test_rejects_row_without_upstream_eligibility(self):
         result = self.call([{"row_status": "eligible_for_review"}])
         self.assertEqual(result["status"], "BLOCKED")

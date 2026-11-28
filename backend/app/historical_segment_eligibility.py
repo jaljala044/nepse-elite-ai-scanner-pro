@@ -9,6 +9,9 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
+from .issue5_quarantine import Quarantine
+
+_ARCHIVE_FIELDS = frozenset({'repository', 'commit_sha', 'source_file', 'source_file_sha256', 'target_csv_row', 'target_date'})
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ALLOWED_SESSION_STATES = {
@@ -99,7 +102,8 @@ def _valid_primary_evidence(evidence, cutoff):
 
 def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                                 session_evidence, records, required_sessions=120,
-                                available_warmup_sessions=0, decision_cutoff):
+                                available_warmup_sessions=0, decision_cutoff,
+                                archive_guard=None, require_archive_guard=False):
     """Evaluate a point-in-time segment without imputing missing or inactive dates.
 
     expected_sessions must be a verified exchange-session list, not weekdays
@@ -127,6 +131,10 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
 
     cutoff = _aware_datetime(decision_cutoff, "decision_cutoff")
     reasons = []
+    if type(require_archive_guard) is not bool:
+        raise ValueError('require_archive_guard must be boolean')
+    if require_archive_guard and not isinstance(archive_guard, Quarantine):
+        reasons.append('archive_quarantine_guard_missing')
     expected = []
     for raw_day in expected_sessions:
         expected.append(_iso_date(raw_day, "expected session"))
@@ -348,6 +356,18 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"duplicate_bar:{day_text}")
             continue
         row = rows[0]
+        if require_archive_guard or archive_guard is not None or _ARCHIVE_FIELDS.intersection(row):
+            if not isinstance(archive_guard, Quarantine):
+                reasons.append(f"archive_quarantine_guard_missing:{day_text}")
+            elif row.get("target_date") != day_text:
+                reasons.append(f"archive_quarantine_date_binding_missing_or_mismatch:{day_text}")
+            else:
+                try:
+                    disposition = archive_guard.disposition(row)
+                except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+                    disposition = "hold_invalid_provenance"
+                if disposition != "not_in_overlay_requires_other_gates":
+                    reasons.append(f"archive_quarantine:{disposition}:{day_text}")
         if row.get("symbol") != symbol or row.get("security_id") != security_id:
             reasons.append(f"bar_identity_mismatch:{day_text}")
         if effective_from and day < effective_from or effective_to and day > effective_to:
@@ -411,3 +431,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         "reasons": reasons,
         "policy": "verified_sessions_only_no_imputation_no_cross_identity_splice_no_ohlcv_adjustment",
     }
+
+
+def evaluate_archive_historical_segment(*, archive_guard=None, **kwargs):
+    """Archive replay requires the pinned guard in addition to strict evidence."""
+    return evaluate_historical_segment(archive_guard=archive_guard, require_archive_guard=True, **kwargs)

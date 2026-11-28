@@ -76,6 +76,13 @@ class PortfolioServiceTests(unittest.TestCase):
         self.assertEqual(updated["horizon"], "long_term")
         self.assertEqual(len(service.list_holding_preferences(self.owner, self.portfolio["id"])), 1)
 
+    def test_preference_requires_a_recorded_holding(self):
+        with self.assertRaisesRegex(LookupError, "holding not found"):
+            service.set_holding_preference(
+                self.owner, self.portfolio["id"], symbol="CFCL",
+                horizon="long_term", risk_preference="balanced",
+            )
+
     def test_invalid_holding_preferences_and_foreign_portfolio_fail_closed(self):
         for horizon, risk in (("tomorrow", "balanced"), ("long_term", "YOLO")):
             with self.subTest(horizon=horizon, risk=risk):

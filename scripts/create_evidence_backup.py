@@ -36,15 +36,15 @@ def validate_backup_paths(database_path: str, storage_root: str, destination_roo
         raise ValueError("raw storage and destination roots must exist as directories")
     if not os.path.ismount(destination):
         raise ValueError("destination root is not a mounted filesystem; refusing same-volume backup")
+    if destination == source_root or destination in source_root.parents or source_root in destination.parents:
+        raise ValueError("destination and raw storage source must not overlap")
+    if destination == database or destination in database.parents:
+        raise ValueError("database source must not be located inside the backup destination")
     _require_separate_filesystem(
         os.stat(database.parent).st_dev,
         os.stat(source_root).st_dev,
         os.stat(destination).st_dev,
     )
-    if destination == source_root or destination in source_root.parents or source_root in destination.parents:
-        raise ValueError("destination and raw storage source must not overlap")
-    if destination == database or destination in database.parents:
-        raise ValueError("database source must not be located inside the backup destination")
     return database, source_root, destination
 
 

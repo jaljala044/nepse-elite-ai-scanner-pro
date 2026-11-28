@@ -1,0 +1,11 @@
+const {test}=require("node:test");
+const assert=require("node:assert/strict");
+const {calendarRows,holdingsSummary}=require("./research-workspace.js");
+const event={date:"2026-11-28",symbol:"NABIL",type:"AGM",source:"https://example.org/notice"};
+test("valid calendar",()=>assert.equal(calendarRows([event])[0].symbol,"NABIL"));
+test("reject impossible date",()=>assert.throws(()=>calendarRows([{...event,date:"2026-02-30"}])));
+test("reject duplicate event",()=>assert.throws(()=>calendarRows([event,event])));
+test("reject unsafe source",()=>assert.throws(()=>calendarRows([{...event,source:"javascript:alert(1)"}])));
+test("holdings value and concentration",()=>{const s=holdingsSummary([{symbol:"A",quantity:10,cost:100,mark:120},{symbol:"B",quantity:10,cost:100,mark:80}]);assert.equal(s.value,2000);assert.equal(s.pnl,0);assert.equal(s.items[0].weight,60);});
+test("duplicate holdings rejected",()=>{const r={symbol:"A",quantity:1,cost:100,mark:100};assert.throws(()=>holdingsSummary([r,r]));});
+test("invalid marks rejected",()=>assert.throws(()=>holdingsSummary([{symbol:"A",quantity:1,cost:100,mark:0}])));

@@ -12,7 +12,7 @@
 10. Expose historical replay readiness and add regression tests for trusted persistent replay.
 
 ## Important limitations
-- The implementation selects one signed registry and one signed freshness-policy snapshot per configured path. It does not yet search an archived version directory; a snapshot generated after a historical cutoff is rejected rather than backfilled.
+- The implementation supports explicit server-side maps from exact decision-time cutoffs to archived signed registry and freshness-policy paths. It does not automatically discover archive files; a snapshot generated after a historical cutoff is rejected rather than backfilled. Publisher ownership-group changes across explicitly selected snapshots are flagged for review.
 - Historical events without a source URL are excluded because host trust cannot be checked.
 - Expected symbols and capture sessions are operator-supplied expectations, not authoritative exchange calendars or official sector membership.
 - No real publisher registry, freshness SLA, or timeline database is provisioned by this change.

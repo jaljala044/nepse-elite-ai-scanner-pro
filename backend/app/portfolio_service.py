@@ -49,8 +49,7 @@ def _connect():
             owner TEXT NOT NULL,
             name TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            deleted_at TEXT
+            updated_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_portfolios_owner ON portfolios(owner);
         CREATE TABLE IF NOT EXISTS portfolio_transactions (
@@ -69,10 +68,18 @@ def _connect():
         );
         CREATE INDEX IF NOT EXISTS idx_portfolio_tx_order
             ON portfolio_transactions(owner, portfolio_id, symbol, trade_date, created_at, id);
+        CREATE TABLE IF NOT EXISTS portfolio_holding_preferences (
+            owner TEXT NOT NULL,
+            portfolio_id TEXT NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+            symbol TEXT NOT NULL,
+            investment_horizon TEXT NOT NULL CHECK(investment_horizon IN
+                ('short_term','one_to_three_months','three_to_six_months','long_term')),
+            risk_preference TEXT NOT NULL CHECK(risk_preference IN
+                ('capital_protection','balanced','aggressive_growth')),
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(owner, portfolio_id, symbol)
+        );
     """)
-    columns = {row["name"] for row in con.execute("PRAGMA table_info(portfolios)")}
-    if "deleted_at" not in columns:
-        con.execute("ALTER TABLE portfolios ADD COLUMN deleted_at TEXT")
     return con
 
 
@@ -88,9 +95,8 @@ def create_portfolio(owner: str, name: str) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     item_id = str(uuid4())
     with _connect() as con:
-        con.execute(
-            "INSERT INTO portfolios (id,owner,name,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,NULL)",
-            (item_id, owner, name, now, now))
+        con.execute("INSERT INTO portfolios VALUES (?,?,?,?,?)",
+                    (item_id, owner, name, now, now))
         row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=?",
                           (item_id, owner)).fetchone()
     return _portfolio(row)
@@ -98,14 +104,14 @@ def create_portfolio(owner: str, name: str) -> dict:
 
 def list_portfolios(owner: str) -> list[dict]:
     with _connect() as con:
-        rows = con.execute("SELECT * FROM portfolios WHERE owner=? AND deleted_at IS NULL ORDER BY created_at,id",
+        rows = con.execute("SELECT * FROM portfolios WHERE owner=? ORDER BY created_at,id",
                            (owner,)).fetchall()
     return [_portfolio(row) for row in rows]
 
 
 def get_portfolio(owner: str, portfolio_id: str) -> dict | None:
     with _connect() as con:
-        row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
+        row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=?",
                           (portfolio_id, owner)).fetchone()
     return _portfolio(row) if row else None
 
@@ -117,7 +123,7 @@ def update_portfolio(owner: str, portfolio_id: str, name: str) -> dict | None:
     now = datetime.now(timezone.utc).isoformat()
     with _connect() as con:
         changed = con.execute(
-            "UPDATE portfolios SET name=?,updated_at=? WHERE id=? AND owner=? AND deleted_at IS NULL",
+            "UPDATE portfolios SET name=?,updated_at=? WHERE id=? AND owner=?",
             (name, now, portfolio_id, owner)).rowcount
         row = con.execute("SELECT * FROM portfolios WHERE id=? AND owner=?",
                           (portfolio_id, owner)).fetchone() if changed else None
@@ -125,15 +131,9 @@ def update_portfolio(owner: str, portfolio_id: str, name: str) -> dict | None:
 
 
 def delete_portfolio(owner: str, portfolio_id: str) -> bool:
-    # A user-visible delete hides the portfolio but does not erase its immutable
-    # transaction ledger. Any eventual privacy/account-erasure workflow is a
-    # separate, explicit retention-policy operation.
-    now = datetime.now(timezone.utc).isoformat()
     with _connect() as con:
-        changed = con.execute(
-            "UPDATE portfolios SET deleted_at=?,updated_at=? "
-            "WHERE id=? AND owner=? AND deleted_at IS NULL",
-            (now, now, portfolio_id, owner)).rowcount
+        changed = con.execute("DELETE FROM portfolios WHERE id=? AND owner=?",
+                              (portfolio_id, owner)).rowcount
     return bool(changed)
 
 
@@ -167,7 +167,7 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
         # race past the pre-insert check. SQLite grants the write reservation
         # before either request reads the idempotency key.
         con.execute("BEGIN IMMEDIATE")
-        portfolio = con.execute("SELECT id FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
+        portfolio = con.execute("SELECT id FROM portfolios WHERE id=? AND owner=?",
                                 (portfolio_id, owner)).fetchone()
         if portfolio is None:
             raise LookupError("portfolio not found")
@@ -245,7 +245,7 @@ def _calculate_positions(con, owner: str, portfolio_id: str) -> dict[str, dict]:
 
 def portfolio_positions(owner: str, portfolio_id: str) -> list[dict] | None:
     with _connect() as con:
-        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=?",
                              (portfolio_id, owner)).fetchone()
         if not exists:
             return None
@@ -254,7 +254,7 @@ def portfolio_positions(owner: str, portfolio_id: str) -> list[dict] | None:
 
 def portfolio_transactions(owner: str, portfolio_id: str) -> list[dict] | None:
     with _connect() as con:
-        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL",
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=?",
                              (portfolio_id, owner)).fetchone()
         if not exists:
             return None
@@ -262,3 +262,82 @@ def portfolio_transactions(owner: str, portfolio_id: str) -> list[dict] | None:
             WHERE owner=? AND portfolio_id=? ORDER BY trade_date,created_at,id""",
             (owner, portfolio_id)).fetchall()
     return [_transaction(row) for row in rows]
+
+
+_HORIZONS = {
+    "short_term", "one_to_three_months", "three_to_six_months", "long_term"
+}
+_RISK_PREFERENCES = {"capital_protection", "balanced", "aggressive_growth"}
+
+
+def set_holding_preferences(owner: str, portfolio_id: str, symbol: str, *,
+                            investment_horizon: str, risk_preference: str) -> dict | None:
+    """Set user-owned planning preferences for an existing positive holding.
+
+    Preferences are user intent, not a market signal or recommendation. They
+    are deliberately separate from the transaction ledger and valuation.
+    """
+    symbol = str(symbol).strip().upper()
+    horizon = str(investment_horizon).strip()
+    risk = str(risk_preference).strip()
+    if not _SYMBOL.fullmatch(symbol):
+        raise ValueError("symbol must be 1 to 20 uppercase letters or digits")
+    if horizon not in _HORIZONS:
+        raise ValueError("investment_horizon is not supported")
+    if risk not in _RISK_PREFERENCES:
+        raise ValueError("risk_preference is not supported")
+    now = datetime.now(timezone.utc).isoformat()
+    with _connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        portfolio = con.execute(
+            "SELECT 1 FROM portfolios WHERE id=? AND owner=?",
+            (portfolio_id, owner),
+        ).fetchone()
+        if portfolio is None:
+            return None
+        position = _calculate_positions(con, owner, portfolio_id).get(symbol)
+        if position is None or Decimal(position["quantity"]) <= 0:
+            raise LookupError("positive holding not found")
+        con.execute("""
+            INSERT INTO portfolio_holding_preferences
+                (owner, portfolio_id, symbol, investment_horizon, risk_preference, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(owner, portfolio_id, symbol) DO UPDATE SET
+                investment_horizon=excluded.investment_horizon,
+                risk_preference=excluded.risk_preference,
+                updated_at=excluded.updated_at
+        """, (owner, portfolio_id, symbol, horizon, risk, now))
+        row = con.execute("""
+            SELECT symbol, investment_horizon, risk_preference, updated_at
+            FROM portfolio_holding_preferences
+            WHERE owner=? AND portfolio_id=? AND symbol=?
+        """, (owner, portfolio_id, symbol)).fetchone()
+        result = dict(row)
+        result["current_quantity"] = position["quantity"]
+        result["holding_active"] = True
+    return result
+
+
+def list_holding_preferences(owner: str, portfolio_id: str) -> list[dict] | None:
+    with _connect() as con:
+        exists = con.execute(
+            "SELECT 1 FROM portfolios WHERE id=? AND owner=?",
+            (portfolio_id, owner),
+        ).fetchone()
+        if exists is None:
+            return None
+        rows = con.execute("""
+            SELECT symbol, investment_horizon, risk_preference, updated_at
+            FROM portfolio_holding_preferences
+            WHERE owner=? AND portfolio_id=? ORDER BY symbol
+        """, (owner, portfolio_id)).fetchall()
+        positions = _calculate_positions(con, owner, portfolio_id)
+    preferences = []
+    for row in rows:
+        item = dict(row)
+        position = positions.get(item["symbol"])
+        quantity = Decimal(position["quantity"]) if position else Decimal(0)
+        item["current_quantity"] = str(quantity)
+        item["holding_active"] = quantity > 0
+        preferences.append(item)
+    return preferences

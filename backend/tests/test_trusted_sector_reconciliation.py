@@ -5,6 +5,7 @@ from pathlib import Path
 
 from app.publisher_trust import sign_trust_payload
 from app.trusted_sector_reconciliation import (
+    build_evidence_completeness_report,
     publisher_trust_readiness,
     reconcile_trusted_sector_evidence,
 )
@@ -137,6 +138,29 @@ class TrustedSectorIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(result["results"]["AAA"]["status"], "conflicting_sources")
             self.assertIsNone(result["results"]["AAA"]["sector_code"])
+
+
+    def test_completeness_report_finds_missing_symbol_and_publisher(self):
+        rows = [observation("brand-a", "a.example", symbol="AAA")]
+        assessment = {"observations": [
+            {"index": 0, "eligible_for_independence_count": True}
+        ]}
+        report = build_evidence_completeness_report(
+            expected_symbols=["AAA", "BBB"],
+            expected_publisher_ids=["brand-a", "brand-c"],
+            observations=rows, assessment=assessment,
+        )
+        self.assertEqual(report["status"], "incomplete")
+        self.assertEqual(report["missing_symbols"], ["BBB"])
+        self.assertEqual(report["missing_publishers"], ["brand-c"])
+        self.assertFalse(report["production_admission_allowed"])
+
+    def test_completeness_rejects_duplicate_expectation_symbols(self):
+        with self.assertRaisesRegex(ValueError, "expected_symbols_must_be_non_empty_and_unique"):
+            build_evidence_completeness_report(
+                expected_symbols=["AAA", "AAA"], expected_publisher_ids=[],
+                observations=[], assessment={"observations": []},
+            )
 
     def test_readiness_reports_unconfigured_without_secrets(self):
         result = publisher_trust_readiness(

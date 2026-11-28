@@ -30,7 +30,6 @@ def report(rows, batch_id="BATCH-2026-11-25"):
         expected_source_ids={"SRC-FLOORSHEET"},received_source_ids={"SRC-FLOORSHEET"},
         available_at="2026-11-26T10:00:00+05:45",
         verified_session_finality={d:d+"T16:00:00+05:45" for d in days},
-        source_rights_evidence=rights_evidence(),
         source_rights_evidence=rights_evidence())
 
 

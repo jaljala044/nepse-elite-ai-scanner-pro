@@ -301,6 +301,7 @@ def build_historical_trust_version_report(
             "registry_status": registry["status"],
             "registry_sha256": registry.get("registry_sha256"),
             "registry_generated_at": registry.get("generated_at"),
+            "publisher_ownership_groups": {key: value["ownership_group_id"] for key, value in registry.get("publishers", {}).items()},
             "freshness_policy_status": policy["status"],
             "freshness_policy_sha256": policy.get("policy_sha256"),
             "freshness_policy_generated_at": policy.get("generated_at"),
@@ -309,9 +310,25 @@ def build_historical_trust_version_report(
                 and policy["status"] == "reviewed_policy_loaded"
             ),
         })
+    identity_changes = []
+    previous = None
+    for row in rows:
+        current = row["publisher_ownership_groups"]
+        if previous is not None:
+            for publisher_id in sorted(set(previous) | set(current)):
+                if previous.get(publisher_id) != current.get(publisher_id):
+                    identity_changes.append({
+                        "decision_time": row["decision_time"],
+                        "publisher_id": publisher_id,
+                        "previous_ownership_group_id": previous.get(publisher_id),
+                        "current_ownership_group_id": current.get(publisher_id),
+                        "status": "review_required_identity_change",
+                    })
+        previous = current
     return {
         "status": "assessed",
         "cutoff_count": len(rows),
+        "publisher_identity_changes": identity_changes,
         "versions": rows,
         "version_selection_mode": "single_configured_signed_snapshot_per_path",
         "historical_archive_search_supported": False,
@@ -320,4 +337,65 @@ def build_historical_trust_version_report(
             "This deployment selects one configured signed snapshot per path; it does not search an archived version directory.",
             "A snapshot generated after a historical decision cutoff is rejected, not backfilled.",
         ],
+    }
+
+
+
+def build_sector_evidence_coverage_report(
+    *,
+    expected_symbols_by_sector: dict[str, list[str]],
+    expected_capture_sessions: list[str],
+    observations: list[dict[str, Any]],
+    assessment: dict[str, Any],
+) -> dict[str, Any]:
+    """Report per-sector symbol coverage and missing source-capture sessions."""
+    if not isinstance(expected_symbols_by_sector, dict) or not expected_symbols_by_sector:
+        raise ValueError("expected_symbols_by_sector_required")
+    if not isinstance(expected_capture_sessions, list) or not expected_capture_sessions:
+        raise ValueError("expected_capture_sessions_required")
+    eligible = {
+        row.get("index") for row in assessment.get("observations", [])
+        if row.get("eligible_for_independence_count")
+    }
+    normalized: dict[str, set[str]] = {}
+    for sector, symbols in expected_symbols_by_sector.items():
+        if not isinstance(sector, str) or not sector.strip() or not isinstance(symbols, list) or not symbols:
+            raise ValueError("sector_expectation_invalid")
+        normalized[sector] = {str(symbol).strip().upper() for symbol in symbols if str(symbol).strip()}
+        if not normalized[sector]:
+            raise ValueError("sector_symbols_required")
+    observed: dict[str, set[str]] = {sector: set() for sector in normalized}
+    sessions = set()
+    for index, row in enumerate(observations):
+        if index not in eligible or not isinstance(row, dict):
+            continue
+        symbol = str(row.get("symbol", "")).strip().upper()
+        sector = str(row.get("sector_code", "")).strip()
+        if sector in normalized and symbol in normalized[sector]:
+            observed[sector].add(symbol)
+        captured = row.get("captured_at")
+        if isinstance(captured, str) and len(captured) >= 10:
+            sessions.add(captured[:10])
+    sectors = {}
+    for sector, expected in normalized.items():
+        missing = sorted(expected - observed[sector])
+        sectors[sector] = {
+            "expected_symbol_count": len(expected),
+            "observed_symbol_count": len(expected & observed[sector]),
+            "missing_symbols": missing,
+            "coverage_pct": round(100 * len(expected & observed[sector]) / len(expected), 2),
+            "status": "complete" if not missing else "incomplete",
+        }
+    missing_sessions = sorted(set(expected_capture_sessions) - sessions)
+    return {
+        "status": "complete" if not missing_sessions and all(x["status"] == "complete" for x in sectors.values()) else "incomplete",
+        "sector_coverage": sectors,
+        "expected_capture_sessions": sorted(set(expected_capture_sessions)),
+        "observed_capture_sessions": sorted(sessions),
+        "missing_capture_sessions": missing_sessions,
+        "capture_session_coverage_pct": round(
+            100 * (len(set(expected_capture_sessions)) - len(missing_sessions)) / len(set(expected_capture_sessions)), 2
+        ),
+        "expectations_provenance": "operator_supplied_not_exchange_verified",
+        "production_admission_allowed": False,
     }

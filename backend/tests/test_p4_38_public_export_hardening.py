@@ -45,5 +45,15 @@ class PublicExportHardeningTests(unittest.TestCase):
             [(0, "duplicate_symbol_session"), (1, "duplicate_symbol_session")],
         )
 
+    def test_duplicate_after_invalid_first_row_preserves_both_raw_rows(self):
+        invalid = {"date": "2026-11-27", "open": 99, "high": 98, "low": 97, "close": 98, "volume": 100}
+        valid = {"date": "2026-11-27", "open": 99, "high": 101, "low": 98, "close": 100, "volume": 1000}
+        result = normalize_ohlcv_rows(provider="sharehub", symbol="BENH", rows=[invalid, valid])
+        self.assertEqual(result["records"], [])
+        self.assertEqual([item["reason"] for item in result["rejected"]],
+                         ["duplicate_symbol_session", "duplicate_symbol_session"])
+        self.assertEqual(result["rejected"][0]["raw_row"], invalid)
+        self.assertEqual(result["rejected"][1]["raw_row"], valid)
+
 if __name__ == "__main__":
     unittest.main()

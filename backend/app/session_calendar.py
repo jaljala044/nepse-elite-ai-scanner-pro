@@ -102,6 +102,8 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
     evidence = load_calendar(calendar_path)
     rows_seen = 0
     accepted = 0
+    verified_rows = 0
+    project_accepted_rows = 0
     quarantined: list[dict[str, Any]] = []
     seen: dict[tuple[str, str], dict[str, str]] = {}
     repeats: list[dict[str, Any]] = []
@@ -137,8 +139,12 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
                     if nums["high"] < max(nums["open"], nums["close"], nums["low"]) or nums["low"] > min(nums["open"], nums["close"], nums["high"]):
                         raise ValueError("invalid_ohlc_bounds")
                     cls = classify_date(day, evidence)
-                    if cls["classification"] not in {"verified_open", "verified_exceptional_open"}:
-                        raise ValueError("date_not_verified_open:" + cls["classification"])
+                    if cls["classification"] in {"verified_open", "verified_exceptional_open"}:
+                        verified_rows += 1
+                    elif cls["classification"] == "project_accepted_open":
+                        project_accepted_rows += 1
+                    else:
+                        raise ValueError("date_not_accepted_open:" + cls["classification"])
                     key = (symbol, day.isoformat())
                     comparable = {k: row[k] for k in OHLCV_FIELDS if k != "symbol"}
                     if key in seen:
@@ -155,9 +161,13 @@ def audit_ohlcv(paths: list[str | Path], calendar_path: str | Path) -> dict[str,
         "calendar_file": str(calendar_path),
         "calendar_sha256": hashlib.sha256(Path(calendar_path).read_bytes()).hexdigest(),
         "rows_seen": rows_seen, "rows_accepted": accepted, "rows_quarantined": len(quarantined),
-        "verified_calendar_dates": len(evidence), "files": per_file, "quarantine": quarantined,
-        "gate_pass": rows_seen > 0 and not quarantined,
-        "gate_note": "A pass applies only to supplied files and explicit calendar evidence; it is not proof of archive completeness.",
+        "verified_rows": verified_rows, "project_accepted_rows": project_accepted_rows,
+        "verified_calendar_dates": sum(1 for item in evidence.values() if item["status"] != "project_accepted_open"),
+        "project_accepted_calendar_dates": sum(1 for item in evidence.values() if item["status"] == "project_accepted_open"),
+        "files": per_file, "quarantine": quarantined,
+        "gate_pass": rows_seen > 0 and not quarantined and project_accepted_rows == 0,
+        "research_gate_pass": rows_seen > 0 and not quarantined,
+        "gate_note": "gate_pass requires explicit verified-open evidence; research_gate_pass may include project_accepted_open archive dates and is not exchange certification or canonical admission.",
     }
 
 

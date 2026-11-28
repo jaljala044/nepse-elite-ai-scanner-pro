@@ -60,7 +60,8 @@ def _approved_rights(source_id: str, evidence: Any, available_by: datetime) -> t
     if not re.fullmatch(r"[0-9a-f]{64}", evidence["document_sha256"]):
         return False, "invalid_source_rights_document_hash"
     scope = evidence.get("scope")
-    if (not isinstance(scope, (list, tuple, set, frozenset)) or
+    if (not isinstance(scope, (list, tuple)) or
+            any(not isinstance(item, str) or not item.strip() for item in scope) or
             not {"electronic_storage", "aggregation"}.issubset(set(scope))):
         return False, "source_rights_scope_insufficient"
     try:
@@ -143,9 +144,19 @@ def reconcile_broker_batch(
     except IngestionError:
         raise IngestionError("invalid_verified_session_inventory") from None
 
+    if not isinstance(verified_brokers, (set, frozenset)) or any(
+        not isinstance(item, str) or not item.strip() or item != item.strip()
+        for item in verified_brokers
+    ):
+        raise IngestionError("invalid_verified_broker_inventory")
+    if expected_source_ids is not None and not isinstance(expected_source_ids, (set, frozenset)):
+        raise IngestionError("invalid_source_inventory")
+    if not isinstance(received_source_ids, (set, frozenset)):
+        raise IngestionError("invalid_source_inventory")
     expected = set(expected_source_ids or set())
-    received = set(received_source_ids or set())
-    if any(not isinstance(item, str) or not item.strip() for item in expected | received):
+    received = set(received_source_ids)
+    if any(not isinstance(item, str) or not item.strip() or item != item.strip()
+           for item in expected | received):
         raise IngestionError("invalid_source_inventory")
     if not expected or not received:
         coverage_status, ratio = "unknown", None
@@ -266,6 +277,8 @@ def reconcile_broker_batch(
             "session_date": str(raw["session_date"]), "side": side,
             "quantity": str(quantity), "amount": str(amount), "source_id": str(raw["source_id"]),
             "evidence_id": str(raw["evidence_id"]), "source_payload_sha256": digest,
+            "source_rights_evidence_id": rights[str(raw["source_id"])]["evidence_id"],
+            "source_rights_document_sha256": rights[str(raw["source_id"])]["document_sha256"],
             "source_row_count": row_count, "coverage_ratio": str(row_coverage),
             "raw_record_lineage": raw.get("raw_record_lineage", []),
             "available_at": availability.isoformat(), "batch_id": batch_id,

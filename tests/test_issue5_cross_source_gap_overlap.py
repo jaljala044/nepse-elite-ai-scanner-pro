@@ -145,7 +145,7 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "gaps.csv"
             path.write_text(
-                "repository,symbol,symbol,trade_date,gap_status,canonical_promotion_allowed,raw_source_modified\\n",
+                "repository,symbol,symbol,trade_date,gap_status,canonical_promotion_allowed,raw_source_modified\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "duplicate column headers"):
@@ -155,8 +155,8 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "gaps.csv"
             path.write_text(
-                ",".join(FIELDS) + "\\n" +
-                ",".join([SMC, "ABC", "2026-01-02", STATUS, "false", "false", "unexpected"]) + "\\n",
+                ",".join(FIELDS) + "\n" +
+                ",".join([SMC, "ABC", "2026-01-02", STATUS, "false", "false", "unexpected"]) + "\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "unexpected extra CSV fields"):
@@ -166,8 +166,8 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "gaps.csv"
             path.write_text(
-                ",".join(FIELDS) + "\\n" +
-                ",".join([SMC, "ABC", "2026-01-02", STATUS, "false"]) + "\\n",
+                ",".join(FIELDS) + "\n" +
+                ",".join([SMC, "ABC", "2026-01-02", STATUS, "false"]) + "\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "raw_source_modified must be a non-empty string"):

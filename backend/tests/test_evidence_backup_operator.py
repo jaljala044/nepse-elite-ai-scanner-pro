@@ -14,6 +14,8 @@ SPEC.loader.exec_module(CLI)
 
 from app.evidence_backup import _validate_backup_source_destination
 
+_require_separate_filesystem = CLI._require_separate_filesystem
+
 
 class EvidenceBackupOperatorPathTests(unittest.TestCase):
     def setUp(self):
@@ -35,7 +37,9 @@ class EvidenceBackupOperatorPathTests(unittest.TestCase):
                 CLI.validate_backup_paths(str(self.database), str(self.source), str(self.destination))
 
     def test_accepts_existing_isolated_mount_point(self):
-        with patch.object(CLI.os.path, "ismount", return_value=True):
+        with patch.object(CLI.os.path, "ismount", return_value=True), patch.object(
+            CLI, "_require_separate_filesystem"
+        ):
             database, source, destination = CLI.validate_backup_paths(
                 str(self.database), str(self.source), str(self.destination)
             )
@@ -63,6 +67,26 @@ class EvidenceBackupOperatorPathTests(unittest.TestCase):
         with patch.object(CLI.os.path, "ismount", return_value=True):
             with self.assertRaisesRegex(ValueError, "database source"):
                 CLI.validate_backup_paths(str(nested_db), str(self.source), str(self.destination))
+
+    def test_same_filesystem_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "separate filesystem"):
+            _require_separate_filesystem(1, 1, 1)
+
+    def test_destination_matching_database_filesystem_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "separate filesystem"):
+            _require_separate_filesystem(1, 2, 1)
+
+    def test_destination_matching_raw_filesystem_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "separate filesystem"):
+            _require_separate_filesystem(1, 2, 2)
+
+    def test_distinct_filesystem_is_accepted(self):
+        self.assertIsNone(_require_separate_filesystem(1, 2, 3))
+
+    def test_validator_rejects_same_filesystem_even_when_mountpoint(self):
+        with patch.object(CLI.os.path, "ismount", return_value=True):
+            with self.assertRaisesRegex(ValueError, "separate filesystem"):
+                CLI.validate_backup_paths(str(self.database), str(self.source), str(self.destination))
 
     def test_core_backup_rejects_recursive_destination(self):
         nested = self.source / "backup-output"

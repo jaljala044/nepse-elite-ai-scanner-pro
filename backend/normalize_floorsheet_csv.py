@@ -9,6 +9,7 @@ def main():
     parser.add_argument("input", help="CSV file or directory containing daily floorsheet CSV files")
     parser.add_argument("--source", required=True, help="Dataset/provider name used for provenance")
     parser.add_argument("--max-reject-ratio", type=float, default=0.10)
+    parser.add_argument("--validation-registry", help="shared SQLite validation registry path")
     args = parser.parse_args()
 
     path = Path(args.input)
@@ -17,13 +18,21 @@ def main():
     ) if path.is_dir() else [path]
     if not candidates:
         parser.error("No CSV files found")
+    registry = None
+    if args.validation_registry:
+        try:
+            from nepse_shared_validation import ValidationRegistry
+        except ImportError:
+            parser.error("Install nepse-shared-validation before using --validation-registry")
+        registry = ValidationRegistry(args.validation_registry)
+
     results = []
     failures = []
     for candidate in candidates:
         try:
             results.append(normalize_floorsheet_csv(
                 candidate, source=args.source,
-                max_reject_ratio=args.max_reject_ratio,
+                max_reject_ratio=args.max_reject_ratio, registry=registry,
             ))
         except Exception as exc:
             failures.append({"file": str(candidate), "error": f"{type(exc).__name__}: {exc}"})

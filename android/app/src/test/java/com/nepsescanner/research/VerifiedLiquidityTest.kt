@@ -21,4 +21,13 @@ class VerifiedLiquidityTest {
         assertNull(eligibleAverageDailyVolume("AAA",r.dropLast(1)+r.first()))
         assertNull(eligibleAverageDailyVolume("AAA",r.dropLast(1)+r.last().copy(quantity=-1)))
     }
+
+    @Test fun attachesOnlyAdmittedVolumeToMatchingHolding() {
+        val holdings=listOf(Holding("AAA",100,"10".toBigDecimal(),"11".toBigDecimal(),
+            LocalDate.parse("2026-01-20"),"BANK",BigDecimal("999")))
+        val admitted=applyVerifiedLiquidityEvidence(holdings,mapOf("AAA" to rows()))
+        assertEquals(1000,admitted.single().averageDailyQuantity!!.toInt())
+        val rejected=applyVerifiedLiquidityEvidence(holdings,mapOf("AAA" to rows().dropLast(1)))
+        assertNull(rejected.single().averageDailyQuantity)
+    }
 }

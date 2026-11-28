@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from fastapi import HTTPException, Request
 
-def principal(request: Request):
+def proxy_principal(request: Request):
     secret=os.getenv("NEPSE_PROXY_SECRET","")
     provided=request.headers.get("x-nepse-proxy-secret","")
     subject=request.headers.get("x-nepse-subject","")
@@ -18,6 +18,12 @@ def principal(request: Request):
         raise HTTPException(401,"Verified subject required")
     return subject
 
+def principal(request: Request):
+    auth = request.headers.get("authorization", "")
+    if auth:
+        return mobile_principal(auth)
+    return proxy_principal(request)
+
 def _connect():
     path=Path(os.getenv("NEPSE_PRIVATE_DB","private/accounts.sqlite3"))
     path.parent.mkdir(parents=True,exist_ok=True)
@@ -25,6 +31,7 @@ def _connect():
     c.execute("CREATE TABLE IF NOT EXISTS watchlists (owner TEXT NOT NULL, symbol TEXT NOT NULL, PRIMARY KEY(owner,symbol))")
     c.execute("CREATE TABLE IF NOT EXISTS price_alerts (owner TEXT NOT NULL, symbol TEXT NOT NULL, direction TEXT NOT NULL, threshold TEXT NOT NULL, PRIMARY KEY(owner,symbol,direction,threshold))")
     c.execute("CREATE TABLE IF NOT EXISTS price_alert_events (owner TEXT NOT NULL, symbol TEXT NOT NULL, direction TEXT NOT NULL, threshold TEXT NOT NULL, session TEXT NOT NULL, PRIMARY KEY(owner,symbol,direction,threshold,session))")
+    c.execute("CREATE TABLE IF NOT EXISTS mobile_sessions (digest TEXT PRIMARY KEY, owner TEXT NOT NULL, expires INTEGER NOT NULL, revoked INTEGER NOT NULL DEFAULT 0)")
     return c
 
 def watchlist(owner):
@@ -103,3 +110,32 @@ def evaluate_price_alerts(owner, observation):
             if result.rowcount==1:
                 events.append({"symbol":symbol,"direction":direction,"threshold":threshold,"session":session,"close":str(close),"delivery_enabled":False})
     return events
+
+def issue_mobile_session(owner, now=None):
+    """Only called after trusted proxy authentication; never accepts a client subject."""
+    import secrets, hashlib, time
+    now=int(time.time()) if now is None else int(now)
+    token=secrets.token_urlsafe(32)
+    digest=hashlib.sha256(token.encode()).hexdigest()
+    with _connect() as c:
+        c.execute("DELETE FROM mobile_sessions WHERE expires<=?",(now,))
+        c.execute("INSERT INTO mobile_sessions(digest,owner,expires) VALUES (?,?,?)",(digest,owner,now+900))
+    return {"access_token":token,"token_type":"Bearer","expires_in":900}
+
+def mobile_principal(authorization, now=None):
+    import hashlib, time
+    now=int(time.time()) if now is None else int(now)
+    if not re.fullmatch(r"Bearer [A-Za-z0-9_-]{43}",authorization):
+        raise HTTPException(401,"Invalid session")
+    digest=hashlib.sha256(authorization[7:].encode()).hexdigest()
+    with _connect() as c:
+        row=c.execute("SELECT owner FROM mobile_sessions WHERE digest=? AND revoked=0 AND expires>?",(digest,now)).fetchone()
+    if row is None:
+        raise HTTPException(401,"Session expired or revoked")
+    return row[0]
+
+def revoke_mobile_session(authorization):
+    import hashlib
+    mobile_principal(authorization)
+    with _connect() as c:
+        c.execute("UPDATE mobile_sessions SET revoked=1 WHERE digest=?",(hashlib.sha256(authorization[7:].encode()).hexdigest(),))

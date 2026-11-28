@@ -18,7 +18,7 @@ def _utc(value: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
+def _run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
                                 mapping: OhlcvCsvMapping,
                                 instrument_lifecycle: list[dict],
                                 session_evidence: list,
@@ -99,6 +99,31 @@ def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
     }
 
 
+def run_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
+                                mapping: OhlcvCsvMapping,
+                                instrument_lifecycle: list[dict],
+                                session_evidence: list,
+                                decision_time: str,
+                                availability_by_key: dict | None = None) -> dict:
+    """Prevent known archive sources from using the unguarded ingestion route."""
+    result = _run_ohlcv_evidence_pipeline(
+        payload, source_id=source_id, mapping=mapping,
+        instrument_lifecycle=instrument_lifecycle, session_evidence=session_evidence,
+        decision_time=decision_time, availability_by_key=availability_by_key,
+    )
+    if source_id.strip().casefold() in {
+        "jaljala_history_starter", "jaljala_smc_data",
+        "jaljala044/nepse-history-starter", "jaljala044/nepse-smc-data",
+    }:
+        for row in result["rows"]:
+            row["quarantine_reasons"] = sorted(set(
+                row["quarantine_reasons"] + ["archive_guarded_ingestion_required"]))
+            row["row_status"] = "quarantined"
+        result["counts"]["eligible_for_review"] = 0
+        result["counts"]["quarantined"] = len(result["rows"])
+    return result
+
+
 def run_archive_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
                                         mapping: OhlcvCsvMapping,
                                         instrument_lifecycle: list[dict],
@@ -117,7 +142,7 @@ def run_archive_ohlcv_evidence_pipeline(payload: bytes, *, source_id: str,
     quarantines every parsed row. A locator absent from the overlay is not cleared;
     it proceeds only through the existing identity/session/rights/PIT gates.
     """
-    result = run_ohlcv_evidence_pipeline(
+    result = _run_ohlcv_evidence_pipeline(
         payload, source_id=source_id, mapping=mapping,
         instrument_lifecycle=instrument_lifecycle, session_evidence=session_evidence,
         decision_time=decision_time, availability_by_key=availability_by_key,

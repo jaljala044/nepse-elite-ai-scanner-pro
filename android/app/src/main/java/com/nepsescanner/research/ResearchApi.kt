@@ -11,7 +11,32 @@ class ResearchApi(base: String) {
     }
     fun marketHealth(): JSONObject = get("/v1/market-health")
     fun readiness(): JSONObject = get("/v1/research/readiness")
-    fun history(symbol: String): JSONObject = get("/v1/data/"+symbolKey(symbol))
+    fun history(symbol: String): JSONObject {
+        val key = symbolKey(symbol)
+        val rows = org.json.JSONArray()
+        var offset = 0
+        var snapshot: String? = null
+        var total = -1
+        do {
+            check(!Thread.currentThread().isInterrupted)
+            val page = get("/v1/history/"+key+"?limit=500&offset="+offset+(snapshot?.let { "&snapshot="+it } ?: ""))
+            check(page.getString("symbol")==key && page.getInt("offset")==offset)
+            val digest=page.getString("snapshot")
+            check(digest.matches(Regex("[a-f0-9]{64}")) && (snapshot==null || snapshot==digest))
+            snapshot=digest
+            val count=page.getInt("total")
+            check(count in 0..20000 && (total<0 || total==count))
+            total=count
+            val part=page.getJSONArray("rows")
+            check(part.length()<=500 && offset+part.length()<=total)
+            for(i in 0 until part.length()) rows.put(part.getJSONObject(i))
+            if(page.isNull("next_offset")) { check(rows.length()==total); break }
+            val next=page.getInt("next_offset")
+            check(next==offset+part.length() && next>offset && next<total)
+            offset=next
+        } while(true)
+        return JSONObject().put("symbol",key).put("rows",rows)
+    }
     fun scan(symbol: String): JSONObject = get("/v1/scan", JSONObject().put("symbols",org.json.JSONArray().put(symbolKey(symbol))))
     fun brokers(symbol: String, start: String, end: String): JSONObject {
         require(java.time.LocalDate.parse(start).toString()==start && java.time.LocalDate.parse(end).toString()==end && start<=end)

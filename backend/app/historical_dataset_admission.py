@@ -146,6 +146,8 @@ def admit_qualified_six_scanner_dataset(*, panel_qualification, dataset_manifest
     This remains human-review admission only; it never launches replay.
     """
     issues = []
+    if not records:
+        issues.append({"severity": "BLOCKER", "reason": "empty_historical_dataset"})
     for index, row in enumerate(records):
         if not isinstance(row, Mapping):
             issues.append({"severity": "BLOCKER", "reason": "invalid_record", "index": index})
@@ -156,7 +158,7 @@ def admit_qualified_six_scanner_dataset(*, panel_qualification, dataset_manifest
             issues.append({"severity": "BLOCKER", "reason": "historical_segment_not_eligible", "index": index})
         if row.get("archive_quarantine_disposition") not in (None, "not_in_overlay_requires_other_gates"):
             issues.append({"severity": "BLOCKER", "reason": "archive_quarantine_not_cleared", "index": index})
-        if row.get("archive_locator_present") is True and row.get("archive_quarantine_disposition") != "not_in_overlay_requires_other_gates":
+        if (row.get("archive_locator_present") is True or any(k in row for k in ("repository", "commit_sha", "source_file", "source_file_sha256", "target_csv_row", "target_date"))) and row.get("archive_quarantine_disposition") != "not_in_overlay_requires_other_gates":
             issues.append({"severity": "BLOCKER", "reason": "archive_quarantine_disposition_missing", "index": index})
     base = admit_six_scanner_dataset(
         panel_qualification=panel_qualification, dataset_manifest=dataset_manifest,

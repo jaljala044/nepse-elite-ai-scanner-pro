@@ -99,8 +99,13 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             "jaljala044/nepse-smc-data",
             "jaljala044/nepse-history-starter",
         ):
+            pinned_commit = (
+                "937cfcf93d78dfcf28a9f09bb13291447988157b"
+                if repository == "jaljala044/nepse-smc-data"
+                else "b60728d39f34e0f9e428675d817fd52ed2784da6"
+            )
             audit["repositories"][repository] = {
-                "commit_sha": ("937cfcf93d78dfcf28a9f09bb13291447988157b" if repository.endswith("nepse-smc-data") else "b60728d39f34e0f9e428675d817fd52ed2784da6"), "files_audited": 1, "file_count": 1,
+                "commit_sha": pinned_commit, "files_audited": 1, "file_count": 1,
                 "total_rows": 2, "duplicate_date_count": 0,
                 "out_of_order_transitions": 0, "invalid_row_count": 0,
                 "download_errors": [],

@@ -18,3 +18,15 @@ internal fun eligibleAverageDailyVolume(symbol: String, evidence: List<DatedVolu
         it.sourceValidationStatus!="verified" || it.finalityStatus!="final" }) return null
     return BigDecimal.valueOf(rows.sumOf { it.quantity }).divide(BigDecimal.valueOf(requiredSessions.toLong()),4,java.math.RoundingMode.HALF_UP)
 }
+
+internal fun applyVerifiedLiquidityEvidence(
+    holdings: List<Holding>,
+    evidenceBySymbol: Map<String,List<DatedVolumeEvidence>>,
+    requiredSessions: Int = 20
+): List<Holding> {
+    require(holdings.map { it.symbol }.distinct().size==holdings.size)
+    return holdings.map { holding ->
+        val average=eligibleAverageDailyVolume(holding.symbol,evidenceBySymbol[holding.symbol].orEmpty(),requiredSessions)
+        holding.copy(averageDailyQuantity=average)
+    }
+}

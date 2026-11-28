@@ -6,6 +6,7 @@ source-omission explanations remain unresolved until independent evidence exists
 from __future__ import annotations
 import argparse
 import csv
+from collections import Counter
 import hashlib
 import json
 from datetime import date
@@ -26,7 +27,8 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tuple[dict, list[dict]]:
+def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,
+                 expected_active_equity_count: int | None = None) -> tuple[dict, list[dict]]:
     audit = json.loads(audit_json.read_text(encoding="utf-8"))
     with calendar_csv.open(encoding="utf-8-sig", newline="") as stream:
         calendar_rows = list(csv.DictReader(stream))
@@ -69,6 +71,15 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
     active_equities = sorted(active_symbols)
     if not active_equities:
         raise ValueError("active equity universe is empty")
+    if (expected_active_equity_count is not None and
+            (type(expected_active_equity_count) is not int or expected_active_equity_count < 1)):
+        raise ValueError("expected_active_equity_count must be a positive integer or None")
+    if (expected_active_equity_count is not None and
+            len(active_equities) != expected_active_equity_count):
+        raise ValueError(
+            f"active equity universe count mismatch: expected {expected_active_equity_count}, "
+            f"received {len(active_equities)}"
+        )
 
     gaps = []
     repository_summaries = {}
@@ -184,8 +195,27 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
             "download_error_count": len(source.get("download_errors", [])),
             "active_equity_files_missing": missing_files,
             "active_equity_count": len(active_equities),
+        "expected_active_equity_count": expected_active_equity_count,
+        "active_equity_universe_count_validated": expected_active_equity_count is None or len(active_equities) == expected_active_equity_count,
             "symbol_gap_summaries": symbol_summaries,
         }
+
+    gap_key_sources = Counter((item["symbol"], item["trade_date"]) for item in gaps)
+    gap_counts_by_symbol = Counter(item["symbol"] for item in gaps)
+    top_gap_symbols = [
+        {"symbol": symbol, "source_gap_rows": count}
+        for symbol, count in sorted(
+            gap_counts_by_symbol.items(), key=lambda pair: (-pair[1], pair[0])
+        )[:20]
+    ]
+    gap_concordance = {
+        "unique_symbol_date_gap_keys": len(gap_key_sources),
+        "gap_keys_present_in_both_sources": sum(1 for count in gap_key_sources.values() if count == 2),
+        "gap_keys_present_in_one_source": sum(1 for count in gap_key_sources.values() if count == 1),
+        "distinct_symbols_with_gaps": len(gap_counts_by_symbol),
+        "top_symbols_by_source_gap_rows": top_gap_symbols,
+        "interpretation": "Cross-archive agreement is not independent publisher confirmation; mirrored archives may share upstream data.",
+    }
 
     report = {
         "audit_scope": "full_archive_date_gap_inventory_not_missing_trade_adjudication",
@@ -197,6 +227,7 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
         "active_equity_count": len(active_equities),
         "repository_summaries": repository_summaries,
         "unclassified_gap_count": len(gaps),
+        "gap_concordance": gap_concordance,
         "unclassified_gap_csv": "issue5_unclassified_equity_session_gaps.csv",
         "raw_source_values_modified": False,
         "canonical_or_training_promotion": False,
@@ -223,8 +254,13 @@ def main() -> int:
     parser.add_argument("--calendar-csv", required=True, type=Path)
     parser.add_argument("--universe-csv", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--expected-active-equities", type=int, default=281,
+                        help="Fail closed unless the active equity manifest has this many unique symbols (default: 281).")
     args = parser.parse_args()
-    report, gaps = build_report(args.audit_json, args.calendar_csv, args.universe_csv)
+    report, gaps = build_report(
+        args.audit_json, args.calendar_csv, args.universe_csv,
+        expected_active_equity_count=args.expected_active_equities,
+    )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "issue5_full_source_gap_report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"

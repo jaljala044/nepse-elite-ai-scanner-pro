@@ -28,4 +28,16 @@ class PortfolioMathTest {
             assertThrows(IllegalArgumentException::class.java) { PortfolioMath.calculate(rows) }
         }
     }
+
+    @Test fun liquidityAndExposure() {
+        val a=h("AAA",1000,"10","12","Bank").copy(averageDailyQuantity=BigDecimal("2000"))
+        val b=h("BBB",1000,"10","8")
+        val risk=exposureRisk(listOf(a,b),BigDecimal("10"))
+        eq("60",risk.largestStockPct)
+        eq("100",risk.topThreeStockPct)
+        eq("40",risk.unclassifiedPct)
+        eq("5",risk.liquidity.first().estimatedSessions!!)
+        assertNull(risk.liquidity.last().estimatedSessions)
+        assertThrows(IllegalArgumentException::class.java) { exposureRisk(listOf(a),BigDecimal.ZERO) }
+    }
 }

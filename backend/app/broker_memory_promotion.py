@@ -19,14 +19,14 @@ def promote_validated_batch(report: IngestionReport, store: BrokerMemoryStore, *
         raise PromotionRejected("batch contains conflicts")
     if any(is_quarantined(row) for row in report.accepted):
         raise PromotionRejected("quarantined accepted row")
-    if not report.memory_eligible:
-        raise PromotionRejected("batch is not fully validated and memory-eligible")
-    if not isinstance(as_of_date, str) or len(as_of_date) != 10:
-        raise PromotionRejected("as_of_date must be ISO YYYY-MM-DD")
     try:
         quarantine_keys = runtime_quarantine_keys()
     except ValueError as exc:
         raise PromotionRejected("invalid quarantine ledger") from exc
+    if not report.memory_eligible:
+        raise PromotionRejected("batch is not fully validated and memory-eligible")
+    if not isinstance(as_of_date, str) or len(as_of_date) != 10:
+        raise PromotionRejected("as_of_date must be ISO YYYY-MM-DD")
     observations, availabilities, batch_ids = [], [], set()
     for row in report.accepted:
         if is_quarantined(row):

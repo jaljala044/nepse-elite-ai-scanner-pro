@@ -31,3 +31,21 @@ class PrivateAccountsTests(unittest.TestCase):
             self.assertEqual(account_session("alice")["role"],"administrator")
             self.assertFalse(account_session("bob")["permissions"]["admin_ingestion"])
             self.assertFalse(account_session("alice")["permissions"]["ai_recommendations"])
+
+    def test_price_alert_rules_and_events(self):
+        from app.private_accounts import add_alert, delete_alert, list_alerts, evaluate_price_alerts
+        with tempfile.TemporaryDirectory() as d, patch.dict("os.environ",{"NEPSE_PRIVATE_DB":str(Path(d)/"accounts.db")}):
+            add_alert("alice","NABIL","above","500")
+            add_alert("alice","NABIL","above","500.00")
+            self.assertEqual(len(list_alerts("alice")),1)
+            self.assertEqual(list_alerts("bob"),[])
+            observation={"symbol":"NABIL","session_date":"2026-11-20","close":"501","source_validation_status":"verified","finality_status":"final","source_id":"test_fixture","source_payload_sha256":"a"*64}
+            self.assertEqual(evaluate_price_alerts("alice",dict(observation,finality_status="provisional")),[])
+            self.assertEqual(evaluate_price_alerts("alice",dict(observation,close="499")),[])
+            self.assertEqual(evaluate_price_alerts("bob",observation),[])
+            self.assertEqual(len(evaluate_price_alerts("alice",observation)),1)
+            self.assertEqual(evaluate_price_alerts("alice",observation),[])
+            self.assertEqual(delete_alert("alice","NABIL","above","500"),[])
+            for price in ("NaN","-1","1.001"):
+                with self.assertRaises(ValueError):
+                    add_alert("alice","NABIL","above",price)

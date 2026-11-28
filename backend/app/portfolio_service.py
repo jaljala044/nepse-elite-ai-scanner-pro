@@ -285,6 +285,6 @@ def portfolio_transactions(owner: str, portfolio_id: str) -> list[dict] | None:
         if not exists:
             return None
         rows = con.execute("""SELECT * FROM portfolio_transactions
-            WHERE owner=? AND portfolio_id=? ORDER BY trade_date,created_at,id""",
+            WHERE owner=? AND portfolio_id=? ORDER BY trade_date,ledger_sequence""",
             (owner, portfolio_id)).fetchall()
     return [_transaction(row) for row in rows]

@@ -169,5 +169,36 @@ class RepeatedAdjacentTests(unittest.TestCase):
             self.assertEqual(joined[0]["session_join_classification"],"adjacent_project_sessions_review")
 
 
+    def test_malformed_current_and_noncanonical_dates_remain_review_only(self):
+        from scripts.extract_repeated_adjacent_ohlcv import join_project_calendar, unlisted_date_queue
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            calendar = root / "calendar.csv"
+            calendar.write_text(
+                "date,status\\n2026-01-01,project_accepted_open\\n",
+                encoding="utf-8",
+            )
+            for previous, current in (
+                ("2026-01-01", "2026-02-30"),
+                ("20260101", "2026-01-01"),
+            ):
+                with self.subTest(previous=previous, current=current):
+                    rows = [{
+                        "repository": "example/repo",
+                        "symbol": "ABC",
+                        "previous_date": previous,
+                        "current_date": current,
+                    }]
+                    joined, _ = join_project_calendar(rows, calendar)
+                    self.assertEqual(
+                        joined[0]["session_join_classification"],
+                        "malformed_candidate_date_review",
+                    )
+                    queue = unlisted_date_queue(joined)
+                    self.assertEqual(queue[0]["disposition"], "malformed_date_review")
+                    self.assertFalse(queue[0]["canonical_promotion_allowed"])
+
+
+
 if __name__ == "__main__":
     unittest.main()

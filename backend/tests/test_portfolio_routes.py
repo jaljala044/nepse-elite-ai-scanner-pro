@@ -237,5 +237,39 @@ class PortfolioRouteTests(unittest.TestCase):
         self.assertEqual(self.client.get(f"/v1/portfolios/{portfolio_id}", headers=other).status_code, 404)
 
 
+
+    def test_private_portfolio_responses_are_never_cacheable(self):
+        unauthorized = self.client.get("/v1/portfolios")
+        self.assertEqual(unauthorized.status_code, 401)
+        self.assertEqual(unauthorized.headers.get("cache-control"), "private, no-store, max-age=0")
+        self.assertEqual(unauthorized.headers.get("pragma"), "no-cache")
+
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "No cache"})
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.headers.get("cache-control"), "private, no-store, max-age=0")
+        portfolio_id = created.json()["id"]
+        bought = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions", headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "5",
+                  "price": "100", "fees": "0", "trade_date": "2026-01-01"},
+        )
+        self.assertEqual(bought.status_code, 201)
+        self.assertEqual(bought.headers.get("cache-control"), "private, no-store, max-age=0")
+
+        paths = [
+            "/v1/portfolios",
+            f"/v1/portfolios/{portfolio_id}",
+            f"/v1/portfolios/{portfolio_id}/positions",
+            f"/v1/portfolios/{portfolio_id}/transactions",
+            f"/v1/portfolios/{portfolio_id}/preferences",
+        ]
+        for path in paths:
+            with self.subTest(path=path):
+                response = self.client.get(path, headers=self.headers)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.headers.get("cache-control"), "private, no-store, max-age=0")
+                self.assertEqual(response.headers.get("pragma"), "no-cache")
+
 if __name__ == "__main__":
     unittest.main()

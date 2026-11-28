@@ -1,4 +1,6 @@
 import unittest
+import hashlib
+import json
 
 from app.market_sector_participation_features import market_sector_participation_component
 
@@ -8,9 +10,12 @@ WINDOWS = ("1W", "1M", "3M", "6M")
 
 
 def provenance(source_id, **extra):
+    payload = {"source_id": source_id, "as_of_session": SESSION, "sample": "fixture"}
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     return {
         "status": "verified", "source_id": source_id,
-        "source_payload_sha256": DIGEST, "as_of_session": SESSION, **extra,
+        "source_payload_sha256": digest, "artifact_payload": payload,
+        "as_of_session": SESSION, **extra,
     }
 
 
@@ -75,6 +80,20 @@ class MarketSectorParticipationTests(unittest.TestCase):
         }
         result = self.run_component(sector_features=features(returns))
         self.assertIn("short_term_sector_participation_deteriorating", result["warnings"])
+
+    def test_payload_hash_mismatch_withholds_score(self):
+        universe = provenance("verified-sector-master", expected_sector_count=5)
+        universe["artifact_payload"]["sample"] = "tampered"
+        result = self.run_component(universe=universe)
+        self.assertIsNone(result["score"])
+        self.assertIn("artifact_payload_hash_mismatch", result["withheld_reasons"]["sector_universe"])
+
+    def test_missing_payload_withholds_score(self):
+        prices = provenance("verified-equity-prices")
+        prices.pop("artifact_payload")
+        result = self.run_component(prices=prices)
+        self.assertIsNone(result["score"])
+        self.assertIn("artifact_payload_missing", result["withheld_reasons"]["price_evidence"])
 
     def test_unverified_universe_withholds_score(self):
         universe = provenance("sector-master", expected_sector_count=5)

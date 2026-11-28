@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import math
+import hashlib
+import json
 
 DIGEST_LENGTH = 64
 REQUIRED_WINDOWS = ("1W", "1M", "3M", "6M")
@@ -21,6 +23,15 @@ def _provenance(item: object, label: str, decision_session: str) -> str | None:
         return f"{label}_source_id_missing"
     if len(digest) != DIGEST_LENGTH or any(ch not in "0123456789abcdef" for ch in digest):
         return f"{label}_source_hash_invalid"
+    payload = item.get("artifact_payload")
+    if payload is None:
+        return f"{label}_artifact_payload_missing"
+    try:
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    except (TypeError, ValueError):
+        return f"{label}_artifact_payload_invalid"
+    if hashlib.sha256(canonical).hexdigest() != digest:
+        return f"{label}_artifact_payload_hash_mismatch"
     return None
 
 

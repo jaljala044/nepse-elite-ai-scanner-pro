@@ -1,4 +1,6 @@
 import unittest
+import hashlib
+import json
 from datetime import date, timedelta
 
 from app.market_health_pipeline import build_market_health_snapshot
@@ -44,9 +46,12 @@ def turnover_rows(calendar):
 
 
 def manifest(source_id, as_of_session, **extra):
+    payload = {"source_id": source_id, "as_of_session": as_of_session, **extra}
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     return {
         "status": "verified", "source_id": source_id,
-        "source_payload_sha256": DIGEST, "as_of_session": as_of_session, **extra,
+        "source_payload_sha256": digest, "artifact_payload": payload,
+        "as_of_session": as_of_session, **extra,
     }
 
 

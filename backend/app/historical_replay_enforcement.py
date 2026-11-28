@@ -31,6 +31,8 @@ def audit_point_in_time_replay_observations(
     """Audit each historical decision independently; labels remain outcome-only."""
     rows = list(observations)
     issues = []
+    if not rows:
+        issues.append({"reason": "observations_empty"})
     seen = set()
     for index, row in enumerate(rows):
         if not isinstance(row, Mapping):

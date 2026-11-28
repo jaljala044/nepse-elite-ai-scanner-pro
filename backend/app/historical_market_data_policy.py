@@ -1,4 +1,4 @@
-"""Five-year all-equity collection planning and two-source evidence resolution."""
+"""3–5-year all-equity collection planning and two-source evidence resolution."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -35,10 +35,44 @@ def five_year_start(as_of_date: str) -> str:
     return start.isoformat()
 
 
+def three_year_start(as_of_date: str) -> str:
+    try:
+        end = date.fromisoformat(as_of_date)
+        try:
+            start = end.replace(year=end.year - 3)
+        except ValueError:
+            start = end.replace(year=end.year - 3, day=28)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("as_of_date must be a valid ISO date") from exc
+    return start.isoformat()
+
+
+def classify_history_coverage(*, coverage_start: str, as_of_date: str) -> dict:
+    """Classify observed history against the preferred five-year / minimum three-year rule."""
+    observed_start = date.fromisoformat(coverage_start)
+    end = date.fromisoformat(as_of_date)
+    if observed_start > end:
+        raise ValueError("coverage_start must not be after as_of_date")
+    preferred_start = date.fromisoformat(five_year_start(as_of_date))
+    minimum_start = date.fromisoformat(three_year_start(as_of_date))
+    if observed_start <= preferred_start:
+        return {"status": "COMPLETE_EVIDENCED", "coverage_years": 5,
+                "coverage_start": observed_start.isoformat(), "as_of_date": end.isoformat(),
+                "coverage_tier": "preferred_5_year"}
+    if observed_start <= minimum_start:
+        return {"status": "COMPLETE_EVIDENCED", "coverage_years": 3,
+                "coverage_start": observed_start.isoformat(), "as_of_date": end.isoformat(),
+                "coverage_tier": "minimum_3_year_fallback"}
+    return {"status": "PARTIAL_EVIDENCED", "coverage_years": None,
+            "coverage_start": observed_start.isoformat(), "as_of_date": end.isoformat(),
+            "coverage_tier": "below_3_year_minimum"}
+
+
 def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
                                     session_dates: list[str] | None = None) -> dict:
-    """Create a coverage plan; it does not claim data was acquired."""
+    """Plan five-year preferred collection with a three-year minimum fallback."""
     start = five_year_start(as_of_date)
+    minimum_start = three_year_start(as_of_date)
     if not isinstance(equities, list) or not equities:
         raise ValueError("complete equity universe is required")
     normalized, seen = [], set()
@@ -63,12 +97,14 @@ def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
     providers = (*PROVIDERS, *REFERENCE_PROVIDERS)
     return {
         "schema_version": 1, "as_of_date": as_of_date,
-        "period_start": start, "period_end": as_of_date,
+        "period_start": start, "minimum_period_start": minimum_start,
+        "preferred_years": 5, "minimum_years": 3, "period_end": as_of_date,
         "equity_count": len(normalized), "equities": normalized,
         "session_calendar_count": len(session_dates or []),
         "required_collections": [
             {"provider": provider, "data_type": data_type,
-             "period_start": start, "period_end": as_of_date,
+             "period_start": start, "minimum_period_start": minimum_start,
+             "preferred_years": 5, "minimum_years": 3, "period_end": as_of_date,
              "equity_count": len(normalized),
              "role": "reference" if provider in REFERENCE_PROVIDERS else "secondary_collection",
              "status": ("BLOCKED_DEPENDENCY" if data_type == "floorsheet" and not session_dates
@@ -78,7 +114,8 @@ def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
         "coverage_matrix": [
             {"symbol": equity["symbol"], "security_id": equity["security_id"],
              "provider": provider, "data_type": data_type,
-             "period_start": start, "period_end": as_of_date,
+             "period_start": start, "minimum_period_start": minimum_start,
+             "preferred_years": 5, "minimum_years": 3, "period_end": as_of_date,
              "status": ("BLOCKED_DEPENDENCY" if data_type == "floorsheet" and not session_dates
                         else "BLOCKED_ACCESS")}
             for equity in normalized for provider in providers for data_type in DATA_TYPES

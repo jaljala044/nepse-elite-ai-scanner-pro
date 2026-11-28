@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone, time
+import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
@@ -17,6 +18,17 @@ from .broker_pattern_detector import detect_broker_patterns
 from .index_intelligence import build_verified_index_intelligence
 from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
+from .sector_evidence_registry import load_sector_evidence_registry
+
+def _sector_registry_snapshot(decision_time: str):
+    expected = EQUITY_UNIVERSE["symbols"] if EQUITY_UNIVERSE else []
+    return load_sector_evidence_registry(
+        os.getenv("NEPSE_SECTOR_EVIDENCE_REGISTRY_PATH"),
+        os.getenv("NEPSE_SECTOR_REGISTRY_HMAC_KEY"),
+        expected_symbols=expected,
+        decision_time=decision_time,
+    )
+
 
 app = FastAPI(title="NEPSE ELITE AI SCANNER PRO", version="0.1.0",
               description="Research-only NEPSE analytics API. No trade execution.")
@@ -202,8 +214,16 @@ def sector_confluence_research(request: SectorConfluenceRequest):
 @app.get("/v1/research/readiness")
 def research_readiness():
     """Read-only UI contract. Never exposes uploaded data or authorizes recommendations."""
+    registry = _sector_registry_snapshot(datetime.now(timezone.utc).isoformat())
     return {
         "mode": "research_only",
+        "sector_evidence_registry": {
+            "status": registry["status"],
+            "coverage_pct": registry.get("coverage_pct", 0.0),
+            "verified": False,
+            "admission_allowed": False,
+            "reason": registry.get("reason"),
+        },
         "candidate_equities": len(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else None,
         "canonical_reviewed_rows": len(REVIEWED_ROWS),
         "universe_available": EQUITY_UNIVERSE is not None,
@@ -290,6 +310,13 @@ def scan(request: ScanRequest):
         }
     candidate_symbols = set(EQUITY_UNIVERSE["symbols"])
     selected = selected or sorted(candidate_symbols)
+    current_cutoff = datetime.now(timezone.utc)
+    if request.as_of:
+        historical_cutoff = datetime.combine(
+            request.as_of, time.max, ZoneInfo("Asia/Kathmandu")
+        )
+        current_cutoff = min(current_cutoff, historical_cutoff)
+    sector_registry = _sector_registry_snapshot(current_cutoff.isoformat())
     for symbol in selected:
         normalized_symbol = symbol.upper()
         if normalized_symbol not in candidate_symbols:
@@ -346,6 +373,18 @@ def scan(request: ScanRequest):
         if request.as_of:
             rows = [r for r in rows if r["date"] <= request.as_of]
         result = analyze(symbol.upper(), rows)
+        sector_code = sector_registry.get("membership", {}).get(symbol.upper())
+        result["sector_evidence"] = {
+            "status": sector_registry["status"] if sector_code else (
+                "not_configured" if sector_registry["status"] == "not_configured"
+                else "insufficient_evidence"
+            ),
+            "sector_code": sector_code,
+            "registry_sha256": sector_registry.get("registry_sha256"),
+            "research_only": True,
+            "score_adjustment": 0,
+            "recommendation_override": False,
+        }
         cutoff = datetime.now(timezone.utc)
         if request.as_of:
             cutoff = min(cutoff, datetime.combine(request.as_of, time.max, ZoneInfo("Asia/Kathmandu")))

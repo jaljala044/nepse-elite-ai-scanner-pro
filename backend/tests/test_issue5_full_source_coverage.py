@@ -216,7 +216,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
     def test_universe_null_fields_do_not_crash(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); audit, ap, cp, up = self._minimal_inputs(root)
-            up.write_text("symbol,instrument_type,status\\nABC,Equity,Active\\n,Equity,Active\\n", encoding="utf-8")
+            up.write_text("symbol,instrument_type,status\nABC,Equity,Active\n,Equity,Active\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "active equity symbol must be nonblank"):
                 build_report(ap, cp, up)
 

@@ -200,6 +200,17 @@ def replay_source_data_quality(
         calendar=calendar, completeness=completeness,
         reconciliation=reconciliation, record_corrections=corrections,
     )
+    # Two distinct source IDs are required before a row is described as
+    # cross-source corroborated. This does not prove publisher independence;
+    # ownership-group review remains a separate trust gate.
+    single_source_groups = sum(
+        item.get("status") == "single_source_only"
+        for item in reconciliation.get("results", [])
+    )
+    if single_source_groups:
+        report["reasons"].append("cross_source_corroboration_incomplete")
+        report["data_quality"] = "LOW"
+        report["confidence"] = "LOW"
     return {
         "status": "assessed" if selected else "insufficient_evidence",
         "decision_time": cutoff.isoformat(),

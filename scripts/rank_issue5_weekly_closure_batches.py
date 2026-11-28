@@ -17,12 +17,10 @@ from pathlib import Path
 SMC = "jaljala044/nepse-smc-data"
 HISTORY = "jaljala044/nepse-history-starter"
 REPOSITORIES = {SMC, HISTORY}
-CLASSIFICATION = "date_not_listed_in_project_calendar"
+CLASSIFICATIONS = {"date_not_in_project_calendar_review", "date_not_listed_in_project_calendar"}
 SCHEDULE_CHANGE = date(2026, 4, 6)
-REQUIRED = {
-    "repository", "symbol", "previous_date", "current_date",
-    "session_pair_classification",
-}
+REQUIRED = {"repository", "symbol", "previous_date", "current_date"}
+CLASSIFICATION_FIELDS = ("session_join_classification", "session_pair_classification")
 
 
 def digest(path: Path) -> str:
@@ -83,11 +81,15 @@ def rank_batches(
 
     with input_csv.open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        missing = REQUIRED - set(reader.fieldnames or [])
-        if missing:
-            raise ValueError("candidate CSV missing columns: " + ", ".join(sorted(missing)))
+        headers = set(reader.fieldnames or [])
+        missing = REQUIRED - headers
+        classification_field = next((name for name in CLASSIFICATION_FIELDS if name in headers), None)
+        if missing or classification_field is None:
+            missing_fields = sorted(missing | ({"session_join_classification or session_pair_classification"}
+                                                if classification_field is None else set()))
+            raise ValueError("candidate CSV missing columns: " + ", ".join(missing_fields))
         for line, row in enumerate(reader, start=2):
-            if row["session_pair_classification"] != CLASSIFICATION:
+            if row[classification_field] not in CLASSIFICATIONS:
                 continue
             repository = row["repository"]
             raw_symbol = row["symbol"]

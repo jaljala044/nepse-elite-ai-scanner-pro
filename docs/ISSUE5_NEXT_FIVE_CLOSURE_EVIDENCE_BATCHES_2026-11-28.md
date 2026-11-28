@@ -35,6 +35,6 @@ The workload was recomputed by grouping the original 196,784-row candidate CSV b
 ## Reproducibility
 
 - Source artifact: `15231005676`.
-- Source CSV SHA-256: `a343c1a4c87fb3054158b13153cbef1` (full digest above).
+- Source CSV SHA-256: `a343c1a4c87fb3054152e74d69cdbb0558b13153cbef1` (full digest above).
 - Grouping key: `current_date`.
 - Excluded previously registered current dates: 2026-06-27, 2026-06-28, 2026-02-21, 2026-05-31, 2026-06-20, 2026-05-03, 2026-06-13, 2026-06-14, 2026-05-16, 2026-05-17.

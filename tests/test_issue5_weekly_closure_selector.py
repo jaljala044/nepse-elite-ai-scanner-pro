@@ -7,8 +7,8 @@ from scripts.rank_issue5_weekly_closure_batches import (
     HISTORY, SMC, rank_batches, is_weekly_closure,
 )
 
-FIELDS = ["repository", "symbol", "previous_date", "current_date", "session_pair_classification"]
-CLASSIFICATION = "date_not_listed_in_project_calendar"
+FIELDS = ["repository", "symbol", "previous_date", "current_date", "session_join_classification"]
+CLASSIFICATION = "date_not_in_project_calendar_review"
 
 
 class WeeklyClosureSelectorTests(unittest.TestCase):

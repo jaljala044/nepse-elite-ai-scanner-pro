@@ -1,0 +1,50 @@
+name: mobile-checks
+
+on:
+  push:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-checks.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expo-validation:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate lockfile from pinned direct dependencies
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Install exact locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Check Expo dependency compatibility
+        run: npx expo install --check
+      - name: Type-check mobile application
+        run: npm run typecheck
+      - name: Test research API contract
+        run: npm test
+      - name: Export Android JavaScript bundle
+        run: npx expo export --platform android --output-dir dist
+      - name: Export iOS JavaScript bundle
+        run: npx expo export --platform ios --output-dir dist-ios
+      - name: Preserve generated lockfile for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-package-lock
+          path: mobile/package-lock.json
+          if-no-files-found: error
+          retention-days: 7

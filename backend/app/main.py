@@ -489,6 +489,19 @@ def history_page(symbol: str, offset: int = 0, limit: int = 500, snapshot: str |
             "snapshot": digest, "offset": offset, "next_offset": end if end < len(ordered) else None,
             "status": "observed_history_not_independently_certified"}
 
+@app.get("/v1/portfolio/volume/{symbol}")
+def portfolio_volume_endpoint(symbol: str, as_of: date):
+    from .portfolio_volume import load_portfolio_volume
+    import re
+    symbol = symbol.upper()
+    if not re.fullmatch(r"[A-Z0-9]{1,20}", symbol):
+        raise HTTPException(422, "Invalid symbol")
+    if EQUITY_UNIVERSE is None or symbol not in EQUITY_UNIVERSE["symbols"]:
+        return {"symbol": symbol, "as_of": str(as_of), "status": "unavailable",
+                "reason": "equity_universe_gate", "rows": [],
+                "average_daily_quantity": None, "production_eligible": False}
+    return load_portfolio_volume(symbol, as_of, REVIEWED_ROWS)
+
 @app.get("/v1/volume-profile/{symbol}")
 def volume_profile(symbol: str, start: date, end: date):
     from .volume_profile_store import load_profile

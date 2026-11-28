@@ -34,6 +34,30 @@ class DailyMarketCSVTests(unittest.TestCase):
  def test_quarantined_symbol_is_not_reported_absent(self):
   r=self.parse(line(1,"BENH",273,270,273,313.9,90,26634,9))
   self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
+ def test_non_finite_numeric_values_are_quarantined(self):
+  for value in ("NaN","Infinity","-Infinity"):
+   r=self.parse(line(1,"BENH",273,313.9,273,313.9,value,26634,9))
+   self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
+   self.assertEqual(r["quarantined_rows"][0]["reasons"],["non_finite_numeric"])
+ def test_extra_csv_fields_are_quarantined(self):
+  r=self.parse(line(1,"BENH",273,313.9,273,313.9,90,26634,9)+",unexpected")
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
+  self.assertEqual(r["quarantined_rows"][0]["reasons"],["extra_csv_fields"])
+ def test_duplicate_symbol_quarantines_both_source_rows(self):
+  row=line(1,"BENH",273,313.9,273,313.9,90,26634,9)
+  r=self.parse(row+"\\n"+line(2,"BENH",273,313.9,273,313.9,91,27000,10))
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
+  self.assertEqual([x["source_line"] for x in r["quarantined_rows"]],[2,3])
+  self.assertEqual(r["records"],[])
+ def test_numeric_grouping_is_strict(self):
+  r=self.parse(line(1,"BENH",273,313.9,273,313.9,"12,34",26634,9))
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
+  self.assertEqual(r["quarantined_rows"][0]["reasons"],["malformed_numeric"])
+ def test_source_artifact_digest_is_bound_to_each_row(self):
+  body=line(1,"BENH",273,313.9,273,313.9,90,26634,9)
+  r=self.parse(body)
+  self.assertEqual(r["records"][0]["source_artifact_sha256"],r["source_artifact"]["sha256"])
+  self.assertEqual(r["records"][0]["parser_version"],r["source_artifact"]["parser_version"])
  def test_missing_required_column_rejected(self):
   r=parse_daily_market_csv("Symbol,Open,High,Low,Close\nADBL,1,2,1,2",session_date="2026-10-14",source_url="public",retrieved_at="now")
   self.assertIn("missing_columns",r["errors"][0])

@@ -13,6 +13,16 @@ from typing import Any
 import duckdb
 
 
+def _resolve_within_root(root: Path, candidate: str | Path) -> Path | None:
+    """Resolve a catalog path and reject symlinks/path traversal outside storage."""
+    try:
+        resolved = Path(candidate).expanduser().resolve()
+        resolved.relative_to(root)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return resolved
+
+
 def audit_evidence_store(
     *, database_path: str | Path, storage_root: str | Path
 ) -> dict[str, Any]:
@@ -66,12 +76,22 @@ def audit_evidence_store(
         if con is not None:
             con.close()
 
+    root_resolved = root.resolve()
+    indexed_payload_paths: set[Path] = set()
     object_keys: set[tuple[str, str]] = set()
     for source_id, digest, expected_bytes, payload_name in objects:
         key = (source_id, digest)
         object_keys.add(key)
         result["raw_objects_checked"] += 1
-        payload_path = Path(payload_name)
+        payload_path = _resolve_within_root(root_resolved, payload_name)
+        if payload_path is None:
+            result["issues"].append({
+                "code": "raw_payload_path_outside_storage_root",
+                "source_id": source_id,
+                "sha256": digest,
+            })
+            continue
+        indexed_payload_paths.add(payload_path)
         try:
             payload = payload_path.read_bytes()
         except OSError:
@@ -88,8 +108,14 @@ def audit_evidence_store(
     for fetch_id, source_id, digest, manifest_json, manifest_name in captures:
         result["captures_checked"] += 1
         capture_keys.add((fetch_id, source_id, digest))
-        manifest_path = Path(manifest_name)
-        known_manifest_paths.add(manifest_path.resolve())
+        manifest_path = _resolve_within_root(root_resolved, manifest_name)
+        if manifest_path is None:
+            result["issues"].append({
+                "code": "capture_manifest_path_outside_storage_root",
+                "fetch_id": fetch_id,
+            })
+            continue
+        known_manifest_paths.add(manifest_path)
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -116,9 +142,6 @@ def audit_evidence_store(
         if (fetch_id, source_id, digest) not in capture_keys:
             result["issues"].append({"code": "normalized_record_orphaned", "record_id": record_id})
 
-    indexed_payload_paths = {
-        Path(row[3]).resolve() for row in objects
-    }
     if root.exists():
         for payload_path in root.rglob("payload.bin"):
             if payload_path.resolve() not in indexed_payload_paths:

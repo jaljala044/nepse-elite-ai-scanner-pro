@@ -38,3 +38,15 @@ class PortfolioTests(unittest.TestCase):
         costs={}
         result=replay_portfolio({},["2025-01-01"],{},costs=costs)
         self.assertEqual(result["total_return_pct"],0)
+
+    def test_fee_aware_quantity_and_entry_day_stop(self):
+        days=[(date(2025,1,1)+timedelta(days=i)).isoformat() for i in range(12)]
+        rows=[dict(date=d,open=100,high=102,low=98,close=100,volume=100000+i) for i,d in enumerate(days)]
+        rows[1]["low"]=94
+        costs=dict(buy_broker_rate=.0036,sell_broker_rate=.0036,regulatory_rate=.00015,sell_dp_charge=25,capital_gain_tax_rate=.075,slippage_bps=20,min_broker_fee=10)
+        result=replay_portfolio({"AAA":rows},days,{days[0]:["AAA"]},costs=costs,initial_capital=10000,allocation=.05,holding=5,retry=2)
+        self.assertEqual(len(result["closed"]),1)
+        self.assertEqual(result["closed"][0]["exit_date"],days[4])
+        self.assertLess(result["realized_pnl"],0)
+        self.assertAlmostEqual(result["cash"],10000+result["realized_pnl"])
+        self.assertEqual(result["unresolved"],{})

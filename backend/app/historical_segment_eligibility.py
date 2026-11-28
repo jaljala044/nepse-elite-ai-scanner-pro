@@ -5,6 +5,8 @@ adjusts, or joins OHLCV across security identities or lifecycle boundaries.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
 import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -70,7 +72,7 @@ def _valid_ohlcv(row):
 
 
 def _valid_primary_evidence(evidence, cutoff):
-    """Validate a source-evidence envelope; this is not a substitute for raw-byte review."""
+    """Validate provenance metadata and recompute the digest from retained raw bytes."""
     if not isinstance(evidence, dict):
         return False
     required_text = ("source_id", "source_record_ref")
@@ -89,7 +91,18 @@ def _valid_primary_evidence(evidence, cutoff):
         return False
     digest = str(evidence.get("evidence_sha256") or "").lower()
     payload_digest = str(evidence.get("payload_sha256") or "").lower()
-    if not _SHA256.fullmatch(digest) or digest != payload_digest:
+    payload_base64 = evidence.get("payload_base64")
+    if not isinstance(payload_base64, str) or not payload_base64:
+        return False
+    try:
+        payload = base64.b64decode(payload_base64, validate=True)
+    except (ValueError, TypeError):
+        return False
+    if base64.b64encode(payload).decode("ascii") != payload_base64:
+        return False
+    computed_digest = hashlib.sha256(payload).hexdigest()
+    if (not _SHA256.fullmatch(digest) or digest != payload_digest
+            or digest != computed_digest):
         return False
     if evidence.get("rights_status") != "approved":
         return False

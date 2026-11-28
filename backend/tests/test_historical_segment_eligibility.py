@@ -32,7 +32,9 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
                 "status": "traded", "source_id": "fixture-calendar-v1",
                 "source_record_ref": f"fixture:{day}",
                 "source_url": "https://www.nepalstock.com/calendar/2025",
-                "evidence_sha256": "b" * 64, "payload_sha256": "b" * 64, "rights_status": "approved",
+                "evidence_sha256": "e094fe908c56611d9de193318a6c9919e23d883b962adf83786b9d174fc85194",
+                "payload_sha256": "e094fe908c56611d9de193318a6c9919e23d883b962adf83786b9d174fc85194",
+                "payload_base64": "Zml4dHVyZS1jYWxlbmRhci1wYXlsb2Fk", "rights_status": "approved",
                 "retrieved_at": "2025-12-31T15:00:00+05:45",
                 "available_at": "2025-12-31T15:00:00+05:45",
             }
@@ -44,8 +46,9 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         evidence = {
             "source_id": "nepse-official-v1", "source_record_ref": record_ref,
             "source_url": "https://www.nepalstock.com/api/evidence",
-            "evidence_sha256": "c" * 64, "payload_sha256": "c" * 64,
-            "rights_status": "approved",
+            "evidence_sha256": "9a5df3729917cba86db1a823bdedea240ac08fd1cdacb93ac8d987c09b49bb08",
+            "payload_sha256": "9a5df3729917cba86db1a823bdedea240ac08fd1cdacb93ac8d987c09b49bb08",
+            "payload_base64": "Zml4dHVyZS1wYXlsb2Fk", "rights_status": "approved",
             "available_at": "2025-12-30T00:00:00+05:45",
             "retrieved_at": "2025-12-31T15:00:00+05:45",
         }
@@ -58,7 +61,7 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             "session_date": day, "symbol": "NABIL", "security_id": "123",
             "open": "100", "high": "105", "low": "95", "close": "102", "volume": "1000",
             "adjustment_basis": "raw", "rights_status": "approved",
-            "evidence_sha256": "c" * 64, "available_at": "2025-12-30T00:00:00+05:45",
+            "evidence_sha256": "9a5df3729917cba86db1a823bdedea240ac08fd1cdacb93ac8d987c09b49bb08", "available_at": "2025-12-30T00:00:00+05:45",
             "source_evidence": self.source_evidence("ohlcv:NABIL:123:" + day),
         }
 
@@ -381,6 +384,33 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         evidence[self.sessions[0]] = dict(evidence[self.sessions[0]], status="no_trade_verified")
         result = self.evaluate(session_evidence=evidence)
         self.assertIn("session_evidence_status_mismatch:" + self.sessions[0], result["reasons"])
+
+    def test_primary_evidence_requires_retained_raw_payload_bytes(self):
+        evidence = dict(self.session_evidence)
+        item = dict(evidence[self.sessions[0]])
+        item.pop("payload_base64")
+        evidence[self.sessions[0]] = item
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_primary_evidence_recomputes_hash_from_exact_payload_bytes(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(
+            evidence[self.sessions[0]], payload_base64="ZGlmZmVyZW50"
+        )
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_primary_evidence_rejects_malformed_payload_base64(self):
+        evidence = dict(self.session_evidence)
+        evidence[self.sessions[0]] = dict(
+            evidence[self.sessions[0]], payload_base64="%%%not-base64%%%"
+        )
+        result = self.evaluate(session_evidence=evidence)
+        self.assertIn("session_evidence_unverified:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
 
     def test_late_session_source_evidence_fails_point_in_time_gate(self):
         evidence = dict(self.session_evidence)

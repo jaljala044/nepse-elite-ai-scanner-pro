@@ -37,8 +37,8 @@ def audit_historical_panel_completeness(*, cohort_symbols: Iterable[str], expect
         missing=[]; present=0; eligible=0; excluded=[]
         for day in sessions:
             d=date.fromisoformat(day)
-            if d not in opened:
-                if d in closed: excluded.append(day)
+            if day not in opened:
+                if day in closed: excluded.append(day)
                 else: issues.append({"severity":"WARNING","symbol":sym,"session_date":day,"reason":"calendar_session_status_unknown"})
                 continue
             if d<start or (end and d>end) or d<first_day: excluded.append(day); continue

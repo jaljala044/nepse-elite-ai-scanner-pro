@@ -64,3 +64,57 @@ def build_walk_forward_report(rows: list[dict], min_train_dates: int,
     return {"status": "evaluated" if reports else "insufficient_sample",
             "fold_count": len(reports), "folds": reports,
             "warning": "synthetic or unverified records do not establish predictive value; report source and point-in-time gates separately"}
+
+
+def build_causal_walk_forward_report(rows, min_train_dates, test_dates, *, evaluation_at,
+                                     step_dates=None):
+    """Separate strict research path; legacy descriptive report is unchanged."""
+    from app.point_in_time import _aware
+    from app.part5_decision_admission import mature_training_rows
+    from datetime import timedelta
+    evaluation = _aware(evaluation_at)
+    ids = set()
+    for row in rows:
+        key = row["record_id"]
+        if not isinstance(key,str) or not key.strip() or key in ids:
+            raise ValueError("unique record_id required")
+        ids.add(key)
+        if date.fromisoformat(row["observation_date"]) != date.fromisoformat(row["decision_at"][:10]):
+            raise ValueError("observation/decision date mismatch")
+        _aware(row["decision_at"])
+    dates = sorted({r["observation_date"] for r in rows})
+    reports = []
+    for fold in walk_forward_splits(dates,min_train_dates,test_dates,step_dates):
+        train = [r for r in rows if r["observation_date"] <= fold["train_end"]]
+        test = [r for r in rows if fold["test_start"] <= r["observation_date"] <= fold["test_end"]]
+        if not test:
+            continue
+        first = min(_aware(r["decision_at"]) for r in test)
+        fit = first-timedelta(microseconds=1)
+        maturity = mature_training_rows(train,fit_cutoff=fit.isoformat(),first_test_decision=first.isoformat())
+        selected = [r for r in train if r["record_id"] in maturity["included_ids"]]
+        valid = []
+        for row in test:
+            try:
+                f,i,d,e,k = (_aware(row[key]) for key in ("feature_available_at","forecast_issued_at","decision_at","label_end_at","label_available_at"))
+                if f <= i <= d < e <= k <= evaluation and fit < i:
+                    valid.append(row)
+            except (KeyError,TypeError,ValueError,AttributeError):
+                continue
+        report = {**fold,"train_rows":len(selected),"test_rows":len(valid),
+                  "purged_train_rows":len(train)-len(selected),"excluded_test_rows":len(test)-len(valid)}
+        if len({r["observation_date"] for r in selected}) < min_train_dates or not valid:
+            reports.append(dict(report,status="insufficient_sample"))
+            continue
+        def binary(row):
+            v=row["actual"]
+            if isinstance(v,bool) or v not in (0,1,"0","1"):
+                raise ValueError("invalid binary outcome")
+            return int(v)
+        probabilities=[float(r["probability"]) for r in valid]
+        if any(not isfinite(p) or not 0<=p<=1 for p in probabilities):
+            raise ValueError("invalid probability")
+        prevalence=sum(binary(r) for r in selected)/len(selected)
+        reports.append({**report,**_scores([binary(r) for r in valid],probabilities,prevalence)})
+    return {"status":"research_only","folds":reports,"production_eligible":False,
+            "limitations":["Forecast fitting provenance is not independently verified."]}

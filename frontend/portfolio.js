@@ -2,7 +2,7 @@
 (() => {
   const byId = id => document.getElementById(id);
   const state = { portfolios: [], activeId: "", generation: 0 };
-  const money = value => window.NepsePortfolioFormat.money(value);
+  const money = value => window.NepsePortfolioFormat.money(value);\n  const allocation = positions => window.NepsePortfolioAllocation.allocation(positions);
   const node = (tag, value, className) => {
     const el = document.createElement(tag);
     if (value !== undefined) el.textContent = String(value);
@@ -42,7 +42,7 @@
     byId("portfolio-name").textContent = "No portfolio selected";
     byId("portfolio-valuation-note").textContent =
       "Market value and unrealized P&L remain UNKNOWN until eligible timestamped price evidence is connected.";
-    for (const id of ["portfolio-positions", "portfolio-transactions", "portfolio-preferences"]) {
+    for (const id of ["portfolio-positions", "portfolio-allocation", "portfolio-transactions", "portfolio-preferences"]) {
       byId(id).replaceChildren();
     }
   }

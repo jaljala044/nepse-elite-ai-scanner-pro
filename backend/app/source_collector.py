@@ -143,6 +143,39 @@ def collect_user_github_repos(client: httpx.Client, selected: set[str]) -> list[
     return records
 
 
+def _provider_access_approval(name: str, data_type: str, url: str) -> tuple[bool, str]:
+    """Require a reviewed provider contract before any configured-provider request."""
+    raw = os.getenv("NEPSE_PROVIDER_ACCESS_MANIFEST", "").strip()
+    if not raw:
+        return False, "provider_access_manifest_missing"
+    try:
+        manifest = json.loads(raw)
+        entry = manifest.get("providers", {}).get(name)
+        if not isinstance(entry, dict):
+            return False, "provider_access_approval_missing"
+        from datetime import date
+        if entry.get("status") != "approved":
+            return False, "provider_access_not_approved"
+        if data_type not in entry.get("allowed_data_types", []):
+            return False, "provider_data_type_not_approved"
+        if entry.get("rights_status") not in {"research_only", "internal_use", "redistribution_permitted"}:
+            return False, "provider_rights_not_approved"
+        required = ("reviewer", "evidence_ref", "contract_ref", "valid_until")
+        if not all(isinstance(entry.get(key), str) and entry[key].strip() for key in required):
+            return False, "provider_approval_evidence_incomplete"
+        if date.fromisoformat(entry["valid_until"]) < date.today():
+            return False, "provider_access_approval_expired"
+        parsed = httpx.URL(url)
+        if parsed.scheme != "https" or parsed.host not in entry.get("allowed_hosts", []):
+            return False, "provider_endpoint_host_not_approved"
+        prefixes = entry.get("allowed_path_prefixes", [])
+        if not any(isinstance(prefix, str) and parsed.path.startswith(prefix) for prefix in prefixes):
+            return False, "provider_endpoint_path_not_approved"
+        return True, "approved"
+    except (ValueError, TypeError, AttributeError):
+        return False, "provider_access_manifest_invalid"
+
+
 def collect_configured_provider(
     client: httpx.Client, name: str, data_type: str, *,
     equities: list[dict] | None = None, session_dates: list[str] | None = None,

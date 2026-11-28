@@ -2,7 +2,8 @@
 (() => {
   const byId = id => document.getElementById(id);
   const state = { portfolios: [], activeId: "", generation: 0 };
-  const money = value => window.NepsePortfolioFormat.money(value);\n  const allocation = positions => window.NepsePortfolioAllocation.allocation(positions);
+  const money = value => window.NepsePortfolioFormat.money(value);
+  const allocation = positions => window.NepsePortfolioAllocation.allocation(positions);
   const node = (tag, value, className) => {
     const el = document.createElement(tag);
     if (value !== undefined) el.textContent = String(value);

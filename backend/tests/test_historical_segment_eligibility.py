@@ -76,6 +76,48 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         args.update(overrides)
         return evaluate_historical_segment(**args)
 
+    def test_archive_locator_requires_guard(self):
+        self.records[0]["repository"] = "archive"
+        result = self.evaluate()
+        self.assertIn("archive_quarantine_guard_missing:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_archive_entry_requires_guard_even_without_rows(self):
+        from app.historical_segment_eligibility import evaluate_archive_historical_segment
+        result = evaluate_archive_historical_segment(
+            segment=self.segment, expected_sessions=self.sessions,
+            session_statuses=self.statuses, session_evidence=self.session_evidence,
+            records=[], decision_cutoff="2026-01-01T00:00:00+05:45")
+        self.assertIn("archive_quarantine_guard_missing", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_archive_guard_cannot_bypass_date_or_exclusion(self):
+        from unittest.mock import patch
+        from app.issue5_quarantine import Quarantine
+        guard = object.__new__(Quarantine)
+        day = self.sessions[0]
+        self.records[0]["target_date"] = self.sessions[1]
+        result = self.evaluate(archive_guard=guard)
+        self.assertIn("archive_quarantine_date_binding_missing_or_mismatch:" + day, result["reasons"])
+        self.records[0]["target_date"] = day
+        with patch.object(Quarantine, "disposition", return_value="excluded_confirmed_carry_forward"):
+            result = self.evaluate(archive_guard=guard)
+        self.assertIn("archive_quarantine:excluded_confirmed_carry_forward:" + day, result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+        self.assertFalse(result["production_promotion_allowed"])
+
+    def test_clear_overlay_does_not_bypass_evidence(self):
+        from unittest.mock import patch
+        from app.issue5_quarantine import Quarantine
+        guard = object.__new__(Quarantine)
+        for row in self.records:
+            row["target_date"] = row["session_date"]
+        self.records[0]["rights_status"] = "unknown"
+        with patch.object(Quarantine, "disposition", return_value="not_in_overlay_requires_other_gates"):
+            result = self.evaluate(archive_guard=guard)
+        self.assertIn("source_rights_not_approved:" + self.sessions[0], result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_complete_verified_segment_is_exploratory_only(self):
         result = self.evaluate()
         self.assertTrue(result["exploratory_replay_eligible"])

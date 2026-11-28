@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -12,6 +13,18 @@ from app.evidence_backup_operations import (
 )
 from app.evidence_store import persist_evidence_batch
 from app.raw_capture import build_capture_manifest
+
+
+def _append_restore_drill_worker(log_path, drill_id):
+    record_restore_drill(
+        log_path=log_path,
+        drill_id=drill_id,
+        backup_id="backup-concurrent",
+        restore_result={
+            "status": "restore_verified",
+            "restored_audit": {"status": "integrity_ok"},
+        },
+    )
 
 
 class EvidenceBackupOperationsTests(unittest.TestCase):
@@ -131,6 +144,44 @@ class EvidenceBackupOperationsTests(unittest.TestCase):
                 log_path=log, drill_id="same", backup_id="backup-1",
                 restore_result=result, recorded_at_utc=now,
             )
+
+    def test_concurrent_restore_drill_appends_preserve_one_hash_chain(self):
+        log = self.base / "ops" / "concurrent-restore-drills.jsonl"
+        processes = [
+            multiprocessing.Process(
+                target=_append_restore_drill_worker,
+                args=(str(log), f"parallel-{index}"),
+            )
+            for index in range(8)
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join(timeout=20)
+        for process in processes:
+            self.assertFalse(process.is_alive(), "append worker timed out")
+            self.assertEqual(process.exitcode, 0)
+
+        audit = audit_restore_drill_log(log)
+        self.assertEqual(audit["status"], "verified")
+        self.assertEqual(audit["events_checked"], 8)
+
+    def test_restore_drill_writer_rejects_symlink_log_path(self):
+        target = self.base / "target.jsonl"
+        target.write_text("")
+        link = self.base / "restore-drills.jsonl"
+        link.symlink_to(target)
+        with self.assertRaisesRegex(ValueError, "must not be a symlink"):
+            record_restore_drill(
+                log_path=link,
+                drill_id="symlink-attempt",
+                backup_id="backup-1",
+                restore_result={
+                    "status": "restore_verified",
+                    "restored_audit": {"status": "integrity_ok"},
+                },
+            )
+        self.assertEqual(target.read_text(), "")
 
     def test_tampered_restore_drill_log_fails_closed(self):
         log = self.base / "restore-drills.jsonl"

@@ -18,11 +18,11 @@ def row(**changes):
 
 
 class SectorEvidenceReconciliationTests(unittest.TestCase):
-    def reconcile(self, observations, symbols=("AAA",), cutoff=CUTOFF):
+    def reconcile(self, observations, symbols=("AAA",), cutoff=CUTOFF, as_of_date="2026-11-28"):
         return reconcile_sector_evidence(
             observations, symbols=list(symbols),
             allowed_sector_codes={"BANK", "HYDRO", "FINANCE"},
-            as_of_date="2026-11-28", decision_time=cutoff,
+            as_of_date=as_of_date, decision_time=cutoff,
         )
 
     def test_two_independent_publishers_corroborate_secondary_membership(self):
@@ -72,7 +72,7 @@ class SectorEvidenceReconciliationTests(unittest.TestCase):
             row(source_id="s2", publisher_id="publisher-b",
                 payload_sha256="b" * 64, source_record_ref="page:2",
                 effective_from="2026-11-29"),
-        ])
+        ], as_of_date="2026-11-27")
         self.assertEqual(result["results"]["AAA"]["status"], "single_source_only")
 
     def test_historical_reclassification_is_detected_as_two_timelines(self):
@@ -81,13 +81,13 @@ class SectorEvidenceReconciliationTests(unittest.TestCase):
             row(source_id="s2", publisher_id="publisher-b",
                 payload_sha256="b" * 64, source_record_ref="page:2",
                 effective_from="2026-01-01", effective_to="2026-11-27"),
-        ])
+        ], as_of_date="2026-11-27")
         new = self.reconcile([
             row(effective_from="2026-11-28"),
             row(source_id="s2", publisher_id="publisher-b",
                 payload_sha256="b" * 64, source_record_ref="page:2",
                 effective_from="2026-11-28"),
-        ])
+        ], as_of_date="2026-11-28")
         self.assertEqual(old["results"]["AAA"]["sector_code"], "BANK")
         self.assertEqual(new["results"]["AAA"]["sector_code"], "BANK")
 

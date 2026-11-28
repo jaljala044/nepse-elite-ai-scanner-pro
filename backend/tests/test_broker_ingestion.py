@@ -31,7 +31,8 @@ def run(rows=None, **kwargs):
         verified_brokers={"BROKER-1"}, verified_sessions={"2026-11-25"},
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
         available_at="2026-11-26T09:00:00+05:45",
-        verified_session_finality={"2026-11-25": "2026-11-25T16:00:00+05:45"},\n        source_rights_evidence={"SRC-A": rights_evidence()})
+        verified_session_finality={"2026-11-25": "2026-11-25T16:00:00+05:45"},
+        source_rights_evidence={"SRC-A": rights_evidence()})
     defaults.update(kwargs)
     return reconcile_broker_batch(**defaults)
 

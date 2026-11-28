@@ -264,7 +264,8 @@ def add_transaction(owner_id: str, portfolio_id: str, holding_id: str, *,
                      for r in existing]
         candidate.append({"id": tx_id, "type": transaction_type, "trade_date": day,
                           "quantity": quantity, "unit_price": price, "fees": fee})
-        candidate.sort(key=lambda item: (item["trade_date"], item["id"]))
+        # Preserve insertion chronology. Sorting here would silently normalize
+        # backdated transactions and defeat the accounting core's fail-closed guard.
         calculate_position(candidate)
         con.execute("""
             INSERT INTO portfolio_transactions

@@ -82,6 +82,17 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertFalse(result["approved_backtest_eligible"])
         self.assertFalse(result["production_promotion_allowed"])
 
+    def test_traded_evidence_is_not_eligible_candle_coverage(self):
+        records = list(self.records[:-1])
+        records[0] = dict(records[0], volume="0")
+        records[1] = dict(records[1], rights_status="unknown")
+        result = self.evaluate(records=records)
+        self.assertEqual(result["verified_traded_session_count"], 120)
+        self.assertEqual(result["valid_ohlcv_candle_count"], 118)
+        self.assertEqual(result["eligible_ohlcv_candle_count"], 117)
+        self.assertIn("insufficient_traded_sessions", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_missing_bar_fails_closed(self):
         result = self.evaluate(records=self.records[:-1])
         self.assertIn("missing_bar:" + self.sessions[-1], result["reasons"])

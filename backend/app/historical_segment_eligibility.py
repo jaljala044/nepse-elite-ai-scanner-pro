@@ -283,6 +283,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         by_day.setdefault(day, []).append(row)
 
     verified_traded = 0
+    valid_candles = 0
+    eligible_candles = 0
     verified_no_trade = 0
     verified_closed = 0
     verified_suspended = 0
@@ -348,6 +350,9 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"duplicate_bar:{day_text}")
             continue
         row = rows[0]
+        candle_reason_start = len(reasons)
+        if _valid_ohlcv(row):
+            valid_candles += 1
         if row.get("symbol") != symbol or row.get("security_id") != security_id:
             reasons.append(f"bar_identity_mismatch:{day_text}")
         if effective_from and day < effective_from or effective_to and day > effective_to:
@@ -388,7 +393,12 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         elif digest != source_digest or digest != payload_digest:
             reasons.append(f"evidence_hash_binding_mismatch:{day_text}")
 
-    if verified_traded < required_sessions:
+        if len(reasons) == candle_reason_start and day <= cutoff.date():
+            eligible_candles += 1
+        elif day > cutoff.date():
+            reasons.append(f"future_session:{day.isoformat()}")
+
+    if eligible_candles < required_sessions:
         reasons.append("insufficient_traded_sessions")
 
     reasons = sorted(set(reasons))
@@ -398,6 +408,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         "security_id": security_id,
         "expected_session_count": len(expected),
         "verified_traded_session_count": verified_traded,
+        "valid_ohlcv_candle_count": valid_candles,
+        "eligible_ohlcv_candle_count": eligible_candles,
         "verified_no_trade_count": verified_no_trade,
         "verified_closed_session_count": verified_closed,
         "verified_suspended_session_count": verified_suspended,

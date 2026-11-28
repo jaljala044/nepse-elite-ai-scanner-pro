@@ -13,3 +13,29 @@ Do not change this workflow to a scheduled trigger until:
 4. The reviewer key is configured outside the repository and independent approval is operational.
 
 A missing bundle is a hard failure, not an empty successful scan.
+
+## Protected input bundle verification
+
+The workflow now requires a detached Ed25519 signature for every input bundle.
+Provision these files through a protected runner-side mount or approved secure
+artifact transfer; never commit them to the repository:
+
+- `secure-input-bundles/YYYY-MM-DD.json`
+- `secure-input-signatures/YYYY-MM-DD.sig` (base64 Ed25519 signature over the exact JSON bytes)
+
+Configure the trusted collector public key as the GitHub Actions repository or
+environment variable `NEPSE_INPUT_BUNDLE_PUBLIC_KEY` (PEM-encoded Ed25519 public
+key). This is a public verification key, not a private signing credential.
+Keep the corresponding private signing key outside GitHub and outside this
+repository, under the authorized source custodian's control.
+
+The handoff verifies the detached signature, exact session, required bundle
+shape, decision-time cutoff and file integrity before calling the generator.
+A valid signature establishes bundle integrity and signer identity only; it
+does not independently establish source rights, NEPSE first-party attestation,
+lineage independence, or factual correctness. Those remain separate evidence
+and admission gates.
+
+The workflow intentionally fails when the public key or signed bundle is
+absent. It remains manual and research-only. No source authorization, registry
+promotion, or trading-signal enablement is implied by signature verification.

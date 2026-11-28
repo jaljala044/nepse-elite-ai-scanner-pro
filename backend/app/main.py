@@ -535,7 +535,7 @@ def reliability():
 
 
 from fastapi import Request, Depends
-from .private_accounts import principal, watchlist, set_watchlist
+from .private_accounts import principal, watchlist, set_watchlist, list_alerts, add_alert, delete_alert
 
 @app.get("/v1/account/session")
 def account_session(owner: str = Depends(principal)):
@@ -556,6 +556,29 @@ def account_watchlist(owner: str = Depends(principal)):
 def account_watchlist_update(payload: WatchlistRequest, owner: str = Depends(principal)):
     try:
         return {"symbols":set_watchlist(owner,payload.symbols)}
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+
+class PriceAlertRequest(BaseModel):
+    symbol: str = Field(max_length=20)
+    direction: str = Field(max_length=5)
+    threshold: str = Field(max_length=32)
+
+@app.get("/v1/account/alerts")
+def account_alerts(owner: str = Depends(principal)):
+    return {"rules": list_alerts(owner), "delivery_enabled": False}
+
+@app.post("/v1/account/alerts")
+def account_alert_add(payload: PriceAlertRequest, owner: str = Depends(principal)):
+    try:
+        return {"rules": add_alert(owner,payload.symbol,payload.direction,payload.threshold), "delivery_enabled": False}
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+
+@app.delete("/v1/account/alerts")
+def account_alert_delete(payload: PriceAlertRequest, owner: str = Depends(principal)):
+    try:
+        return {"rules": delete_alert(owner,payload.symbol,payload.direction,payload.threshold), "delivery_enabled": False}
     except ValueError as exc:
         raise HTTPException(422,str(exc)) from exc
 

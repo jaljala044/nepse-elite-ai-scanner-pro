@@ -90,6 +90,28 @@ class SectorTimelineStoreTests(unittest.TestCase):
         self.assertFalse(result["verified"])
         self.assertFalse(result["production_admission_allowed"])
 
+
+    def test_event_available_after_capture_receipt_is_rejected(self):
+        future = {**EVENT, "available_at": "2026-11-29T10:01:00Z"}
+        with self.assertRaisesRegex(ValueError, "available_after_batch_receipt"):
+            self.persist([future])
+
+    def test_event_available_before_capture_is_rejected(self):
+        invalid = {**EVENT, "available_at": "2026-11-27T09:59:00Z"}
+        with self.assertRaisesRegex(ValueError, "available_before_capture"):
+            self.persist([invalid])
+
+    def test_capture_request_after_receipt_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "requested_at_after_received_at"):
+            persist_sector_timeline_batch(
+                [EVENT],
+                batch_id="bad-clock",
+                requested_at_utc="2026-11-28T11:02:00Z",
+                received_at_utc="2026-11-28T11:01:00Z",
+                storage_root=self.raw,
+                database_path=self.db,
+            )
+
     def test_batch_filter_is_explicit(self):
         self.persist()
         loaded = load_sector_timeline_events(database_path=self.db, batch_id="missing")

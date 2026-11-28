@@ -102,5 +102,96 @@ class Issue5CrossSourceGapOverlapTests(unittest.TestCase):
             self.assertEqual(report["top_dates"][0]["both_source_symbol_gaps"], 1)
 
 
+    def test_non_string_symbol_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = self.write(root, [self.row(SMC, "ABC", "2026-01-02")])
+            text = path.read_text(encoding="utf-8").replace("ABC", "")
+            path.write_text(text, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "symbol must be a non-empty string"):
+                summarize(path)
+
+    def test_blank_repository_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaisesRegex(ValueError, "repository must be a non-empty string"):
+                summarize(self.write(root, [self.row("", "ABC", "2026-01-02")]))
+
+    def test_blank_gap_status_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            row = self.row(SMC, "ABC", "2026-01-02")
+            row["gap_status"] = ""
+            with self.assertRaisesRegex(ValueError, "gap_status must be a non-empty string"):
+                summarize(self.write(root, [row]))
+
+    def test_blank_promotion_flag_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            row = self.row(SMC, "ABC", "2026-01-02")
+            row["canonical_promotion_allowed"] = ""
+            with self.assertRaisesRegex(ValueError, "canonical_promotion_allowed must be a non-empty string"):
+                summarize(self.write(root, [row]))
+
+    def test_blank_mutation_flag_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            row = self.row(SMC, "ABC", "2026-01-02")
+            row["raw_source_modified"] = ""
+            with self.assertRaisesRegex(ValueError, "raw_source_modified must be a non-empty string"):
+                summarize(self.write(root, [row]))
+
+    def test_duplicate_headers_fail_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "gaps.csv"
+            path.write_text(
+                "repository,symbol,symbol,trade_date,gap_status,canonical_promotion_allowed,raw_source_modified\\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "duplicate column headers"):
+                summarize(path)
+
+    def test_extra_csv_fields_fail_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "gaps.csv"
+            path.write_text(
+                ",".join(FIELDS) + "\\n" +
+                ",".join([SMC, "ABC", "2026-01-02", STATUS, "false", "false", "unexpected"]) + "\\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "unexpected extra CSV fields"):
+                summarize(path)
+
+    def test_missing_csv_field_value_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "gaps.csv"
+            path.write_text(
+                ",".join(FIELDS) + "\\n" +
+                ",".join([SMC, "ABC", "2026-01-02", STATUS, "false"]) + "\\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "raw_source_modified must be a non-empty string"):
+                summarize(path)
+
+    def test_symbol_normalization_is_case_insensitive_and_trimmed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = summarize(self.write(root, [self.row(SMC, " abc ", "2026-01-02")]))
+            self.assertEqual(report["top_symbols"][0]["symbol"], "ABC")
+
+    def test_symbol_ranking_counts_each_source_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = summarize(self.write(root, [
+                self.row(SMC, "ABC", "2026-01-02"),
+                self.row(HISTORY, "ABC", "2026-01-02"),
+                self.row(SMC, "ABC", "2026-01-03"),
+            ]))
+            self.assertEqual(report["top_symbols"][0]["unique_gap_dates"], 2)
+            self.assertEqual(report["top_symbols"][0]["smc_gap_dates"], 2)
+            self.assertEqual(report["top_symbols"][0]["history_starter_gap_dates"], 1)
+            self.assertEqual(report["top_symbols"][0]["both_source_gap_dates"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

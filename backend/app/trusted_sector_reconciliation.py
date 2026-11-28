@@ -128,3 +128,56 @@ def publisher_trust_readiness(
         "freshness_assessment_allowed": freshness["status"] == "reviewed_policy_loaded",
         "production_admission_allowed": False,
     }
+
+
+
+def build_evidence_completeness_report(
+    *,
+    expected_symbols: list[str],
+    expected_publisher_ids: list[str],
+    observations: list[dict[str, Any]],
+    assessment: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare observed evidence with an explicit operator-supplied expectation set."""
+    symbols = [str(value).strip().upper() for value in expected_symbols if str(value).strip()]
+    publishers = [str(value).strip() for value in expected_publisher_ids if str(value).strip()]
+    if not symbols or len(symbols) != len(set(symbols)):
+        raise ValueError("expected_symbols_must_be_non_empty_and_unique")
+    if len(publishers) != len(set(publishers)):
+        raise ValueError("expected_publisher_ids_must_be_unique")
+    eligible_indices = {
+        row.get("index") for row in assessment.get("observations", [])
+        if row.get("eligible_for_independence_count")
+    }
+    observed_by_symbol = {symbol: 0 for symbol in symbols}
+    observed_by_publisher = {publisher: 0 for publisher in publishers}
+    for index, row in enumerate(observations):
+        if index not in eligible_indices or not isinstance(row, dict):
+            continue
+        symbol = str(row.get("symbol", "")).strip().upper()
+        publisher = str(row.get("publisher_id", "")).strip()
+        if symbol in observed_by_symbol:
+            observed_by_symbol[symbol] += 1
+        if publisher in observed_by_publisher:
+            observed_by_publisher[publisher] += 1
+    missing_symbols = sorted(symbol for symbol, count in observed_by_symbol.items() if count == 0)
+    missing_publishers = sorted(publisher for publisher, count in observed_by_publisher.items() if count == 0)
+    symbol_coverage = (len(symbols) - len(missing_symbols)) / len(symbols)
+    publisher_coverage = (
+        (len(publishers) - len(missing_publishers)) / len(publishers)
+        if publishers else None
+    )
+    return {
+        "status": "complete" if not missing_symbols and not missing_publishers else "incomplete",
+        "expected_symbol_count": len(symbols),
+        "observed_symbol_count": len(symbols) - len(missing_symbols),
+        "missing_symbols": missing_symbols,
+        "symbol_coverage_pct": round(symbol_coverage * 100, 2),
+        "expected_publisher_count": len(publishers),
+        "observed_publisher_count": len(publishers) - len(missing_publishers),
+        "missing_publishers": missing_publishers,
+        "publisher_coverage_pct": round(publisher_coverage * 100, 2) if publisher_coverage is not None else None,
+        "eligible_observation_count": len(eligible_indices),
+        "expectation_set_provenance": "operator_supplied_not_exchange_verified",
+        "production_admission_allowed": False,
+    }

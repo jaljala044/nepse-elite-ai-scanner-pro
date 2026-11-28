@@ -70,6 +70,17 @@ class HRLConflictRecordTests(unittest.TestCase):
         self.assertEqual(record.project_designated_low, 483.90)
         self.assertFalse(record.canonical_promotion_allowed)
 
+    def test_option_b_preserves_raw_low_and_never_enables_promotion(self):
+        record = make_record(
+            status="RESOLVED", chosen_option="B", decided_by="owner",
+            decision_date="2026-11-28",
+            justification="Preserve the project-designated low as a separate unresolved assertion.",
+        )
+        self.assertEqual(record.raw_low, 480.00)
+        self.assertEqual(record.project_designated_low, 483.90)
+        self.assertEqual(record.chosen_option, "B")
+        self.assertFalse(record.canonical_promotion_allowed)
+
     def test_option_c_stays_quarantined(self):
         record = make_record(
             chosen_option="C", decided_by="owner", decision_date="2026-11-28",

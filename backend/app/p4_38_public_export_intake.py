@@ -5,7 +5,7 @@ authenticate to, or bypass subscription-only services. Every import is research-
 until independent coverage, identity, calendar and quality gates are satisfied.
 """
 from __future__ import annotations
-import csv, hashlib, io
+import csv, hashlib, io, math
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -13,7 +13,7 @@ PROFILES = {
     "sharehub": {
         "date": ("date", "trading_date", "session_date"),
         "open": ("open", "open_price"), "high": ("high", "high_price"),
-        "low": ("low", "low_price"), "close": ("close", "close_price", "ltp"),
+        "low": ("low", "low_price"), "close": ("close", "close_price"),
         "volume": ("volume", "total_traded_quantity", "quantity"),
     },
     "chukul": {
@@ -21,13 +21,13 @@ PROFILES = {
         "open": ("openPrice", "open_price", "open"),
         "high": ("highPrice", "high_price", "high"),
         "low": ("lowPrice", "low_price", "low"),
-        "close": ("closePrice", "close_price", "ltp", "close"),
+        "close": ("closePrice", "close_price", "close"),
         "volume": ("totalVolume", "total_traded_quantity", "volume", "quantity"),
     },
     "sharesansar": {
         "date": ("trade_date", "trading_date", "session_date", "date"),
         "open": ("open", "open_price"), "high": ("high", "high_price"),
-        "low": ("low", "low_price"), "close": ("closing_price", "close", "ltp"),
+        "low": ("low", "low_price"), "close": ("closing_price", "close"),
         "volume": ("quantity", "total_traded_quantity", "volume"),
     },
 }
@@ -47,7 +47,7 @@ def _pick(row: dict[str, Any], names: tuple[str, ...]) -> Any:
     return None
 
 def _day(value: Any) -> str:
-    return date.fromisoformat(str(value).strip()[:10]).isoformat()
+    return date.fromisoformat(str(value).strip()).isoformat()
 
 def _capture_time(value: str) -> str:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -96,6 +96,8 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
             vals = {key: float(_pick(row, aliases)) for key, aliases in fields.items() if key != "date"}
             if any(v is None for v in vals.values()):
                 raise ValueError("missing_ohlcv_field")
+            if any(not math.isfinite(v) for v in vals.values()):
+                raise ValueError("non_finite_ohlcv_value")
             if any(v < 0 for v in vals.values()):
                 raise ValueError("negative_ohlcv_value")
             if vals["low"] > min(vals["open"], vals["close"]) or vals["high"] < max(vals["open"], vals["close"]) or vals["low"] > vals["high"]:
@@ -119,6 +121,8 @@ def normalize_close_only_rows(*, provider: str, symbol: str,
         try:
             day = _day(_pick(row, ("date", "trade_date", "trading_date", "session_date")))
             close = float(_pick(row, ("close", "closing_price", "ltp")))
+            if not math.isfinite(close):
+                raise ValueError("non_finite_close")
             if close <= 0 or day in seen:
                 raise ValueError("non_positive_close_or_duplicate_session")
             seen.add(day)
@@ -165,6 +169,8 @@ def normalize_floorsheet_rows(*, symbol: str, rows: list[dict[str, Any]]) -> dic
             day = _day(_pick(row, FLOORSHEET_ALIASES["date"]))
             qty = float(_pick(row, FLOORSHEET_ALIASES["quantity"]))
             price = float(_pick(row, FLOORSHEET_ALIASES["price"]))
+            if not math.isfinite(qty) or not math.isfinite(price):
+                raise ValueError("non_finite_quantity_or_price")
             if qty <= 0 or price <= 0:
                 raise ValueError("non_positive_quantity_or_price")
             item = daily.setdefault(day, {"symbol": row_symbol, "session_date": day,

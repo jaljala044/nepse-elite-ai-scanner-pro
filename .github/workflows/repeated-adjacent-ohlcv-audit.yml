@@ -69,6 +69,7 @@ jobs:
           python scripts/publish_issue5_review_ledger.py \
             --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \
             --output reports/repeated-adjacent-ohlcv/issue5_candidate_row_review.csv \
+            --validator-report reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json \
             --manifest reports/repeated-adjacent-ohlcv/issue5_review_ledger_manifest.json
       - name: Upload pinned review evidence
         uses: actions/upload-artifact@v4

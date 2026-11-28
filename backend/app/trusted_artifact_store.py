@@ -44,6 +44,40 @@ def _safe_payload_path(root: Path, relative: Any) -> Path:
     return path
 
 
+def _validate_rotation(data, expected_indices):
+    from math import isfinite
+    indices = data["indices"]
+    if (not isinstance(expected_indices, list) or not expected_indices
+            or any(not isinstance(k, str) or not k.strip() for k in expected_indices)
+            or len(set(expected_indices)) != len(expected_indices)
+            or set(indices) != set(expected_indices)):
+        raise TrustedArtifactError("rotation_universe_mismatch")
+    common_dates = None
+    for item in indices.values():
+        trail = item.get("rotation_trail") if isinstance(item, dict) else None
+        if not isinstance(trail, list) or len(trail) != 6:
+            raise TrustedArtifactError("rotation_trail_invalid")
+        dates = []
+        for point in trail:
+            if not isinstance(point, dict):
+                raise TrustedArtifactError("rotation_point_invalid")
+            day = point.get("date")
+            if not isinstance(day, str) or date.fromisoformat(day).isoformat() != day:
+                raise TrustedArtifactError("rotation_date_invalid")
+            x, y = point.get("relative_return_pct"), point.get("momentum_change_pp")
+            if any(type(v) not in (int, float) or not isfinite(v) for v in (x, y)):
+                raise TrustedArtifactError("rotation_coordinate_invalid")
+            quadrant = "leading" if x >= 0 and y >= 0 else "weakening" if x >= 0 else "improving" if y >= 0 else "lagging"
+            if point.get("quadrant") != quadrant:
+                raise TrustedArtifactError("rotation_quadrant_invalid")
+            dates.append(day)
+        if dates != sorted(set(dates)) or dates[-1] != data["as_of"]:
+            raise TrustedArtifactError("rotation_dates_misaligned")
+        if common_dates is not None and dates != common_dates:
+            raise TrustedArtifactError("rotation_dates_misaligned")
+        common_dates = dates
+
+
 class TrustedArtifactStore:
     """Load only artifacts pinned by server-owned registry configuration.
 
@@ -148,6 +182,7 @@ class TrustedArtifactStore:
                             or not isinstance(data.get("indices"), dict)
                             or "NEPSE" not in data["indices"]):
                         raise TrustedArtifactError("index_rotation_not_complete")
+                    _validate_rotation(data, entry.get("expected_indices"))
                 if module in {"sector_rotation", "broker_sector_rotation"}:
                     membership_status = entry.get("sector_membership_status")
                     membership_version = entry.get("sector_membership_version")

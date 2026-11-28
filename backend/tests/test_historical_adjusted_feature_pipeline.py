@@ -66,4 +66,17 @@ class DatasetAdmissionTests(unittest.TestCase):
         reasons={x["reason"] for x in out["issues"]}
         self.assertIn("records_missing_available_at",reasons); self.assertIn("input_lineage_incomplete",reasons)
 
+    def test_empty_or_malformed_record_ids_block_admission(self):
+        for records in ([], [{"available_at":"2024-09-30T10:00:00Z"}],
+                        [{"record_id": [], "available_at":"2024-09-30T10:00:00Z"}],
+                        [{"record_id":" ", "available_at":"2024-09-30T10:00:00Z"}],
+                        [{"record_id":"r1","available_at":"2024-09-30T10:00:00Z"},
+                         {"record_id":" r1 ","available_at":"2024-09-30T10:00:00Z"}]):
+            with self.subTest(records=records):
+                args=self.base()
+                args["records"]=records
+                out=admit_six_scanner_dataset(**args)
+                self.assertEqual(out["status"],"BLOCKED")
+                self.assertTrue(all(cell["status"]=="BLOCKED" for cell in out["matrix"]))
+
 if __name__=="__main__": unittest.main()

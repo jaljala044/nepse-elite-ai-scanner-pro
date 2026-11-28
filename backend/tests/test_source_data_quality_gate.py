@@ -79,6 +79,22 @@ class SourceDataQualityGateTests(unittest.TestCase):
         result = resolve_record_corrections(records, decision_time=NOW)
         self.assertEqual(result["active_versions"][0]["record_id"], "r1")
 
+    def test_correction_with_missing_predecessor_is_not_active(self):
+        records = [{"record_id": "r2", "available_at": "2026-11-28T10:00:00Z",
+                    "supersedes_record_id": "missing-r1", "value": 11}]
+        result = resolve_record_corrections(records, decision_time=NOW)
+        self.assertEqual(result["active_versions"], [])
+        self.assertEqual(result["rejected"][0]["reason"],
+                         "superseded_record_missing_at_cutoff")
+
+    def test_descendant_of_orphan_correction_is_not_active(self):
+        records = [{"record_id": "r2", "available_at": "2026-11-27T10:00:00Z",
+                    "supersedes_record_id": "missing-r1", "value": 11},
+                   {"record_id": "r3", "available_at": "2026-11-28T10:00:00Z",
+                    "supersedes_record_id": "r2", "value": 12}]
+        result = resolve_record_corrections(records, decision_time=NOW)
+        self.assertEqual(result["active_versions"], [])
+
     def test_cross_source_conflict_is_retained_not_majority_promoted(self):
         rows = [{"dataset": "ohlcv", "symbol": "NABIL", "session_date": "2026-11-27",
                  "source_id": "a", "value": 500},

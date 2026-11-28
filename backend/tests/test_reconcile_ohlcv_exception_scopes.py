@@ -51,6 +51,48 @@ class CrossScopeLedgerJoinTests(unittest.TestCase):
         self.assertEqual(report["invalid_key_records"][0]["raw_record"]["id"], "x")
         self.assertEqual(report["right_only_keys"], 1)
 
+    def test_duplicate_raw_rows_are_counted_without_collapsing_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            row = {"symbol": "API", "trade_date": "2026-01-01", "exception_id": "E1", "rule": "bad_low"}
+            left = self.write(root, "left.csv", [row, row])
+            right = self.write(root, "right.csv", [{"symbol": "API", "trade_date": "2026-01-01", "id": "R1"}])
+            report = reconcile(left, right, left_name="left", right_name="right")
+        joined = report["joined_records"][0]
+        self.assertEqual(len(joined["left_records"]), 2)
+        self.assertEqual(joined["left_exact_duplicate_rows"], 1)
+        self.assertEqual(report["left_exact_duplicate_rows"], 1)
+
+    def test_scope_names_must_be_distinct(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            left = self.write(root, "left.csv", [{"symbol": "API", "trade_date": "2026-01-01"}])
+            right = self.write(root, "right.csv", [{"symbol": "API", "trade_date": "2026-01-01"}])
+            with self.assertRaisesRegex(ValueError, "non-empty and distinct"):
+                reconcile(left, right, left_name="same", right_name="same")
+
+    def test_duplicate_csv_headers_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.csv"
+            path.write_text("symbol,symbol,trade_date\\nAPI,API,2026-01-01\\n", encoding="utf-8")
+            right = self.write(Path(tmp), "right.csv", [{"symbol": "API", "trade_date": "2026-01-01"}])
+            with self.assertRaisesRegex(ValueError, "duplicate column"):
+                reconcile(path, right, left_name="left", right_name="right")
+
+    def test_ragged_csv_rows_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ragged.csv"
+            path.write_text("symbol,trade_date\\nAPI,2026-01-01,EXTRA\\n", encoding="utf-8")
+            right = self.write(Path(tmp), "right.csv", [{"symbol": "API", "trade_date": "2026-01-01"}])
+            with self.assertRaisesRegex(ValueError, "malformed CSV field count"):
+                reconcile(path, right, left_name="left", right_name="right")
+
+    def test_json_and_csv_output_paths_must_not_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "same.out"
+            with self.assertRaisesRegex(ValueError, "must be different"):
+                write_outputs({"joined_records": []}, path, path)
+
     def test_exact_source_locators_and_raw_rows_are_preserved(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

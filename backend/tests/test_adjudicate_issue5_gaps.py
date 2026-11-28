@@ -60,6 +60,31 @@ class Issue5EvidenceAdjudicationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate CSV headers"):
                 adjudicate(gaps, evidence)
 
+    def test_whitespace_only_csv_header_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = root / "gaps.csv"
+            gaps.write_text(
+                "repository,symbol,trade_date,gap_status,   \\n"
+                f"{SMC},ABC,2026-01-02,{STATUS},ignored\\n",
+                encoding="utf-8",
+            )
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])
+            with self.assertRaisesRegex(ValueError, "CSV headers must be nonblank"):
+                adjudicate(gaps, evidence)
+
+    def test_blank_gap_repository_is_rejected(self):
+        report = self.run_case([])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gaps = self.write(root / "gaps.csv", GAP_FIELDS, [{
+                "repository": "", "symbol": "ABC", "trade_date": "2026-01-02",
+                "gap_status": STATUS,
+            }])
+            evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])
+            with self.assertRaisesRegex(ValueError, "invalid gap identity"):
+                adjudicate(gaps, evidence)
+
     def test_extra_csv_columns_are_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

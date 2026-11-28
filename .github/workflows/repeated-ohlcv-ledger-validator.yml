@@ -1,0 +1,21 @@
+name: Repeated OHLCV candidate ledger validator
+on:
+  pull_request:
+    paths:
+      - "scripts/validate_repeated_adjacent_ohlcv.py"
+      - "tests/test_validate_repeated_adjacent_ohlcv.py"
+      - ".github/workflows/repeated-ohlcv-ledger-validator.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  focused-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run focused candidate-ledger integrity tests
+        run: python -m unittest tests.test_validate_repeated_adjacent_ohlcv -v

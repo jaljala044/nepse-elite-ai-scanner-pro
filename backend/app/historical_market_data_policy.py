@@ -31,7 +31,7 @@ def five_year_start(as_of_date: str) -> str:
         except ValueError:
             start = end.replace(year=end.year - 5, day=28)
     except (TypeError, ValueError) as exc:
-        raise ValueError("as_of_date must be a valid ISO date") from exc
+        raise ValueError("as_of_date must use canonical YYYY-MM-DD") from exc
     return start.isoformat()
 
 

@@ -33,11 +33,22 @@ def replay_portfolio(series, sessions, signals, *, costs, initial_capital=100000
             if bar is None or bar["open"]>=band["upper"]:excluded+=1;continue
             q=min(floor(min(cash,initial_capital*allocation)/bar["open"]),floor(bar["volume"]*participation))
             if q<1:excluded+=1;continue
-            result=round_trip(bar["open"],bar["open"],q,assumptions=costs)
-            if result["status"]!="scenario_only" or result["buy_cash"]>min(cash,initial_capital*allocation):
+            budget=min(cash,initial_capital*allocation)
+            lo,hi=1,q
+            affordable=None
+            while lo<=hi:
+                mid=(lo+hi)//2
+                trial=round_trip(bar["open"],bar["open"],mid,assumptions=costs)
+                if trial["status"]!="scenario_only":break
+                if trial["buy_cash"]<=budget:
+                    affordable=(mid,trial)
+                    lo=mid+1
+                else:hi=mid-1
+            if affordable is None:
                 excluded+=1;continue
+            q,result=affordable
             cash-=result["buy_cash"]
-            positions[s]=dict(entry=i,price=bar["open"],qty=q,invested=result["buy_cash"],pending=False)
+            positions[s]=dict(entry=i,price=bar["open"],qty=q,invested=result["buy_cash"],pending=bar["low"]<=bar["open"]*(1-stop))
         for s,p in list(positions.items()):
             if i<=p["entry"]:continue
             bar,band=usable(s,i,p["qty"])

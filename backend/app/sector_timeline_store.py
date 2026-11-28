@@ -184,3 +184,36 @@ def replay_persisted_sector_timeline(
     result["admission_allowed"] = False
     result["production_admission_allowed"] = False
     return result
+
+
+
+def replay_persisted_trusted_sector_timeline(
+    *,
+    as_of_date: str,
+    decision_time: str,
+    allowed_sector_codes: set[str],
+    known_security_ids: set[str],
+    registry_path: str | Path | None,
+    freshness_policy_path: str | Path | None,
+    hmac_key: str | None,
+    database_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Load append-only timeline evidence and replay it through trust gates."""
+    from .trusted_sector_reconciliation import replay_trusted_sector_timeline
+
+    loaded = load_sector_timeline_events(database_path=database_path)
+    result = replay_trusted_sector_timeline(
+        loaded["events"], as_of_date=as_of_date, decision_time=decision_time,
+        allowed_sector_codes=allowed_sector_codes,
+        known_security_ids=known_security_ids,
+        registry_path=registry_path, freshness_policy_path=freshness_policy_path,
+        hmac_key=hmac_key,
+    )
+    result["persistence"] = {
+        "record_count": loaded["record_count"],
+        "batch_ids": loaded["batch_ids"],
+        "source_validation_status": loaded["source_validation_status"],
+        "finality_status": loaded["finality_status"],
+    }
+    result["production_admission_allowed"] = False
+    return result

@@ -18,3 +18,9 @@ jobs:
       - run: npm install --ignore-scripts
       - run: npm run check
       - run: npm run build
+      - name: Install pinned browser test tooling
+        run: npm install --no-save --ignore-scripts playwright@1.51.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run real browser smoke tests
+        run: node browser-smoke.cjs

@@ -1,8 +1,13 @@
 name: Part 5 exact engine research
 on:
+  push:
+    branches: [part5-validation-admission-audit]
   pull_request:
     paths:
       - 'backend/run_part5_actual_engine_replay.py'
+      - 'backend/run_part5_portfolio_batch.py'
+      - 'backend/app/part5_*.py'
+      - 'backend/tests/test_part5_*.py'
       - 'backend/app/historical_trade_simulation.py'
       - 'backend/app/part5_exit_retry.py'
       - 'backend/tests/test_historical_trade_simulation.py'
@@ -16,7 +21,7 @@ permissions:
 jobs:
   replay:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,7 +41,7 @@ jobs:
       - name: Run execution and retry regression tests
         env:
           PYTHONPATH: backend
-        run: python -m unittest backend.tests.test_historical_trade_simulation backend.tests.test_part5_exit_retry
+        run: python -m unittest backend.tests.test_historical_trade_simulation backend.tests.test_part5_exit_retry backend.tests.test_part5_freeze_portfolio
       - name: Inventory benchmark and sector evidence
         run: python backend/audit_part5_benchmark_sector_inventory.py . > results/benchmark_sector_inventory.json
       - name: Validate frozen holdout protocol
@@ -53,6 +58,10 @@ jobs:
           assert r['production_eligible'] is False and r['independent_holdout'] is False
           assert all(x.get('n',0)==0 for x in r['results'] if x.get('mode') in ('master','authentic_idpat'))
           PY
+      - name: Execute eight portfolio scenarios
+        env:
+          PYTHONPATH: backend
+        run: python backend/run_part5_portfolio_batch.py inputs/prices/candidate.csv data/reference/nepse_session_calendar.csv results/portfolio_batch.json
       - uses: actions/upload-artifact@v4
         with:
           name: part5-exact-engine-research

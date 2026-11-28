@@ -3,6 +3,12 @@ name: Repeated adjacent OHLCV candidate audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/publish_issue5_review_ledger.py"
+      - "scripts/extract_repeated_adjacent_ohlcv.py"
+      - "scripts/validate_repeated_adjacent_ohlcv.py"
+      - ".github/workflows/repeated-adjacent-ohlcv-audit.yml"
   push:
     paths:
       - "scripts/extract_repeated_adjacent_ohlcv.py"
@@ -43,7 +49,7 @@ jobs:
             --source jaljala044/nepse-history-starter b60728d39f34e0f9e428675d817fd52ed2784da6 sources/nepse-history-starter/03_stock_charts_ohlcv \
             --out reports/repeated-adjacent-ohlcv \
             --calendar data/reference/nepse_session_calendar.csv
-      - name: Validate extracted candidate ledger (review findings remain quarantined)
+      - name: Validate extracted candidate ledger
         run: |
           set +e
           python scripts/validate_repeated_adjacent_ohlcv.py \
@@ -55,11 +61,18 @@ jobs:
             echo "Candidate-ledger validator failed unexpectedly: $status"
             exit "$status"
           fi
-          echo "Validator exit: $status (0=clean, 2=review findings). Candidate rows remain non-promotable." >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload candidate ledger
+      - name: Build deterministic Issue #5 review ledger
+        run: |
+          python scripts/publish_issue5_review_ledger.py \
+            --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \
+            --output reports/repeated-adjacent-ohlcv/issue5_candidate_row_review.csv \
+            --manifest reports/repeated-adjacent-ohlcv/issue5_review_ledger_manifest.json
+      - name: Upload pinned review evidence
         uses: actions/upload-artifact@v4
         with:
-          name: repeated-adjacent-ohlcv-candidates
-          path: reports/repeated-adjacent-ohlcv/
+          name: issue5-candidate-row-review
+          path: |
+            reports/repeated-adjacent-ohlcv/issue5_candidate_row_review.csv
+            reports/repeated-adjacent-ohlcv/issue5_review_ledger_manifest.json
           if-no-files-found: error
           retention-days: 90

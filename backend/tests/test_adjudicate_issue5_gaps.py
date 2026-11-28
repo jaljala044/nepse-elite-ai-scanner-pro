@@ -52,8 +52,8 @@ class Issue5EvidenceAdjudicationTests(unittest.TestCase):
             root = Path(tmp)
             gaps = root / "gaps.csv"
             gaps.write_text(
-                "repository,repository,symbol,trade_date,gap_status\\n"
-                f"{SMC},{SMC},ABC,2026-01-02,{STATUS}\\n",
+                "repository,repository,symbol,trade_date,gap_status\n"
+                f"{SMC},{SMC},ABC,2026-01-02,{STATUS}\n",
                 encoding="utf-8",
             )
             evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])
@@ -65,8 +65,8 @@ class Issue5EvidenceAdjudicationTests(unittest.TestCase):
             root = Path(tmp)
             gaps = root / "gaps.csv"
             gaps.write_text(
-                "repository,symbol,trade_date,gap_status\\n"
-                f"{SMC},ABC,2026-01-02,{STATUS},EXTRA\\n",
+                "repository,symbol,trade_date,gap_status\n"
+                f"{SMC},ABC,2026-01-02,{STATUS},EXTRA\n",
                 encoding="utf-8",
             )
             evidence = self.write(root / "evidence.csv", EVIDENCE_FIELDS, [self.evidence()])

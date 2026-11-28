@@ -137,6 +137,17 @@ class TrustedArtifactStore:
                     if action_status not in {"verified", "confirmed_none"}:
                         raise TrustedArtifactError("corporate_action_status_unverified")
                     context["corporate_action_status"] = action_status
+                if module == "index_rotation":
+                    if (coverage != 1 or data.get("status") != "research_only"
+                            or data.get("as_of") != as_of.isoformat()
+                            or data.get("coverage_ratio") != 1
+                            or data.get("missing_indices") != []
+                            or data.get("benchmark") != "NEPSE"
+                            or data.get("signals_enabled") is not False
+                            or data.get("trade_actions_enabled") is not False
+                            or not isinstance(data.get("indices"), dict)
+                            or "NEPSE" not in data["indices"]):
+                        raise TrustedArtifactError("index_rotation_not_complete")
                 if module in {"sector_rotation", "broker_sector_rotation"}:
                     membership_status = entry.get("sector_membership_status")
                     membership_version = entry.get("sector_membership_version")
@@ -182,7 +193,8 @@ def build_trusted_market_snapshot(store: TrustedArtifactStore, *,
     """Load pinned server-side artifacts and pass only admitted envelopes onward."""
     from .market_intelligence_snapshot import build_market_intelligence_snapshot
 
-    artifacts = store.load(decision_date=decision_date, decision_time=decision_time)
+    modules = REQUIRED_MODULES + ("index_rotation",)
+    artifacts = store.load(decision_date=decision_date, decision_time=decision_time, required_modules=modules)
     return build_market_intelligence_snapshot(
-        artifacts, decision_date=decision_date, decision_time=decision_time
+        artifacts, decision_date=decision_date, decision_time=decision_time, required_modules=modules
     )

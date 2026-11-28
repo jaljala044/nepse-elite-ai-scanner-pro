@@ -1,6 +1,6 @@
 import unittest
 from app.historical_market_data_policy import (
-    build_five_year_collection_plan, resolve_record_by_two_source_match,
+    build_five_year_collection_plan, classify_history_coverage, resolve_record_by_two_source_match,
 )
 from app.source_trust_registry import SourcePolicy
 
@@ -40,6 +40,33 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
         self.assertEqual(len(plan["coverage_matrix"]), 20)
         self.assertEqual(plan["session_calendar_count"], 0)
         self.assertTrue(all(x["status"] == ("BLOCKED_DEPENDENCY" if x["data_type"] == "floorsheet" else "BLOCKED_ACCESS") for x in plan["coverage_matrix"]))
+
+    def test_plan_exposes_five_year_target_and_three_year_minimum(self):
+        plan = build_five_year_collection_plan(
+            as_of_date="2026-11-28",
+            equities=[{"symbol": "AAA", "security_id": "1"}])
+        self.assertEqual(plan["preferred_years"], 5)
+        self.assertEqual(plan["minimum_years"], 3)
+        self.assertEqual(plan["minimum_period_start"], "2023-11-28")
+        self.assertTrue(all(x["minimum_years"] == 3 for x in plan["coverage_matrix"]))
+
+    def test_five_year_history_is_preferred(self):
+        result = classify_history_coverage(
+            coverage_start="2021-11-28", as_of_date="2026-11-28")
+        self.assertEqual(result["status"], "COMPLETE_EVIDENCED")
+        self.assertEqual(result["coverage_tier"], "preferred_5_year")
+
+    def test_three_year_history_is_accepted_as_minimum_fallback(self):
+        result = classify_history_coverage(
+            coverage_start="2023-11-28", as_of_date="2026-11-28")
+        self.assertEqual(result["status"], "COMPLETE_EVIDENCED")
+        self.assertEqual(result["coverage_tier"], "minimum_3_year_fallback")
+
+    def test_less_than_three_year_history_remains_partial(self):
+        result = classify_history_coverage(
+            coverage_start="2024-01-01", as_of_date="2026-11-28")
+        self.assertEqual(result["status"], "PARTIAL_EVIDENCED")
+        self.assertEqual(result["coverage_tier"], "below_3_year_minimum")
 
     def test_plan_handles_leap_day(self):
         self.assertEqual(

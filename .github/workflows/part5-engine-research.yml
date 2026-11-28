@@ -1,0 +1,69 @@
+name: Part 5 exact engine research
+on:
+  push:
+    branches: [part5-validation-admission-audit]
+  pull_request:
+    paths:
+      - 'backend/run_part5_actual_engine_replay.py'
+      - 'backend/run_part5_portfolio_batch.py'
+      - 'backend/app/part5_*.py'
+      - 'backend/tests/test_part5_*.py'
+      - 'backend/app/historical_trade_simulation.py'
+      - 'backend/app/part5_exit_retry.py'
+      - 'backend/tests/test_historical_trade_simulation.py'
+      - 'docs/PART5_FROZEN_HOLDOUT_PROTOCOL.json'
+      - 'backend/audit_part5_benchmark_sector_inventory.py'
+      - '.github/workflows/part5-engine-research.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve pinned candidate archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p inputs/prices inputs/brokers results
+          gh api repos/jaljala044/nepse-history-starter/actions/artifacts/15133662109/zip > inputs/prices.zip
+          gh api repos/jaljala044/nepse-elite-ai-scanner-pro/actions/artifacts/15150674205/zip > inputs/brokers.zip
+          echo '61449bd6449fbde66f20951192a66ab62e4da7b2fb02a1a29c3c1c33616f4985  inputs/prices.zip' | sha256sum -c
+          echo '01af48fd9cbf4e310ff16bc61c235081080314073d1fcb597e682a391fe120cc  inputs/brokers.zip' | sha256sum -c
+          unzip -q inputs/prices.zip -d inputs/prices
+          unzip -q inputs/brokers.zip -d inputs/brokers
+      - name: Run execution and retry regression tests
+        env:
+          PYTHONPATH: backend
+        run: python -m unittest backend.tests.test_historical_trade_simulation backend.tests.test_part5_exit_retry backend.tests.test_part5_freeze_portfolio
+      - name: Inventory benchmark and sector evidence
+        run: python backend/audit_part5_benchmark_sector_inventory.py . > results/benchmark_sector_inventory.json
+      - name: Validate frozen holdout protocol
+        run: python -c "import json; p=json.load(open('docs/PART5_FROZEN_HOLDOUT_PROTOCOL.json')); assert p['status']=='DESIGN_ONLY_NOT_LOCKED' and p['production_eligible'] is False"
+      - name: Execute actual feature engine research
+        env:
+          PYTHONPATH: backend
+        run: |
+          python backend/run_part5_actual_engine_replay.py inputs/prices/candidate.csv inputs/brokers/broker.sqlite data/reference/nepse_session_calendar.csv results/engine_replay.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/engine_replay.json'))
+          assert r['candidate_universe']==281 and len(r['selected'])==12
+          assert r['production_eligible'] is False and r['independent_holdout'] is False
+          assert all(x.get('n',0)==0 for x in r['results'] if x.get('mode') in ('master','authentic_idpat'))
+          PY
+      - name: Execute eight portfolio scenarios
+        env:
+          PYTHONPATH: backend
+        run: python backend/run_part5_portfolio_batch.py inputs/prices/candidate.csv data/reference/nepse_session_calendar.csv results/portfolio_batch.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: part5-exact-engine-research
+          path: results/
+          if-no-files-found: error

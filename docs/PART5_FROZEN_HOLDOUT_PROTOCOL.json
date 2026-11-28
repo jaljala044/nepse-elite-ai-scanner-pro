@@ -1,0 +1,32 @@
+{
+  "protocol": "NEPSE-PART5-HOLDOUT-v1",
+  "status": "DESIGN_ONLY_NOT_LOCKED",
+  "production_eligible": false,
+  "independent_reviewer_required": true,
+  "required_before_freeze": [
+    "Complete strategy implementation and code commit SHA",
+    "Complete immutable parameter manifest and SHA-256",
+    "Point-in-time eligible dataset manifest with source hashes",
+    "Exchange session calendar hash and corporate-action policy",
+    "Execution and settlement model version with fee evidence",
+    "Predeclared primary horizon, benchmark, metrics and acceptance thresholds",
+    "List of all previously accessed dates and symbols",
+    "Named independent custodian and reviewer"
+  ],
+  "holdout_rules": {
+    "selection": "Chronological date range chosen by independent custodian after development freeze",
+    "access": "No strategy author access to holdout labels or outcomes before freeze",
+    "repeated_peeking": "Prohibited; any access invalidates holdout and requires a new future period",
+    "parameter_changes": "Any change invalidates the holdout and requires a new freeze",
+    "missing_data": "Exclude and disclose; never impute future observations",
+    "corporate_actions": "Use only actions effective and knowable at decision time",
+    "survivorship": "Include delisted and suspended securities where source history permits",
+    "release": "Reviewer publishes signed manifest, hashes, metrics and exclusions"
+  },
+  "mandatory_metrics": [
+    "net expectancy", "win rate", "average win/loss", "profit factor",
+    "maximum drawdown", "exposure", "turnover", "unresolved exits",
+    "fees and slippage", "benchmark-relative return", "sample size by horizon"
+  ],
+  "decision": "NO_PRODUCTION_APPROVAL_UNTIL_INDEPENDENT_REVIEW"
+}

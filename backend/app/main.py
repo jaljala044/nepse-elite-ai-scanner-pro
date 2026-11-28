@@ -594,6 +594,25 @@ def unified_coverage():
     except (OSError,ValueError,TypeError,KeyError):
         return dict(unavailable,reason="research_artifact_missing_or_invalid")
 
+
+
+class PaperDashboardRequest(BaseModel):
+    initial_capital: float = Field(gt=0, allow_inf_nan=False)
+
+@app.get("/v1/research/backtest-readiness")
+def part5_backtest_readiness():
+    from .part5_research_dashboard import comparative_readiness
+    return comparative_readiness()
+
+@app.post("/v1/account/paper-dashboard")
+def part5_paper_dashboard(payload: PaperDashboardRequest, owner: str = Depends(principal)):
+    from .part5_paper_store import list_paper
+    from .part5_research_dashboard import journal_dashboard
+    try:
+        return journal_dashboard(list_paper(owner), initial_capital=payload.initial_capital)
+    except ValueError as exc:
+        raise HTTPException(422,"Invalid paper journal or capital") from exc
+
 # Mount only the built public frontend, never the repository or raw data.
 from fastapi.staticfiles import StaticFiles
 import os

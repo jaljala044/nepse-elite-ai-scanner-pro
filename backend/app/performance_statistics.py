@@ -79,3 +79,21 @@ def risk_adjusted(returns, benchmark, *, expected_sessions, periods_per_year, an
         sortino=mean(excess)/downside*sqrt(periods_per_year) if downside else None,
         information_ratio=mean(active)/tracking*sqrt(periods_per_year) if tracking else None,
         limitations=["Caller must certify session completeness, benchmark basis and net execution costs.","Statistics do not establish actual fills or predictive accuracy."])
+
+
+def benchmark_report(returns, benchmark, *, expected_sessions, periods_per_year, annual_risk_free=0.0):
+    """Extend aligned daily-return statistics with annualized growth and Calmar."""
+    result = risk_adjusted(returns, benchmark, expected_sessions=expected_sessions,
+                           periods_per_year=periods_per_year, annual_risk_free=annual_risk_free)
+    result.update(cagr=None, benchmark_cagr=None, calmar=None)
+    if result["status"] != "research_only":
+        return result
+    n = result["sample_size"]
+    # Do not extrapolate short samples into annual growth claims.
+    if n < periods_per_year:
+        return result
+    for source,target in (("net_return","cagr"),("benchmark_return","benchmark_cagr")):
+        result[target] = (1+result[source])**(periods_per_year/n)-1
+    if result["max_drawdown"] > 0:
+        result["calmar"] = result["cagr"]/result["max_drawdown"]
+    return result

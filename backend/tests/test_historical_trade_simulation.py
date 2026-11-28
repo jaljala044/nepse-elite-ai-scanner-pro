@@ -106,3 +106,17 @@ class HistoricalTradeSimulationTests(unittest.TestCase):
         self.assertEqual(self.run_case()["cost_mode"],"flat_scenario")
     def test_invalid_cost_mode(self):
         with self.assertRaises(ValueError): self.run_case(cost_mode="unknown")
+
+    def test_retry_after_missing_deadline_bar(self):
+        self.days.append("2025-01-10")
+        self.rows.append(dict(date=self.days[-1],open=97,high=99,low=96,close=98,volume=10000))
+        self.controls[self.days[-1]]=dict(verified=True,evidence_id="synthetic-retry",ordinary_session=True,previous_close=100)
+        self.rows.pop(4)
+        result=self.run_case(retry_sessions=1)
+        trade=result["trades"][0]
+        self.assertEqual(trade["status"],"closed_scenario")
+        self.assertEqual(trade["exit_date"],self.days[5])
+        self.assertEqual(trade["exit_reason"],"retry_open_scenario")
+
+    def test_retry_window_validation(self):
+        with self.assertRaises(ValueError): self.run_case(retry_sessions=21)

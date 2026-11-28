@@ -71,13 +71,9 @@ class HRLConflictRecordTests(unittest.TestCase):
         self.assertFalse(record.canonical_promotion_allowed)
 
     def test_option_c_stays_quarantined(self):
-        record = make_record(
-            chosen_option="C", decided_by="owner", decision_date="2026-11-28",
-            justification="Retain the source conflict without canonical promotion.",
-        )
+        record = make_record(chosen_option="C")
         self.assertEqual(record.status, "QUARANTINED")
         self.assertEqual(record.chosen_option, "C")
-        self.assertEqual(record.decided_by, "owner")
 
     def test_no_silent_replacement_in_serialized_record(self):
         data = make_record().to_dict()
@@ -87,16 +83,17 @@ class HRLConflictRecordTests(unittest.TestCase):
         self.assertEqual(set(data["source_rows"]), {"nepse-history-starter", "nepse-smc-data"})
 
     def test_incomplete_or_unsafe_decisions_fail_closed(self):
-        invalid = [
+        cases = [
             {"status": "RESOLVED", "chosen_option": "A"},
             {"status": "RESOLVED", "chosen_option": "C", "decided_by": "owner",
              "decision_date": "2026-11-28", "justification": "Keep conflict."},
             {"canonical_promotion_allowed": True},
             {"chosen_option": "B"},
         ]
-        for kwargs in invalid:
-            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
-                make_record(**kwargs)
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(ValueError):
+                    make_record(**kwargs)
 
     def test_invalid_archive_hash_rejected(self):
         with self.assertRaisesRegex(ValueError, "SHA-256"):

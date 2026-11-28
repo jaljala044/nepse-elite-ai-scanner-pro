@@ -201,6 +201,26 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
                           observation("chukul", self.chart(), dates=["2026-01-01"])])
         self.assertFalse(result["canonical_candidate"])
 
+    def test_collection_plan_rejects_noncanonical_as_of_date(self):
+        with self.assertRaisesRegex(ValueError, "canonical YYYY-MM-DD"):
+            build_five_year_collection_plan(
+                as_of_date="2026-1-2",
+                equities=[{"symbol": "AAA", "security_id": "1"}])
+
+    def test_collection_plan_rejects_session_outside_three_year_minimum_window(self):
+        with self.assertRaisesRegex(ValueError, "minimum collection window"):
+            build_five_year_collection_plan(
+                as_of_date="2026-11-28",
+                equities=[{"symbol": "AAA", "security_id": "1"}],
+                session_dates=["2023-11-27"])
+
+    def test_collection_plan_sorts_session_grid_deterministically(self):
+        result = build_five_year_collection_plan(
+            as_of_date="2026-11-28",
+            equities=[{"symbol": "AAA", "security_id": "1"}],
+            session_dates=["2026-11-27", "2026-11-26"])
+        self.assertEqual(result["session_calendar_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

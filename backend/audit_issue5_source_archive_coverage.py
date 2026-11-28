@@ -6,6 +6,7 @@ source-omission explanations remain unresolved until independent evidence exists
 from __future__ import annotations
 import argparse
 import csv
+from collections import Counter
 import hashlib
 import json
 from datetime import date
@@ -187,6 +188,23 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,\n 
             "symbol_gap_summaries": symbol_summaries,
         }
 
+    gap_key_sources = Counter((item["symbol"], item["trade_date"]) for item in gaps)
+    gap_counts_by_symbol = Counter(item["symbol"] for item in gaps)
+    top_gap_symbols = [
+        {"symbol": symbol, "source_gap_rows": count}
+        for symbol, count in sorted(
+            gap_counts_by_symbol.items(), key=lambda pair: (-pair[1], pair[0])
+        )[:20]
+    ]
+    gap_concordance = {
+        "unique_symbol_date_gap_keys": len(gap_key_sources),
+        "gap_keys_present_in_both_sources": sum(1 for count in gap_key_sources.values() if count == 2),
+        "gap_keys_present_in_one_source": sum(1 for count in gap_key_sources.values() if count == 1),
+        "distinct_symbols_with_gaps": len(gap_counts_by_symbol),
+        "top_symbols_by_source_gap_rows": top_gap_symbols,
+        "interpretation": "Cross-archive agreement is not independent publisher confirmation; mirrored archives may share upstream data.",
+    }
+
     report = {
         "audit_scope": "full_archive_date_gap_inventory_not_missing_trade_adjudication",
         "audit_json_sha256": _sha256(audit_json),
@@ -197,6 +215,7 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,\n 
         "active_equity_count": len(active_equities),
         "repository_summaries": repository_summaries,
         "unclassified_gap_count": len(gaps),
+        "gap_concordance": gap_concordance,
         "unclassified_gap_csv": "issue5_unclassified_equity_session_gaps.csv",
         "raw_source_values_modified": False,
         "canonical_or_training_promotion": False,

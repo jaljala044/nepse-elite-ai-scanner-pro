@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, date, timezone
 from hashlib import sha256
+import math
 from typing import Any
 
 PROVIDERS = {
@@ -27,7 +28,7 @@ def _session(value: Any) -> str:
         return value.isoformat()
     raw = str(value).strip()
     try:
-        return date.fromisoformat(raw[:10]).isoformat()
+        return date.fromisoformat(raw).isoformat()
     except ValueError:
         for fmt in ("%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y"):
             try:
@@ -53,7 +54,7 @@ def capture_chart_history(*, provider_id: str, symbol: str, rows: list[dict[str,
             values = {field: _first(row, aliases) for field, aliases in mapping.items()}
             session = _session(values.pop("date"))
             numbers = {k: float(v) for k, v in values.items()}
-            if any(v is None for v in values.values()) or any(v < 0 for v in numbers.values()):
+            if any(v is None for v in values.values()) or any(not math.isfinite(v) for v in numbers.values()):\n                raise ValueError("non_finite_ohlcv")\n            if any(v < 0 for v in numbers.values()):
                 raise ValueError("missing_or_negative_ohlcv")
             if numbers["low"] > min(numbers["open"], numbers["close"]) or numbers["high"] < max(numbers["open"], numbers["close"]) or numbers["low"] > numbers["high"]:
                 raise ValueError("invalid_ohlcv_relationship")
@@ -88,7 +89,7 @@ def aggregate_floorsheet(*, symbol: str, trades: list[dict[str, Any]], raw_paylo
             day = _session(_first(trade, ("date", "trade_date", "trading_date", "session_date")))
             qty = float(_first(trade, ("quantity", "qty", "contract_quantity")))
             price = float(_first(trade, ("rate", "price", "contract_rate")))
-            if qty <= 0 or price <= 0:
+            if not math.isfinite(qty) or not math.isfinite(price):\n                raise ValueError("non_finite_trade_quantity_or_price")\n            if qty <= 0 or price <= 0:
                 raise ValueError("non_positive_trade_quantity_or_price")
             daily[day]["trade_count"] += 1
             daily[day]["volume"] += qty

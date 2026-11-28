@@ -146,7 +146,7 @@ class DownstreamQuarantineTests(unittest.TestCase):
 
     def test_broker_rejects_invalid_runtime_ledger(self):
         from unittest.mock import patch
-        report = IngestionReport("test", "complete", "1", accepted=[])
+        report = IngestionReport("test", "complete", "1", accepted=[{"status": "descriptive_only", "available_at": "2026-11-28T10:00:00Z"}])
         with patch("app.broker_memory_promotion.runtime_quarantine_keys",
                    side_effect=ValueError("invalid runtime quarantine ledger")):
             with self.assertRaisesRegex(PromotionRejected, "invalid quarantine ledger"):

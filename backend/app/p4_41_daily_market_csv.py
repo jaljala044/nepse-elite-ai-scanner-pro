@@ -18,6 +18,8 @@ def _number(value: Any) -> float:
     if value is None:
         raise ValueError("missing_numeric")
     raw = str(value).strip()
+    if raw.casefold() in {"nan", "+nan", "-nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}:
+        raise ValueError("non_finite_numeric")
     if not _NUMBER.fullmatch(raw):
         raise ValueError("malformed_numeric")
     parsed = float(raw.replace(",", ""))
@@ -54,7 +56,7 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
     warnings: list[str] = []
     records: list[dict] = []
     quarantined: list[dict] = []
-    seen: dict[str, int] = {}
+    seen: dict[str, dict] = {}
     reader = csv.DictReader(StringIO(text, newline=""), restkey="__extra_fields__", strict=True)
     headers = reader.fieldnames or []
     missing = [column for column in REQUIRED if column not in headers]
@@ -71,6 +73,24 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
                 errors.append(f"line_{line}_missing_symbol")
                 quarantined.append(_quarantine(line, symbol, raw_row, "missing_symbol"))
                 continue
+            if symbol in seen:
+                previous = seen[symbol]
+                previous_record = next((item for item in records if item["symbol"] == symbol), None)
+                if previous_record is not None:
+                    records.remove(previous_record)
+                    quarantined.append(_quarantine(previous["line"], symbol, previous["raw_row"], "duplicate_symbol"))
+                else:
+                    prior_quarantine = next((item for item in quarantined if item["source_line"] == previous["line"]), None)
+                    if prior_quarantine is not None:
+                        if "duplicate_symbol" not in prior_quarantine["reasons"]:
+                            prior_quarantine["reasons"].append("duplicate_symbol")
+                    else:
+                        quarantined.append(_quarantine(previous["line"], symbol, previous["raw_row"], "duplicate_symbol"))
+                quarantined.append(_quarantine(line, symbol, raw_row, "duplicate_symbol"))
+                errors.append(f"line_{line}_duplicate_symbol_{symbol}")
+                warnings.append(f"symbol_{symbol}_ambiguous_duplicate_rows")
+                continue
+            seen[symbol] = {"line": line, "raw_row": raw_row}
             if row.get("__extra_fields__") is not None:
                 quarantined.append(_quarantine(line, symbol, raw_row, "extra_csv_fields"))
                 warnings.append(f"line_{line}_quarantined_{symbol}:extra_csv_fields")
@@ -80,17 +100,6 @@ def parse_daily_market_csv(text: str, *, session_date: str, source_url: str, ret
                 quarantined.append(_quarantine(line, symbol, raw_row, "missing_row_fields:" + ",".join(missing_values)))
                 warnings.append(f"line_{line}_quarantined_{symbol}:missing_row_fields")
                 continue
-            if symbol in seen:
-                previous_line = seen[symbol]
-                previous = next((item for item in records if item["symbol"] == symbol), None)
-                if previous is not None:
-                    records.remove(previous)
-                    quarantined.append(_quarantine(previous_line, symbol, previous["raw_row"], "duplicate_symbol"))
-                quarantined.append(_quarantine(line, symbol, raw_row, "duplicate_symbol"))
-                errors.append(f"line_{line}_duplicate_symbol_{symbol}")
-                warnings.append(f"symbol_{symbol}_ambiguous_duplicate_rows")
-                continue
-            seen[symbol] = line
             try:
                 o, h, low, close = (_number(row[key]) for key in ("Open", "High", "Low", "Close"))
                 volume = _number(row["Vol"])

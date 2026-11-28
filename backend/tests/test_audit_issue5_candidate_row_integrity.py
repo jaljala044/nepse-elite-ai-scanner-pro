@@ -209,7 +209,7 @@ class Issue5CandidateIntegrityTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             payload = output.read_bytes()
-            self.assertTrue(payload.endswith(b"\\n"))
+            self.assertTrue(payload.endswith(b"\n"))
             self.assertIsInstance(json.loads(payload), dict)
 
 if __name__ == "__main__":

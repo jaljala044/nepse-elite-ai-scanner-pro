@@ -68,3 +68,36 @@ class PrivateAccountsTests(unittest.TestCase):
             self.assertEqual(mobile_principal(b,now),"bob")
             with self.assertRaises(HTTPException):
                 mobile_principal("Bearer "+"x"*43,now)
+
+    def test_account_http_boundaries(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        from app.private_accounts import issue_mobile_session
+        with tempfile.TemporaryDirectory() as d, patch.dict("os.environ",{
+            "NEPSE_PRIVATE_DB":str(Path(d)/"accounts.db"),
+            "NEPSE_PROXY_SECRET":"s"*32,
+            "NEPSE_MOBILE_GATEWAY_PROOF":"g"*32,
+            "NEPSE_MOBILE_EXCHANGE_ENABLED":"0",
+            "NEPSE_DEPLOYMENT_MODE":"private",
+            "NEPSE_ADMIN_SUBJECTS":"alice",
+        }):
+            client=TestClient(app)
+            proxy={"x-nepse-proxy-secret":"s"*32,"x-nepse-subject":"alice"}
+            gateway=dict(proxy,**{"x-nepse-mobile-gateway-proof":"g"*32})
+            self.assertEqual(client.get("/v1/account/watchlist").status_code,401)
+            self.assertEqual(client.post("/v1/account/mobile/session",headers=proxy).status_code,403)
+            self.assertEqual(client.post("/v1/account/mobile/session",headers=gateway).status_code,503)
+            with patch.dict("os.environ",{"NEPSE_MOBILE_EXCHANGE_ENABLED":"1"}):
+                issued=client.post("/v1/account/mobile/session",headers=gateway)
+                self.assertEqual(issued.status_code,200)
+                self.assertEqual(issued.headers["cache-control"],"no-store")
+                alice={"authorization":"Bearer "+issued.json()["access_token"]}
+            bob={"authorization":"Bearer "+issue_mobile_session("bob")["access_token"]}
+            self.assertEqual(client.put("/v1/account/watchlist",headers=alice,json={"symbols":["AAA","AAA"]}).json()["symbols"],["AAA"])
+            self.assertEqual(client.get("/v1/account/watchlist",headers=bob).json()["symbols"],[])
+            self.assertEqual(client.post("/v1/account/alerts",headers=alice,json={"symbol":"AAA","direction":"above","threshold":"500"}).status_code,200)
+            self.assertEqual(client.get("/v1/account/alerts",headers=bob).json()["rules"],[])
+            self.assertEqual(client.post("/v1/ingest/csv",headers=alice).status_code,401)
+            self.assertEqual(client.post("/v1/account/mobile/logout",headers=alice).status_code,200)
+            self.assertEqual(client.get("/v1/account/watchlist",headers=alice).status_code,401)
+            self.assertEqual(client.get("/v1/account/watchlist",headers=bob).status_code,200)

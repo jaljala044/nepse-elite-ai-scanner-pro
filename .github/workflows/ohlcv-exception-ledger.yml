@@ -1,0 +1,76 @@
+name: OHLCV exception ledger
+on:
+  pull_request:
+    paths:
+      - "backend/audit_ohlcv_archives.py"
+      - "backend/build_ohlcv_exception_ledger.py"
+      - "backend/crosscheck_ohlcv_socrateai.py"
+      - "backend/tests/test_audit_ohlcv_archives.py"
+      - "backend/tests/test_build_ohlcv_exception_ledger.py"
+      - "scripts/validate_ohlcv_exception_ledger.py"
+      - "tests/test_ohlcv_exception_ledger.py"
+      - ".github/workflows/ohlcv-exception-ledger.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install audit dependency
+        run: python -m pip install "httpx>=0.27,<1"
+      - name: Run audit and ledger unit tests
+        working-directory: backend
+        run: python -m unittest tests.test_audit_ohlcv_archives tests.test_build_ohlcv_exception_ledger -v
+      - name: Re-run source archive audit at exact pinned commits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          python backend/audit_ohlcv_archives.py \
+            --repo jaljala044/nepse-smc-data \
+            --repo-commit jaljala044/nepse-smc-data=937cfcf93d78dfcf28a9f09bb13291447988157b \
+            --repo jaljala044/nepse-history-starter \
+            --repo-commit jaljala044/nepse-history-starter=b60728d39f34e0f9e428675d817fd52ed2784da6 \
+            --workers 8 \
+            --output output/ohlcv-archive-audit.json
+          status=$?
+          set -e
+          if [ "$status" -ne 2 ]; then
+            echo "Expected integrity-gate exit 2 after writing the audit report; got $status"
+            exit "$status"
+          fi
+          echo "Pinned source audit completed; integrity gate remains FAIL by design while exceptions exist."
+      - name: Cross-check flagged rows against SocrateAI unadjusted EOD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python backend/crosscheck_ohlcv_socrateai.py \
+            --input output/ohlcv-archive-audit.json \
+            --output output/ohlcv-socrateai-crosscheck.json
+      - name: Generate canonical row-level ledger
+        run: |
+          python backend/build_ohlcv_exception_ledger.py \
+            --input output/ohlcv-archive-audit.json \
+            --external-input output/ohlcv-socrateai-crosscheck.json \
+            --json-output output/ohlcv_exception_ledger.json \
+            --csv-output output/ohlcv_exception_ledger.csv
+      - name: Validate deterministic ledger
+        run: |
+          python scripts/validate_ohlcv_exception_ledger.py \
+            --json output/ohlcv_exception_ledger.json \
+            --csv output/ohlcv_exception_ledger.csv
+      - name: Run ledger regression tests
+        working-directory: backend
+        run: python -m unittest tests.test_build_ohlcv_exception_ledger -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ohlcv-row-level-exception-ledger
+          path: output/
+          if-no-files-found: error
+          retention-days: 90

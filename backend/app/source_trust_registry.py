@@ -60,7 +60,7 @@ REQUIRED_CHECKS = {
 }
 
 POLICY_STATES = {"review_required", "active", "suspended", "revoked"}
-CANONICAL_TRUST_TIERS = {"exchange_primary", "official_registry"}
+CANONICAL_TRUST_TIERS = {"exchange_primary", "official_registry", "secondary_publisher"}
 RIGHTS_STATES = {"unknown", "review_required", "research_only", "internal_use", "redistribution_permitted", "prohibited"}
 TRUST_TIERS = {
     "exchange_primary", "official_registry", "licensed_publisher",
@@ -122,7 +122,9 @@ class SourcePolicy:
         if not allowed or not allowed <= RECORD_TYPES or not canonical <= allowed:
             raise ValueError("record types must be supported and canonical types must be allowed")
         if canonical and self.trust_tier not in CANONICAL_TRUST_TIERS:
-            raise ValueError("only exchange_primary or official_registry sources may supply canonical records")
+            raise ValueError("source trust tier is not eligible to supply canonical records")
+        if self.trust_tier == "secondary_publisher" and canonical - {"ohlcv", "floorsheet"}:
+            raise ValueError("secondary publishers may supply canonical OHLCV and floorsheet records only")
         start = date.fromisoformat(self.effective_from)
         if self.effective_to:
             end = date.fromisoformat(self.effective_to)
@@ -261,13 +263,36 @@ def build_promotion_event(
     if not verify_source_registry(registry, trusted_registry_sha256):
         reasons.append("source_registry_digest_not_trusted")
     if action == "promote":
-        _, policy_reasons = resolve_source_policy(
+        policy, policy_reasons = resolve_source_policy(
             registry, source_id=record.get("source_id", ""),
             record_type=record.get("record_type", ""),
             session_date=record.get("session_date", ""),
             decision_time=decision_time,
         )
         reasons.extend(policy_reasons)
+        if policy and policy.trust_tier == "secondary_publisher" and record.get("record_type") in {"ohlcv", "floorsheet"}:
+            pair = validation.get("two_source_reconciliation", {})
+            if not isinstance(pair, dict):
+                pair = {}
+            source_ids = pair.get("selected_source_ids", [])
+            if pair.get("status") != "COMPLETE_EVIDENCED":
+                reasons.append("two_source_reconciliation_not_complete_evidenced")
+            if (not isinstance(source_ids, list)
+                    or any(not isinstance(source_id, str) or not source_id.strip() for source_id in source_ids)
+                    or len(set(source_ids)) < 2):
+                reasons.append("two_lineage_independent_source_ids_missing")
+            lineage_count = pair.get("matching_lineage_count")
+            if isinstance(lineage_count, bool) or not isinstance(lineage_count, int) or lineage_count < 2:
+                reasons.append("two_lineage_independent_match_not_proven")
+            if pair.get("conflicts"):
+                investigation = pair.get("mismatch_investigation")
+                if not isinstance(investigation, dict):
+                    investigation = {}
+                refs = investigation.get("evidence_refs")
+                if (not isinstance(investigation.get("reason"), str)
+                        or not investigation["reason"].strip()
+                        or not isinstance(refs, list) or not refs):
+                    reasons.append("mismatch_investigation_evidence_missing")
         if not verify_reviewer_signature(validation, reviewer_keys):
             reasons.append("reviewer_signature_invalid_or_untrusted")
         reasons.extend(validate_promotion_evidence(

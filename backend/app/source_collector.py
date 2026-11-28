@@ -161,54 +161,184 @@ def collect_user_github_repos(client: httpx.Client, selected: set[str]) -> list[
     return records
 
 
-def collect_configured_provider(client: httpx.Client, name: str) -> dict[str, Any]:
-    """Fetch a provider's documented JSON endpoint only when explicitly configured.
+def collect_configured_provider(
+    client: httpx.Client, name: str, data_type: str, *,
+    equities: list[dict] | None = None, session_dates: list[str] | None = None,
+    period_start: str | None = None, period_end: str | None = None,
+) -> list[dict[str, Any]]:
+    """Capture provider-documented per-equity charts or per-session floorsheets.
 
-    Set <NAME>_DATA_URL to the exact endpoint supplied by the provider. If needed,
-    set <NAME>_API_TOKEN. This intentionally does not guess undocumented app APIs.
+    URL templates may use only {symbol}, {security_id}, {date}, {from}, {to}.
+    A bulk archive URL can be supplied instead. No endpoint/query is invented.
     """
+    if data_type not in {"floorsheet", "chart"}:
+        raise ValueError("data_type must be floorsheet or chart")
     prefix = re.sub(r"[^A-Z0-9]", "_", name.upper())
-    url = os.getenv(f"{prefix}_DATA_URL", "").strip()
-    if not url:
-        return {"source": name, "status": "not_configured",
-                "required": f"{prefix}_DATA_URL (provider-documented endpoint)"}
-    headers = {}
+    template = os.getenv(f"{prefix}_{data_type.upper()}_URL_TEMPLATE", "").strip()
+    bulk_url = os.getenv(f"{prefix}_{data_type.upper()}_DATA_URL", "").strip()
+    if not template and not bulk_url:
+        return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
+                 "required": f"{prefix}_{data_type.upper()}_URL_TEMPLATE or {prefix}_{data_type.upper()}_DATA_URL"}]
     token = os.getenv(f"{prefix}_API_TOKEN", "").strip()
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    try:
-        response = client.get(url, headers=headers)
-        response.raise_for_status()
-        if len(response.content) > 30 * 1024 * 1024:
-            raise ValueError("response exceeded 30 MiB safety limit")
-        return _save(name, "provider_payload", response.content, url,
-                     response.headers.get("content-type", ""))
-    except Exception as exc:
-        return {"source": name, "url": url, "error": f"{type(exc).__name__}: {exc}"}
+    api_key = os.getenv(f"{prefix}_API_KEY", "").strip()
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if api_key:
+        headers["X-Api-Key"] = api_key
+    targets: list[tuple[str, dict[str, str]]] = []
+    if template:
+        fields = set(re.findall(r"\{([a-z_]+)\}", template))
+        allowed = {"symbol", "security_id", "date", "from", "to"}
+        if not fields <= allowed:
+            return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
+                     "error": "unsupported_url_template_placeholder"}]
+        permitted_for_type = ({"symbol", "security_id", "from", "to"} if data_type == "chart"
+                              else {"date", "symbol", "security_id", "from", "to"})
+        if not fields <= permitted_for_type or (data_type == "floorsheet" and "date" in fields and "symbol" in fields):
+            return [{"source": name, "data_type": data_type, "status": "BLOCKED_ACCESS",
+                     "error": "template_placeholders_conflict_with_data_type"}]
+        if data_type == "chart" and "symbol" in fields:
+            if not equities:
+                return [{"source": name, "data_type": data_type, "status": "BLOCKED_DEPENDENCY",
+                         "error": "complete_equity_universe_required_for_per_symbol_chart_capture"}]
+            for equity in equities:
+                values = {"symbol": str(equity["symbol"]), "security_id": str(equity["security_id"]),
+                          "from": period_start or "", "to": period_end or ""}
+                targets.append((str(equity["symbol"]), values))
+        elif data_type == "floorsheet" and "date" in fields:
+            if not session_dates:
+                return [{"source": name, "data_type": data_type, "status": "BLOCKED_DEPENDENCY",
+                         "error": "exchange_verified_session_calendar_required_for_daily_floorsheet_capture"}]
+            for day in session_dates:
+                targets.append((day, {"date": day, "from": period_start or "", "to": period_end or ""}))
+        elif "symbol" in fields:
+            if not equities:
+                return [{"source": name, "data_type": data_type, "status": "BLOCKED_DEPENDENCY",
+                         "error": "complete_equity_universe_required_for_per_symbol_capture"}]
+            for equity in equities:
+                targets.append((str(equity["symbol"]), {
+                    "symbol": str(equity["symbol"]), "security_id": str(equity["security_id"]),
+                    "from": period_start or "", "to": period_end or "",
+                }))
+        else:
+            targets.append(("bulk_archive", {"from": period_start or "", "to": period_end or ""}))
+    else:
+        targets.append(("bulk_archive", {"from": period_start or "", "to": period_end or ""}))
+
+    records = []
+    for label, values in targets:
+        try:
+            url = template.format(**values) if template else bulk_url
+            if not url.startswith("https://"):
+                raise ValueError("provider URL must use HTTPS")
+            response = client.get(url, headers=headers)
+            response.raise_for_status()
+            if len(response.content) > 250 * 1024 * 1024:
+                raise ValueError("response exceeded 250 MiB safety limit")
+            saved = _save(name, f"{data_type}_{label}", response.content, url,
+                          response.headers.get("content-type", ""))
+            records.append({**saved, "data_type": data_type,
+                            "equity_symbol": label if data_type == "chart" or "symbol" in values else None,
+                            "session_date": label if data_type == "floorsheet" and "date" in values else None,
+                            "status": "PARTIAL_EVIDENCED",
+                            "note": "Raw payload captured; parsed coverage and completeness remain to be validated."})
+        except Exception as exc:
+            records.append({"source": name, "data_type": data_type, "target": label,
+                            "status": "BLOCKED_ACCESS", "url": template or bulk_url,
+                            "error": f"{type(exc).__name__}: {exc}"})
+    return records
 
 
-def collect(sources: list[str] | None = None) -> dict[str, Any]:
-    available = set(SOURCES) | set(GITHUB_REPOS) | {
-        "chukul", "sharehub", "hamroshare", "nepsealpha",
-        "nepsepy", "nepse_client", "nepse_data_api", "nepse_link"
+
+def collect_sharesansar_public_chart_archive(
+    client: httpx.Client, equities: list[dict] | None,
+) -> list[dict[str, Any]]:
+    """Capture the documented public ShareSansar-derived per-symbol chart archive."""
+    if not equities:
+        return [{"source": "sharesansar", "data_type": "chart",
+                 "status": "BLOCKED_DEPENDENCY",
+                 "required": "complete equity universe with symbol and security_id"}]
+    records = []
+    base = "https://omitnomis.github.io/ShareSansarScraper/api/history/{symbol}.json"
+    for equity in equities:
+        symbol = str(equity["symbol"]).strip().upper()
+        url = base.format(symbol=symbol)
+        try:
+            response = client.get(url)
+            response.raise_for_status()
+            if len(response.content) > 250 * 1024 * 1024:
+                raise ValueError("response exceeded 250 MiB safety limit")
+            saved = _save("sharesansar", f"chart_history_{symbol}", response.content, url,
+                          response.headers.get("content-type", ""))
+            records.append({**saved, "data_type": "chart", "equity_symbol": symbol,
+                            "security_id": str(equity["security_id"]),
+                            "status": "PARTIAL_EVIDENCED",
+                            "note": "Public ShareSansar-derived history captured; filter five-year period and validate coverage/fields."})
+        except Exception as exc:
+            records.append({"source": "sharesansar", "data_type": "chart",
+                            "equity_symbol": symbol, "url": url,
+                            "status": "BLOCKED_ACCESS",
+                            "error": f"{type(exc).__name__}: {exc}"})
+    return records
+
+
+def collect(sources: list[str] | None = None, *, as_of_date: str | None = None,
+            equities: list[dict] | None = None,
+            session_dates: list[str] | None = None) -> dict[str, Any]:
+    from app.historical_market_data_policy import (
+        PROVIDERS, REFERENCE_PROVIDERS, DIAGNOSTIC_PROVIDERS,
+        build_five_year_collection_plan,
+    )
+    available = set(SOURCES) | set(GITHUB_REPOS) | set(PROVIDERS) | set(REFERENCE_PROVIDERS) | set(DIAGNOSTIC_PROVIDERS) | {
+        "hamroshare", "nepsepy", "nepse_client", "nepse_data_api", "nepse_link"
     }
     selected = set(sources or available)
     unknown = selected - available
     if unknown:
         raise ValueError("Unknown sources: " + ", ".join(sorted(unknown)))
+    plan = None
+    period_start = period_end = None
+    if as_of_date is not None or equities is not None:
+        if as_of_date is None or equities is None:
+            raise ValueError("as_of_date and complete equities universe must be supplied together")
+        plan = build_five_year_collection_plan(as_of_date=as_of_date, equities=equities,
+                                               session_dates=session_dates)
+        period_start, period_end = plan["period_start"], plan["period_end"]
+    if session_dates is not None:
+        if not isinstance(session_dates, list) or any(not isinstance(day, str) for day in session_dates):
+            raise ValueError("session_dates must be a list of ISO dates")
+        from datetime import date
+        for day in session_dates:
+            if date.fromisoformat(day).isoformat() != day:
+                raise ValueError("session_dates must be zero-padded ISO dates")
+        if len(session_dates) != len(set(session_dates)):
+            raise ValueError("session_dates must not contain duplicates")
     records: list[dict[str, Any]] = []
     with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=True) as client:
         records.extend(collect_public_archives(client, selected))
         records.extend(collect_user_github_repos(client, selected))
-        for name in ("chukul", "sharehub", "hamroshare", "nepsealpha",
-                     "nepsepy", "nepse_client", "nepse_data_api", "nepse_link"):
+        if "sharesansar" in selected:
+            records.extend(collect_sharesansar_public_chart_archive(client, equities))
+        for name in (*PROVIDERS, *REFERENCE_PROVIDERS, *DIAGNOSTIC_PROVIDERS):
             if name in selected:
-                records.append(collect_configured_provider(client, name))
+                for data_type in ("floorsheet", "chart"):
+                    records.extend(collect_configured_provider(
+                        client, name, data_type, equities=equities,
+                        session_dates=session_dates, period_start=period_start,
+                        period_end=period_end))
+        for name in ("hamroshare", "nepsepy", "nepse_client", "nepse_data_api", "nepse_link"):
+            if name in selected:
+                for data_type in ("floorsheet", "chart"):
+                    records.extend(collect_configured_provider(
+                        client, name, data_type, equities=equities,
+                        session_dates=session_dates, period_start=period_start,
+                        period_end=period_end))
     manifest = {
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
-        "mode": "read_only_raw_collection",
+        "mode": "read_only_five_year_raw_collection",
+        "collection_plan": plan,
+        "session_calendar_count": len(session_dates or []),
         "records": records,
-        "note": "Raw snapshots only; no source is considered authoritative until reconciled."
+        "note": "Raw snapshots only; five-year coverage, lineage and two-source matching must pass before COMPLETE_EVIDENCED.",
     }
     manifest_dir = ROOT / "manifests"
     manifest_dir.mkdir(parents=True, exist_ok=True)

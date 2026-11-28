@@ -50,6 +50,14 @@ def _checkpoint(database: Path) -> None:
         con.close()
 
 
+def _validate_backup_source_destination(database: Path, source_root: Path, destination: Path) -> None:
+    """Prevent recursive backup copies and source files being overwritten."""
+    if destination == source_root or destination in source_root.parents or source_root in destination.parents:
+        raise ValueError("backup destination and raw storage source must not overlap")
+    if destination == database or destination in database.parents:
+        raise ValueError("source database must not be located inside the backup destination")
+
+
 def create_evidence_backup(
     *, database_path: str | Path, storage_root: str | Path,
     backup_destination: str | Path, backup_id: str,
@@ -65,6 +73,7 @@ def create_evidence_backup(
         raise ValueError("backup_id contains unsafe characters")
     if not database.is_file() or not source_root.is_dir():
         raise FileNotFoundError("source database and raw storage root must exist")
+    _validate_backup_source_destination(database, source_root, destination)
     if destination.exists():
         raise FileExistsError("backup destination already exists; backups are never overwritten")
     _checkpoint(database)
@@ -184,8 +193,6 @@ def restore_evidence_backup(
             capture_rows = con.execute(
                 "SELECT fetch_id, manifest_path FROM source_captures"
             ).fetchall()
-            # The source root is recorded in the backup manifest. Do not infer
-            # it from directory names: deployments may call the root anything.
             backup_manifest = json.loads((backup / BACKUP_MANIFEST).read_text(encoding="utf-8"))
             old_root = Path(backup_manifest["source_storage_root"]).resolve()
             for _, _, payload_name in object_rows:
@@ -229,8 +236,6 @@ def restore_evidence_backup(
         )
         if restored_audit["status"] != "integrity_ok":
             raise ValueError("restored evidence store failed post-restore integrity audit")
-        # Publishing the isolated directory changes its absolute path. Rebind
-        # catalog paths one final time to the published destination, then audit.
         os.replace(staging, destination)
         published_db = destination / DATABASE_NAME
         published_root = destination / RAW_DIRECTORY

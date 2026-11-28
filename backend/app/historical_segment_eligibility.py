@@ -9,6 +9,7 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 from .issue5_quarantine import Quarantine
 
 _ARCHIVE_FIELDS = frozenset({'repository', 'commit_sha', 'source_file', 'source_file_sha256', 'target_csv_row', 'target_date'})
@@ -141,6 +142,10 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     if len(expected) != len(set(expected)):
         reasons.append("duplicate_expected_session")
     expected = sorted(set(expected))
+    market_cutoff_date = cutoff.astimezone(ZoneInfo("Asia/Kathmandu")).date()
+    for session_day in expected:
+        if session_day > market_cutoff_date:
+            reasons.append(f"future_expected_session:{session_day.isoformat()}")
     if not expected:
         reasons.append("verified_expected_sessions_required")
 
@@ -320,6 +325,30 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                     pass
             if not evidence_valid:
                 reasons.append(f"session_evidence_unverified:{day_text}")
+        if day == market_cutoff_date:
+            finality = evidence.get("session_finality_evidence") if isinstance(evidence, dict) else None
+            claims = finality.get("claims") if isinstance(finality, dict) else None
+            finality_valid = (
+                _valid_primary_evidence(finality, cutoff)
+                and isinstance(claims, dict)
+                and claims.get("session_date") == day_text
+                and claims.get("session_status") == state
+                and claims.get("finality_status") == "complete"
+            )
+            if finality_valid:
+                try:
+                    finalized_at = _aware_datetime(
+                        claims.get("finalized_at"), "session finality finalized_at"
+                    )
+                    finality_valid = (
+                        finalized_at <= _aware_datetime(finality.get("available_at"), "finality available_at") <= cutoff
+                        and finalized_at.astimezone(ZoneInfo("Asia/Kathmandu")).date() == day
+                    )
+                except ValueError:
+                    finality_valid = False
+            if not finality_valid:
+                reasons.append(f"same_day_session_finality_unverified:{day_text}")
+                evidence_valid = False
         if not evidence_valid:
             unknown += 1
             continue

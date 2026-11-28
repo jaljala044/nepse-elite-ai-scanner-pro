@@ -39,13 +39,14 @@ class AdjustedFeaturePipelineTests(unittest.TestCase):
 
 class DatasetAdmissionTests(unittest.TestCase):
     def base(self):
+        cutoff="2024-09-30T23:00:00Z"
         return dict(
             panel_qualification={"status":"PANEL_EVIDENCE_QUALIFIED_FOR_HUMAN_REVIEW","backtest_admission_allowed":False},
-            dataset_manifest={"dataset_fingerprint":"f"*64,"decision_time":"2025-01-10T12:00:00Z","corporate_action_review_status":"verified","input_lineage_status":"complete"},
-            records=[{"record_id":"r1","available_at":"2025-01-10T10:00:00Z","feature_available_at":"2025-01-10T10:00:00Z"}],
-            decision_time="2025-01-10T12:00:00Z",expected_dataset_fingerprint="f"*64,
+            dataset_manifest={"dataset_fingerprint":"f"*64,"decision_time":cutoff,"corporate_action_review_status":"verified","input_lineage_status":"complete"},
+            records=[{"record_id":"r1","available_at":"2024-09-30T10:00:00Z","feature_available_at":"2024-09-30T10:00:00Z"}],
+            decision_time=cutoff,expected_dataset_fingerprint="f"*64,
             train_end="2024-06-30T00:00:00Z",validation_start="2024-07-01T00:00:00Z",
-            validation_end="2024-09-30T00:00:00Z",test_start="2024-10-01T00:00:00Z",
+            validation_end="2024-09-29T00:00:00Z",test_start="2024-10-01T00:00:00Z",
             test_end="2024-12-31T00:00:00Z")
 
     def test_admits_complete_24_cell_matrix_for_human_review_only(self):
@@ -57,9 +58,9 @@ class DatasetAdmissionTests(unittest.TestCase):
 
     def test_future_timestamp_fingerprint_and_window_leakage_block_all_cells(self):
         args=self.base()
-        args["records"]=[{"record_id":"r1","available_at":"2025-01-11T10:00:00Z"}]
+        args["records"]=[{"record_id":"r1","available_at":"2024-10-01T10:00:00Z"}]
         args["expected_dataset_fingerprint"]="wrong"
-        args["test_start"]="2025-01-01T00:00:00Z"
+        args["test_start"]="2024-09-01T00:00:00Z"
         out=admit_six_scanner_dataset(**args)
         self.assertEqual(out["status"],"BLOCKED")
         self.assertEqual(out["blocker_count"],3)

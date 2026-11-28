@@ -155,4 +155,15 @@ def evaluate_runtime_historical_segment(**kwargs):
                 "verified_traded_session_count": 0, "verified_no_trade_count": 0,
                 "exploratory_replay_eligible": False, "approved_backtest_eligible": False,
                 "production_promotion_allowed": False}
-    return evaluate_historical_segment(**kwargs)
+    # Preserve diagnostic reasons from legacy callers, but never admit them.
+    try:
+        result = evaluate_historical_segment(**kwargs)
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        result = {"reasons": ["malformed_runtime_evidence"], "verified_traded_session_count": 0,
+                  "verified_no_trade_count": 0, "exploratory_replay_eligible": False,
+                  "approved_backtest_eligible": False, "production_promotion_allowed": False}
+    if not isinstance(kwargs.get("session_evidence"), dict) or not kwargs["session_evidence"]:
+        result["reasons"] = sorted(set(result["reasons"]) | {"runtime_session_evidence_required"})
+        result["exploratory_replay_eligible"] = False
+        result["eligible_ohlcv_candle_count"] = 0
+    return result

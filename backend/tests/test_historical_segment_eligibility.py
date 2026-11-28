@@ -124,6 +124,20 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         self.assertIn("quarantined_bar:" + self.sessions[0], result["reasons"])
         self.assertFalse(result["exploratory_replay_eligible"])
 
+    def test_runtime_cannot_admit_legacy_rows_without_session_evidence(self):
+        from unittest.mock import patch
+        from app.historical_segment_eligibility import evaluate_runtime_historical_segment
+        with patch("app.historical_segment_eligibility.runtime_quarantine_keys",
+                   return_value=frozenset()):
+            result = evaluate_runtime_historical_segment(
+                segment=self.segment, expected_sessions=self.sessions,
+                session_statuses=self.statuses, records=self.records,
+                required_sessions=120, available_warmup_sessions=20,
+                decision_cutoff="2026-01-01T00:00:00+05:45")
+        self.assertIn("runtime_session_evidence_required", result["reasons"])
+        self.assertEqual(result["eligible_ohlcv_candle_count"], 0)
+        self.assertFalse(result["exploratory_replay_eligible"])
+
     def test_explicit_quarantine_marker_blocks_traded_bar(self):
         records = list(self.records)
         records[0] = dict(records[0], quarantined=True)

@@ -184,22 +184,40 @@ def replay_source_data_quality(
         selected.append((kind, body))
     grouped = {kind: [body for row_kind, body in selected if row_kind == kind] for kind in EVIDENCE_KINDS}
     calendar = validate_calendar_sessions(grouped["calendar_session"], decision_time=decision_time)
-    policies = [validate_capture_policy(item) for item in grouped["capture_policy"]]
+    policies, invalid_policy_count = [], 0
+    for item in grouped["capture_policy"]:
+        try:
+            policies.append(validate_capture_policy(item))
+        except (TypeError, ValueError):
+            invalid_policy_count += 1
     completeness = assess_source_capture_completeness(
         policies, grouped["source_capture"], calendar,
         decision_time=decision_time,
         reliability_events=grouped["source_lifecycle_event"],
     )
-    reconciliation = reconcile_source_observations(grouped["market_observation"])
+    try:
+        reconciliation = reconcile_source_observations(grouped["market_observation"])
+        invalid_observation_count = 0
+    except (TypeError, ValueError):
+        reconciliation = {"results": [], "conflict_count": 0, "promotion_allowed": False}
+        invalid_observation_count = len(grouped["market_observation"])
     corrections = None
+    correction_history_invalid = False
     if grouped["record_correction"]:
-        corrections = resolve_record_corrections(
-            grouped["record_correction"], decision_time=decision_time
-        )
+        try:
+            corrections = resolve_record_corrections(
+                grouped["record_correction"], decision_time=decision_time
+            )
+        except (TypeError, ValueError):
+            correction_history_invalid = True
     report = build_data_quality_report(
         calendar=calendar, completeness=completeness,
         reconciliation=reconciliation, record_corrections=corrections,
     )
+    if invalid_policy_count or invalid_observation_count or correction_history_invalid:
+        report["reasons"].append("persisted_evidence_validation_failed")
+        report["data_quality"] = "LOW"
+        report["confidence"] = "LOW"
     # Two distinct source IDs are required before a row is described as
     # cross-source corroborated. This does not prove publisher independence;
     # ownership-group review remains a separate trust gate.
@@ -225,6 +243,9 @@ def replay_source_data_quality(
         "capture_completeness": completeness,
         "cross_source_reconciliation": reconciliation,
         "correction_history": corrections,
+        "invalid_capture_policy_count": invalid_policy_count,
+        "invalid_observation_count": invalid_observation_count,
+        "correction_history_invalid": correction_history_invalid,
         "data_quality_report": report,
         "source_validation_status": "review_required",
         "finality_status": "provisional",

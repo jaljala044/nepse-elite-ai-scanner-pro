@@ -1,0 +1,116 @@
+name: Issue 5 weekly closure batch 5 schedule-priority evidence
+on:
+  pull_request:
+    paths:
+      - "scripts/rank_issue5_weekly_closure_batches.py"
+      - "tests/test_issue5_weekly_closure_selector.py"
+      - "data/reports/issue5_next_five_weekly_closure_batches_4_2026-11-28.csv"
+      - ".github/workflows/issue5-weekly-closure-batch5.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout audit code
+        uses: actions/checkout@v4
+      - name: Checkout pinned NEPSE SMC archive
+        uses: actions/checkout@v4
+        with:
+          repository: jaljala044/nepse-smc-data
+          ref: 937cfcf93d78dfcf28a9f09bb13291447988157b
+          path: sources/nepse-smc-data
+      - name: Checkout pinned history starter archive
+        uses: actions/checkout@v4
+        with:
+          repository: jaljala044/nepse-history-starter
+          ref: b60728d39f34e0f9e428675d817fd52ed2784da6
+          path: sources/nepse-history-starter
+      - name: Run selector unit tests
+        run: python -m unittest discover -s tests -p 'test_issue5_weekly_closure_selector.py' -v
+      - name: Extract pinned candidate pairs
+        run: |
+          python scripts/extract_repeated_adjacent_ohlcv.py \
+            --source jaljala044/nepse-smc-data 937cfcf93d78dfcf28a9f09bb13291447988157b sources/nepse-smc-data/03_stock_charts_ohlcv \
+            --source jaljala044/nepse-history-starter b60728d39f34e0f9e428675d817fd52ed2784da6 sources/nepse-history-starter/03_stock_charts_ohlcv \
+            --out reports/repeated-adjacent-ohlcv \
+            --calendar data/reference/nepse_session_calendar.csv
+      - name: Validate candidate-pair structure (review findings remain quarantined)
+        run: |
+          set +e
+          python scripts/validate_repeated_adjacent_ohlcv.py \
+            --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \
+            --output reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            echo "Candidate validator failed unexpectedly: $status"
+            exit "$status"
+          fi
+          echo "Validator exit $status; no candidate row is promoted." >> "$GITHUB_STEP_SUMMARY"
+      - name: Rank next five dates without repeating prior reviews
+        run: |
+          python scripts/rank_issue5_weekly_closure_batches.py \
+            --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \
+            --exclude data/reference/issue5_registered_weekly_closure_dates.csv \
+            --exclude-reviewed data/reports/issue5_next_five_weekly_closure_batches_4_2026-11-28.csv \
+            --output reports/issue5-weekly-closure-batch5.json \
+            --limit 5
+      - name: Export review-only CSV
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          root = Path("reports")
+          report = json.loads((root / "issue5-weekly-closure-batch5.json").read_text())
+          fields = ["current_date", "weekday", "candidate_pairs", "unique_symbols",
+                    "previous_date", "repositories", "review_disposition",
+                    "evidence_tier_limit", "review_status", "canonical_promotion_allowed"]
+          output = root / "issue5-weekly-closure-batch5.csv"
+          with output.open("w", newline="", encoding="utf-8") as stream:
+              writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
+              writer.writeheader()
+              for row in report["selected"]:
+                  writer.writerow({**row, "review_status": "REVIEW_ONLY",
+                                   "canonical_promotion_allowed": False})
+          if report["selected_date_count"] != len(report["selected"]):
+              raise SystemExit("selected date count mismatch")
+          print(json.dumps({
+              "eligible_date_count": report["eligible_date_count"],
+              "selected_date_count": report["selected_date_count"],
+              "selected_candidate_pair_incidences": report["selected_candidate_pair_incidences"],
+              "registered_exclusion_date_count": report["registered_exclusion_date_count"],
+              "prior_reviewed_date_count": report["prior_reviewed_date_count"],
+              "canonical_or_training_promotion": report["canonical_or_training_promotion"],
+              "raw_source_modified": report["raw_source_modified"],
+          }, indent=2))
+          PY
+      - name: Validate exported CSV is parseable and complete
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          root = Path("reports")
+          report = json.loads((root / "issue5-weekly-closure-batch5.json").read_text())
+          with (root / "issue5-weekly-closure-batch5.csv").open(newline="", encoding="utf-8") as stream:
+              rows = list(csv.DictReader(stream))
+          if len(rows) != report["selected_date_count"]:
+              raise SystemExit(f"CSV rows {len(rows)} != selected dates {report['selected_date_count']}")
+          if any(row["review_status"] != "REVIEW_ONLY" or row["canonical_promotion_allowed"] != "False" for row in rows):
+              raise SystemExit("CSV promotion boundary mismatch")
+          print(f"validated {len(rows)} review-only CSV rows")
+          PY
+      - name: Upload batch-5 schedule-priority package
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue5-weekly-closure-batch5-review-only
+          path: |
+            reports/issue5-weekly-closure-batch5.csv
+            reports/issue5-weekly-closure-batch5.json
+            reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv
+            reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_summary.json
+            reports/repeated-adjacent-ohlcv/evidence_manifest.json
+            reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json
+          if-no-files-found: error
+          retention-days: 90

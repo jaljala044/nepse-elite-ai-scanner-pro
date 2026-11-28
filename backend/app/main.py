@@ -234,6 +234,8 @@ def research_readiness():
     source_data_quality = source_data_quality_readiness(
         database_path=os.getenv("NEPSE_SOURCE_DATA_QUALITY_DB_PATH"),
         decision_time=decision_time,
+        review_registry_path=os.getenv("NEPSE_SOURCE_QUALITY_REVIEW_REGISTRY_PATH"),
+        hmac_key=os.getenv("NEPSE_SOURCE_QUALITY_REVIEW_HMAC_KEY"),
     )
     return {
         "mode": "research_only",

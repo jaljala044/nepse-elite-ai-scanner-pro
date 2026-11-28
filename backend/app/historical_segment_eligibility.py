@@ -308,6 +308,7 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
     for day in expected:
         day_text = day.isoformat()
         state = normalized_statuses.get(day)
+        rows = by_day.get(day, [])
         if state not in _ALLOWED_SESSION_STATES:
             reasons.append(f"session_status_unverified:{day_text}")
             unknown += 1
@@ -330,9 +331,13 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             if not evidence_valid:
                 reasons.append(f"session_evidence_unverified:{day_text}")
         if not evidence_valid:
+            # Evaluate row-level rights independently; missing calendar evidence
+            # must not hide a known rights violation in the associated candle.
+            for row in rows:
+                if row.get("rights_status") not in _ALLOWED_RIGHTS:
+                    reasons.append(f"source_rights_not_approved:{day_text}")
             unknown += 1
             continue
-        rows = by_day.get(day, [])
         if state == "unknown":
             reasons.append(f"session_status_unverified:{day_text}")
             unknown += 1

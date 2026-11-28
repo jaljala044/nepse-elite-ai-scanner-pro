@@ -17,6 +17,22 @@ class CalendarEvidenceManifestTests(unittest.TestCase):
         self.assertEqual(result["claims"][0]["source_ids"], ["n1","n2"])
         self.assertFalse(result["calendar_population_allowed"])
 
+    def test_invalid_calendar_date_is_rejected(self):
+        rows = [{"date":"2026-02-30","status":"verified_closed","scope":"all_securities",
+                 "source_ids":["n1"]}]
+        with self.assertRaisesRegex(ValueError, "date must be ISO format"):
+            validate_calendar_evidence_manifest(rows, self.captures())
+
+    def test_duplicate_date_with_overlapping_scope_is_flagged_as_conflict(self):
+        rows = [
+            {"date":"2026-11-24","status":"verified_closed","scope":"all_securities","source_ids":["n1"]},
+            {"date":"2026-11-24","status":"verified_open","scope":"SEC-1","source_ids":["n2"]},
+        ]
+        result = validate_calendar_evidence_manifest(rows, self.captures())
+        self.assertEqual(result["conflict_count"], 1)
+        self.assertEqual(result["status"], "conflict_or_empty")
+        self.assertFalse(result["calendar_population_allowed"])
+
     def test_conflicting_overlapping_scopes_are_detected(self):
         rows = [
             {"date":"2026-11-24","status":"verified_open","scope":"all_securities","source_ids":["n1"]},

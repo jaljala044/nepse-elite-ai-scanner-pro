@@ -19,7 +19,7 @@ from typing import Any, Iterable
 RECORD_TYPES = {
     "ohlcv", "index_ohlcv", "market_summary", "floorsheet",
     "sector_membership", "sector_price", "corporate_action",
-    "broker_observation",
+    "broker_observation", "exchange_holiday",
 }
 
 REQUIRED_CHECKS = {
@@ -56,6 +56,13 @@ REQUIRED_CHECKS = {
     "broker_observation": {
         "payload_integrity", "source_identity", "schema_mapping",
         "broker_identity", "point_in_time",
+    },
+    # Explicit exchange closure notices are evidence about closed dates only.
+    # Missing dates in this feed must never be interpreted as open sessions.
+    "exchange_holiday": {
+        "payload_integrity", "source_identity", "schema_mapping",
+        "date_validity", "duplicate_detection", "instrument_scope",
+        "point_in_time", "official_notice",
     },
 }
 

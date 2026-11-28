@@ -234,11 +234,11 @@ def main() -> int:
     report = audit(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", newline="\\n", dir=args.output.parent,
+        mode="w", encoding="utf-8", newline="\n", dir=args.output.parent,
         prefix=f".{args.output.name}.", suffix=".tmp", delete=False,
     ) as stream:
         temporary = Path(stream.name)
-        stream.write(json.dumps(report, indent=2, sort_keys=True) + "\\n")
+        stream.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
         stream.flush()
     temporary.replace(args.output)
 

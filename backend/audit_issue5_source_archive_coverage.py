@@ -27,7 +27,8 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,\n                 expected_active_equity_count: int | None = None) -> tuple[dict, list[dict]]:
+def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,
+                 expected_active_equity_count: int | None = None) -> tuple[dict, list[dict]]:
     audit = json.loads(audit_json.read_text(encoding="utf-8"))
     with calendar_csv.open(encoding="utf-8-sig", newline="") as stream:
         calendar_rows = list(csv.DictReader(stream))
@@ -70,6 +71,15 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,\n 
     active_equities = sorted(active_symbols)
     if not active_equities:
         raise ValueError("active equity universe is empty")
+    if (expected_active_equity_count is not None and
+            (type(expected_active_equity_count) is not int or expected_active_equity_count < 1)):
+        raise ValueError("expected_active_equity_count must be a positive integer or None")
+    if (expected_active_equity_count is not None and
+            len(active_equities) != expected_active_equity_count):
+        raise ValueError(
+            f"active equity universe count mismatch: expected {expected_active_equity_count}, "
+            f"received {len(active_equities)}"
+        )
 
     gaps = []
     repository_summaries = {}
@@ -185,6 +195,8 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path, *,\n 
             "download_error_count": len(source.get("download_errors", [])),
             "active_equity_files_missing": missing_files,
             "active_equity_count": len(active_equities),
+        "expected_active_equity_count": expected_active_equity_count,
+        "active_equity_universe_count_validated": expected_active_equity_count is None or len(active_equities) == expected_active_equity_count,
             "symbol_gap_summaries": symbol_summaries,
         }
 
@@ -242,8 +254,13 @@ def main() -> int:
     parser.add_argument("--calendar-csv", required=True, type=Path)
     parser.add_argument("--universe-csv", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--expected-active-equities", type=int, default=281,
+                        help="Fail closed unless the active equity manifest has this many unique symbols (default: 281).")
     args = parser.parse_args()
-    report, gaps = build_report(args.audit_json, args.calendar_csv, args.universe_csv)
+    report, gaps = build_report(
+        args.audit_json, args.calendar_csv, args.universe_csv,
+        expected_active_equity_count=args.expected_active_equities,
+    )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "issue5_full_source_gap_report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"

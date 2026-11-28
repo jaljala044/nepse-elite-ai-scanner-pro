@@ -82,6 +82,15 @@ class PortfolioRouteTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+    def test_holding_preferences_endpoints_require_authentication(self):
+        response = self.client.get("/v1/portfolios/example/holding-preferences")
+        self.assertEqual(response.status_code, 401)
+        response = self.client.put(
+            "/v1/portfolios/example/holding-preferences/CFCL",
+            json={"investment_horizon": "long_term", "risk_preference": "balanced"},
+        )
+        self.assertEqual(response.status_code, 401)
+
     def test_authentication_required(self):
         response = self.client.get("/v1/portfolios")
         self.assertEqual(response.status_code, 401)

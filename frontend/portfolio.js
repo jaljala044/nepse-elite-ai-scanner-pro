@@ -42,6 +42,14 @@
     host.append(wrapper);
   }
   function setStatus(value) { byId("portfolio-status").textContent = value; }
+  function clearPortfolioView() {
+    byId("portfolio-name").textContent = "No portfolio selected";
+    byId("portfolio-valuation-note").textContent =
+      "Market value and unrealized P&L remain UNKNOWN until eligible timestamped price evidence is connected.";
+    for (const id of ["portfolio-positions", "portfolio-transactions", "portfolio-preferences"]) {
+      byId(id).replaceChildren();
+    }
+  }
   function renderPortfolioOptions() {
     const select = byId("portfolio-select");
     select.replaceChildren();
@@ -89,9 +97,7 @@
   async function refresh() {
     const generation = ++state.generation;
     setStatus("Loading private portfolio data…");
-    for (const id of ["portfolio-positions", "portfolio-transactions", "portfolio-preferences"]) {
-      byId(id).replaceChildren();
-    }
+    clearPortfolioView();
     try {
       const response = await get("/v1/portfolios");
       if (generation !== state.generation) return;
@@ -99,6 +105,7 @@
       if (!state.portfolios.length) {
         state.activeId = "";
         renderPortfolioOptions();
+        clearPortfolioView();
         setStatus("No private portfolios found for this account.");
         return;
       }
@@ -110,6 +117,7 @@
       state.portfolios = [];
       state.activeId = "";
       renderPortfolioOptions();
+      clearPortfolioView();
       setStatus(error.message || "Private portfolio unavailable.");
     }
   }
@@ -118,8 +126,14 @@
     state.activeId = event.target.value;
     const generation = ++state.generation;
     setStatus("Loading selected portfolio…");
+    clearPortfolioView();
     try { await loadPortfolio(state.activeId, generation); }
-    catch (error) { if (generation === state.generation) setStatus(error.message || "Portfolio unavailable."); }
+    catch (error) {
+      if (generation === state.generation) {
+        clearPortfolioView();
+        setStatus(error.message || "Portfolio unavailable.");
+      }
+    }
   });
   refresh();
 })();

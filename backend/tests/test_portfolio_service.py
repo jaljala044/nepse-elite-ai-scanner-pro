@@ -60,6 +60,7 @@ class PortfolioServiceTests(unittest.TestCase):
         self.assertEqual(service.portfolio_transactions(self.owner, self.portfolio["id"]), [])
 
     def test_holding_preferences_are_owner_scoped_and_updatable(self):
+        self.tx("BUY", "5", "100", "0", "2026-01-01")
         saved = service.set_holding_preference(
             self.owner, self.portfolio["id"], symbol="cfcl",
             horizon="one_to_three_months", risk_preference="capital_protection",

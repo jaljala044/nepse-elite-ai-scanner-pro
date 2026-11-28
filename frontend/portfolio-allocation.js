@@ -5,11 +5,11 @@
   root.NepsePortfolioAllocation = api;
 })(typeof globalThis === "object" ? globalThis : this, function () {
   function parseDecimal(value) {
-    const match = /^([+]?)(\\d+)(?:\\.(\\d*))?(?:[eE]([+-]?\\d+))?$/.exec(String(value ?? "").trim());
+    const match = /^([+]?)(\d+)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(String(value ?? "").trim());
     if (!match) return null;
     const exponent = Number(match[4] || 0);
     if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 1000) return null;
-    const digits = (match[2] + (match[3] || "")).replace(/^0+(?=\\d)/, "");
+    const digits = (match[2] + (match[3] || "")).replace(/^0+(?=\d)/, "");
     const decimalPlaces = (match[3] || "").length - exponent;
     if (decimalPlaces < 0) return { digits: BigInt(digits || "0") * (10n ** BigInt(-decimalPlaces)), scale: 0 };
     return { digits: BigInt(digits || "0"), scale: decimalPlaces };

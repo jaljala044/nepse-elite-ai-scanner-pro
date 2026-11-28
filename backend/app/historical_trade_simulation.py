@@ -13,12 +13,14 @@ from .performance_statistics import summarize
 def simulate(symbol, rows, observations, *, reviewed, sessions, settlement_days,
              session_controls, costs, horizon, holding_sessions, quantity,
              initial_capital, max_participation, stop_fraction, target_fraction,
-             cost_mode="flat_scenario"):
+             cost_mode="flat_scenario", retry_sessions=0):
     base={"classification":"hypothetical_research_only","production_approved":False,
           "action":"NO TRADE","trades":[],"excluded":[],"statistics":None}
     if cost_mode not in ("flat_scenario","dated_reference"):
         raise ValueError("invalid cost mode")
     base["cost_mode"]=cost_mode
+    if type(retry_sessions) is not int or not 0<=retry_sessions<=20:
+        raise ValueError("invalid retry window")
     if horizon not in HORIZONS or type(holding_sessions) is not int or not HORIZONS[horizon][0]<=holding_sessions<=HORIZONS[horizon][1]:
         raise ValueError("invalid horizon")
     if type(quantity) is not int or quantity<=0:
@@ -104,16 +106,33 @@ def simulate(symbol, rows, observations, *, reviewed, sessions, settlement_days,
         deadline=i+holding_sessions
         trade={"decision_date":str(d),"entry_date":str(entry_day),"entry_price":buy,
                "quantity":quantity,"horizon":horizon,"status":"open_unresolved"}
-        for j in range(i+1,min(deadline+1,len(days))):
+        pending_stop=False
+        for j in range(i+1,min(deadline+1+retry_sessions,len(days))):
             day=days[j]
-            if day<=settled:
-                continue
             bar,band=usable(day)
+            if day<=settled:
+                if retry_sessions and bar is not None and float(bar["low"])<=buy*(1-stop_fraction):
+                    pending_stop=True
+                continue
             if bar is None:
+                if retry_sessions:
+                    continue
                 break
-            exit=exit_scenario(bar,stop=buy*(1-stop_fraction),target=buy*(1+target_fraction),
+            if retry_sessions and (pending_stop or j>deadline):
+                from .part5_exit_retry import retry_exit
+                retried=retry_exit([str(day)],{str(day):bar},{str(day):band},
+                    settled_on=settled,deadline=day,stop=buy*(1-stop_fraction),
+                    target=buy*(1+target_fraction),pending_stop=pending_stop)
+                if retried["price"] is None:
+                    continue
+                exit={"status":"retry_open_scenario","price":retried["price"]}
+            else:
+                exit=exit_scenario(bar,stop=buy*(1-stop_fraction),target=buy*(1+target_fraction),
                                settled_before_session=True,band=band,eligible=True)
-            if exit["status"] not in ("no_exit","stop_gap_scenario","target_open_scenario","ambiguous_stop_first","stop_scenario","target_scenario"):
+            if exit["status"] not in ("no_exit","stop_gap_scenario","target_open_scenario","ambiguous_stop_first","stop_scenario","target_scenario","retry_open_scenario"):
+                if retry_sessions:
+                    pending_stop=pending_stop or float(bar["low"])<=buy*(1-stop_fraction)
+                    continue
                 break
             price=exit["price"]
             if price is None and j==deadline and float(bar["close"])>band["lower"]+1e-8:

@@ -55,7 +55,7 @@ def sample_bundle():
     }
 
 
-def publisher_trust_files(root):
+def publisher_trust_files(root, same_group=False):
     def attestation(scope):
         value = {"reviewer_id": "reviewer-1", "reviewed_at": "2026-11-28T10:00:00Z",
                  "scope": scope, "decision": "approved"}
@@ -68,7 +68,7 @@ def publisher_trust_files(root):
             {"publisher_id": "pub-a", "ownership_group_id": "group-a",
              "approved_hosts": ["a.example"],
              "reviewer_attestation": attestation("publisher_identity_and_affiliation")},
-            {"publisher_id": "pub-b", "ownership_group_id": "group-b",
+            {"publisher_id": "pub-b", "ownership_group_id": "group-a" if same_group else "group-b",
              "approved_hosts": ["b.example"],
              "reviewer_attestation": attestation("publisher_identity_and_affiliation")},
         ],
@@ -221,6 +221,43 @@ class SourceDataQualityStoreTests(unittest.TestCase):
         self.assertEqual(result["data_quality"], "HIGH")
         self.assertEqual(result["replay"]["review_attestation"]["calendar_reviewed_count"], 1)
         self.assertFalse(result["production_admission_allowed"])
+
+    def test_two_brands_in_same_ownership_group_do_not_corroborate(self):
+        bundle = sample_bundle()
+        for scope, field in (("calendar_session", "calendar_sessions"),
+                             ("capture_policy", "capture_policies")):
+            for item in bundle[field]:
+                item["review_attestation"] = sign_review_attestation(
+                    item, reviewer_id="reviewer-1", scope=scope,
+                    reviewed_at="2026-11-28T10:00:00Z", key=KEY,
+                )
+        self.persist(bundle)
+        registry = sign_review_registry({
+            "schema_version": 1, "generated_at": "2026-11-28T10:00:00Z",
+            "reviewers": [{
+                "reviewer_id": "reviewer-1",
+                "allowed_scopes": ["calendar_session", "capture_policy"],
+                "status": "approved",
+            }],
+        }, KEY)
+        review_path = self.root / "review-registry.json"
+        import json
+        review_path.write_text(json.dumps(registry), encoding="utf-8")
+        publisher_path, freshness_path = publisher_trust_files(self.root, same_group=True)
+        result = source_data_quality_readiness(
+            database_path=self.db, decision_time=DECISION,
+            review_registry_path=review_path, hmac_key=KEY,
+            publisher_registry_path=publisher_path,
+            freshness_policy_path=freshness_path,
+            publisher_hmac_key=PUBLISHER_KEY,
+        )
+        self.assertEqual(result["data_quality"], "LOW")
+        self.assertEqual(
+            result["replay"]["publisher_trust"]["eligible_independent_ownership_group_count"], 1
+        )
+        self.assertEqual(
+            result["replay"]["cross_source_reconciliation"]["results"][0]["source_count"], 1
+        )
 
     def test_ready_store_remains_diagnostic_only(self):
         self.persist()

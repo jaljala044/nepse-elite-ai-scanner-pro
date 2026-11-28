@@ -1,7 +1,7 @@
 from __future__ import annotations
 import tempfile, unittest
 from pathlib import Path
-from backend.reconcile_equity_universe import _load, reconcile_snapshots
+from reconcile_equity_universe import _load, reconcile_snapshots
 
 def row(symbol, security_id, instrument_type="Equity", status="Active"):
     return {"symbol": symbol, "security_id": security_id, "instrument_type": instrument_type, "status": status}

@@ -128,23 +128,33 @@ def join_project_calendar(rows: list[dict], calendar_path: Path) -> tuple[list[d
     return rows, summary
 
 def unlisted_date_queue(rows: list[dict]) -> list[dict]:
-    """Rank distinct missing calendar dates by affected pairs; never infer closure."""
+    """Rank distinct missing calendar dates by affected pairs; never infer closure.
+
+    Malformed or incomplete input is retained as review-only evidence. Missing
+    identity labels do not inflate distinct-symbol or repository counts.
+    """
     pending = {}
     for row in rows:
-        if row.get("session_join_classification") != "date_not_in_project_calendar_review":
+        if not isinstance(row, dict) or row.get("session_join_classification") != "date_not_in_project_calendar_review":
             continue
-        missing = {row[side + "_date"] for side, status in
-                   (("previous", "previous_calendar_status"), ("current", "current_calendar_status"))
-                   if row.get(status) == "not_listed"}
+        missing = set()
+        for side, status_key in (("previous", "previous_calendar_status"),
+                                 ("current", "current_calendar_status")):
+            if row.get(status_key) == "not_listed":
+                value = row.get(side + "_date")
+                missing.add(value if isinstance(value, str) else None)
         for day in missing:
             item = pending.setdefault(day, {"pairs": 0, "symbols": set(), "repositories": set()})
             item["pairs"] += 1
-            item["symbols"].add(row["symbol"])
-            item["repositories"].add(row["repository"])
+            symbol, repository = row.get("symbol"), row.get("repository")
+            if isinstance(symbol, str) and symbol.strip():
+                item["symbols"].add(symbol.strip())
+            if isinstance(repository, str) and repository.strip():
+                item["repositories"].add(repository.strip())
     result = []
     for day, item in pending.items():
         try:
-            canonical = date.fromisoformat(day).isoformat() == day
+            canonical = isinstance(day, str) and date.fromisoformat(day).isoformat() == day
         except ValueError:
             canonical = False
         result.append({"date": day, "valid_iso_date": canonical,
@@ -153,7 +163,7 @@ def unlisted_date_queue(rows: list[dict]) -> list[dict]:
                        "repositories": sorted(item["repositories"]),
                        "disposition": "evidence_required" if canonical else "malformed_date_review",
                        "canonical_promotion_allowed": False})
-    return sorted(result, key=lambda item: (-item["affected_pairs"], item["date"]))
+    return sorted(result, key=lambda item: (-item["affected_pairs"], item["date"] or "", item["date"] is not None))
 
 def schedule_review_queue(queue: list[dict]) -> tuple[list[dict], dict]:
     """Apply the shared historical schedule as context, not closure evidence."""

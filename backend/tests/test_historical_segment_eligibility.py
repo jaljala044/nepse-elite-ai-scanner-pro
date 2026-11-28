@@ -128,7 +128,15 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
                 },
             }
         evidence = dict(self.session_evidence, **{day: calendar_evidence})
-        row = dict(self.row(day), available_at="2026-01-01T15:10:00+05:45")
+        row_available_at = "2026-01-01T15:20:00+05:45"
+        row_source_evidence = dict(
+            self.source_evidence(f"ohlcv:NABIL:123:{day}"),
+            available_at=row_available_at, retrieved_at=row_available_at,
+        )
+        row = dict(
+            self.row(day), available_at=row_available_at,
+            source_evidence=row_source_evidence,
+        )
         return {
             "expected_sessions": self.sessions + [day],
             "session_statuses": statuses,

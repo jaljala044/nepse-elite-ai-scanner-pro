@@ -88,6 +88,8 @@ class ProtectedBundleTests(unittest.TestCase):
 
     def test_future_session_uses_nepal_local_date(self):
         # UTC date has rolled over, but Kathmandu is still on the prior date.
+        local_boundary=dict(self.bundle,decision_time="2026-11-26T18:00:00Z")
+        self.write(local_boundary)
         result=verify_protected_input_bundle(self.bundle_path,self.signature_path,
             public_key_pem=self.public,expected_session="2026-11-27",
             decision_time="2026-11-26T19:00:00Z")

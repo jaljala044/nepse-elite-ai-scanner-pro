@@ -26,7 +26,7 @@ _SCHEMAS = {
     "official_corporate_actions": {
         "required": {"action_id", "symbol", "action_type", "announcement_at", "ex_date", "terms_reference"},
         "dates": {"ex_date", "record_date", "payment_date"}, "booleans": set(),
-        "timestamps": {"announcement_at"}, "numbers": {"ratio_numerator", "ratio_denominator", "cash_amount"},
+        "timestamps": {"announcement_at"}, "numbers": {"ratio_numerator", "ratio_denominator", "cash_amount", "rights_issue_price"},
         "keys": ("action_id",),
     },
     "official_floorsheet": {

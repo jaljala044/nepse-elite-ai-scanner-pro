@@ -23,7 +23,7 @@ DISPOSITIONS = {
 def validate(index, calendar, as_of):
     """Validate unique dates, source locators, and pinned-calendar dispositions."""
     seen, locators, counts = set(), set(), Counter()
-    official = secondary = future = 0
+    official = secondary = future = calendar_not_in_closure_file = 0
     for row in index:
         if set(row) != set(FIELDS) or any(v is None for v in row.values()):
             raise ValueError("invalid review row schema")
@@ -47,9 +47,19 @@ def validate(index, calendar, as_of):
                 secondary += n
         if int(row["official_observations"]) + int(row["secondary_observations"]) == 0:
             raise ValueError("missing evidence locators")
-        status = calendar.get(row["date"], "unlisted")
-        if status not in DISPOSITIONS or row["existing_calendar_status"] != status:
-            raise ValueError("calendar mismatch or unknown status")
+        calendar_status = calendar.get(row["date"])
+        status = row["existing_calendar_status"]
+        if status not in DISPOSITIONS:
+            raise ValueError("unknown review calendar status")
+        if calendar_status is not None and calendar_status != status:
+            raise ValueError("calendar status conflicts with pinned closure calendar")
+        if calendar_status is None:
+            # The supplied calendar is a closure-only override file, not the
+            # full project session calendar. Preserve existing open/unlisted
+            # classifications without claiming they were verified by it.
+            if status not in {"unlisted", "project_accepted_open"}:
+                raise ValueError("closure status missing from pinned closure calendar")
+            calendar_not_in_closure_file += 1
         expected = DISPOSITIONS[status]
         if row["review_disposition"] != expected or row["new_promotion_allowed"] != "false":
             raise ValueError("unsafe holiday admission")
@@ -57,7 +67,7 @@ def validate(index, calendar, as_of):
         future += day > as_of
     if not seen:
         raise ValueError("empty index")
-    return {"unique_dates": len(seen), "official_observations": official,
+    return {"unique_dates": len(seen), "calendar_not_in_closure_file": calendar_not_in_closure_file, "official_observations": official,
             "secondary_observations": secondary, "future_dates": future,
             "dispositions": dict(counts), "new_promotions": 0,
             "scope": "structural_review_only_not_source_certification"}

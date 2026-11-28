@@ -90,7 +90,14 @@ class EvidenceRecoveryAuditTests(unittest.TestCase):
         self.assertFalse(report["mutated_storage"])
 
     def test_catalog_manifest_path_outside_storage_root_is_rejected(self):
-        original = next(self.root.rglob("manifest.json"))
+        con = duckdb.connect(str(self.db), read_only=True)
+        try:
+            original_path = con.execute(
+                "SELECT manifest_path FROM source_captures"
+            ).fetchone()[0]
+        finally:
+            con.close()
+        original = Path(original_path)
         outside = self.base / "outside-manifest.json"
         shutil.copy2(original, outside)
         con = duckdb.connect(str(self.db))

@@ -1,0 +1,37 @@
+name: Issue 5 cross-source gap overlap
+on:
+  pull_request:
+    paths:
+      - "scripts/summarize_issue5_cross_source_gap_overlap.py"
+      - "tests/test_issue5_cross_source_gap_overlap.py"
+      - ".github/workflows/issue5-cross-source-gap-overlap.yml"
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  summarize-gap-overlap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download pinned Issue 5 full-source gap inventory
+        uses: actions/download-artifact@v4
+        with:
+          name: issue5-full-source-gap-inventory
+          run-id: 46175577631
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/issue5-gap-inventory
+      - name: Build cross-source gap overlap report
+        run: |
+          python scripts/summarize_issue5_cross_source_gap_overlap.py \
+            --input artifacts/issue5-gap-inventory/issue5_unclassified_equity_session_gaps.csv \
+            --output-dir output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: issue5-cross-source-gap-overlap
+          path: output/
+          if-no-files-found: error
+          retention-days: 90

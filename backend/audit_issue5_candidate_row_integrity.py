@@ -84,7 +84,7 @@ def _valid_identity(row: dict[str, Any]) -> bool:
     if path.strip() != path or chr(92) in path:
         return False
     posix_path = PurePosixPath(path)
-    if posix_path.is_absolute() or any(part in ("", ".", "..") for part in posix_path.parts):
+    if (posix_path.is_absolute() or posix_path.as_posix() != path or\n            any(part in ("", ".", "..") for part in posix_path.parts)):
         return False
     return True
 
@@ -196,7 +196,9 @@ def audit(path: Path) -> dict:
         "audit_scope": "candidate_extract_only_not_full_source_archive",
         "input_file": path.name,
         "input_sha256": digest,
-        "candidate_rows": len(rows),
+        "candidate_rows": len(rows) + len(malformed_rows),
+        "candidate_rows_validated": len(rows),
+        "candidate_rows_excluded_malformed": len(malformed_rows),
         "malformed_csv_rows": malformed_rows,
         "source_files_represented": len(source_order),
         "invalid_source_file_identity": invalid_identities,

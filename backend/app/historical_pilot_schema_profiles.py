@@ -23,7 +23,8 @@ def validate_source_schema_profile(profile: Mapping[str, object]) -> dict:
         mapping={}
     else:
         required=set(schema["required"]) if schema else set()
-        unknown=set(mapping)-set(schema.keys() if schema else ())
+        allowed=set().union(*(v for k,v in schema.items() if isinstance(v,set))) if schema else set(required)
+        unknown=set(mapping)-allowed
         if not required.issubset(mapping):
             errors.append({"field":"column_map","reason":"required_semantic_fields_missing","fields":sorted(required-set(mapping))})
         if unknown:

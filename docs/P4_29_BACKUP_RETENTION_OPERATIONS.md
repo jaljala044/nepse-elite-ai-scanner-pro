@@ -27,10 +27,15 @@ A drill may be recorded only when the isolated restore result is
 `restore_verified` and its post-restore audit is `integrity_ok`. Each JSONL
 event includes the drill/backup IDs, UTC timestamp, result, previous-event
 hash, and its own SHA-256. The verifier checks every link and rejects duplicate
-IDs, tampering, malformed records, and broken chains. Appends fsync the log
-file. This is tamper-evident, not an independently signed or immutable
-off-site audit record; an operator with filesystem write access can rewrite
-the entire log.
+IDs, tampering, malformed records, and broken chains. Writers take an
+inter-process exclusive `flock` on a sidecar lock file across log validation,
+duplicate-ID detection, chain-head selection, and append. The log and lock
+paths reject symlinks; appends use `O_APPEND`, `O_NOFOLLOW` where available,
+and `fsync`. A crash/partial append leaves the log invalid and blocks later
+appends until operator recovery. The lock protocol requires a local filesystem
+with working POSIX advisory locks. This is tamper-evident, not an independently
+signed or immutable off-site audit record; an operator with filesystem write
+access can rewrite the entire log.
 
 ## Readiness semantics
 

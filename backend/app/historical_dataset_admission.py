@@ -26,6 +26,27 @@ def _utc(value: str, field: str) -> datetime:
     return result.astimezone(timezone.utc)
 
 
+def dataset_content_fingerprint(records):
+    """Versioned canonical JSON digest of the exact ordered input records."""
+    if not isinstance(records, list) or not records or any(not isinstance(row, dict) for row in records):
+        raise ValueError("nonempty JSON record list required")
+    def validate(value):
+        if isinstance(value, dict):
+            if any(not isinstance(key, str) for key in value):
+                raise ValueError("JSON object keys must be strings")
+            for item in value.values():
+                validate(item)
+        elif isinstance(value, list):
+            for item in value:
+                validate(item)
+        elif value is not None and type(value) not in (str, int, float, bool):
+            raise ValueError("unsupported JSON value")
+    validate(records)
+    canonical = json.dumps({"schema": "nepse-records-v1", "records": records},
+                           sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def admit_six_scanner_dataset(
     *, panel_qualification: Mapping, dataset_manifest: Mapping,
     records: list[Mapping], decision_time: str,
@@ -56,6 +77,13 @@ def admit_six_scanner_dataset(
     fingerprint = str(dataset_manifest.get("dataset_fingerprint", ""))
     if not fingerprint or fingerprint != expected_dataset_fingerprint:
         issues.append({"severity": "BLOCKER", "reason": "dataset_fingerprint_missing_or_mismatched"})
+    computed_fingerprint = None
+    try:
+        computed_fingerprint = dataset_content_fingerprint(records)
+    except (ValueError, TypeError, OverflowError, RecursionError):
+        issues.append({"severity": "BLOCKER", "reason": "dataset_content_not_canonical"})
+    if computed_fingerprint is None or computed_fingerprint != fingerprint or computed_fingerprint != expected_dataset_fingerprint:
+        issues.append({"severity": "BLOCKER", "reason": "dataset_content_fingerprint_mismatch"})
     manifest_cutoff = dataset_manifest.get("decision_time")
     try:
         if _utc(str(manifest_cutoff), "manifest.decision_time") != cutoff:
@@ -80,7 +108,9 @@ def admit_six_scanner_dataset(
             invalid.append(index)
             continue
         record_id = row.get("record_id")
-        if record_id:
+        if not isinstance(record_id, str) or not record_id.strip():
+            invalid.append(index)
+        else:
             if record_id in seen_ids:
                 duplicate_ids.append(str(record_id))
             seen_ids.add(record_id)
@@ -119,6 +149,8 @@ def admit_six_scanner_dataset(
     blockers = sum(item["severity"] == "BLOCKER" for item in issues)
     payload = {
         "schema_version": 1, "dataset_fingerprint": fingerprint or None,
+        "computed_dataset_fingerprint": computed_fingerprint,
+        "dataset_fingerprint_scheme": "nepse-records-v1",
         "decision_time": cutoff.isoformat().replace("+00:00", "Z"),
         "strategy_count": len(strategy_ids), "horizon_count": len(horizons),
         "strategy_horizon_count": len(matrix), "matrix": matrix,

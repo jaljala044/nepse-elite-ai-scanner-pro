@@ -71,7 +71,7 @@ class EvidenceBackupOperatorPathTests(unittest.TestCase):
 
     def test_core_backup_rejects_database_inside_destination(self):
         nested_db = self.destination / "evidence.duckdb"
-        with self.assertRaisesRegex(ValueError, "database source"):
+        with self.assertRaisesRegex(ValueError, "source database"):
             _validate_backup_source_destination(nested_db, self.source, self.destination)
 
 

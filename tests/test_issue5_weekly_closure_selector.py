@@ -87,6 +87,16 @@ class WeeklyClosureSelectorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "invalid previous_date"):
                 rank_batches(candidate, exclusion)
 
+    def test_blank_symbol_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = self.write_csv(root / "candidates.csv", FIELDS, [
+                self.row(SMC, "   ", "2026-04-10", "2026-04-11"),
+            ])
+            exclusion = self.write_csv(root / "excluded.csv", ["current_date"], [])
+            with self.assertRaisesRegex(ValueError, "blank symbol"):
+                rank_batches(candidate, exclusion)
+
     def test_non_weekly_closure_is_not_selected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -537,6 +537,14 @@ def reliability():
 from fastapi import Request, Depends
 from .private_accounts import principal, watchlist, set_watchlist
 
+@app.get("/v1/account/session")
+def account_session(owner: str = Depends(principal)):
+    admins = {s.strip() for s in os.getenv("NEPSE_ADMIN_SUBJECTS", "").split(",") if s.strip()}
+    return {"authenticated": True, "role": "administrator" if owner in admins else "researcher",
+            "permissions": {"watchlist": True, "research": True,
+                            "admin_ingestion": owner in admins, "ai_recommendations": False},
+            "mode": "research_only"}
+
 class WatchlistRequest(BaseModel):
     symbols: list[str] = Field(max_length=300)
 

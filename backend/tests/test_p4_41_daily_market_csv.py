@@ -49,7 +49,7 @@ class DailyMarketCSVTests(unittest.TestCase):
   self.assertEqual(r["quarantined_rows"][0]["reasons"],["extra_csv_fields"])
  def test_duplicate_symbol_quarantines_both_source_rows(self):
   row=line(1,"BENH",273,313.9,273,313.9,90,26634,9)
-  r=self.parse(row+"\\n"+line(2,"BENH",273,313.9,273,313.9,91,27000,10))
+  r=self.parse(row+"\n"+line(2,"BENH",273,313.9,273,313.9,91,27000,10))
   self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
   self.assertEqual([x["source_line"] for x in r["quarantined_rows"]],[2,3])
   self.assertEqual(r["records"],[])

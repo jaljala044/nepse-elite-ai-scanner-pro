@@ -553,6 +553,15 @@ def account_watchlist_update(payload: WatchlistRequest, owner: str = Depends(pri
 
 @app.middleware("http")
 async def private_deployment_gate(request: Request, call_next):
+    # Portfolio and account payloads contain private financial information.
+    # Apply no-store to successful and rejected responses, including auth failures.
+    private_path = request.url.path.startswith(("/v1/account/", "/v1/portfolios"))
+    def protect_private_response(response):
+        if private_path:
+            response.headers["Cache-Control"] = "private, no-store, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+        return response
+
     # Opt-in development API only. A deployed service must authenticate all non-health routes.
     if os.getenv("NEPSE_DEPLOYMENT_MODE") == "private" and request.url.path != "/health":
         try:
@@ -561,16 +570,14 @@ async def private_deployment_gate(request: Request, call_next):
                 admins = {s.strip() for s in os.getenv("NEPSE_ADMIN_SUBJECTS","").split(",") if s.strip()}
                 if owner not in admins:
                     from fastapi.responses import JSONResponse
-                    return JSONResponse({"detail":"Administrator required"},status_code=403)
+                    return protect_private_response(JSONResponse({"detail":"Administrator required"},status_code=403))
         except HTTPException:
             from fastapi.responses import JSONResponse
-            return JSONResponse({"detail":"Authentication required"},status_code=401)
+            return protect_private_response(JSONResponse({"detail":"Authentication required"},status_code=401))
     response=await call_next(request)
     response.headers["X-Content-Type-Options"]="nosniff"
     response.headers["Referrer-Policy"]="no-referrer"
-    if request.url.path.startswith("/v1/account/"):
-        response.headers["Cache-Control"]="no-store"
-    return response
+    return protect_private_response(response)
 
 
 @app.get("/v1/research/unified-coverage")

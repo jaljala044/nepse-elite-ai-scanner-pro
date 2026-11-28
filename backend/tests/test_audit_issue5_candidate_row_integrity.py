@@ -94,5 +94,123 @@ class Issue5CandidateIntegrityTests(unittest.TestCase):
             self.assertEqual(len(audit(path)["non_review_only_classifications"]), 1)
 
 
+
+    def test_invalid_commit_and_file_hashes_are_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(commit_sha="not-a-commit", file_sha256="bad")])
+            self.assertEqual(len(audit(path)["invalid_source_file_identity"]), 1)
+
+    def test_path_traversal_and_blank_identity_are_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(path="../outside.csv"), row(symbol=" ")])
+            self.assertEqual(len(audit(path)["invalid_source_file_identity"]), 2)
+
+    def test_source_rows_must_be_adjacent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(previous_csv_line="2", current_csv_line="4")])
+            self.assertEqual(len(audit(path)["invalid_source_line_pairs"]), 1)
+
+    def test_non_integer_volume_is_invalid_ohlc(self):
+        values = {"Open": "10", "High": "12", "Low": "9",
+                  "Close": "11", "Volume": "100.5"}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(ohlcv=json.dumps(values))])
+            self.assertEqual(len(audit(path)["invalid_current_ohlc"]), 1)
+
+    def test_duplicate_ohlcv_json_keys_are_rejected(self):
+        raw = '{"Open":"10","High":"12","Low":"9","Close":"11","Volume":"100","Volume":"101"}'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(ohlcv=raw)])
+            self.assertEqual(len(audit(path)["invalid_current_ohlc"]), 1)
+
+    def test_wrong_ohlcv_schema_is_rejected(self):
+        values = {"Open": "10", "High": "12", "Low": "9",
+                  "Close": "11", "Volume": "100", "LTP": "11"}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(ohlcv=json.dumps(values))])
+            self.assertEqual(len(audit(path)["invalid_current_ohlc"]), 1)
+
+    def test_extra_or_missing_csv_fields_are_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row()])
+            lines = path.read_text(encoding="utf-8").splitlines()
+            path.write_text(lines[0] + "\n" + lines[1] + ",unexpected\n", encoding="utf-8")
+            self.assertEqual(len(audit(path)["malformed_csv_rows"]), 1)
+
+    def test_duplicate_csv_headers_fail_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            path.write_text(",".join(FIELDS + ["symbol"]) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate CSV header"):
+                audit(path)
+
+    def test_cli_refuses_to_overwrite_candidate_input(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row()])
+            before = path.read_bytes()
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).parents[1] / "audit_issue5_candidate_row_integrity.py"),
+                 "--input", str(path), "--output", str(path)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(path.read_bytes(), before)
+
+
+    def test_noncanonical_source_paths_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row(path="dir//ABC.csv"), row(path="dir/./ABC.csv")])
+            self.assertEqual(len(audit(path)["invalid_source_file_identity"]), 2)
+
+    def test_malformed_rows_remain_in_candidate_total(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row()])
+            lines = path.read_text(encoding="utf-8").splitlines()
+            path.write_text(lines[0] + "\n" + lines[1] + ",extra\n", encoding="utf-8")
+            report = audit(path)
+            self.assertEqual(report["candidate_rows"], 1)
+            self.assertEqual(report["candidate_rows_validated"], 0)
+            self.assertEqual(report["candidate_rows_excluded_malformed"], 1)
+
+    def test_short_csv_rows_are_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates.csv"
+            write_csv(path, [row()])
+            lines = path.read_text(encoding="utf-8").splitlines()
+            path.write_text(lines[0] + "\n" + ",".join(lines[1].split(",")[:-1]) + "\n",
+                            encoding="utf-8")
+            self.assertEqual(len(audit(path)["malformed_csv_rows"]), 1)
+
+
+    def test_cli_writes_valid_json_with_real_trailing_newline(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "candidates.csv"
+            output = root / "report.json"
+            write_csv(source, [row()])
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).parents[1] / "audit_issue5_candidate_row_integrity.py"),
+                 "--input", str(source), "--output", str(output)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = output.read_bytes()
+            self.assertTrue(payload.endswith(b"\n"))
+            self.assertIsInstance(json.loads(payload), dict)
+
 if __name__ == "__main__":
     unittest.main()

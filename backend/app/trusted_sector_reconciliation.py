@@ -284,17 +284,25 @@ def build_historical_trust_version_report(
     freshness_policy_path: str | Path | None,
     hmac_key: str | None,
     decision_times: list[str],
+    versioned_registry_paths: dict[str, str | Path] | None = None,
+    versioned_freshness_policy_paths: dict[str, str | Path] | None = None,
 ) -> dict[str, Any]:
-    """Report which signed registry/policy versions are usable at each cutoff."""
+    """Report signed registry/policy versions selected for each historical cutoff.
+
+    Explicit maps bind an exact decision_time string to an archived server-owned
+    snapshot path. No filesystem discovery or client-provided paths are used.
+    """
     if not isinstance(decision_times, list) or not decision_times:
         raise ValueError("decision_times_must_be_non_empty_list")
     rows = []
     for cutoff in decision_times:
+        selected_registry_path = (versioned_registry_paths or {}).get(cutoff, registry_path)
+        selected_policy_path = (versioned_freshness_policy_paths or {}).get(cutoff, freshness_policy_path)
         registry = load_publisher_trust_registry(
-            registry_path, hmac_key, decision_time=cutoff
+            selected_registry_path, hmac_key, decision_time=cutoff
         )
         policy = load_evidence_freshness_policy(
-            freshness_policy_path, hmac_key, decision_time=cutoff
+            selected_policy_path, hmac_key, decision_time=cutoff
         )
         rows.append({
             "decision_time": cutoff,
@@ -330,11 +338,12 @@ def build_historical_trust_version_report(
         "cutoff_count": len(rows),
         "publisher_identity_changes": identity_changes,
         "versions": rows,
-        "version_selection_mode": "single_configured_signed_snapshot_per_path",
+        "version_selection_mode": "explicit_cutoff_to_server_owned_snapshot_path_with_default_fallback",
         "historical_archive_search_supported": False,
+        "explicit_version_map_supported": True,
         "production_admission_allowed": False,
         "limitations": [
-            "This deployment selects one configured signed snapshot per path; it does not search an archived version directory.",
+            "Historical versions must be explicitly mapped to exact decision-time cutoffs by server-side configuration; automatic archive discovery is not implemented.",
             "A snapshot generated after a historical decision cutoff is rejected, not backfilled.",
         ],
     }

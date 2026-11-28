@@ -119,5 +119,44 @@ class WeeklyClosureSelectorTests(unittest.TestCase):
             self.assertEqual(report["selected_date_count"], 0)
 
 
+
+    def test_prior_review_batch_is_excluded_without_becoming_registered_closure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rows = [
+                self.row(SMC, "ABC", "2026-04-10", "2026-04-11"),
+                self.row(HISTORY, "ABC", "2026-04-10", "2026-04-11"),
+                self.row(SMC, "XYZ", "2026-04-11", "2026-04-12"),
+                self.row(HISTORY, "XYZ", "2026-04-11", "2026-04-12"),
+            ]
+            candidate = self.write_csv(root / "candidates.csv", FIELDS, rows)
+            registered = self.write_csv(root / "registered.csv", ["current_date"], [
+                {"current_date": "2026-04-11"},
+            ])
+            prior_review = self.write_csv(root / "batch4.csv", ["current_date"], [
+                {"current_date": "2026-04-12"},
+            ])
+            report = rank_batches(candidate, registered, 5, prior_review)
+            self.assertEqual(report["registered_exclusion_date_count"], 1)
+            self.assertEqual(report["prior_reviewed_date_count"], 1)
+            self.assertEqual(report["excluded_date_count"], 2)
+            self.assertEqual(report["selected_date_count"], 0)
+            self.assertFalse(report["canonical_or_training_promotion"])
+
+    def test_registered_and_prior_review_exclusions_must_not_overlap(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = self.write_csv(root / "candidates.csv", FIELDS, [
+                self.row(SMC, "ABC", "2026-04-10", "2026-04-11"),
+            ])
+            registered = self.write_csv(root / "registered.csv", ["current_date"], [
+                {"current_date": "2026-04-11"},
+            ])
+            prior_review = self.write_csv(root / "batch4.csv", ["current_date"], [
+                {"current_date": "2026-04-11"},
+            ])
+            with self.assertRaisesRegex(ValueError, "overlap"):
+                rank_batches(candidate, registered, 5, prior_review)
+
 if __name__ == "__main__":
     unittest.main()

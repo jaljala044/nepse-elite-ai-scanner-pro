@@ -72,6 +72,12 @@ def classify_history_coverage(*, coverage_start: str, as_of_date: str) -> dict:
 def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
                                     session_dates: list[str] | None = None) -> dict:
     """Plan five-year preferred collection with a three-year minimum fallback."""
+    try:
+        parsed_as_of = date.fromisoformat(as_of_date)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("as_of_date must be a valid ISO date") from exc
+    if parsed_as_of.isoformat() != as_of_date:
+        raise ValueError("as_of_date must use canonical YYYY-MM-DD")
     start = five_year_start(as_of_date)
     minimum_start = three_year_start(as_of_date)
     if not isinstance(equities, list) or not equities:
@@ -93,8 +99,11 @@ def build_five_year_collection_plan(*, as_of_date: str, equities: list[dict],
         for day in session_dates:
             if date.fromisoformat(day).isoformat() != day:
                 raise ValueError("session_dates must be zero-padded ISO dates")
+            if not minimum_start <= day <= as_of_date:
+                raise ValueError("session_dates must fall within the minimum collection window")
         if len(session_dates) != len(set(session_dates)):
             raise ValueError("session_dates must not contain duplicates")
+        session_dates = sorted(session_dates)
     providers = (*PROVIDERS, *REFERENCE_PROVIDERS)
     return {
         "schema_version": 1, "as_of_date": as_of_date,

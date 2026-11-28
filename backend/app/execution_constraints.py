@@ -2,6 +2,19 @@
 from datetime import date
 from math import isfinite
 
+
+def _canonical_day(value):
+    if not isinstance(value, str):
+        raise ValueError("date_must_be_canonical_YYYY_MM_DD")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise ValueError("date_must_be_canonical_YYYY_MM_DD") from None
+    if parsed.isoformat() != value:
+        raise ValueError("date_must_be_canonical_YYYY_MM_DD")
+    return parsed
+
+
 def validate_slippage_bps(value):
     """Validate adverse slippage assumption; negative values are never rebates."""
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
@@ -12,15 +25,20 @@ def validate_slippage_bps(value):
 
 
 def settlement_date(trade_day, verified_settlement_days):
-    day=date.fromisoformat(str(trade_day))
-    if day<date(2021,1,24) or verified_settlement_days is None:
+    day = _canonical_day(trade_day)
+    if day < date(2021, 1, 24) or verified_settlement_days is None:
         return None
-    days=sorted({date.fromisoformat(str(d)) for d in verified_settlement_days if date.fromisoformat(str(d))>day})
-    return days[1] if len(days)>=2 else None
+    if isinstance(verified_settlement_days, (str, bytes)):
+        raise ValueError("verified_settlement_days_must_be_a_date_collection")
+    days = sorted({
+        parsed for value in verified_settlement_days
+        if (parsed := _canonical_day(value)) > day
+    })
+    return days[1] if len(days) >= 2 else None
 
 def price_band(day, *, previous_close=None, preopen_reference=None, ordinary_session=False):
-    day=date.fromisoformat(str(day))
-    if not ordinary_session or not date(2021,1,24)<=day<=date(2026,11,26):
+    day = _canonical_day(day)
+    if not ordinary_session or not date(2021,1,24) <= day <= date(2026,11,26):
         return None
     revised=day>=date(2026,4,20)
     reference=preopen_reference if revised else previous_close

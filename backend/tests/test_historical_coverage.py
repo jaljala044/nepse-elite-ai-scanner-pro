@@ -153,3 +153,34 @@ if __name__ == "__main__":
                     build_historical_coverage_report(
                         [], expected_sessions=["2026-11-24"], expected_symbols=[value])
 
+
+    def test_native_date_objects_are_accepted_for_database_rows(self):
+        from datetime import date
+        record = {"source_id": "A", "symbol": "NABIL",
+                  "session_date": date(2026, 11, 24), "close": "100"}
+        report = build_historical_coverage_report(
+            [record], expected_sessions=["2026-11-24"], expected_symbols=["NABIL"])
+        self.assertEqual(report["union_covered_keys"], 1)
+
+    def test_cached_coverage_rejects_noncanonical_grid_before_cache_lookup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "history.csv"
+            source.write_bytes(b"unchanged")
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            with self.assertRaisesRegex(ValueError, "canonical YYYY-MM-DD"):
+                build_cached_historical_coverage_report(
+                    source, expected_sessions=["20261124"], expected_symbols=["NABIL"],
+                    load_records=lambda path: [], registry=registry)
+
+    def test_cached_coverage_rejects_invalid_expected_symbol(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "history.csv"
+            source.write_bytes(b"unchanged")
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            with self.assertRaisesRegex(ValueError, "expected symbols"):
+                build_cached_historical_coverage_report(
+                    source, expected_sessions=["2026-11-24"], expected_symbols=[" "],
+                    load_records=lambda path: [], registry=registry)
+

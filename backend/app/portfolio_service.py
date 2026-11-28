@@ -208,7 +208,7 @@ def _transaction(row):
 def _calculate_positions(con, owner: str, portfolio_id: str) -> dict[str, dict]:
     rows = con.execute("""SELECT * FROM portfolio_transactions
         WHERE owner=? AND portfolio_id=?
-        ORDER BY trade_date,created_at,id""", (owner, portfolio_id)).fetchall()
+        ORDER BY trade_date,created_at,rowid""", (owner, portfolio_id)).fetchall()
     state: dict[str, dict[str, Decimal]] = {}
     for row in rows:
         symbol = row["symbol"]

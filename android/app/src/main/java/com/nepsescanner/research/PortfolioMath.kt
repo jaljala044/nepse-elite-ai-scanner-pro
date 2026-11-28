@@ -5,7 +5,7 @@ import java.math.RoundingMode
 import java.time.LocalDate
 
 internal data class Holding(val symbol: String, val quantity: Long, val costPerShare: BigDecimal,
-    val observedPrice: BigDecimal, val priceDate: LocalDate, val sector: String?)
+    val observedPrice: BigDecimal, val priceDate: LocalDate, val sector: String?, val averageDailyQuantity: BigDecimal? = null)
 internal data class HoldingValue(val symbol: String, val cost: BigDecimal, val value: BigDecimal,
     val pnl: BigDecimal, val weightPct: BigDecimal, val sector: String?, val priceDate: LocalDate)
 internal data class PortfolioValue(val cost: BigDecimal, val value: BigDecimal, val pnl: BigDecimal,
@@ -29,4 +29,27 @@ internal object PortfolioMath {
             .mapValues { (_,members) -> percent(members.map { it.value }.fold(BigDecimal.ZERO,BigDecimal::add),value) }
         return PortfolioValue(cost,value,value-cost,rows,sectorWeights)
     }
+}
+
+internal data class LiquidityEstimate(val symbol: String, val estimatedSessions: BigDecimal?)
+internal data class ExposureRisk(val largestStockPct: BigDecimal, val topThreeStockPct: BigDecimal,
+    val largestSectorPct: BigDecimal?, val unclassifiedPct: BigDecimal,
+    val liquidity: List<LiquidityEstimate>)
+
+internal fun exposureRisk(holdings: List<Holding>, participationPct: BigDecimal): ExposureRisk {
+    require(participationPct > BigDecimal.ZERO && participationPct <= BigDecimal("100"))
+    val p=PortfolioMath.calculate(holdings)
+    val ranked=p.holdings.sortedByDescending { it.value }
+    val topThree=ranked.take(3).fold(BigDecimal.ZERO) { acc,h -> acc+h.value }
+    val topThreePct=topThree.multiply(BigDecimal(100)).divide(p.value,2,RoundingMode.HALF_UP)
+    val unclassified=p.sectorWeights["UNCLASSIFIED"] ?: BigDecimal.ZERO
+    val liquidity=holdings.map { h ->
+        val adv=h.averageDailyQuantity
+        require(adv==null || adv.signum()>=0)
+        val sessions=if(adv==null || adv.signum()==0) null else
+            BigDecimal.valueOf(h.quantity).multiply(BigDecimal(100)).divide(adv.multiply(participationPct),2,RoundingMode.CEILING)
+        LiquidityEstimate(h.symbol,sessions)
+    }
+    return ExposureRisk(ranked.first().weightPct,topThreePct,
+        p.sectorWeights.filterKeys { it!="UNCLASSIFIED" }.values.maxOrNull(),unclassified,liquidity)
 }

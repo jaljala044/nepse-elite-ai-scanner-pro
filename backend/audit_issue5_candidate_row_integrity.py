@@ -81,7 +81,7 @@ def _valid_identity(row: dict[str, Any]) -> bool:
         return False
     if not _SHA64.fullmatch(row["file_sha256"]):
         return False
-    if path.strip() != path or "\\\\" in path:
+    if path.strip() != path or chr(92) in path:
         return False
     posix_path = PurePosixPath(path)
     if posix_path.is_absolute() or any(part in ("", ".", "..") for part in posix_path.parts):

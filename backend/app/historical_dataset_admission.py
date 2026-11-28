@@ -5,6 +5,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from typing import Mapping
+from .historical_segment_eligibility import evaluate_historical_segment
 
 STRATEGIES = (
     "trend_momentum", "idpat_smart_money", "broker_footprint",
@@ -139,7 +140,8 @@ def admit_six_scanner_dataset(
 
 def admit_qualified_six_scanner_dataset(*, panel_qualification, dataset_manifest,
         records, decision_time, expected_dataset_fingerprint, train_end,
-        validation_start, validation_end, test_start, test_end, **kwargs):
+        validation_start, validation_end, test_start, test_end,
+        segment_inputs=None, archive_guard=None, **kwargs):
     """Fail-closed bridge from reviewed OHLCV rows to the six-scanner preflight.
 
     Every input must retain its upstream historical-segment and archive disposition.
@@ -160,6 +162,58 @@ def admit_qualified_six_scanner_dataset(*, panel_qualification, dataset_manifest
             issues.append({"severity": "BLOCKER", "reason": "archive_quarantine_not_cleared", "index": index})
         if (row.get("archive_locator_present") is True or any(k in row for k in ("repository", "commit_sha", "source_file", "source_file_sha256", "target_csv_row", "target_date"))) and row.get("archive_quarantine_disposition") != "not_in_overlay_requires_other_gates":
             issues.append({"severity": "BLOCKER", "reason": "archive_quarantine_disposition_missing", "index": index})
+    # Evaluate the exact admitted records, not a caller's eligibility assertion.
+    groups = {}
+    seen_keys = set()
+    for index, row in enumerate(records):
+        if not isinstance(row, dict):
+            continue
+        identity = (row.get("symbol"), row.get("security_id"))
+        if not all(isinstance(v, str) and v.strip() for v in identity):
+            issues.append({"severity": "BLOCKER", "reason": "record_identity_missing", "index": index})
+            continue
+        day = row.get("session_date")
+        if not isinstance(day, str):
+            issues.append({"severity": "BLOCKER", "reason": "record_session_missing", "index": index})
+            continue
+        key = (*identity, day)
+        if key in seen_keys:
+            issues.append({"severity": "BLOCKER", "reason": "duplicate_symbol_security_session", "index": index})
+        seen_keys.add(key)
+        groups.setdefault(identity, []).append(row)
+    if not isinstance(segment_inputs, dict):
+        issues.append({"severity": "BLOCKER", "reason": "independent_segment_inputs_required"})
+        segment_inputs = {}
+    if set(segment_inputs) != set(groups):
+        issues.append({"severity": "BLOCKER", "reason": "segment_identity_coverage_mismatch"})
+    reports = []
+    for identity, rows in sorted(groups.items()):
+        spec = segment_inputs.get(identity)
+        if not isinstance(spec, dict):
+            issues.append({"severity": "BLOCKER", "reason": "segment_evidence_missing", "identity": list(identity)})
+            continue
+        segment = spec.get("segment")
+        if not isinstance(segment, dict) or (segment.get("symbol"), segment.get("security_id")) != identity:
+            issues.append({"severity": "BLOCKER", "reason": "segment_identity_mismatch", "identity": list(identity)})
+            continue
+        archive = any(row.get("archive_locator_present") is True or any(k in row for k in
+            ("repository", "commit_sha", "source_file", "source_file_sha256", "target_csv_row", "target_date"))
+            for row in rows)
+        try:
+            result = evaluate_historical_segment(
+                segment=segment, expected_sessions=spec["expected_sessions"],
+                session_statuses=spec["session_statuses"], session_evidence=spec["session_evidence"],
+                records=rows, required_sessions=spec.get("required_sessions", 120),
+                available_warmup_sessions=spec.get("available_warmup_sessions", 0),
+                decision_cutoff=decision_time, archive_guard=archive_guard if archive else None,
+                require_archive_guard=archive)
+        except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            issues.append({"severity": "BLOCKER", "reason": "segment_evaluation_invalid", "identity": list(identity)})
+            continue
+        reports.append(result)
+        if result.get("exploratory_replay_eligible") is not True or result.get("reasons") != []:
+            issues.append({"severity": "BLOCKER", "reason": "independent_segment_evaluation_failed",
+                           "identity": list(identity), "details": result.get("reasons", [])})
     base = admit_six_scanner_dataset(
         panel_qualification=panel_qualification, dataset_manifest=dataset_manifest,
         records=records, decision_time=decision_time,
@@ -167,6 +221,7 @@ def admit_qualified_six_scanner_dataset(*, panel_qualification, dataset_manifest
         train_end=train_end, validation_start=validation_start,
         validation_end=validation_end, test_start=test_start, test_end=test_end,
         **kwargs)
+    base["segment_evaluations"] = reports
     if issues:
         base["issues"].extend(issues)
         base["issue_count"] = len(base["issues"])
@@ -177,6 +232,6 @@ def admit_qualified_six_scanner_dataset(*, panel_qualification, dataset_manifest
         base["canonical_promotion_allowed"] = False
         base["production_enabled"] = False
         base["replay_started"] = False
-        canonical = json.dumps({k:v for k,v in base.items() if k != "admission_sha256"}, sort_keys=True, separators=(",", ":"))
-        base["admission_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+    canonical = json.dumps({k:v for k,v in base.items() if k != "admission_sha256"}, sort_keys=True, separators=(",", ":"))
+    base["admission_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
     return base

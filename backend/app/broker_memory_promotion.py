@@ -5,6 +5,7 @@ from typing import Any
 from app.broker_behavior_memory import build_broker_behavior_memory
 from app.broker_ingestion import IngestionReport
 from app.broker_memory_store import BrokerMemoryStore
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys, ledger_blocked
 
 class PromotionRejected(ValueError):
     """A batch did not satisfy the complete promotion gate."""
@@ -16,8 +17,18 @@ def promote_validated_batch(report: IngestionReport, store: BrokerMemoryStore, *
         raise PromotionRejected("batch is not fully validated and memory-eligible")
     if not isinstance(as_of_date, str) or len(as_of_date) != 10:
         raise PromotionRejected("as_of_date must be ISO YYYY-MM-DD")
+    if report.conflicts:
+        raise PromotionRejected("batch contains conflicts")
+    try:
+        quarantine_keys = runtime_quarantine_keys()
+    except ValueError as exc:
+        raise PromotionRejected("invalid quarantine ledger") from exc
     observations, availabilities, batch_ids = [], [], set()
     for row in report.accepted:
+        if is_quarantined(row):
+            raise PromotionRejected("quarantined accepted row")
+        if quarantine_keys is not None and row.get("symbol") and ledger_blocked(row, quarantine_keys):
+            raise PromotionRejected("quarantined broker historical input")
         if row.get("status") != "descriptive_only":
             raise PromotionRejected("non-descriptive row in accepted batch")
         available_at = row.get("available_at")

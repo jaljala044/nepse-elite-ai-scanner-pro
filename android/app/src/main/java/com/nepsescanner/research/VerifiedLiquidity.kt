@@ -16,7 +16,7 @@ internal fun eligibleAverageDailyVolume(symbol: String, evidence: List<DatedVolu
     if(rows.any { it.quantity<0 || it.sourceId.isBlank() ||
         !it.payloadSha256.matches(Regex("[a-fA-F0-9]{64}")) ||
         it.sourceValidationStatus!="verified" || it.finalityStatus!="final" }) return null
-    return BigDecimal.valueOf(rows.sumOf { it.quantity }).divide(BigDecimal.valueOf(requiredSessions.toLong()),4,java.math.RoundingMode.HALF_UP)
+    return rows.fold(BigDecimal.ZERO) { total,row -> total.add(BigDecimal.valueOf(row.quantity)) }.divide(BigDecimal.valueOf(requiredSessions.toLong()),4,java.math.RoundingMode.HALF_UP)
 }
 
 internal fun applyVerifiedLiquidityEvidence(

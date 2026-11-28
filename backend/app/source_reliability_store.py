@@ -18,14 +18,21 @@ def persist_source_reliability_batch(
     batch = build_source_event_manifest(
         events, batch_id=batch_id, captured_at=captured_at, received_at=received_at
     )
-    existing = load_source_reliability_events(database_path=database_path)
+    existing_rows = load_evidence_records(
+        database_path=database_path, record_type="source_reliability_event"
+    )
     existing_ids = {
-        row.get("event_id"): row.get("event_batch_id")
-        for row in existing["events"] if row.get("event_id")
+        row["source_event"].get("event_id"): row.get("event_batch_id")
+        for row in existing_rows
+        if isinstance(row.get("source_event"), dict)
+        and row["source_event"].get("event_id")
     }
+    incoming_ids = [event["event_id"] for event in batch["events"]]
+    if len(incoming_ids) != len(set(incoming_ids)):
+        raise ValueError("duplicate event_id within incoming batch")
     for event in batch["events"]:
         prior_batch = existing_ids.get(event["event_id"])
-        if prior_batch and prior_batch != batch_id:
+        if prior_batch is not None and prior_batch != batch_id:
             raise ValueError("event_id_already_persisted:" + event["event_id"])
     payload = json.dumps(
         {"batch_id": batch_id, "events": batch["events"]},

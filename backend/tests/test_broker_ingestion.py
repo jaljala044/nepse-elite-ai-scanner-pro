@@ -34,6 +34,23 @@ class BrokerIngestionTests(unittest.TestCase):
         result = run(verified_brokers=set())
         self.assertIn("unverified_broker_identity", result.quarantined[0]["reasons"])
 
+    def test_noncanonical_trade_dates_are_quarantined(self):
+        for value in ("20261125", "2026-W48-3", "2026-1-4", "2026/11/25"):
+            with self.subTest(session_date=value):
+                result = run([make_row(session_date=value)])
+                self.assertFalse(result.memory_eligible)
+                self.assertIn("unverified_or_invalid_session", result.quarantined[0]["reasons"])
+
+    def test_noncanonical_verified_session_inventory_is_rejected(self):
+        for value in ("20261125", "2026-W48-3", "2026-1-4", "2026/11/25"):
+            with self.subTest(session=value), self.assertRaisesRegex(IngestionError, "invalid_verified_session_inventory"):
+                run(verified_sessions={value})
+
+    def test_non_string_trade_date_is_quarantined(self):
+        result = run([make_row(session_date=20261125)])
+        self.assertFalse(result.memory_eligible)
+        self.assertIn("unverified_or_invalid_session", result.quarantined[0]["reasons"])
+
     def test_unknown_session_quarantined(self):
         result = run(verified_sessions=set())
         self.assertIn("unverified_or_invalid_session", result.quarantined[0]["reasons"])

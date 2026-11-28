@@ -37,14 +37,16 @@ jobs:
           SESSION_DATE: ${{ inputs.session_date }}
           BUNDLE_BASE_URL: ${{ vars.NEPSE_INPUT_BUNDLE_BASE_URL }}
           BUNDLE_TOKEN: ${{ secrets.NEPSE_INPUT_BUNDLE_ACCESS_TOKEN }}
+          BUNDLE_PUBLIC_KEY: ${{ vars.NEPSE_INPUT_BUNDLE_PUBLIC_KEY }}
         run: |
           set -euo pipefail
           [[ "$SESSION_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
           [[ "$BUNDLE_BASE_URL" == https://* ]]
           test -n "$BUNDLE_TOKEN"
+          test -n "$BUNDLE_PUBLIC_KEY"
           mkdir -p secure-input-bundles secure-input-signatures
           BASE="${BUNDLE_BASE_URL%/}"
-          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-filesize 104857600 -H "Authorization: Bearer $BUNDLE_TOKEN" "$BASE/$SESSION_DATE.json" -o "secure-input-bundles/$SESSION_DATE.json"
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 --max-filesize 104857600 -H "Authorization: Bearer $BUNDLE_TOKEN" "$BASE/$SESSION_DATE.json" -o "secure-input-bundles/$SESSION_DATE.json"
           curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-filesize 4096 -H "Authorization: Bearer $BUNDLE_TOKEN" "$BASE/$SESSION_DATE.sig" -o "secure-input-signatures/$SESSION_DATE.sig"
       - name: Generate review-only candidates
         working-directory: backend
@@ -52,8 +54,6 @@ jobs:
           SESSION_DATE: ${{ inputs.session_date }}
           DECISION_TIME: ${{ inputs.decision_time }}
           NEPSE_INPUT_BUNDLE_PUBLIC_KEY: ${{ vars.NEPSE_INPUT_BUNDLE_PUBLIC_KEY }}
-          NEPSE_INPUT_BUNDLE_BASE_URL: ${{ vars.NEPSE_INPUT_BUNDLE_BASE_URL }}
-          NEPSE_INPUT_BUNDLE_ACCESS_TOKEN: ${{ secrets.NEPSE_INPUT_BUNDLE_ACCESS_TOKEN }}
         run: |
           python run_daily_market_handoff.py \
             --bundle-dir ../secure-input-bundles \

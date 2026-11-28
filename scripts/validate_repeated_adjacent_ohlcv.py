@@ -130,7 +130,7 @@ def main() -> int:
     args = parser.parse_args()
     report = validate_candidate_ledger(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in (
         "candidate_rows", "unique_source_occurrences", "structural_findings",
         "finding_counts", "input_sha256", "canonical_promotion_allowed"

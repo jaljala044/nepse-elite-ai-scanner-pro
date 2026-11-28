@@ -16,7 +16,7 @@ class BrokerContextServerTests(unittest.TestCase):
     def test_missing_calendar_blocks_calculation(self):
         with patch("app.broker_context_server.load_calendar",return_value={}),patch("app.broker_context_server.build_context") as calc:
             result=broker_context_research(BrokerContextRequest(**self.request))
-            self.assertEqual(result["reason"],"trusted_calendar_incomplete")
+            self.assertEqual(result["reason"],"trusted_calendar_candidate_missing")
             calc.assert_not_called()
     def test_server_calendar_and_registry(self):
         rows={date.fromisoformat(d):{"scope":"market_wide","verified_at_utc":"2026-04-24T00:00:00Z","status":"verified_open"} for d in self.days}

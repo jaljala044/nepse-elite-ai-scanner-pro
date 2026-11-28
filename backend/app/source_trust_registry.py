@@ -272,16 +272,26 @@ def build_promotion_event(
         reasons.extend(policy_reasons)
         if policy and policy.trust_tier == "secondary_publisher" and record.get("record_type") in {"ohlcv", "floorsheet"}:
             pair = validation.get("two_source_reconciliation", {})
-            source_ids = pair.get("selected_source_ids", []) if isinstance(pair, dict) else []
+            if not isinstance(pair, dict):
+                pair = {}
+            source_ids = pair.get("selected_source_ids", [])
             if pair.get("status") != "COMPLETE_EVIDENCED":
                 reasons.append("two_source_reconciliation_not_complete_evidenced")
-            if not isinstance(source_ids, list) or len(set(source_ids)) < 2:
+            if (not isinstance(source_ids, list)
+                    or any(not isinstance(source_id, str) or not source_id.strip() for source_id in source_ids)
+                    or len(set(source_ids)) < 2):
                 reasons.append("two_lineage_independent_source_ids_missing")
-            if not isinstance(pair, dict) or pair.get("matching_lineage_count", 0) < 2:
+            lineage_count = pair.get("matching_lineage_count")
+            if isinstance(lineage_count, bool) or not isinstance(lineage_count, int) or lineage_count < 2:
                 reasons.append("two_lineage_independent_match_not_proven")
-            if isinstance(pair, dict) and pair.get("conflicts"):
-                investigation = pair.get("mismatch_investigation") or {}
-                if not investigation.get("reason") or not investigation.get("evidence_refs"):
+            if pair.get("conflicts"):
+                investigation = pair.get("mismatch_investigation")
+                if not isinstance(investigation, dict):
+                    investigation = {}
+                refs = investigation.get("evidence_refs")
+                if (not isinstance(investigation.get("reason"), str)
+                        or not investigation["reason"].strip()
+                        or not isinstance(refs, list) or not refs):
                     reasons.append("mismatch_investigation_evidence_missing")
         if not verify_reviewer_signature(validation, reviewer_keys):
             reasons.append("reviewer_signature_invalid_or_untrusted")

@@ -107,3 +107,32 @@ provider payloads unless redistribution rights are evidenced.
 A validated two-source historical record may be marked COMPLETE_EVIDENCED and
 selected as a canonical historical data candidate. This does not authorize
 production signals, deployment, or automatic trading; those remain separate.
+
+
+## Collector configuration
+
+The collector supports provider-documented URL templates. Configure them as
+server-side environment variables; never commit API credentials.
+
+- `SHAREHUB_CHART_URL_TEMPLATE=https://sharehubnepal.com/data/api/v1/nepse-data/price-history/{symbol}?time=5Y`
+- `SHAREHUB_API_TOKEN` for Bearer auth, or `SHAREHUB_API_KEY` for the documented `X-Api-Key` header. ShareHub also requires a licensed service and allow-listed server IP.
+- `SHAREHUB_FLOORSHEET_URL_TEMPLATE` only if ShareHub supplies an authorized historical archive endpoint. Its public docs currently describe today's raw floorsheet, not a five-year raw archive.
+- `NEPSEALPHA_CHART_URL_TEMPLATE`, `NEPSEALPHA_FLOORSHEET_URL_TEMPLATE`, `CHUKUL_CHART_URL_TEMPLATE`, `CHUKUL_FLOORSHEET_URL_TEMPLATE`, `SHARESANSAR_CHART_URL_TEMPLATE`, and `SHARESANSAR_FLOORSHEET_URL_TEMPLATE` must be exact endpoints/templates supplied by the respective provider or an authorized export process.
+- URL templates may use only `{symbol}`, `{security_id}`, `{date}`, `{from}`, and `{to}`. Chart templates should be per-symbol. Daily floorsheet templates should use `{date}` and require the complete exchange-verified session calendar. A bulk archive URL can be supplied with `<PROVIDER>_<TYPE>_DATA_URL`.
+- `MEROLAGANI_CHART_URL_TEMPLATE` and `MEROLAGANI_FLOORSHEET_URL_TEMPLATE` are diagnostic-only inputs.
+
+Example command (replace the input paths with the verified project artifacts):
+
+```bash
+python backend/collect_sources.py \
+  --as-of-date 2026-11-28 \
+  --equity-universe path/to/effective_equity_universe.json \
+  --session-calendar path/to/verified_session_dates.json \
+  --source sharehub --source nepsealpha --source chukul --source sharesansar
+```
+
+The equity-universe JSON is an array of `{"symbol":"...","security_id":"..."}`
+objects. The session-calendar JSON is an array of ISO trading dates or an object
+with a `session_dates` array. Collector results remain PARTIAL_EVIDENCED until
+parsed row counts, five-year coverage, security lifecycle, source lineage and
+two-source reconciliation have been verified.

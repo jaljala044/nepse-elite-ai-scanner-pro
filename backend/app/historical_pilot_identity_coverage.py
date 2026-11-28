@@ -117,6 +117,8 @@ def validate_effective_dated_security_identity(
             if left["symbol"] == right["symbol"] and left["security_id"] == right["security_id"] and left["instrument_type"] != right["instrument_type"] and overlaps(left, right):
                 errors.append({"reason": "instrument_type_conflict_in_overlapping_interval", "symbol": left["symbol"]})
     distinct_primary = {x["publisher_id"] for x in accepted if x["authority"] in {"exchange_primary", "depository_primary"}}
+    if not distinct_primary:
+        errors.append({"reason": "no_primary_identity_evidence"})
     canonical = _canonical_hash({"accepted": accepted, "errors": errors})
     return {
         "status": "IDENTITY_EVIDENCE_VALIDATED" if accepted and not errors else "IDENTITY_EVIDENCE_BLOCKED",

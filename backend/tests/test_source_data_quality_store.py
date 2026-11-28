@@ -66,7 +66,7 @@ class SourceDataQualityStoreTests(unittest.TestCase):
 
     def test_persists_review_required_typed_evidence(self):
         result = self.persist()
-        self.assertEqual(result["evidence_count"], 5)
+        self.assertEqual(result["evidence_count"], 6)
         self.assertEqual(result["source_validation_status"], "review_required")
         self.assertFalse(result["production_admission_allowed"])
 
@@ -125,6 +125,17 @@ class SourceDataQualityStoreTests(unittest.TestCase):
         replay = replay_source_data_quality(loaded["rows"], decision_time=DECISION)
         self.assertEqual(replay["cross_source_reconciliation"]["conflict_count"], 1)
         self.assertEqual(replay["data_quality_report"]["data_quality"], "LOW")
+
+    def test_single_source_observation_cannot_claim_high_data_quality(self):
+        bundle = sample_bundle()
+        bundle["observations"] = bundle["observations"][:1]
+        self.persist(bundle)
+        from app.source_data_quality_store import load_source_data_quality_evidence
+        loaded = load_source_data_quality_evidence(database_path=self.db)
+        replay = replay_source_data_quality(loaded["rows"], decision_time=DECISION)
+        self.assertEqual(replay["data_quality_report"]["data_quality"], "LOW")
+        self.assertIn("cross_source_corroboration_incomplete",
+                      replay["data_quality_report"]["reasons"])
 
     def test_missing_database_is_not_created(self):
         absent = self.root / "missing.duckdb"

@@ -3,7 +3,9 @@
 const el=id=>document.getElementById(id);
 let indices={}, generation=0;
 const categories = [['gainers','Top gainers','%'],['losers','Top losers','%'],['volume','Top volume',' shares'],['turnover','Top turnover',' NPR'],['leaders','Benchmark leaders',' pp'],['laggards','Benchmark laggards',' pp']];
-let rankings={};
+let rankings={}, sectors={};
+function renderSectors(){const target=el('market-sector-list');target.replaceChildren();const period=el('market-sector-period').value;const entries=Object.entries(sectors).sort(([a],[b])=>a.localeCompare(b));if(!entries.length){target.textContent='Verified sector leadership unavailable.';return;}for(const [name,item] of entries){const w=item?.windows?.[period], observed=w?.status==='observed'&&Number.isFinite(w.median_return_pct)&&Number.isFinite(w.median_excess_return_pct)&&Number.isFinite(w.coverage_pct)&&w.coverage_pct>0&&w.coverage_pct<=100;const tile=document.createElement('article');tile.className='sector-tile';tile.dataset.direction=observed?(w.median_excess_return_pct>0?'positive':w.median_excess_return_pct<0?'negative':'neutral'):'unknown';const h=document.createElement('h4');h.textContent=name;const value=document.createElement('strong');value.textContent=observed?w.median_return_pct.toFixed(2)+'%':'Unavailable';const detail=document.createElement('p');detail.textContent=observed?'vs NEPSE: '+w.median_excess_return_pct.toFixed(2)+' pp · coverage '+w.coverage_pct.toFixed(1)+'%':'Insufficient reviewed evidence';const label=document.createElement('small');label.textContent='Overall classification: '+(item?.classification||'Unavailable');tile.append(h,value,detail,label);target.append(tile);}}
+
 function renderRanking(){const target=el('market-ranking-results');target.replaceChildren();const key=el('market-ranking-type').value;const rows=rankings[key];if(!Array.isArray(rows)){target.textContent='Verified ranking unavailable.';return;}if(!rows.length){target.textContent='No qualifying stocks.';return;}const table=document.createElement('table');const head=document.createElement('tr');for(const label of ['Rank','Symbol','Value']){const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);}const thead=document.createElement('thead');thead.append(head);table.append(thead);const body=document.createElement('tbody');const unit=categories.find(c=>c[0]===key)?.[2]||'';rows.forEach((r,i)=>{const tr=document.createElement('tr');for(const v of [i+1,r.symbol,String(r.value)+unit]){const td=document.createElement('td');td.textContent=v;tr.append(td);}body.append(tr);});table.append(body);target.append(table);}
 
 const svg=el("rotation-chart"), picker=el("rotation-index"), length=el("rotation-length");
@@ -24,15 +26,14 @@ function draw(){
 }
 function pair(label,value){const a=document.createElement("dt"),b=document.createElement("dd");a.textContent=label;b.textContent=value??"Unavailable";el("market-research-metrics").append(a,b);}
 async function load(){
- const g=++generation;indices={};rankings={};renderRanking();picker.replaceChildren();picker.disabled=true;draw();el("market-research-metrics").replaceChildren();el("market-sector-list").replaceChildren();el("market-research-status").textContent="Loading reviewed artifacts…";
+ const g=++generation;indices={};rankings={};sectors={};renderRanking();renderSectors();picker.replaceChildren();picker.disabled=true;draw();el("market-research-metrics").replaceChildren();renderSectors();el("market-research-status").textContent="Loading reviewed artifacts…";
  try{
  const r=await fetch("/v1/research/market-dashboard",{cache:"no-store",signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error("HTTP "+r.status);const d=await r.json();if(g!==generation)return;
  if(d.mode!=="research_only"||d.signals_enabled!==false||d.trade_actions_enabled!==false)throw Error("Unexpected research contract");
  const m=d.modules||{},health=m.market_health?.data,participation=m.daily_market_participation?.data,sector=m.sector_rotation?.data;
  rankings={...participation?.rankings,leaders:participation?.benchmark_relative?.leaders,laggards:participation?.benchmark_relative?.laggards};renderRanking();
  pair("Market regime",health?.regime);pair("Market health",health?.market_health_score??health?.score);pair("Breadth sentiment",participation?.sentiment);pair("Market pressure",participation?.pressure);pair("Participation session",m.daily_market_participation?.as_of_date);
- for(const [name,item] of Object.entries(sector?.sectors||{})){const p=document.createElement("p");p.textContent=name+" — "+(item.classification||"Unavailable");el("market-sector-list").append(p);}
- if(!el("market-sector-list").childNodes.length)el("market-sector-list").textContent="Verified sector leadership unavailable.";
+ sectors=sector?.sectors||{};renderSectors();
  indices=m.index_rotation?.data?.indices||{};
  for(const key of Object.keys(indices).filter(k=>k!=="NEPSE").sort()){const opt=document.createElement("option");opt.value=key;opt.textContent=key;picker.append(opt);}
  picker.disabled=!picker.options.length;draw();if(picker.disabled)el("rotation-readout").textContent="Verified relative rotation unavailable.";
@@ -40,5 +41,6 @@ async function load(){
  }catch(e){if(g===generation)el("market-research-status").textContent="Market research unavailable. No demonstration values displayed.";}
 }
 for(const [key,label] of categories){const opt=document.createElement("option");opt.value=key;opt.textContent=label;el("market-ranking-type").append(opt);}el("market-ranking-type").addEventListener("change",renderRanking);
+el("market-sector-period").addEventListener("change",renderSectors);
 picker.addEventListener("change",draw);length.addEventListener("input",draw);el("market-reload").addEventListener("click",load);load();
 })();

@@ -190,6 +190,13 @@ def _provider_access_approval(name: str, data_type: str, url: str) -> tuple[bool
                 or parsed.host.casefold().rstrip(".") not in
                    {host.casefold().rstrip(".") for host in hosts}):
             return False, "provider_endpoint_host_not_approved"
+        # Encoded dot segments, separators and backslashes may be normalized by
+        # upstream proxies after this check. Reject them rather than authorizing
+        # a path whose effective destination could differ from its visible path.
+        if (re.search(r"%(?:2e|2f|5c)", parsed.path, flags=re.IGNORECASE)
+                or "\\" in parsed.path
+                or any(segment in {".", ".."} for segment in parsed.path.split("/"))):
+            return False, "provider_endpoint_path_not_approved"
         def path_matches(path: str, prefix: str) -> bool:
             normalized = prefix.rstrip("/")
             return path == normalized or path.startswith(normalized + "/")

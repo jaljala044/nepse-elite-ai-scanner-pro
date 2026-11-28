@@ -49,6 +49,7 @@ jobs:
             exit "$status"
           fi
           echo "Validator exit $status; no candidate row is promoted." >> "$GITHUB_STEP_SUMMARY"
+          echo "Batch 6 excludes 20 registered dates and 10 separate prior-review dates; exclusions do not certify exchange closures." >> "$GITHUB_STEP_SUMMARY"
       - name: Rank next five dates without repeating prior reviews
         run: |
           python scripts/rank_issue5_weekly_closure_batches.py \
@@ -97,5 +98,6 @@ jobs:
             reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_summary.json
             reports/repeated-adjacent-ohlcv/evidence_manifest.json
             reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json
+            data/reports/issue5_prior_reviewed_batches_4_5.csv
           if-no-files-found: error
           retention-days: 90

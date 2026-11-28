@@ -210,9 +210,13 @@ def collect_configured_provider(
     for label, values in targets:
         try:
             url = template.format(**values) if template else bulk_url
-            if not url.startswith("https://"):
-                raise ValueError("provider URL must use HTTPS")
-            response = client.get(url, headers=headers)
+            approved, approval_reason = _provider_access_approval(name, data_type, url)
+            if not approved:
+                records.append({"source": name, "data_type": data_type, "target": label,
+                                "status": "BLOCKED_ACCESS", "url": url,
+                                "error": approval_reason})
+                continue
+            response = client.get(url, headers=headers, follow_redirects=False)
             response.raise_for_status()
             if len(response.content) > 250 * 1024 * 1024:
                 raise ValueError("response exceeded 250 MiB safety limit")
@@ -295,7 +299,7 @@ def collect(sources: list[str] | None = None, *, as_of_date: str | None = None,
         if len(session_dates) != len(set(session_dates)):
             raise ValueError("session_dates must not contain duplicates")
     records: list[dict[str, Any]] = []
-    with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=True) as client:
+    with httpx.Client(timeout=TIMEOUT, headers=HEADERS, follow_redirects=False) as client:
         records.extend(collect_public_archives(client, selected))
         records.extend(collect_user_github_repos(client, selected))
         if "sharesansar" in selected:

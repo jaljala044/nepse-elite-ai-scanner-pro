@@ -1,0 +1,108 @@
+"""Exploratory-only historical segment admission. Never authorizes production."""
+from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
+import re
+
+def day(value):
+    if not isinstance(value,str) or date.fromisoformat(value).isoformat()!=value:
+        raise ValueError("invalid date")
+    return value
+
+def instant(value):
+    dt=datetime.fromisoformat(value.replace("Z","+00:00"))
+    if dt.tzinfo is None or dt.utcoffset() is None:
+        raise ValueError("naive timestamp")
+    return dt
+
+def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,records,
+                                required_sessions,available_warmup_sessions,decision_cutoff):
+    reasons=[]
+    traded=no_trade=0
+    def reject(reason):
+        if reason not in reasons:
+            reasons.append(reason)
+    if segment.get("identity_verified") is not True or not segment.get("security_id") or not segment.get("symbol"):
+        reject("instrument_identity_not_verified")
+    if segment.get("boundary_reviewed") is not True:
+        reject("lifecycle_boundary_unreviewed")
+    if segment.get("suspension_overlap") is not False:
+        reject("suspension_overlap_unknown_or_present")
+    if segment.get("merger_or_successor_boundary") is not False:
+        reject("merger_or_successor_boundary_unknown_or_crossed")
+    if segment.get("adjustment_basis")!="raw":
+        reject("adjustment_basis_not_verified_raw")
+    try:
+        cutoff=instant(decision_cutoff)
+        start=day(segment["effective_from"])
+        end=day(segment["effective_to"]) if segment.get("effective_to") is not None else None
+        if end is not None and end<start:
+            raise ValueError("inverted interval")
+        sessions=[day(d) for d in expected_sessions]
+        if not sessions or len(sessions)!=len(set(sessions)):
+            reject("invalid_expected_sessions")
+        if type(required_sessions) is not int or required_sessions<=0:
+            raise ValueError("invalid required sessions")
+        warmup=segment["minimum_warmup_sessions"]
+        if type(warmup) is not int or warmup<0 or type(available_warmup_sessions) is not int or available_warmup_sessions<warmup:
+            reject("insufficient_causal_warmup")
+        expected=set(sessions)
+        by_day={}
+        for row in records:
+            d=day(row["session_date"])
+            if d in by_day:
+                reject("duplicate_bar:"+d)
+            by_day[d]=row
+            if d not in expected:
+                reject("unexpected_bar:"+d)
+        for d in sorted(expected):
+            if d<start or (end is not None and d>end):
+                reject("session_outside_instrument_effective_interval:"+d)
+            status=session_statuses.get(d)
+            row=by_day.get(d)
+            if status=="no_trade_verified":
+                no_trade+=1
+                if row is not None:
+                    reject("bar_present_on_verified_no_trade_session:"+d)
+                continue
+            if status!="traded":
+                reject("session_status_unverified:"+d)
+                continue
+            if row is None:
+                reject("missing_bar:"+d)
+                continue
+            valid=True
+            def bad(reason):
+                nonlocal valid
+                valid=False
+                reject(reason+":"+d)
+            if row.get("symbol")!=segment.get("symbol") or row.get("security_id")!=segment.get("security_id"):
+                bad("bar_identity_mismatch")
+            if row.get("adjustment_basis")!=segment.get("adjustment_basis"):
+                bad("bar_adjustment_basis_mismatch")
+            if row.get("rights_status")!="approved":
+                bad("source_rights_not_approved")
+            if not re.fullmatch(r"[0-9a-fA-F]{64}",str(row.get("evidence_sha256",""))):
+                bad("evidence_hash_missing_or_invalid")
+            try:
+                if instant(row["available_at"])>cutoff:
+                    bad("lookahead_available_after_cutoff")
+                if date.fromisoformat(d)>cutoff.date():
+                    bad("future_session")
+            except (ValueError,TypeError,KeyError,AttributeError):
+                bad("availability_invalid")
+            try:
+                o,h,l,c,v=(Decimal(str(row[k])) for k in ("open","high","low","close","volume"))
+                if not all(x.is_finite() for x in (o,h,l,c,v)) or min(o,h,l,c)<=0 or h<max(o,l,c) or l>min(o,h,c) or v<=0 or v!=v.to_integral_value():
+                    bad("invalid_ohlcv")
+            except (InvalidOperation,TypeError,ValueError,KeyError):
+                bad("invalid_ohlcv")
+            if valid:
+                traded+=1
+        if traded<required_sessions:
+            reject("insufficient_traded_sessions")
+    except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
+        reject("malformed_segment_input")
+    return {"exploratory_replay_eligible":not reasons,
+            "approved_backtest_eligible":False,"production_promotion_allowed":False,
+            "verified_traded_session_count":traded,"verified_no_trade_count":no_trade,
+            "reasons":reasons}

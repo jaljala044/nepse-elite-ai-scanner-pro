@@ -108,6 +108,10 @@ class DownstreamQuarantineTests(unittest.TestCase):
                 "close": 11, "volume": 100, "row_status": "quarantined"
             }]})
 
+    def test_database_rejects_quarantined_row_without_date_before_opening(self):
+        with self.assertRaisesRegex(ValueError, "Quarantined or incomplete"):
+            persist_import("test", {"AAA": [{"row_status": "quarantined"}]})
+
     def test_database_rejects_each_quarantine_marker_before_opening(self):
         markers = [
             {"row_status": "quarantined"},

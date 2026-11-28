@@ -1,0 +1,54 @@
+{
+  "records": [
+    {
+      "predecessors": [
+        "BPW"
+      ],
+      "successor": "SLBSL",
+      "event_type": "merger",
+      "final_approval_date": "2024-02-08",
+      "joint_transaction_date": "2024-03-07",
+      "swap_ratio": "1:0.8535",
+      "source_urls": [
+        "https://www.sharesansar.com/index.php/newsdetail/bpw-laghubitta-and-samudayik-laghubitta-receive-final-approval-from-nrb-for-merger-2024-02-08",
+        "https://www.sharesansar.com/newsdetail/for-the-purpose-of-joint-integrated-transaction-share-trading-of-samudayik-laghubitta-and-bpw-laghubitta-to-be-halted-from-falgun-24-2024-03-06",
+        "https://www.sharesansar.com/newsdetail/after-successful-merger-shares-of-samudayik-laghubitta-and-nerude-mirmire-laghubitta-listed-in-nepse-2024-05-17"
+      ],
+      "status": "SECONDARY_EVIDENCE_CANDIDATE"
+    },
+    {
+      "predecessors": [
+        "JALPA",
+        "KLBSL"
+      ],
+      "successor": "MATRI",
+      "event_type": "merger",
+      "final_approval_date": "2024-06-11",
+      "joint_transaction_date": "2024-07-11",
+      "swap_ratio": "1:0.8834",
+      "source_urls": [
+        "https://www.sharesansar.com/newsdetail/share-trading-of-jalpa-samudayik-and-kisan-laghubitta-suspended-for-joint-integrated-transaction-2024-06-24",
+        "https://www.sharesansar.com/newsdetail/joint-trading-of-kisan-laghubitta-and-jalpa-samudayik-laghubitta-shares-transactions-suspended-2024-07-11",
+        "https://nepalipaisa.com/merger"
+      ],
+      "status": "SECONDARY_EVIDENCE_CANDIDATE"
+    },
+    {
+      "predecessors": [
+        "MKLB"
+      ],
+      "successor": "SMATA",
+      "event_type": "acquisition",
+      "effective_date": "2024-07-08",
+      "joint_transaction_date": "2024-07-08",
+      "swap_ratio": "1:1",
+      "source_urls": [
+        "https://www.sharesansar.com/newsdetail/share-trading-of-manakamana-smart-and-samata-laghubitta-suspended-for-joint-integrated-transaction-2024-07-08",
+        "https://www.sharesansar.com/newsdetail/after-successful-acquisition-share-of-samata-gharelu-laghubitta-listed-in-nepse-2024-08-02",
+        "https://nepalipaisa.com/merger"
+      ],
+      "status": "SECONDARY_EVIDENCE_CANDIDATE"
+    }
+  ],
+  "production_identity_approved": false
+}

@@ -25,7 +25,7 @@ Counts are candidate source-pair occurrences whose `current_date` equals the lis
 | 2026-03-28 | 657 | 341 | 316 | 341 | Saturday; scheduled non-session candidate |
 | 2026-05-02 | 655 | 340 | 315 | 340 | Saturday; scheduled non-session candidate |
 | 2025-12-30 | 648 | 336 | 312 | 336 | Tuesday; scheduled open candidate |
-| **Total** | **3,319** | — | **1,598** | **1,696** | — |
+| **Total** | **3,319** | — | **1,598** | **1,721** | — |
 
 ## Evidence boundary
 

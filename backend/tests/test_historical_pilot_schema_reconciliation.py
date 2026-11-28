@@ -1,6 +1,6 @@
 import unittest
 from app.historical_pilot_schema_profiles import validate_source_schema_profile
-from app.historical_pilot_reconciliation import reconcile_historical_datasets
+from app.historical_pilot_cross_dataset_reconciliation import reconcile_historical_datasets
 
 class SchemaProfileTests(unittest.TestCase):
     def test_explicit_approved_versioned_profile_passes(self):

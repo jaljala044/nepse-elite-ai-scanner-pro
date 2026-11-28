@@ -20,6 +20,7 @@ from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
 from .sector_evidence_registry import load_sector_evidence_registry
 from .trusted_sector_reconciliation import publisher_trust_readiness
+from .source_reliability_store import source_reliability_readiness
 
 def _sector_registry_snapshot(decision_time: str):
     expected = EQUITY_UNIVERSE["symbols"] if EQUITY_UNIVERSE else []
@@ -223,8 +224,15 @@ def research_readiness():
         hmac_key=os.getenv("NEPSE_PUBLISHER_TRUST_HMAC_KEY"),
         decision_time=decision_time,
     )
+    expected_source_ids = [item.strip() for item in os.getenv("NEPSE_EXPECTED_SOURCE_IDS", "").split(",") if item.strip()]
+    source_reliability = source_reliability_readiness(
+        database_path=os.getenv("NEPSE_SOURCE_RELIABILITY_DB_PATH"),
+        decision_time=decision_time,
+        expected_source_ids=expected_source_ids,
+    )
     return {
         "mode": "research_only",
+        "source_reliability": source_reliability,
         "sector_evidence_registry": {
             "status": registry["status"],
             "coverage_pct": registry.get("coverage_pct", 0.0),

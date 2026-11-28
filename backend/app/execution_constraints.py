@@ -2,6 +2,15 @@
 from datetime import date
 from math import isfinite
 
+def validate_slippage_bps(value):
+    """Validate adverse slippage assumption; negative values are never rebates."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+        raise ValueError("invalid_slippage_bps")
+    if value < 0 or value >= 10000:
+        raise ValueError("invalid_slippage_bps")
+    return value
+
+
 def settlement_date(trade_day, verified_settlement_days):
     day=date.fromisoformat(str(trade_day))
     if day<date(2021,1,24) or verified_settlement_days is None:
@@ -34,6 +43,8 @@ def exit_scenario(bar, *, stop, target, settled_before_session=False, band=None,
         return result
     if l<blo-1e-8 or h>bhi+1e-8:
         return dict(result,status="band_or_reference_mismatch")
+    if h>=bhi-1e-8 and l>=bhi-1e-8:
+        return dict(result,status="limit_up_execution_unverified")
     if l<=blo+1e-8 and l<=s:
         return dict(result,status="limit_down_execution_unverified")
     if o<=s:

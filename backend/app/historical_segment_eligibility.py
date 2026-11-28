@@ -10,6 +10,9 @@ from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
+from .issue5_quarantine import Quarantine
+
+ARCHIVE_FIELDS = frozenset({"repository", "commit_sha", "source_file", "source_file_sha256", "target_csv_row", "target_date"})
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ALLOWED_SESSION_STATES = {
@@ -100,7 +103,8 @@ def _valid_primary_evidence(evidence, cutoff):
 
 def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
                                 session_evidence, records, required_sessions=120,
-                                available_warmup_sessions=0, decision_cutoff):
+                                available_warmup_sessions=0, decision_cutoff,
+                                archive_guard=None, require_archive_guard=False):
     """Evaluate a point-in-time segment without imputing missing or inactive dates.
 
     expected_sessions must be a verified exchange-session list, not weekdays
@@ -353,6 +357,19 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
             reasons.append(f"duplicate_bar:{day_text}")
             continue
         row = rows[0]
+        if require_archive_guard or archive_guard is not None or ARCHIVE_FIELDS.intersection(row):
+            disposition = None
+            if not isinstance(archive_guard, Quarantine):
+                disposition = "archive_quarantine_guard_missing"
+            elif row.get("target_date") != day_text:
+                disposition = "archive_quarantine_date_binding_missing_or_mismatch"
+            else:
+                guard_result = archive_guard.disposition(row)
+                if guard_result != "not_in_overlay_requires_other_gates":
+                    disposition = "archive_quarantine:" + guard_result
+            if disposition is not None:
+                reasons.append(f"{disposition}:{day_text}")
+                verified_traded -= 1
         if row.get("symbol") != symbol or row.get("security_id") != security_id:
             reasons.append(f"bar_identity_mismatch:{day_text}")
         if effective_from and day < effective_from or effective_to and day > effective_to:
@@ -416,3 +433,8 @@ def evaluate_historical_segment(*, segment, expected_sessions, session_statuses,
         "reasons": reasons,
         "policy": "verified_sessions_only_no_imputation_no_cross_identity_splice_no_ohlcv_adjustment",
     }
+
+
+def evaluate_archive_historical_segment(*, archive_guard=None, **kwargs):
+    """Archive entry point: absence of guard/provenance fails closed."""
+    return evaluate_historical_segment(archive_guard=archive_guard, require_archive_guard=True, **kwargs)

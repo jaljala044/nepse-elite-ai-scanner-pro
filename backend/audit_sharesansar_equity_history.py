@@ -203,7 +203,7 @@ def build_inventory(crosswalk_path: Path, output_dir: Path,
         "retrieval_status_counts": counts,
         "equities_with_at_least_3_years": qualifying_3y,
         "equities_with_at_least_5_years": qualifying_5y,
-        "three_to_five_year_target_met": qualifying_3y,
+        "at_least_3_year_floor_met": qualifying_3y,\n        "preferred_5_year_target_met": qualifying_5y,
         "limitations": [
             "ShareSansar-derived archive; not independent corroboration against another ShareSansar-derived mirror.",
             "Coverage dates are first/last parseable archive row dates, not verified exchange sessions.",
@@ -214,7 +214,7 @@ def build_inventory(crosswalk_path: Path, output_dir: Path,
         "csv_path": str(csv_path),
     }
     json_path = output_dir / "sharesansar_equity_history_coverage.json"
-    json_path.write_text(json.dumps(report, indent=2) + "\\n", encoding="utf-8")
+    json_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 

@@ -1,0 +1,298 @@
+{
+  "dataset_id": "BENH-WEB-SEARCH-EVIDENCE-2026-11-28",
+  "symbol": "BENH",
+  "captured_at": "2026-11-28",
+  "capture_method": "manually transcribed from public web search/indexed pages; no scraping or private API",
+  "records": [
+    {
+      "date": "2026-10-15",
+      "provider": "nepsealpha",
+      "open": 273,
+      "high": 313.9,
+      "low": 273,
+      "close": 313.9,
+      "volume": 90,
+      "scope": "EOD",
+      "source": "https://nepsealpha.com/search?q=BENH",
+      "corroboration": "https://www.nepalstock.com/stockWisePrices"
+    },
+    {
+      "date": "2026-10-16",
+      "provider": "nepsealpha",
+      "open": 323.3,
+      "high": 353,
+      "low": 323.3,
+      "close": 353,
+      "volume": 40,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-26",
+      "provider": "nepsealpha",
+      "open": 370.8,
+      "high": 405.9,
+      "low": 370.8,
+      "close": 405.9,
+      "volume": 140,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-27",
+      "provider": "nepsealpha",
+      "open": 418,
+      "high": 466.7,
+      "low": 418,
+      "close": 466.7,
+      "volume": 230,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-28",
+      "provider": "nepsealpha",
+      "open": 480.7,
+      "high": 536.7,
+      "low": 480.7,
+      "close": 536.7,
+      "volume": 470,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-29",
+      "provider": "nepsealpha",
+      "open": 552.8,
+      "high": 617.2,
+      "low": 552.8,
+      "close": 617.2,
+      "volume": 1338,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-30",
+      "provider": "nepsealpha",
+      "open": 667.4,
+      "high": 709.7,
+      "low": 667.4,
+      "close": 709.7,
+      "volume": 6040,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-02",
+      "provider": "nepsealpha",
+      "open": 767.4,
+      "high": 816.1,
+      "low": 692,
+      "close": 806.1,
+      "volume": 95069,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-03",
+      "provider": "nepsealpha",
+      "open": 800,
+      "high": 800,
+      "low": 743.2,
+      "close": 765.5,
+      "volume": 63968,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-04",
+      "provider": "nepsealpha",
+      "open": 762,
+      "high": 826,
+      "low": 744,
+      "close": 784,
+      "volume": 47365,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-05",
+      "provider": "nepsealpha",
+      "open": 781,
+      "high": 810,
+      "low": 765,
+      "close": 794.1,
+      "volume": 53861,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-06",
+      "provider": "nepsealpha",
+      "open": 790,
+      "high": 870,
+      "low": 790,
+      "close": 840,
+      "volume": 56719,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-13",
+      "provider": "sharegyan",
+      "open": 840,
+      "high": 927,
+      "low": 805.2,
+      "close": 873,
+      "volume": 51684,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-17",
+      "provider": "sharegyan",
+      "open": 830,
+      "high": 930,
+      "low": 820.1,
+      "close": 837,
+      "volume": 52463,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-18",
+      "provider": "sharegyan",
+      "open": 800,
+      "high": 885,
+      "low": 800,
+      "close": 856.4,
+      "volume": 54122,
+      "scope": "EOD",
+      "conflict": "nepsedata_close_only_837"
+    },
+    {
+      "date": "2026-11-19",
+      "provider": "sharegyan",
+      "open": 820,
+      "high": 882.2,
+      "low": 796,
+      "close": 826,
+      "volume": 35271,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-20",
+      "provider": "sharegyan",
+      "open": 800,
+      "high": 850,
+      "low": 781.5,
+      "close": 800,
+      "volume": 30324,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-23",
+      "provider": "sharegyan",
+      "open": 791,
+      "high": 797.9,
+      "low": 772,
+      "close": 785,
+      "volume": null,
+      "scope": "OHLC_ONLY"
+    },
+    {
+      "date": "2026-11-24",
+      "provider": "sharegyan",
+      "open": 765,
+      "high": 803,
+      "low": 765,
+      "close": 798,
+      "volume": null,
+      "scope": "OHLC_ONLY"
+    },
+    {
+      "date": "2026-11-27",
+      "provider": "sharegyan",
+      "open": 800,
+      "high": 840,
+      "low": 771,
+      "close": 785,
+      "volume": 33244,
+      "scope": "EOD",
+      "corroboration": [
+        "https://www.sharesansar.com/sectorwise-share-price",
+        "https://nepsedata.com/stock/BENH"
+      ]
+    }
+  ],
+  "special_observations": [
+    {
+      "date": "2026-11-25",
+      "provider": "sharegyan",
+      "scope": "INTRADAY_SNAPSHOT",
+      "as_of": "12:05 Nepal time",
+      "open": 798,
+      "high": 815,
+      "low": 776,
+      "close": 800,
+      "volume": 475,
+      "decision": "exclude from EOD"
+    },
+    {
+      "date": "2026-11-26",
+      "provider": "sharegyan",
+      "scope": "SUMMARY_ONLY",
+      "open": 801,
+      "high": 839.8,
+      "low": 800,
+      "close": 820,
+      "volume": 27640,
+      "floorsheet_table": "No transaction data found",
+      "decision": "quarantine source internal conflict"
+    },
+    {
+      "date": "2026-11-27",
+      "provider": "sharesansar",
+      "scope": "EOD",
+      "open": 800,
+      "high": 840,
+      "low": 771,
+      "close": 785,
+      "volume": 33244,
+      "turnover": 26323484,
+      "decision": "matched with Share Gyan and NEPSEDATA"
+    }
+  ],
+  "listing_and_first_trade": {
+    "listing_date": "2026-10-13",
+    "scheduled_trading_start": "2026-10-14",
+    "first_observed_official_record": "2026-10-15",
+    "first_observed_ohlcv": {
+      "open": 273,
+      "high": 313.9,
+      "low": 273,
+      "close": 313.9,
+      "volume": 90
+    },
+    "status": "SCHEDULED_14_OCT_FIRST_OBSERVED_15_OCT",
+    "first_trade_fully_verified": false,
+    "reason": "No complete 14-Oct BENH floorsheet archive found; first observed trade does not prove first-ever trade."
+  },
+  "sources": {
+    "nepsealpha": "https://nepsealpha.com/search?q=BENH",
+    "nepsealpha_export": "https://nepsealpha.com/nepse-data/",
+    "nepse_official": "https://www.nepalstock.com/stockWisePrices",
+    "sharesansar": "https://www.sharesansar.com/company/benh",
+    "sharegyan_history": "https://sharegyannepal.com/company/BENH/price-history/",
+    "sharegyan_overview": "https://sharegyannepal.com/company/BENH/",
+    "sharegyan_floorsheet": "https://www.sharegyannepal.com/company/BENH/floorsheet/",
+    "nepsedata": "https://nepsedata.com/stock/BENH",
+    "archive": "https://omitnomis.github.io/ShareSansarScraper/",
+    "dataset": "https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data"
+  },
+  "quality": {
+    "raw_source_file_retained": false,
+    "complete_archive_verified": false,
+    "known_close_conflicts": [
+      "2026-11-18"
+    ],
+    "intraday_only": [
+      "2026-11-25"
+    ],
+    "summary_only_conflict": [
+      "2026-11-26"
+    ],
+    "missing_volume": [
+      "2026-11-23",
+      "2026-11-24"
+    ],
+    "production_admission_allowed": false
+  }
+}

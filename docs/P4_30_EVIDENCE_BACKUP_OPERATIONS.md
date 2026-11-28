@@ -20,11 +20,18 @@ python scripts/create_evidence_backup.py \
   --writers-quiesced
 ```
 
-The destination root must already exist. Each run creates a unique child
-directory, refuses overwrite, calls the P4.26 source integrity audit through
-the P4.27 library, checkpoints DuckDB, inventories files and hashes, then
-re-verifies the completed backup. It emits a JSON report and returns a
-non-zero exit code if verification fails.
+The destination must already exist **and be an actual mounted filesystem**;
+an ordinary directory on the application volume is rejected. The runner also
+rejects overlapping source/destination trees and a source database located
+inside the backup destination. These checks prevent a backup from recursively
+copying its own output or mistaking a same-volume directory for an independent
+backup target.
+
+Each run creates a unique child directory, refuses overwrite, calls the P4.26
+source integrity audit through the P4.27 library, checkpoints DuckDB,
+inventories files and hashes, then re-verifies the completed backup. It emits
+a JSON report for success and operational failure. A non-zero exit code means
+the backup did not complete and verify.
 
 The flag `--writers-quiesced` is an operator attestation, not an OS-level
 distributed lock. The operator must actually stop all writers. Do not run
@@ -63,6 +70,12 @@ No retention pruning is automated here: deleting recovery points before a
 verified newer backup and restore process exists would be unsafe.
 
 ## Acceptance and evidence
+
+The operator path regression suite covers:
+- refusal of a plain directory that is not a mount point;
+- acceptance of a separately mounted destination;
+- rejection of source/destination overlap in either direction;
+- rejection of a database located inside the backup destination.
 
 For every run, retain the JSON output and independently record the host,
 mount/volume identity, destination provider/account, UTC timestamp, backup

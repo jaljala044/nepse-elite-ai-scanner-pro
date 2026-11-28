@@ -8,7 +8,7 @@ Private, research-oriented NEPSE market analysis platform. This repository start
 - Public datasets: Hugging Face inventory, bounded/resumable downloader, daily floorsheet and sector-index normalizers, and independent audit reports
 - Kaggle: safe local download/staging helper (requires your locally configured Kaggle CLI)
 - Scanner: transparent, rule-based technical feature extraction (not an institutional-flow detector)
-- Live API feeds, paid broker integrations, web UI, Android app, authentication, deployment and scheduled automation: not yet connected or verified
+- Live API feeds, paid broker integrations, Android app and scheduled automation: not yet connected or verified. The browser research terminal is built into the Docker image and container-smoke-tested, but no live deployment is verified. Authentication must be configured before exposing the API publicly.
 
 ## Quick start
 ```bash
@@ -19,6 +19,19 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 Open `http://127.0.0.1:8000/docs`.
+
+## Browser terminal container
+
+Build the backend API and browser terminal together from the repository root:
+
+```bash
+docker build -f backend/Dockerfile -t nepse-elite-ai-scanner:local .
+docker run --rm -p 8000:8000 \\
+  -v nepse-api-data:/app/app/data \\
+  nepse-elite-ai-scanner:local
+```
+
+Open `http://127.0.0.1:8000/terminal/`. The container includes the dated secondary-provider candidate-universe manifest at `/data/reference`; it does not include canonical OHLCV history. A fresh database therefore reports zero stored observations until validated data is separately loaded. The Docker build and container smoke tests do not deploy the service to a public host. Configure and verify private authentication, persistent storage, access controls and backups before any external deployment.
 
 ## NEPSE data collection
 

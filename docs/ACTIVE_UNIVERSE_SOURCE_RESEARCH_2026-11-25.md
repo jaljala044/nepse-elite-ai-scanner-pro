@@ -98,3 +98,22 @@ A 2026-11-08 secondary industry overview reports 47 closed-end schemes, with 45 
 Primary-source discovery improved, but **the exact dated 281-equity + 47-mutual-fund active trading register remains unverified**. The 2026-11-24 floorsheet sample contains 347 distinct symbols in one source file, which is 19 more than the arithmetic target of 328. Those 19 symbols are not automatically errors or excluded classes. They must be mapped to official security IDs, instrument types and effective lifecycle dates.
 
 Do not promote any symbol-only list into the canonical target universe. The next required source is a raw NEPSE security-list response or official dated export that can be preserved with retrieval time, source hash, security IDs, instrument types, and status effective dates. SEBON approvals and pipeline rows should be cross-references, not substitutes for exchange listing/trading status.
+
+
+## NEPSE client API semantics cross-check — 2026-11-27
+
+A current third-party NEPSE client reference now documents two distinct methods:
+- `getCompanyList()`: described as all listed companies.
+- `getSecurityList()`: described as all non-delisted securities.
+
+The client documentation is useful for distinguishing company records from security records, but it does not establish that either response is a complete **ordinary-equity-only** registry with effective-dated instrument lifecycle. In particular, a separate unofficial NEPSE client implementation explicitly describes its company map as including delisted companies (excluding promoter shares) and its security map as non-delisted securities (including promoter shares). Therefore:
+- Do not substitute the company list for an active-trading universe; it may include delisted issuers.
+- Do not substitute the non-delisted security list for an ordinary-equity universe; it may include promoter shares and other instruments.
+- A valid reconciliation still needs instrument type, security ID, listing/trading status, and effective dates, plus an immutable raw response and retrieval metadata.
+
+References:
+- [NEPSE Client API reference — company/security list methods](https://nepseclient.readthedocs.io/en/latest/api/client.html)
+- [NEPSE Client generated API reference](https://nepseclient.readthedocs.io/en/latest/api/generated/nepse_client.NepseClient.html)
+- [Unofficial client implementation and its stated list semantics](https://github.com/basic-bgnr/NepseUnofficialApi/blob/master/nepse/NepseLib.py)
+
+Evidence classification: third-party documentation/implementation only. This is a semantic cross-check and source lead, not an official NEPSE API contract, a retrieved exchange response, or authority to alter/promote the 281-symbol candidate manifest. No symbols or historical records were changed.

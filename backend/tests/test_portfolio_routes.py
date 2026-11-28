@@ -142,6 +142,12 @@ class PortfolioRouteTests(unittest.TestCase):
         created = self.client.post("/v1/portfolios", headers=self.headers,
                                    json={"name": "Preferences"})
         portfolio_id = created.json()["id"]
+        bought = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions", headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "5",
+                  "price": "100", "fees": "0", "trade_date": "2026-01-01"},
+        )
+        self.assertEqual(bought.status_code, 201)
         response = self.client.put(
             f"/v1/portfolios/{portfolio_id}/preferences/CFCL",
             headers=self.headers,

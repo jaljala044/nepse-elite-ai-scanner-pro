@@ -1,0 +1,19 @@
+{
+ "capture_date":"2026-11-28",
+ "BENH":{
+  "sharehub":{"url":"https://sharehubnepal.com/data/nepse-data-documentation/","status":"ACCESS_REQUIRED","detail":"Historical price-history endpoint documented. Requires Data API account, licence, allow-listed server IP and enabled service; no credentials were available to this capture."},
+  "chukul":{"url":"https://chukul.com/nepse-charts","status":"FETCH_BLOCKED","detail":"Rendered chart page returned empty content; no historical candles captured."},
+  "sharesansar_profile":{"url":"https://www.sharesansar.com/index.php/company/BENH","status":"PROFILE_CAPTURED","detail":"Current 2026-11-27 quote and company metadata visible; historical chart tab did not yield rows."},
+  "sharesansar_listing":{"url":"https://www.sharesansar.com/index.php/eventdetail/listing-ipo-share-of-beni-hydropower-project-limited-benh-2026-10-13","status":"EVENT_CAPTURED","listing_date":"2026-10-13","scheduled_first_trade_date":"2026-10-14","detail":"Article says NEPSE listed 10,400,000 units and trading would commence 2026-10-14."},
+  "sharesansar_first_observed_trade":{"url":"https://www.sharesansar.com/index.php/newsdetail/nepse-gains-for-sixth-straight-session-as-benh-hits-positive-circuit-2026-10-15","status":"TRADE_OBSERVED","date":"2026-10-15","close":313.90,"detail":"Article reports BENH as top gainer and closed at Rs 313.90 on 2026-10-15; does not establish this was the first actual trade."},
+  "nepsedata_close_series":{"url":"https://nepsedata.com/stock/BENH","status":"CAPTURED_CLOSE_ONLY","records":22,"first_observed":"2026-10-15","last_observed":"2026-11-27","detail":"22 daily close observations; not OHLCV."},
+  "floorsheet":{"url":"https://sharehubnepal.com/company/BENH/floorsheet","status":"NOT_ACQUIRED","detail":"Public page shows current session summary only; no dated historical BENH executions or archive coverage captured."}
+ },
+ "predecessors":{
+  "BPW":{"successor_candidate":"SLBSL","status":"SECONDARY_CANDIDATE","primary_nepse_notice_url":"https://www.nepalstock.com/api/nots/security/fetchFiles?fileLocation=Samudayik_Laghubitta_Bittiya_Sanstha_Limited/Company%20News/2024-02-22/notice%20merger_1708575923704.pdf","secondary_url":"https://laganilab.com/nepse-company/BPW/","detail":"Laganilab states BPW merged into SLBSL and ceased separate trading; NEPSE primary PDF located but scanned and not text-verifiable in this extraction. Effective date not admitted."},
+  "JALPA":{"successor_candidate":"MATRI","status":"SECONDARY_CANDIDATE","url":"https://www.sharesansar.com/newsdetail/after-successful-merger-between-jalpa-and-klbsl-shares-of-matribhumi-laghubitta-listed-in-nepse-2024-08-12","detail":"ShareSansar reports merger with KLBSL; combined entity MATRI, joint transaction started Ashad 27, 2081, swap ratio 1:0.8834; primary merger approval notice still required."},
+  "KLBSL":{"successor_candidate":"MATRI","status":"SECONDARY_CANDIDATE","url":"https://www.sharesansar.com/newsdetail/after-successful-merger-between-jalpa-and-klbsl-shares-of-matribhumi-laghubitta-listed-in-nepse-2024-08-12","detail":"Same merger report; historical security ID and effective-dated mapping still require primary evidence."},
+  "MKLB":{"successor_candidate":null,"status":"IDENTITY_ONLY","primary_url":"https://nepalstock.com/api/nots/news/notice/fetchFiles/df221a2bedf0c416585b019c459f17fb.pdf","detail":"NEPSE company-list PDF names Manakamana Smart Laghubitta Bittiya Sanstha Limited as MKLB; no predecessor/successor relationship is evidenced by this document."}
+ },
+ "production_admission_allowed":false
+}

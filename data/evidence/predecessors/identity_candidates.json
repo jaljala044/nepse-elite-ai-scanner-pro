@@ -1,0 +1,9 @@
+{
+ "records":[
+  {"predecessor":"BPW","successor_candidate":"SLBSL","status":"SECONDARY_CANDIDATE","effective_date":null,"evidence":["https://www.nepalstock.com/api/nots/security/fetchFiles?fileLocation=Samudayik_Laghubitta_Bittiya_Sanstha_Limited/Company%20News/2024-02-22/notice%20merger_1708575923704.pdf","https://laganilab.com/nepse-company/BPW/"],"notes":"NEPSE notice PDF located but scanned/unreadable in extraction; Laganilab reports merger. Do not admit effective date or security ID."},
+  {"predecessor":"JALPA","successor_candidate":"MATRI","status":"SECONDARY_CANDIDATE","effective_date_nepali":"Ashad 27, 2081","swap_ratio":"1:0.8834","evidence":["https://www.sharesansar.com/newsdetail/after-successful-merger-between-jalpa-and-klbsl-shares-of-matribhumi-laghubitta-listed-in-nepse-2024-08-12"],"notes":"ShareSansar reports joint transaction and subsequent listing of MATRI shares; primary merger approval notice required."},
+  {"predecessor":"KLBSL","successor_candidate":"MATRI","status":"SECONDARY_CANDIDATE","effective_date_nepali":"Ashad 27, 2081","swap_ratio":"1:0.8834","evidence":["https://www.sharesansar.com/newsdetail/after-successful-merger-between-jalpa-and-klbsl-shares-of-matribhumi-laghubitta-listed-in-nepse-2024-08-12"],"notes":"Kisan Laghubitta identity and merger relationship are reported by ShareSansar; primary merger approval notice required."},
+  {"predecessor":"MKLB","successor_candidate":null,"status":"IDENTITY_ONLY","effective_date":null,"evidence":["https://nepalstock.com/api/nots/news/notice/fetchFiles/df221a2bedf0c416585b019c459f17fb.pdf"],"notes":"NEPSE company list names Manakamana Smart Laghubitta Bittiya Sanstha Limited (MKLB); no successor relationship is established."}
+ ],
+ "production_identity_approved":false
+}

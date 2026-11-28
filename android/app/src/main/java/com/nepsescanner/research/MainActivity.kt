@@ -53,7 +53,28 @@ class MainActivity : Activity() {
         val expand = Button(this).apply { text = "Expand chart" }
         var expanded = false
         expand.setOnClickListener { expanded = !expanded; chart.layoutParams = chart.layoutParams.apply { height = ((if(expanded) 560 else 280)*resources.displayMetrics.density).toInt() }; expand.text = if(expanded) "Reduce chart" else "Expand chart" }
-        listOf(frame,chartRange,earlier,later,zoomIn,zoomOut,latest,expand).forEach { chartControls.addView(it) }
+        val fullscreen = Button(this).apply { text = "Full-screen chart" }
+        var activeChartDialog: android.app.Dialog? = null
+        fullscreen.setOnClickListener {
+            if (activeChartDialog?.isShowing == true) return@setOnClickListener
+            val dialog = android.app.Dialog(this, android.R.style.Theme_Material_NoActionBar)
+            val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(11,17,27)) }
+            val range = label(chart.rangeLabel())
+            val largeChart = CandleView(this).apply { copyViewportFrom(chart) }
+            val close = Button(this).apply { text = "Exit full screen" }
+            largeChart.onRangeChanged = { range.text = largeChart.rangeLabel() }
+            panel.addView(close)
+            panel.addView(range)
+            panel.addView(largeChart, LinearLayout.LayoutParams(-1,0,1f))
+            close.setOnClickListener { dialog.dismiss() }
+            dialog.setContentView(panel)
+            dialog.setOnDismissListener { chart.copyViewportFrom(largeChart); updateChartRange(chartRange,chart); activeChartDialog = null }
+            activeChartDialog = dialog
+            dialog.show()
+            dialog.window?.setLayout(-1,-1)
+            dialog.window?.decorView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        }
+        listOf(frame,chartRange,earlier,later,zoomIn,zoomOut,latest,expand,fullscreen).forEach { chartControls.addView(it) }
         var fullHistory = emptyList<Candle>()
         fun updateRange() { chartRange.text = chart.rangeLabel() }
         chart.onRangeChanged = { updateRange() }
@@ -159,6 +180,8 @@ class MainActivity : Activity() {
     override fun onDestroy() { generation++; worker.shutdownNow(); super.onDestroy() }
 }
 
+private fun updateChartRange(label: TextView, chart: CandleView) { label.text = chart.rangeLabel() }
+
 private data class ScreenResult(val text: String, val candles: List<Candle> = emptyList())
 private data class Candle(val date: String,val open: Double,val high: Double,val low: Double,val close: Double)
 
@@ -212,6 +235,7 @@ private class CandleView(context: android.content.Context): View(context) {
         return true
     }
     override fun performClick(): Boolean { super.performClick(); return true }
+    fun copyViewportFrom(other: CandleView) { rows=other.rows; window=other.window; end=other.end; invalidate() }
     fun replace(data: List<Candle>) { rows=data; end=data.size; window=80; invalidate() }
     fun pan(direction: Int) { if(rows.isNotEmpty()){ end=(end+direction*maxOf(1,window/2)).coerceIn(minOf(window,rows.size),rows.size); invalidate() } }
     fun zoom(factor: Double) { if(rows.isNotEmpty()){ window=(window*factor).toInt().coerceIn(5,500); end=end.coerceIn(minOf(window,rows.size),rows.size); invalidate() } }

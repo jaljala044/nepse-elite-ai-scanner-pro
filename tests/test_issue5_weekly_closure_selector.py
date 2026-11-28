@@ -158,5 +158,19 @@ class WeeklyClosureSelectorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "overlap"):
                 rank_batches(candidate, registered, 5, prior_review)
 
+
+    def test_batch4_and_batch5_review_register_has_ten_unique_unregistered_dates(self):
+        from scripts.rank_issue5_weekly_closure_batches import load_exclusions
+        root = Path(__file__).resolve().parents[1]
+        registered = load_exclusions(
+            root / "data" / "reference" / "issue5_registered_weekly_closure_dates.csv"
+        )
+        prior = load_exclusions(
+            root / "data" / "reports" / "issue5_prior_reviewed_batches_4_5.csv"
+        )
+        self.assertEqual(len(prior), 10)
+        self.assertTrue(prior.isdisjoint(registered))
+        self.assertEqual(len(registered | prior), 30)
+
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,8 @@ if(typeof document!=="undefined"){
  const el=id=>document.getElementById(id),put=(id,v)=>el(id).textContent=v;
  let compareRun=0,watchBusy=false,watchLoaded=false;
  async function request(path,opts={}){const r=await fetch(path,{cache:"no-store",credentials:"same-origin",signal:AbortSignal.timeout(10000),...opts});if(!r.ok)throw Error(r.status===401?"Sign in through configured private deployment":"HTTP "+r.status);return r.json();}
+ async function session(){put("account-status","Checking session…");try{const r=await request("/v1/account/session");if(r.authenticated!==true||!["administrator","researcher"].includes(r.role)||r.mode!=="research_only")throw Error("Invalid session response");put("account-status","Authenticated: "+r.role+" · research only · AI recommendations disabled");}catch(e){put("account-status","Session unavailable: "+e.message);}}
+ el("account-check").addEventListener("click",session);
  el("compare-run").addEventListener("click",async()=>{
   const run=++compareRun;put("compare-result","Loading observed history…");
   try{const list=symbolsFrom(el("compare-symbols").value,5);if(list.length<2)throw Error("Choose 2–5 symbols");

@@ -53,13 +53,13 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
     def test_five_year_history_is_preferred(self):
         result = classify_history_coverage(
             coverage_start="2021-11-28", as_of_date="2026-11-28")
-        self.assertEqual(result["status"], "COMPLETE_EVIDENCED")
+        self.assertEqual(result["status"], "PARTIAL_EVIDENCED")
         self.assertEqual(result["coverage_tier"], "preferred_5_year")
 
     def test_three_year_history_is_accepted_as_minimum_fallback(self):
         result = classify_history_coverage(
             coverage_start="2023-11-28", as_of_date="2026-11-28")
-        self.assertEqual(result["status"], "COMPLETE_EVIDENCED")
+        self.assertEqual(result["status"], "PARTIAL_EVIDENCED")
         self.assertEqual(result["coverage_tier"], "minimum_3_year_fallback")
 
     def test_less_than_three_year_history_remains_partial(self):

@@ -26,6 +26,15 @@ class WeeklyClosureSelectorTests(unittest.TestCase):
             "session_pair_classification": CLASSIFICATION,
         }
 
+    def test_checked_in_exclusion_register_has_unique_prior_review_dates(self):
+        register = (
+            Path(__file__).resolve().parents[1]
+            / "data" / "reference" / "issue5_registered_weekly_closure_dates.csv"
+        )
+        from scripts.rank_issue5_weekly_closure_batches import load_exclusions
+        excluded = load_exclusions(register)
+        self.assertEqual(len(excluded), 25)
+
     def test_weekday_regime_transition(self):
         from datetime import date
         self.assertTrue(is_weekly_closure(date(2026, 4, 3)))  # Friday, old regime

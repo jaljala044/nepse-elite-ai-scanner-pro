@@ -5,7 +5,7 @@ authenticate to, or bypass subscription-only services. Every import is research-
 until independent coverage, identity, calendar and quality gates are satisfied.
 """
 from __future__ import annotations
-import csv, hashlib, io
+import csv, hashlib, io, math
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -13,7 +13,7 @@ PROFILES = {
     "sharehub": {
         "date": ("date", "trading_date", "session_date"),
         "open": ("open", "open_price"), "high": ("high", "high_price"),
-        "low": ("low", "low_price"), "close": ("close", "close_price", "ltp"),
+        "low": ("low", "low_price"), "close": ("close", "close_price"),
         "volume": ("volume", "total_traded_quantity", "quantity"),
     },
     "chukul": {
@@ -21,13 +21,13 @@ PROFILES = {
         "open": ("openPrice", "open_price", "open"),
         "high": ("highPrice", "high_price", "high"),
         "low": ("lowPrice", "low_price", "low"),
-        "close": ("closePrice", "close_price", "ltp", "close"),
+        "close": ("closePrice", "close_price", "close"),
         "volume": ("totalVolume", "total_traded_quantity", "volume", "quantity"),
     },
     "sharesansar": {
         "date": ("trade_date", "trading_date", "session_date", "date"),
         "open": ("open", "open_price"), "high": ("high", "high_price"),
-        "low": ("low", "low_price"), "close": ("closing_price", "close", "ltp"),
+        "low": ("low", "low_price"), "close": ("closing_price", "close"),
         "volume": ("quantity", "total_traded_quantity", "volume"),
     },
 }
@@ -47,7 +47,7 @@ def _pick(row: dict[str, Any], names: tuple[str, ...]) -> Any:
     return None
 
 def _day(value: Any) -> str:
-    return date.fromisoformat(str(value).strip()[:10]).isoformat()
+    return date.fromisoformat(str(value).strip()).isoformat()
 
 def _capture_time(value: str) -> str:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -62,10 +62,18 @@ def parse_csv_bytes(raw: bytes) -> list[dict[str, str]]:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("export_must_be_utf8_or_utf8_bom") from exc
-    reader = csv.DictReader(io.StringIO(text))
+    reader = csv.DictReader(io.StringIO(text, newline=""), restkey="__extra_fields__", strict=True)
     if not reader.fieldnames:
         raise ValueError("csv_header_required")
-    return [dict(row) for row in reader]
+    rows = []
+    try:
+        for line, row in enumerate(reader, start=2):
+            if row.get("__extra_fields__") is not None or any(row.get(key) is None for key in reader.fieldnames):
+                raise ValueError(f"malformed_csv_row_{line}")
+            rows.append(dict(row))
+    except csv.Error as exc:
+        raise ValueError("malformed_csv:" + str(exc)) from exc
+    return rows
 
 def build_import_manifest(*, provider: str, symbol: str, filename: str, raw: bytes,
                           source_url: str | None, captured_at: str,
@@ -88,21 +96,46 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
     provider = provider.strip().lower()
     if provider not in PROFILES:
         raise ValueError("unsupported_provider")
-    accepted, rejected, seen = [], [], set()
+    accepted, rejected, seen = [], [], {}
     for idx, row in enumerate(rows):
         try:
             fields = PROFILES[provider]
             day = _day(_pick(row, fields["date"]))
-            vals = {key: float(_pick(row, aliases)) for key, aliases in fields.items() if key != "date"}
+            if day in seen:
+                prior = seen[day]
+                prior_record = next((item for item in accepted if item["session_date"] == day), None)
+                if prior_record is not None:
+                    accepted.remove(prior_record)
+                    rejected.append({"row_index": prior["row_index"], "reason": "duplicate_symbol_session",
+                                     "raw_row": prior["raw_row"]})
+                elif not any(item["row_index"] == prior["row_index"] and
+                             item["reason"] == "duplicate_symbol_session" for item in rejected):
+                    prior_rejection = next((item for item in rejected if item["row_index"] == prior["row_index"]), None)
+                    if prior_rejection is not None:
+                        # Preserve the original validation failure as well as the
+                        # later duplicate-session disposition; never erase why the
+                        # first row was rejected.
+                        prior_rejection.setdefault("prior_reason", prior_rejection.get("reason"))
+                        prior_rejection["reason"] = "duplicate_symbol_session"
+                        prior_rejection["raw_row"] = prior["raw_row"]
+                    else:
+                        rejected.append({"row_index": prior["row_index"], "reason": "duplicate_symbol_session",
+                                         "raw_row": prior["raw_row"]})
+                rejected.append({"row_index": idx, "reason": "duplicate_symbol_session", "raw_row": row})
+                continue
+            seen[day] = {"row_index": idx, "raw_row": row}
+            raw_values = {key: _pick(row, aliases) for key, aliases in fields.items() if key != "date"}
+            if any(value is None for value in raw_values.values()):
+                raise ValueError("missing_ohlcv_field")
+            vals = {key: float(value) for key, value in raw_values.items()}
             if any(v is None for v in vals.values()):
                 raise ValueError("missing_ohlcv_field")
+            if any(not math.isfinite(v) for v in vals.values()):
+                raise ValueError("non_finite_ohlcv_value")
             if any(v < 0 for v in vals.values()):
                 raise ValueError("negative_ohlcv_value")
             if vals["low"] > min(vals["open"], vals["close"]) or vals["high"] < max(vals["open"], vals["close"]) or vals["low"] > vals["high"]:
                 raise ValueError("invalid_ohlc_relationship")
-            if day in seen:
-                raise ValueError("duplicate_symbol_session")
-            seen.add(day)
             accepted.append({"symbol": symbol.strip().upper(), "session_date": day, **vals,
                              "provider_id": provider, "row_index": idx})
         except (ValueError, TypeError) as exc:
@@ -119,6 +152,8 @@ def normalize_close_only_rows(*, provider: str, symbol: str,
         try:
             day = _day(_pick(row, ("date", "trade_date", "trading_date", "session_date")))
             close = float(_pick(row, ("close", "closing_price", "ltp")))
+            if not math.isfinite(close):
+                raise ValueError("non_finite_close")
             if close <= 0 or day in seen:
                 raise ValueError("non_positive_close_or_duplicate_session")
             seen.add(day)
@@ -165,6 +200,8 @@ def normalize_floorsheet_rows(*, symbol: str, rows: list[dict[str, Any]]) -> dic
             day = _day(_pick(row, FLOORSHEET_ALIASES["date"]))
             qty = float(_pick(row, FLOORSHEET_ALIASES["quantity"]))
             price = float(_pick(row, FLOORSHEET_ALIASES["price"]))
+            if not math.isfinite(qty) or not math.isfinite(price):
+                raise ValueError("non_finite_quantity_or_price")
             if qty <= 0 or price <= 0:
                 raise ValueError("non_positive_quantity_or_price")
             item = daily.setdefault(day, {"symbol": row_symbol, "session_date": day,

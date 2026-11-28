@@ -19,6 +19,7 @@ from .index_intelligence import build_verified_index_intelligence
 from .verified_sector_rotation import build_verified_sector_rotation
 from .sector_intelligence_confluence import build_sector_intelligence_confluence
 from .sector_evidence_registry import load_sector_evidence_registry
+from .trusted_sector_reconciliation import publisher_trust_readiness
 
 def _sector_registry_snapshot(decision_time: str):
     expected = EQUITY_UNIVERSE["symbols"] if EQUITY_UNIVERSE else []
@@ -214,7 +215,14 @@ def sector_confluence_research(request: SectorConfluenceRequest):
 @app.get("/v1/research/readiness")
 def research_readiness():
     """Read-only UI contract. Never exposes uploaded data or authorizes recommendations."""
-    registry = _sector_registry_snapshot(datetime.now(timezone.utc).isoformat())
+    decision_time = datetime.now(timezone.utc).isoformat()
+    registry = _sector_registry_snapshot(decision_time)
+    publisher_trust = publisher_trust_readiness(
+        registry_path=os.getenv("NEPSE_PUBLISHER_TRUST_REGISTRY_PATH"),
+        freshness_policy_path=os.getenv("NEPSE_EVIDENCE_FRESHNESS_POLICY_PATH"),
+        hmac_key=os.getenv("NEPSE_PUBLISHER_TRUST_HMAC_KEY"),
+        decision_time=decision_time,
+    )
     return {
         "mode": "research_only",
         "sector_evidence_registry": {
@@ -224,6 +232,7 @@ def research_readiness():
             "admission_allowed": False,
             "reason": registry.get("reason"),
         },
+        "publisher_trust": publisher_trust,
         "candidate_equities": len(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else None,
         "canonical_reviewed_rows": len(REVIEWED_ROWS),
         "universe_available": EQUITY_UNIVERSE is not None,

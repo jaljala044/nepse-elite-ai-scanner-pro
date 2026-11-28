@@ -73,5 +73,90 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
                 build_report(ap, cp, up)
 
 
+    def _minimal_inputs(self, root):
+        audit = {"repositories": {}}
+        for repository in (
+            "jaljala044/nepse-smc-data",
+            "jaljala044/nepse-history-starter",
+        ):
+            audit["repositories"][repository] = {
+                "commit_sha": "a" * 40, "files_audited": 1, "file_count": 1,
+                "total_rows": 2, "duplicate_date_count": 0,
+                "out_of_order_transitions": 0, "invalid_row_count": 0,
+                "download_errors": [],
+                "files": [{"symbol": "ABC", "first_date": "2026-01-01",
+                           "last_date": "2026-01-03"}],
+                "date_coverage": [
+                    {"date": "2026-01-01", "symbols": ["ABC"]},
+                    {"date": "2026-01-03", "symbols": ["ABC"]},
+                ],
+            }
+        audit_path = root / "audit.json"
+        audit_path.write_text(json.dumps(audit), encoding="utf-8")
+        calendar_path = root / "calendar.csv"
+        calendar_path.write_text(
+            "date,status\n2026-01-01,project_accepted_open\n"
+            "2026-01-02,project_accepted_open\n2026-01-03,verified_closed\n",
+            encoding="utf-8",
+        )
+        universe_path = root / "universe.csv"
+        universe_path.write_text(
+            "symbol,instrument_type,status\nABC,Equity,Active\n",
+            encoding="utf-8",
+        )
+        return audit, audit_path, calendar_path, universe_path
+
+    def test_duplicate_date_coverage_key_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"].append(
+                {"date": "2026-01-01", "symbols": ["ABC"]}
+            )
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate date coverage key"):
+                build_report(ap, cp, up)
+
+    def test_unknown_symbol_in_date_coverage_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"][0]["symbols"].append("GHOST")
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unknown source symbol"):
+                build_report(ap, cp, up)
+
+    def test_observed_date_outside_source_file_range_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["date_coverage"].append(
+                {"date": "2026-01-04", "symbols": ["ABC"]}
+            )
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "outside file range"):
+                build_report(ap, cp, up)
+
+    def test_duplicate_active_equity_symbol_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _, ap, cp, up = self._minimal_inputs(root)
+            up.write_text(
+                "symbol,instrument_type,status\nABC,Equity,Active\nabc,Equity,Active\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "active equity symbols must be unique"):
+                build_report(ap, cp, up)
+
+    def test_nonzero_duplicate_source_date_count_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audit, ap, cp, up = self._minimal_inputs(root)
+            audit["repositories"]["jaljala044/nepse-smc-data"]["duplicate_date_count"] = 1
+            ap.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate source dates remain"):
+                build_report(ap, cp, up)
+
+
 if __name__ == "__main__":
     unittest.main()

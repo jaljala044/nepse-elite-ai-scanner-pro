@@ -38,7 +38,7 @@ def verify_corporate_actions(*, primary_rows: Iterable[Mapping[str, object]], se
             else: raise ValueError("unsupported_action_type")
             if not math.isfinite(factor) or factor<=0: raise ValueError
             if approved_conventions.get(kind)!="THEORETICAL_EX_PRICE_V1": raise ValueError("approved_adjustment_convention_missing")
-            event={"symbol":symbol,"action_type":kind,"ex_date":ex_date,"terms_reference":terms,"source_ids":sorted(sources),"publisher_ids":sorted(publishers),"previous_close":close,"adjustment_factor":factor,"adjusted_historical_price_rule":"raw_price * adjustment_factor","factor_method":"THEORETICAL_EX_PRICE_V1","status":"VERIFIED_TERMS_FACTOR_CALCULATED"}
+            event={"symbol":symbol,"action_type":kind,"ex_date":ex_date,"terms_reference":terms,"source_ids":sorted(sources),"publisher_ids":sorted(publishers),"previous_close":close,"adjustment_factor":factor,"adjusted_historical_price_rule":"raw bars strictly before ex_date * adjustment_factor; later bars unchanged; multiply factors for successive events","factor_method":"THEORETICAL_EX_PRICE_V1","status":"VERIFIED_TERMS_FACTOR_CALCULATED"}
             event["event_sha256"]=hashlib.sha256(json.dumps(event,sort_keys=True,separators=(",",":"),default=str).encode()).hexdigest()
             events.append(event)
         except (KeyError,TypeError,ValueError,OverflowError):

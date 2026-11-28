@@ -71,3 +71,24 @@ class ProtectedBundleTests(unittest.TestCase):
         self.signature_path.unlink()
         self.signature_path.symlink_to(self.bundle_path)
         with self.assertRaisesRegex(ValueError,"protected_bundle_or_signature_missing"): self.verify()
+
+    def test_duplicate_json_keys_rejected_after_valid_signature(self):
+        raw=b'{"decision_time":"2026-11-27T16:00:00+05:45","decision_time":"2026-11-27T16:00:00+05:45"}'
+        self.bundle_path.write_bytes(raw)
+        self.signature_path.write_bytes(base64.b64encode(self.key.sign(raw)))
+        with self.assertRaisesRegex(ValueError,"protected_bundle_duplicate_json_key"):
+            self.verify()
+
+    def test_non_finite_json_number_rejected_after_valid_signature(self):
+        raw=json.dumps(dict(self.bundle,extra=float("nan"))).encode()
+        self.bundle_path.write_bytes(raw)
+        self.signature_path.write_bytes(base64.b64encode(self.key.sign(raw)))
+        with self.assertRaisesRegex(ValueError,"protected_bundle_non_finite_json_number"):
+            self.verify()
+
+    def test_future_session_uses_nepal_local_date(self):
+        # UTC date has rolled over, but Kathmandu is still on the prior date.
+        result=verify_protected_input_bundle(self.bundle_path,self.signature_path,
+            public_key_pem=self.public,expected_session="2026-11-27",
+            decision_time="2026-11-26T19:00:00Z")
+        self.assertTrue(result["signature_verified"])

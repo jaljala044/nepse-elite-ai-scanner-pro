@@ -8,7 +8,6 @@ import argparse
 import csv
 import hashlib
 import json
-from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -38,19 +37,32 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
         raise ValueError("universe requires symbol, instrument_type and status columns")
 
     calendar = {}
-    for row in calendar_rows:
-        day = date.fromisoformat(row["date"])
+    allowed_statuses = OPEN_STATUSES | {
+        "verified_closed", "verified_exceptional_closed"
+    }
+    for line, row in enumerate(calendar_rows, start=2):
+        try:
+            day = date.fromisoformat(row["date"])
+        except (TypeError, ValueError):
+            raise ValueError(f"invalid calendar date at line {line}") from None
         if day.isoformat() != row["date"] or row["date"] in calendar:
             raise ValueError("calendar dates must be canonical and unique")
+        if row["status"] not in allowed_statuses:
+            raise ValueError(f"unsupported calendar status at line {line}: {row['status']!r}")
         calendar[row["date"]] = row["status"]
     expected_sessions = sorted(day for day, status in calendar.items() if status in OPEN_STATUSES)
 
-    active_equities = sorted({
-        row["symbol"].strip() for row in universe_rows
+    active_equity_rows = [
+        row for row in universe_rows
         if row["instrument_type"].strip().lower() == "equity"
         and row["status"].strip().lower() == "active"
-        and row["symbol"].strip()
-    })
+    ]
+    active_symbols = [row["symbol"].strip().upper() for row in active_equity_rows]
+    if any(not symbol for symbol in active_symbols):
+        raise ValueError("active equity symbol must be nonblank")
+    if len(active_symbols) != len(set(active_symbols)):
+        raise ValueError("active equity symbols must be unique")
+    active_equities = sorted(active_symbols)
     if not active_equities:
         raise ValueError("active equity universe is empty")
 
@@ -70,13 +82,37 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
                 raise ValueError(f"duplicate symbol file in {repository}: {symbol}")
             file_index[symbol] = item
 
+        if source.get("files_audited") != source.get("file_count"):
+            raise ValueError(f"incomplete source file audit in {repository}")
+        if source.get("download_errors"):
+            raise ValueError(f"source archive download errors in {repository}")
+        if source.get("duplicate_date_count") != 0:
+            raise ValueError(f"duplicate source dates remain in {repository}")
+        if source.get("out_of_order_transitions") != 0:
+            raise ValueError(f"out-of-order source rows remain in {repository}")
+
         observed_by_symbol = {}
-        for item in source.get("date_coverage", []):
+        seen_date_rows = set()
+        for line, item in enumerate(source.get("date_coverage", []), start=1):
             day = item.get("date")
             symbols = item.get("symbols", [])
             if not isinstance(day, str) or not isinstance(symbols, list):
-                raise ValueError(f"invalid date coverage row in {repository}")
+                raise ValueError(f"invalid date coverage row in {repository} at row {line}")
+            try:
+                parsed_day = date.fromisoformat(day)
+            except ValueError:
+                raise ValueError(f"invalid date coverage date in {repository} at row {line}") from None
+            if parsed_day.isoformat() != day:
+                raise ValueError(f"noncanonical date coverage date in {repository} at row {line}")
+            if len(symbols) != len(set(symbols)):
+                raise ValueError(f"duplicate symbol in date coverage row in {repository}: {day}")
             for symbol in symbols:
+                if not isinstance(symbol, str) or symbol not in file_index:
+                    raise ValueError(f"date coverage references unknown source symbol in {repository}: {symbol!r}")
+                key = (day, symbol)
+                if key in seen_date_rows:
+                    raise ValueError(f"duplicate date coverage key in {repository}: {symbol}/{day}")
+                seen_date_rows.add(key)
                 observed_by_symbol.setdefault(symbol, set()).add(day)
 
         missing_files = []
@@ -101,11 +137,17 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
                     "observed_valid_dates": 0, "unclassified_gap_count": None,
                 })
                 continue
-            start, end = date.fromisoformat(first), date.fromisoformat(last)
-            if end < start:
-                raise ValueError(f"invalid file date range: {repository}/{symbol}")
-            expected = [day for day in expected_sessions if first <= day <= last]
+            try:
+                start, end = date.fromisoformat(first), date.fromisoformat(last)
+            except (TypeError, ValueError):
+                raise ValueError(f"invalid file date range: {repository}/{symbol}") from None
+            if start.isoformat() != first or end.isoformat() != last or end < start:
+                raise ValueError(f"invalid or noncanonical file date range: {repository}/{symbol}")
             observed = observed_by_symbol.get(symbol, set())
+            outside_range = sorted(day for day in observed if not (first <= day <= last))
+            if outside_range:
+                raise ValueError(f"observed dates outside file range: {repository}/{symbol}: {outside_range[:3]}")
+            expected = [day for day in expected_sessions if first <= day <= last]
             missing = [day for day in expected if day not in observed]
             for day in missing:
                 gaps.append({
@@ -149,6 +191,13 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
         "unclassified_gap_csv": "issue5_unclassified_equity_session_gaps.csv",
         "raw_source_values_modified": False,
         "canonical_or_training_promotion": False,
+        "structural_source_integrity_gate": all(
+            item["duplicate_date_count"] == 0
+            and item["out_of_order_transitions"] == 0
+            and item["download_error_count"] == 0
+            and item["files_audited"] == item["file_count"]
+            for item in repository_summaries.values()
+        ),
         "limitations": [
             "A project_accepted_open date is a research-baseline session, not exchange certification.",
             "An absent symbol/date may be no-trade, suspension, lifecycle boundary, source omission or missing data.",

@@ -4,7 +4,7 @@
   "scripts": {
     "vendor": "node vendor.mjs",
     "build": "node build.mjs",
-    "check": "node --check app.js && node --check chart.js && node --check lightweight.js && node --check actual-profile.js && node --check build.mjs && node --check scanner.js && node --check broker-strategy.js && node --check reliability.js && node --check unified-coverage.js"
+    "check": "node --check app.js && node --check chart.js && node --check lightweight.js && node --check actual-profile.js && node --check build.mjs && node --check scanner.js && node --check broker-strategy.js && node --check reliability.js && node --check unified-coverage.js && node --check market-wide-scanner.js"
   },
   "dependencies": {
     "lightweight-charts": "5.0.0"

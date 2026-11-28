@@ -35,7 +35,7 @@ class ModeResearchTests(unittest.TestCase):
     def test_missing_calendar(self):
         args,kw,_=self.fixture(21)
         with patch("app.broker_context_server.load_calendar",return_value={}):
-            self.assertEqual(mode_research(*args,mode="positional",**kw)["reason"],"trusted_calendar_incomplete")
+            self.assertEqual(mode_research(*args,mode="positional",**kw)["reason"],"trusted_calendar_candidate_missing")
     def test_quarantine_real_registry_both_modes(self):
         import json
         from app.broker_context_server import ROOT

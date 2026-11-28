@@ -113,6 +113,7 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
                     prior_rejection = next((item for item in rejected if item["row_index"] == prior["row_index"]), None)
                     if prior_rejection is not None:
                         prior_rejection["reason"] = "duplicate_symbol_session"
+                        prior_rejection["raw_row"] = prior["raw_row"]
                     else:
                         rejected.append({"row_index": prior["row_index"], "reason": "duplicate_symbol_session",
                                          "raw_row": prior["raw_row"]})

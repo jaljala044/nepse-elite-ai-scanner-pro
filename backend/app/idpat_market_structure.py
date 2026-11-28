@@ -56,10 +56,15 @@ def _calendar_context(calendar, *, as_of_date, as_of_timestamp, min_coverage):
         return None, "verified_sessions_missing"
     parsed = []
     for item in sessions:
+        if not isinstance(item, str):
+            raise IDPATError("invalid_calendar_session")
         try:
-            parsed.append(date.fromisoformat(str(item)).isoformat())
-        except (TypeError, ValueError):
+            day = date.fromisoformat(item)
+        except ValueError:
             raise IDPATError("invalid_calendar_session") from None
+        if day.isoformat() != item:
+            raise IDPATError("calendar_session_must_be_canonical_yyyy_mm_dd")
+        parsed.append(day.isoformat())
     if parsed != sorted(set(parsed)):
         raise IDPATError("calendar_sessions_must_be_unique_and_ascending")
     if parsed[-1] > as_of_date:

@@ -1,0 +1,21 @@
+name: Issue 5 evidence-gated gap adjudication
+on:
+  pull_request:
+    paths:
+      - "backend/adjudicate_issue5_gaps.py"
+      - "backend/tests/test_adjudicate_issue5_gaps.py"
+      - ".github/workflows/issue5-gap-evidence-adjudication.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  adjudication-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run focused evidence adjudication tests
+        run: python -m unittest discover -s tests -p 'test_adjudicate_issue5_gaps.py' -v
+        working-directory: backend

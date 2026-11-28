@@ -14,7 +14,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             audit = {
                 "repositories": {
                     "jaljala044/nepse-smc-data": {
-                        "commit_sha": "a" * 40, "files_audited": 1, "file_count": 1,
+                        "commit_sha": "937cfcf93d78dfcf28a9f09bb13291447988157b", "files_audited": 1, "file_count": 1,
                         "total_rows": 2, "duplicate_date_count": 0,
                         "out_of_order_transitions": 0, "invalid_row_count": 0,
                         "download_errors": [],
@@ -26,7 +26,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
                         ],
                     },
                     "jaljala044/nepse-history-starter": {
-                        "commit_sha": "b" * 40, "files_audited": 1, "file_count": 1,
+                        "commit_sha": "b60728d39f34e0f9e428675d817fd52ed2784da6", "files_audited": 1, "file_count": 1,
                         "total_rows": 2, "duplicate_date_count": 0,
                         "out_of_order_transitions": 0, "invalid_row_count": 0,
                         "download_errors": [],
@@ -58,6 +58,26 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             self.assertEqual({g["trade_date"] for g in gaps}, {"2026-01-02"})
             self.assertTrue(all(g["gap_status"].startswith("UNCLASSIFIED") for g in gaps))
             self.assertFalse(report["canonical_or_training_promotion"])
+
+    def test_unpinned_source_commit_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audit = {"repositories": {
+                "jaljala044/nepse-smc-data": {
+                    "commit_sha": "f" * 40, "files_audited": 0, "file_count": 0,
+                    "download_errors": [], "files": [], "date_coverage": [],
+                },
+                "jaljala044/nepse-history-starter": {
+                    "commit_sha": "b60728d39f34e0f9e428675d817fd52ed2784da6",
+                    "files_audited": 0, "file_count": 0,
+                    "download_errors": [], "files": [], "date_coverage": [],
+                },
+            }}
+            ap = root / "audit.json"; ap.write_text(json.dumps(audit))
+            cp = root / "calendar.csv"; cp.write_text("date,status\\n2026-01-01,project_accepted_open\\n")
+            up = root / "universe.csv"; up.write_text("symbol,instrument_type,status\\nABC,Equity,Active\\n")
+            with self.assertRaisesRegex(ValueError, "pinned approved input"):
+                build_report(ap, cp, up)
 
     def test_duplicate_calendar_date_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

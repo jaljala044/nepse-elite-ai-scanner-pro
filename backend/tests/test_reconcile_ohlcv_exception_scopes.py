@@ -63,10 +63,10 @@ class CrossScopeLedgerJoinTests(unittest.TestCase):
             report = reconcile(left, right, left_name="a", right_name="b")
             write_outputs(report, root/"joined.json", root/"joined.csv")
             row = report["joined_records"][0]
+            self.assertTrue((root/"joined.json").exists())
+            self.assertTrue((root/"joined.csv").exists())
         self.assertEqual(row["left_records"][0]["source_csv_line"], "77")
         self.assertEqual(row["right_records"][0]["source_file_sha256"], "b"*64)
-        self.assertTrue((root/"joined.json").exists())
-        self.assertTrue((root/"joined.csv").exists())
 
 
 if __name__ == "__main__":

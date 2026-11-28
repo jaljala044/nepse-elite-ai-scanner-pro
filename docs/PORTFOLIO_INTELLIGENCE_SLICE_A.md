@@ -11,7 +11,7 @@ Branch: `feature/issue-85-portfolio-foundation`
 - Deterministic weighted-average cost accounting. Buy fees are capitalized into cost basis; sell fees reduce net proceeds; partial disposals realize P&L and proportionally reduce remaining basis.
 - Oversells and backdated transactions that would make chronological holdings negative are rejected.
 - SQLite persistence is isolated in `NEPSE_PORTFOLIO_DB`; user ownership is enforced in every query and delete. Existing databases receive an additive `deleted_at` column migration.
-- Tests cover the CFCL acceptance arithmetic, weighted-average cost, realized P&L, partial sales, oversell, replay/idempotency, invalid values, owner isolation, authentication and API CRUD.
+- Tests cover the CFCL acceptance arithmetic, weighted-average cost, realized P&L, partial sales, oversell, concurrent replay/idempotency, owner isolation across nested routes, invalid/non-finite values, failed-write rollback, authentication and API CRUD.
 
 ## API
 
@@ -31,7 +31,7 @@ Every route requires the configured trusted-proxy identity headers and secret. T
 - Buy total cost = quantity × execution price + buy fees.
 - Weighted average cost = remaining cost basis ÷ remaining quantity.
 - Sell realized P&L = quantity × execution price − sell fees − quantity × weighted average cost immediately before the sale.
-- A sale cannot exceed the shares held at that point in chronological transaction order.
+- A sale cannot exceed the shares held at that point in chronological transaction order. For transactions sharing the same trade date and timestamp, the append-only SQLite row insertion sequence is the deterministic tie-breaker; random transaction IDs are not used to reorder same-day events.
 - Deleting a portfolio sets `deleted_at`; portfolio, position and transaction API reads then return not-found, while the immutable transaction rows remain retained and inaccessible through normal owner APIs.
 - Monetary arithmetic uses Python `Decimal`; the ledger stores decimal strings.
 - Idempotent replay with the same key and identical payload returns the original transaction. Reusing a key for a different payload fails.

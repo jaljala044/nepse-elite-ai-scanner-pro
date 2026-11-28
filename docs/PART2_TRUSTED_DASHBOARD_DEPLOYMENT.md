@@ -18,3 +18,12 @@ Each module entry requires source_id, evidence_ids, payload_path, payload_sha256
 8. Keep historical data and circuit-breaker evidence gates open until authoritative records are obtained.
 
 No deployment credentials, reviewed real artifact registry or authoritative index/sector evidence were obtained in this execution. Do not claim provisioning or production acceptance.
+
+## Offline candidate generation
+Run from the repository root:
+
+```sh
+python backend/generate_market_candidates.py --bundle /secure/reviewed-input.json --output-dir /secure/candidates
+```
+
+The normalized input bundle requires decision_time, calendar, universe, daily_rows, benchmark_rows, index_rows, expected_indices, stock_rows, expected_sector_members and sector_membership. The generator invokes the existing evidence-aware calculators and writes hash-addressed files plus a review-required manifest. It does not certify source authenticity, write a trusted registry, or grant admission. Keep candidate storage separate from deployed trusted artifacts. Review the raw-source evidence and exact session coverage before constructing any deployment registry.

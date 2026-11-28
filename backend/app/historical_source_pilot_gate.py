@@ -126,7 +126,9 @@ def evaluate_historical_pilot_evidence(*, source_coverage: Mapping[str, Any],
         digest = str(item.get("raw_payload_sha256", ""))
         if not _HEX_64.fullmatch(digest):
             issues.append({"reason": "raw_payload_sha256_invalid", "index": index})
-        if isinstance(item.get("row_count"), bool) or not isinstance(item.get("row_count"), int) or item.get("row_count", 0) <= 0:
+        row_count = item.get("row_count")
+        row_count_valid = isinstance(row_count, int) and not isinstance(row_count, bool) and row_count > 0
+        if not row_count_valid:
             issues.append({"reason": "capture_row_count_invalid", "index": index})
         if item.get("pagination_complete") is not True:
             issues.append({"reason": "capture_pagination_incomplete", "index": index})
@@ -138,7 +140,7 @@ def evaluate_historical_pilot_evidence(*, source_coverage: Mapping[str, Any],
             issues.append({"reason": "capture_window_missing", "index": index})
         if not str(item.get("publisher_id", "")).strip():
             issues.append({"reason": "capture_publisher_id_missing", "index": index})
-        if (capture_id and _HEX_64.fullmatch(digest) and item.get("row_count", 0) > 0
+        if (capture_id and _HEX_64.fullmatch(digest) and row_count_valid
                 and item.get("pagination_complete") is True
                 and item.get("schema_validation_status") == "passed"
                 and item.get("raw_payload_archived") is True):

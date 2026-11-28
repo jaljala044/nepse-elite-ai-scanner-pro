@@ -38,11 +38,15 @@ def build_historical_coverage_report(records: list[dict], *,
     for index, row in enumerate(records):
         try:
             session_date = _canonical_iso_date(row["session_date"], "session_date", allow_date_object=True)
-            symbol = str(row["symbol"]).strip().upper()
-            source = str(row["source_id"]).strip()
+            raw_symbol = row["symbol"]
+            raw_source = row["source_id"]
+            if not isinstance(raw_symbol, str) or not raw_symbol.strip():
+                raise ValueError("symbol must be a non-empty string")
+            if not isinstance(raw_source, str) or not raw_source.strip():
+                raise ValueError("source_id must be a non-empty string")
+            symbol = raw_symbol.strip().upper()
+            source = raw_source.strip()
             close = Decimal(str(row["close"]))
-            if not source or not symbol:
-                raise ValueError("blank source_id or symbol")
             if not close.is_finite() or close <= 0:
                 raise ValueError("close must be a finite positive decimal")
             key = (session_date, symbol)

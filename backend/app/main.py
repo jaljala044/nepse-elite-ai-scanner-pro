@@ -469,6 +469,26 @@ def history(symbol: str):
         raise HTTPException(404, "Symbol not found")
     return {"symbol": symbol.upper(), "rows": rows}
 
+@app.get("/v1/history/{symbol}")
+def history_page(symbol: str, offset: int = 0, limit: int = 500, snapshot: str | None = None):
+    import hashlib
+    import json
+    if offset < 0 or not 1 <= limit <= 1000:
+        raise HTTPException(422, "Invalid pagination")
+    rows = DATA.get(symbol.upper())
+    if rows is None:
+        raise HTTPException(404, "Symbol not found")
+    ordered = sorted(rows, key=lambda r: str(r["date"]))
+    digest = hashlib.sha256(json.dumps(ordered, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+    if (offset > 0 and snapshot is None) or (snapshot is not None and snapshot != digest):
+        raise HTTPException(409, "History changed or snapshot missing; restart pagination")
+    if offset > len(ordered):
+        raise HTTPException(422, "Offset outside history")
+    end = min(offset + limit, len(ordered))
+    return {"symbol": symbol.upper(), "rows": ordered[offset:end], "total": len(ordered),
+            "snapshot": digest, "offset": offset, "next_offset": end if end < len(ordered) else None,
+            "status": "observed_history_not_independently_certified"}
+
 @app.get("/v1/volume-profile/{symbol}")
 def volume_profile(symbol: str, start: date, end: date):
     from .volume_profile_store import load_profile

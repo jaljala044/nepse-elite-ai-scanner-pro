@@ -24,14 +24,13 @@ class PortfolioRouteTests(unittest.TestCase):
         self.env.stop()
         self.tmp.cleanup()
 
-    def test_holding_preferences_endpoints_require_authentication(self):
-        response = self.client.get("/v1/portfolios/example/holding-preferences")
-        self.assertEqual(response.status_code, 401)
-        response = self.client.put(
-            "/v1/portfolios/example/holding-preferences/CFCL",
-            json={"investment_horizon": "long_term", "risk_preference": "balanced"},
+    def test_nested_portfolio_read_endpoints_require_authentication(self):
+        self.assertEqual(
+            self.client.get("/v1/portfolios/example").status_code, 401
         )
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            self.client.get("/v1/portfolios/example/positions").status_code, 401
+        )
 
     def test_authentication_required(self):
         response = self.client.get("/v1/portfolios")

@@ -146,6 +146,66 @@ def _validate_rotation(data, expected_indices):
         common_dates = dates
 
 
+def _validate_sector_constituents(data, expected_members, as_of):
+    from math import isfinite
+    from statistics import median
+    sectors = data.get("sectors")
+    if (data.get("status") != "observed" or data.get("as_of_session") != as_of
+            or data.get("signals_enabled") is not False
+            or not isinstance(sectors, dict) or not isinstance(expected_members, dict)
+            or not expected_members or set(sectors) != set(expected_members)):
+        raise TrustedArtifactError("sector_payload_invalid")
+    all_members = set()
+    for sector, item in sectors.items():
+        members = expected_members[sector]
+        if (not isinstance(members, list) or not members
+                or any(not isinstance(s, str) or not s or s != s.strip().upper() for s in members)
+                or len(set(members)) != len(members) or all_members.intersection(members)):
+            raise TrustedArtifactError("sector_universe_invalid")
+        all_members.update(members)
+        windows = item.get("windows") if isinstance(item, dict) else None
+        if not isinstance(windows, dict) or set(windows) != {"1W", "1M", "3M", "6M"}:
+            raise TrustedArtifactError("sector_windows_invalid")
+        for window in windows.values():
+            if not isinstance(window, dict) or window.get("end_session") != as_of:
+                raise TrustedArtifactError("sector_window_invalid")
+            rows = window.get("constituents")
+            if window.get("status") == "insufficient_evidence":
+                if rows is not None:
+                    raise TrustedArtifactError("sector_unverified_constituents")
+                continue
+            if window.get("status") != "observed" or not isinstance(rows, list) or not rows:
+                raise TrustedArtifactError("sector_constituents_invalid")
+            seen, order, returns, excess = set(), [], [], []
+            benchmark = window.get("nepse_return_pct")
+            if type(benchmark) not in (int, float) or not isfinite(benchmark):
+                raise TrustedArtifactError("sector_benchmark_invalid")
+            for row in rows:
+                if not isinstance(row, dict):
+                    raise TrustedArtifactError("sector_constituents_invalid")
+                symbol, r, e = row.get("symbol"), row.get("return_pct"), row.get("excess_return_pct")
+                if not isinstance(symbol, str) or symbol not in members or symbol in seen:
+                    raise TrustedArtifactError("sector_constituent_identity_invalid")
+                if any(type(v) not in (int, float) or not isfinite(v) for v in (r, e)):
+                    raise TrustedArtifactError("sector_constituent_return_invalid")
+                if abs(r-benchmark-e) > 0.00016:
+                    raise TrustedArtifactError("sector_constituent_excess_invalid")
+                seen.add(symbol)
+                returns.append(r)
+                excess.append(e)
+                order.append((-e, symbol))
+            if order != sorted(order):
+                raise TrustedArtifactError("sector_constituent_order_invalid")
+            if (window.get("observed_members") != len(seen) or window.get("expected_members") != len(members)
+                    or window.get("missing_members") != sorted(set(members)-seen)):
+                raise TrustedArtifactError("sector_constituent_coverage_invalid")
+            for key, value, tolerance in (("coverage_pct",100*len(seen)/len(members),0.00501),
+                    ("median_return_pct",median(returns),0.00011),("median_excess_return_pct",median(excess),0.00011)):
+                actual = window.get(key)
+                if type(actual) not in (int,float) or not isfinite(actual) or abs(actual-value)>tolerance:
+                    raise TrustedArtifactError("sector_constituent_aggregate_invalid")
+
+
 class TrustedArtifactStore:
     """Load only artifacts pinned by server-owned registry configuration.
 
@@ -268,6 +328,8 @@ class TrustedArtifactStore:
                         raise TrustedArtifactError("sector_membership_version_unverified")
                     context["sector_membership_status"] = membership_status
                     context["sector_membership_version"] = membership_version
+                    if module == "sector_rotation":
+                        _validate_sector_constituents(data, entry.get("expected_sector_members"), as_of.isoformat())
                 if module in {"broker_profiles", "broker_sector_rotation"}:
                     broker_status = entry.get("broker_code_mapping_status")
                     broker_coverage = entry.get("broker_identity_coverage_ratio")

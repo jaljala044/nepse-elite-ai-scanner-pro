@@ -138,6 +138,19 @@ class PortfolioRouteTests(unittest.TestCase):
             200,
         )
 
+    def test_fractional_share_quantity_is_rejected_at_api_boundary(self):
+        created = self.client.post("/v1/portfolios", headers=self.headers,
+                                   json={"name": "Whole shares"})
+        portfolio_id = created.json()["id"]
+        response = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions",
+            headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "1.5",
+                  "price": "100", "fees": "0", "trade_date": "2026-01-01"},
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("whole share count", response.json()["detail"])
+
     def test_compact_transaction_date_is_rejected_at_api_boundary(self):
         created = self.client.post("/v1/portfolios", headers=self.headers,
                                    json={"name": "Date validation"})

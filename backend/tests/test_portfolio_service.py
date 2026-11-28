@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+from datetime import datetime, timezone
+from uuid import UUID
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from pathlib import Path
@@ -124,6 +126,63 @@ class PortfolioServiceTests(unittest.TestCase):
             )
         finally:
             con.close()
+
+
+    def test_same_day_transactions_follow_ledger_insertion_order(self):
+        fixed_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+        class FixedDateTime:
+            @classmethod
+            def now(cls, tz=None):
+                return fixed_time
+
+        # Deliberately reverse lexical UUID order: insertion order, not random
+        # identifier ordering, must decide same-day ledger chronology.
+        with patch.object(service, "datetime", FixedDateTime), patch.object(
+            service, "uuid4",
+            side_effect=[UUID("00000000-0000-0000-0000-0000000000ff"),
+                         UUID("00000000-0000-0000-0000-000000000001")],
+        ):
+            self.tx("BUY", "5", "100", "0", "2026-01-01")
+            self.tx("SELL", "2", "110", "0", "2026-01-01")
+
+        position = service.portfolio_positions(self.owner, self.portfolio["id"])[0]
+        self.assertEqual(position["quantity"], "3")
+        transactions = service.portfolio_transactions(self.owner, self.portfolio["id"])
+        self.assertEqual([row["side"] for row in transactions], ["BUY", "SELL"])
+
+    def test_idempotency_keys_are_scoped_to_authenticated_owner(self):
+        other_portfolio = service.create_portfolio("user-b", "Other")
+        first = self.tx("BUY", "2", "100", "0", "2026-01-01", "same-key")
+        second = service.add_transaction(
+            "user-b", other_portfolio["id"], symbol="CFCL", side="BUY",
+            quantity="3", price="90", fees="0", trade_date="2026-01-01",
+            idempotency_key="same-key",
+        )
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(len(service.portfolio_transactions(self.owner, self.portfolio["id"])), 1)
+        self.assertEqual(len(service.portfolio_transactions("user-b", other_portfolio["id"])), 1)
+
+    def test_non_finite_and_negative_transaction_values_are_rejected(self):
+        for field, value in (("quantity", "NaN"), ("quantity", "Infinity"),
+                             ("price", "-Infinity"), ("fees", "NaN"), ("fees", "-1")):
+            kwargs = {"quantity": "1", "price": "100", "fees": "0"}
+            kwargs[field] = value
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(ValueError):
+                    service.add_transaction(
+                        self.owner, self.portfolio["id"], symbol="CFCL", side="BUY",
+                        trade_date="2026-01-01", **kwargs,
+                    )
+
+    def test_failed_backdated_write_rolls_back_transaction_row(self):
+        self.tx("BUY", "5", "100", "0", "2026-01-02")
+        before = len(service.portfolio_transactions(self.owner, self.portfolio["id"]))
+        with self.assertRaisesRegex(ValueError, "historical sells exceed buys"):
+            self.tx("SELL", "2", "110", "0", "2026-01-01")
+        after = service.portfolio_transactions(self.owner, self.portfolio["id"])
+        self.assertEqual(len(after), before)
+        self.assertEqual([row["side"] for row in after], ["BUY"])
 
     def test_invalid_values_and_symbols_rejected(self):
         with self.assertRaises(ValueError):

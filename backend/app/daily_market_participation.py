@@ -6,7 +6,7 @@ from .market_breadth_features import _utc, _digest
 
 
 def daily_market_participation(rows, *, expected_symbols, universe, calendar,
-                               decision_time, top_n=10):
+                               decision_time, top_n=10, benchmark_rows=None):
     """No inferred trades, imputation or production recommendations."""
     cutoff = _utc(decision_time, "decision_time")
     base = {"status": "insufficient_evidence", "pressure": None,
@@ -46,13 +46,15 @@ def daily_market_participation(rows, *, expected_symbols, universe, calendar,
             raise ValueError("invalid_number")
         return n
     accepted = {}
+    seen = set()
     expected = set(expected_symbols)
     for r in rows:
         s = r.get("symbol")
         if not isinstance(s, str) or s not in expected or r.get("session_date") != days[-1]:
             continue
-        if s in accepted:
+        if s in seen:
             raise ValueError("duplicate_symbol")
+        seen.add(s)
         if (r.get("source_validation_status") != "verified" or r.get("finality_status") != "final"
             or r.get("prior_session") != days[-2] or r.get("prior_close_verified") is not True
             or r.get("corporate_action_status") != "verified_clear"
@@ -79,7 +81,27 @@ def daily_market_participation(rows, *, expected_symbols, universe, calendar,
         ordered = sorted((v for v in values if predicate(v)),
                          key=lambda v: (-v[key] if reverse else v[key], v["symbol"]))
         return [{"symbol": v["symbol"], "value": str(v[key])} for v in ordered[:top_n]]
-    return dict(base, status="research_only", pressure=(adv-dec)/len(values),
+    relative = None
+    if benchmark_rows is not None:
+        from .relative_strength_features import _close_series
+        if not isinstance(benchmark_rows, list):
+            raise ValueError("invalid_benchmark_rows")
+        relevant = [r for r in benchmark_rows if isinstance(r, dict)
+                    and r.get("session_date") in days[-2:]
+                    and _utc(r.get("available_at"), "available_at") <= cutoff]
+        series, excluded = _close_series(relevant, "benchmark", benchmark=True)
+        if set(series) == set(days[-2:]) and not any(excluded.values()):
+            index_return = (Decimal(str(series[days[-1]])) /
+                            Decimal(str(series[days[-2]])) - 1) * 100
+            for v in values:
+                v["excess_return_pct"] = v["return_pct"] - index_return
+            relative = {
+                "benchmark": "NEPSE",
+                "benchmark_return_pct": str(index_return),
+                "leaders": rank("excess_return_pct", predicate=lambda v: v["excess_return_pct"] > 0),
+                "laggards": rank("excess_return_pct", False, lambda v: v["excess_return_pct"] < 0),
+            }
+    return dict(base, benchmark_relative=relative, status="research_only", pressure=(adv-dec)/len(values),
                 sentiment="positive" if adv > dec else "negative" if dec > adv else "balanced",
                 counts={"advance": adv, "decline": dec, "unchanged": len(values)-adv-dec},
                 rankings={"gainers": rank("return_pct", predicate=lambda v: v["return_pct"] > 0),

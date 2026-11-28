@@ -3,6 +3,7 @@
   const byId = id => document.getElementById(id);
   const state = { portfolios: [], activeId: "", generation: 0 };
   const money = value => window.NepsePortfolioFormat.money(value);
+  const allocation = positions => window.NepsePortfolioAllocation.allocation(positions);
   const node = (tag, value, className) => {
     const el = document.createElement(tag);
     if (value !== undefined) el.textContent = String(value);
@@ -42,7 +43,7 @@
     byId("portfolio-name").textContent = "No portfolio selected";
     byId("portfolio-valuation-note").textContent =
       "Market value and unrealized P&L remain UNKNOWN until eligible timestamped price evidence is connected.";
-    for (const id of ["portfolio-positions", "portfolio-transactions", "portfolio-preferences"]) {
+    for (const id of ["portfolio-positions", "portfolio-allocation", "portfolio-transactions", "portfolio-preferences"]) {
       byId(id).replaceChildren();
     }
   }
@@ -74,6 +75,11 @@
     table(byId("portfolio-positions"),
       ["Symbol", "Quantity", "Average cost", "Cost basis", "Realized P&L", "Market value", "Unrealized P&L", "Valuation", "Corporate-action adjustment"],
       positionRows, "No recorded positions in this portfolio.");
+    const allocationRows = allocation(positions.positions || []);
+    table(byId("portfolio-allocation"),
+      ["Symbol", "Ledger cost basis", "Share of recorded cost basis"],
+      allocationRows === null ? [] : allocationRows.map(item => [item.symbol, money(item.cost_basis), window.NepsePortfolioAllocation.percent(item.share_bps)]),
+      allocationRows === null ? "Allocation unavailable: one or more ledger cost-basis values failed validation." : "No positive recorded cost basis to allocate.");
     const transactionRows = (transactions.transactions || []).map(t => [
       t.trade_date, t.symbol, t.side, t.quantity, money(t.price), money(t.fees)
     ]);

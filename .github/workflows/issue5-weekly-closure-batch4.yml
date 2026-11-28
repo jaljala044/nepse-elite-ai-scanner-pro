@@ -1,0 +1,20 @@
+name: Issue 5 weekly closure batch 4 evidence checks
+on:
+  pull_request:
+    paths:
+      - "data/reports/issue5_next_five_weekly_closure_batches_4_2026-11-28.csv"
+      - "tests/test_issue5_weekly_closure_batch4.py"
+      - ".github/workflows/issue5-weekly-closure-batch4.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate review-only batch package
+        run: python -m unittest discover -s tests -p 'test_issue5_weekly_closure_batch4.py' -v

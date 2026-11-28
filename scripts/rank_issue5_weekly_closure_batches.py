@@ -64,10 +64,20 @@ def is_weekly_closure(day: date) -> bool:
     return day.weekday() in closed_weekdays
 
 
-def rank_batches(input_csv: Path, exclusion_csv: Path, limit: int = 5) -> dict:
+def rank_batches(
+    input_csv: Path,
+    exclusion_csv: Path,
+    limit: int = 5,
+    prior_review_csv: Path | None = None,
+) -> dict:
     if limit < 1:
         raise ValueError("limit must be positive")
-    excluded = load_exclusions(exclusion_csv)
+    registered = load_exclusions(exclusion_csv)
+    prior_reviewed = load_exclusions(prior_review_csv) if prior_review_csv else set()
+    overlap = registered & prior_reviewed
+    if overlap:
+        raise ValueError(f"registered and prior-review exclusion files overlap: {sorted(overlap)}")
+    excluded = registered | prior_reviewed
     groups: dict[str, dict] = {}
     seen: set[tuple[str, str, str]] = set()
 
@@ -142,7 +152,10 @@ def rank_batches(input_csv: Path, exclusion_csv: Path, limit: int = 5) -> dict:
         "report_type": "issue5_weekly_closure_batch_priority_only",
         "input_csv_sha256": digest(input_csv),
         "exclusion_csv_sha256": digest(exclusion_csv),
+        "prior_review_csv_sha256": digest(prior_review_csv) if prior_review_csv else None,
         "schedule_change_effective_date": SCHEDULE_CHANGE.isoformat(),
+        "registered_exclusion_date_count": len(registered),
+        "prior_reviewed_date_count": len(prior_reviewed),
         "excluded_date_count": len(excluded),
         "eligible_date_count": len(ranked),
         "selected_date_count": len(selected),
@@ -161,11 +174,14 @@ def rank_batches(input_csv: Path, exclusion_csv: Path, limit: int = 5) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--exclude", required=True, type=Path)
+    parser.add_argument("--exclude", required=True, type=Path,
+                        help="Registered review/closure date exclusions.")
+    parser.add_argument("--exclude-reviewed", type=Path,
+                        help="Additional previously reviewed dates not registered as exchange closures.")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--limit", type=int, default=5)
     args = parser.parse_args()
-    report = rank_batches(args.input, args.exclude, args.limit)
+    report = rank_batches(args.input, args.exclude, args.limit, args.exclude_reviewed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k != "selected"}, indent=2))

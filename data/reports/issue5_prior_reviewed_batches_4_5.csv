@@ -1,0 +1,11 @@
+current_date,review_batch,source_package,review_status,exchange_closure_certified
+2026-05-24,batch-4,issue5-weekly-closure-batch4,REVIEW_ONLY,false
+2026-05-23,batch-4,issue5-weekly-closure-batch4,REVIEW_ONLY,false
+2026-04-19,batch-4,issue5-weekly-closure-batch4,REVIEW_ONLY,false
+2026-04-18,batch-4,issue5-weekly-closure-batch4,REVIEW_ONLY,false
+2026-04-12,batch-4,issue5-weekly-closure-batch4,REVIEW_ONLY,false
+2024-08-16,batch-5,issue5-weekly-closure-batch5,REVIEW_ONLY,false
+2024-08-17,batch-5,issue5-weekly-closure-batch5,REVIEW_ONLY,false
+2026-03-13,batch-5,issue5-weekly-closure-batch5,REVIEW_ONLY,false
+2026-03-14,batch-5,issue5-weekly-closure-batch5,REVIEW_ONLY,false
+2024-06-28,batch-5,issue5-weekly-closure-batch5,REVIEW_ONLY,false

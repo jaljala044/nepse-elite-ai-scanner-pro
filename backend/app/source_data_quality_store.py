@@ -294,6 +294,7 @@ def source_data_quality_readiness(
             "data_quality": "LOW",
             "confidence": "LOW",
             "missing_reason": "persistent_calendar_capture_policy_store_not_configured",
+            "review_registry_status": "not_configured",
             "production_admission_allowed": False,
             "recommendation_override": False,
         }

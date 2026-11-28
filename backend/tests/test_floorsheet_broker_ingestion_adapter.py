@@ -81,6 +81,22 @@ class FloorsheetBrokerIngestionAdapterTests(unittest.TestCase):
         self.assertTrue(result["memory_eligible"],repr(result["report"]))
         self.assertEqual(result["unresolved_party_rows"],1)
 
+    def test_missing_rights_evidence_blocks_promotion(self):
+        result=setup(party_rows(),source_rights_evidence={})
+        self.assertFalse(result["memory_eligible"])
+        self.assertTrue(any("source_rights_unverified" in reason
+                            for item in result["report"].quarantined
+                            for reason in item.get("reasons", [])))
+
+    def test_denied_rights_evidence_blocks_promotion(self):
+        denied=rights_evidence()
+        denied["SRC-A"]["status"]="denied"
+        result=setup(party_rows(),source_rights_evidence=denied)
+        self.assertFalse(result["memory_eligible"])
+        self.assertTrue(any("source_rights_unverified" in reason
+                            for item in result["report"].quarantined
+                            for reason in item.get("reasons", [])))
+
     def test_source_control_mismatch_blocks_promotion(self):
         controls=[{"source_id":"SRC-A","trade_date":"2026-11-25",
             "contract_count":99,"party_observation_count":40,"gross_amount":"2000","quantity":"40"}]

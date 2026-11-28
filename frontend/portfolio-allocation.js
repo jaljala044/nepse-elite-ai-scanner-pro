@@ -36,11 +36,15 @@
     }));
     const total = normalized.reduce((sum, item) => sum + item.value, 0n);
     if (total <= 0n) return null;
-    return normalized.map(item => ({
-      symbol: item.symbol,
-      cost_basis: item.cost_basis,
-      share_bps: Number((item.value * 10000n + total / 2n) / total)
-    })).sort((a, b) => b.share_bps - a.share_bps || a.symbol.localeCompare(b.symbol));
+    const shares = normalized.map(item => {
+      const numerator = item.value * 10000n;
+      return { symbol: item.symbol, cost_basis: item.cost_basis, share_bps: Number(numerator / total), remainder: numerator % total };
+    });
+    // Largest-remainder apportionment keeps displayed shares at exactly 100.00%.
+    const unassigned = 10000 - shares.reduce((sum, item) => sum + item.share_bps, 0);
+    const remainderOrder = [...shares].sort((a, b) => a.remainder === b.remainder ? a.symbol.localeCompare(b.symbol) : a.remainder > b.remainder ? -1 : 1);
+    for (let index = 0; index < unassigned; index += 1) remainderOrder[index].share_bps += 1;
+    return shares.map(({ remainder, ...item }) => item).sort((a, b) => b.share_bps - a.share_bps || a.symbol.localeCompare(b.symbol));
   }
 
   function percent(shareBps) {

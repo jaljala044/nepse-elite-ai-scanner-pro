@@ -7,7 +7,7 @@ from app.source_trust_registry import SourcePolicy
 
 def observation(source, record, upstream=None, dates=None):
     return {
-        "source_id": source, "upstream_feed": upstream or source,
+        "source_id": source, "upstream_feed": upstream or source,\n        "publisher_identity": {"sharehub":"ShareHub","chukul":"Chukul","sharesansar":"ShareSansar","nepsealpha":"NEPSE Alpha"}[source],\n        "publisher_identity_evidence_ref": f"provider-identity:{source}",\n        "source_contract_ref": f"provider-contract:{source}",
         "source_url": f"https://{source}.example/archive",
         "retrieved_utc": "2026-11-28T00:00:00Z",
         "payload_sha256": "a" * 64, "parser_version": "v1",

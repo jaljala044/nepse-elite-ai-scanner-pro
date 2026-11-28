@@ -22,8 +22,21 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 def _read_rows(path: Path, *, source_name: str) -> tuple[list[dict[str, Any]], str]:
     raw = path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
-    with path.open(encoding="utf-8-sig", newline="") as stream:
-        rows = list(csv.DictReader(stream))
+    try:
+        with path.open(encoding="utf-8-sig", newline="") as stream:
+            reader = csv.DictReader(stream, strict=True)
+            headers = reader.fieldnames
+            if not headers or any(not str(name or "").strip() for name in headers):
+                raise ValueError(f"{source_name}: CSV header is missing or contains blank columns")
+            if len(headers) != len(set(headers)):
+                raise ValueError(f"{source_name}: CSV contains duplicate column names")
+            rows = []
+            for ordinal, row in enumerate(reader, start=2):
+                if None in row or any(value is None for value in row.values()):
+                    raise ValueError(f"{source_name}: malformed CSV field count at data row {ordinal}")
+                rows.append(row)
+    except (csv.Error, UnicodeDecodeError) as exc:
+        raise ValueError(f"{source_name}: malformed UTF-8 CSV: {exc}") from exc
     if not rows:
         raise ValueError(f"{source_name}: CSV has no data rows")
     return rows, digest
@@ -67,6 +80,8 @@ def _identity(row: dict[str, Any], source: str, ordinal: int) -> dict[str, Any]:
 
 
 def reconcile(left_path: Path, right_path: Path, *, left_name: str, right_name: str) -> dict[str, Any]:
+    if not left_name.strip() or not right_name.strip() or left_name == right_name:
+        raise ValueError("scope names must be non-empty and distinct")
     left_rows, left_hash = _read_rows(left_path, source_name=left_name)
     right_rows, right_hash = _read_rows(right_path, source_name=right_name)
     groups: dict[tuple[str, str], dict[str, list[dict[str, Any]]]] = defaultdict(
@@ -93,6 +108,12 @@ def reconcile(left_path: Path, right_path: Path, *, left_name: str, right_name: 
             "symbol": symbol, "trade_date": day, "join_status": status,
             "left_record_count": len(left), "right_record_count": len(right),
             "left_duplicate_key": len(left) > 1, "right_duplicate_key": len(right) > 1,
+            "left_exact_duplicate_rows": sum(count - 1 for count in Counter(
+                json.dumps(x["raw_record"], sort_keys=True, ensure_ascii=False) for x in left
+            ).values()),
+            "right_exact_duplicate_rows": sum(count - 1 for count in Counter(
+                json.dumps(x["raw_record"], sort_keys=True, ensure_ascii=False) for x in right
+            ).values()),
             "left_rule_multiplicity": dict(sorted(Counter(x["validation_rule"] or x["exception_type"] for x in left).items())),
             "right_rule_multiplicity": dict(sorted(Counter(x["validation_rule"] or x["exception_type"] for x in right).items())),
             "left_records": left, "right_records": right,
@@ -108,6 +129,8 @@ def reconcile(left_path: Path, right_path: Path, *, left_name: str, right_name: 
         "valid_join_keys": len(joined), "overlap_keys": status_counts["overlap"],
         "left_only_keys": status_counts["left_only"], "right_only_keys": status_counts["right_only"],
         "left_duplicate_keys": left_duplicate_keys, "right_duplicate_keys": right_duplicate_keys,
+        "left_exact_duplicate_rows": sum(item["left_exact_duplicate_rows"] for item in joined),
+        "right_exact_duplicate_rows": sum(item["right_exact_duplicate_rows"] for item in joined),
         "invalid_key_rows": len(invalid_keys),
         "left_duplicate_rows_beyond_first": sum(max(0, len(v[left_name])-1) for v in groups.values()),
         "right_duplicate_rows_beyond_first": sum(max(0, len(v[right_name])-1) for v in groups.values()),
@@ -127,6 +150,8 @@ def reconcile(left_path: Path, right_path: Path, *, left_name: str, right_name: 
 
 
 def write_outputs(report: dict[str, Any], json_path: Path, csv_path: Path) -> None:
+    if json_path.resolve() == csv_path.resolve():
+        raise ValueError("JSON and CSV output paths must be different")
     json_path.parent.mkdir(parents=True, exist_ok=True)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

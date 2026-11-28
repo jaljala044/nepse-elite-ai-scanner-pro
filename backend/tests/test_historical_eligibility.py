@@ -36,7 +36,8 @@ def build(sessions, records, **kwargs):
     return build_lifecycle_eligibility_manifest(
         records, symbol="NABIL", verified_sessions=sessions,
         lifecycle={"listing_date": sessions[0], "suspensions": []},
-        required_warmup_sessions=100, available_as_of=CUTOFF, **kwargs
+        required_warmup_sessions=kwargs.pop("required_warmup_sessions", 100),
+        available_as_of=CUTOFF, **kwargs
     )
 
 

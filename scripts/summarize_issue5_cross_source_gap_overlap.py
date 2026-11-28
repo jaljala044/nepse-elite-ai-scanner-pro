@@ -75,6 +75,9 @@ def summarize(input_csv: Path) -> dict:
             symbol_dates[symbol].add(day)
             date_symbols[day].add(symbol)
 
+    if not seen:
+        raise ValueError("gap inventory must contain at least one row")
+
     overlap_counts = Counter()
     pair_rows = []
     for (symbol, day), sources in sorted(pair_sources.items()):

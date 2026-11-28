@@ -11,6 +11,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -85,9 +86,18 @@ def collect_user_github_repos(client: httpx.Client, selected: set[str]) -> list[
             continue
         tree_url = f"{GITHUB_API}/repos/{repo}/git/trees/main?recursive=1"
         try:
+            revision_response = client.get(f"{GITHUB_API}/repos/{repo}/commits/main", headers={"Accept": "application/vnd.github+json"})
+            revision_response.raise_for_status()
+            revision = revision_response.json().get("sha", "")
+            if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+                raise ValueError("Invalid immutable source revision")
+            tree_url = f"{GITHUB_API}/repos/{repo}/git/trees/{revision}?recursive=1"
             response = client.get(tree_url, headers={"Accept": "application/vnd.github+json"})
             response.raise_for_status()
-            tree = response.json().get("tree", [])
+            tree_payload = response.json()
+            if tree_payload.get("truncated") is not False:
+                raise ValueError("Source tree completeness not established")
+            tree = tree_payload["tree"]
             candidates = []
             for item in tree:
                 path = item.get("path", "")
@@ -119,21 +129,29 @@ def collect_user_github_repos(client: httpx.Client, selected: set[str]) -> list[
                         )
                     )
                 if wanted and int(item.get("size", 0)) <= 30 * 1024 * 1024:
-                    candidates.append((path, item.get("size", 0)))
+                    candidates.append((path, item.get("size", 0), item.get("sha", "")))
             if label == "samirwagle_archive":
-                floor_files = sorted((p, s) for p, s in candidates if "data/floorsheet/" in p)
-                keep = {p for p, _ in floor_files[-10:]}
-                candidates = [(p, s) for p, s in candidates
+                floor_files = sorted((p, s, b) for p, s, b in candidates if "data/floorsheet/" in p)
+                keep = {p for p, _, _ in floor_files[-10:]}
+                candidates = [(p, s, b) for p, s, b in candidates
                               if "data/floorsheet/" not in p or p in keep]
-            for path, size in candidates:
-                raw_url = f"https://raw.githubusercontent.com/{repo}/main/{path}"
+            for path, size, blob in candidates:
+                raw_url = f"https://raw.githubusercontent.com/{repo}/{revision}/{quote(path, safe='/')}"
                 try:
                     file_response = client.get(raw_url)
                     file_response.raise_for_status()
                     if len(file_response.content) > 30 * 1024 * 1024:
                         raise ValueError("file exceeded 30 MiB safety limit")
-                    records.append(_save(label, path, file_response.content, raw_url,
-                                          file_response.headers.get("content-type", "")))
+                    content = file_response.content
+                    git_blob = hashlib.sha1(f"blob {len(content)}\0".encode("ascii") + content).hexdigest()
+                    if len(content) != size or git_blob != blob:
+                        raise ValueError("Source blob identity or size mismatch")
+                    record = _save(label, path, content, raw_url,
+                                   file_response.headers.get("content-type", ""))
+                    record.update(repository=repo, commit_sha=revision, source_file=path,
+                                  source_file_sha256=record["sha256"], git_blob_sha=blob,
+                                  canonical_training_allowed=False, eligibility_review_required=True)
+                    records.append(record)
                 except Exception as exc:
                     records.append({"source": label, "label": path, "url": raw_url,
                                     "error": f"{type(exc).__name__}: {exc}"})

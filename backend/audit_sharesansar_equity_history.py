@@ -44,28 +44,58 @@ def classify_span(first: date | None, last: date | None) -> dict[str, Any]:
     }
 
 
-def summarize_payload(payload: Any) -> dict[str, Any]:
-    if not isinstance(payload, list):
-        raise ValueError("history payload root must be a JSON array")
+def summarize_payload(payload: Any, expected_symbol: str | None = None) -> dict[str, Any]:
     parsed: list[date] = []
     malformed = 0
-    for row in payload:
-        if not isinstance(row, dict):
-            malformed += 1
-            continue
-        raw_day = row.get("d")
-        try:
-            parsed.append(date.fromisoformat(str(raw_day)[:10]))
-        except (TypeError, ValueError):
-            malformed += 1
+    columns: list[str] = []
+    payload_symbol = ""
+    if isinstance(payload, dict):
+        payload_symbol = str(payload.get("symbol", "")).strip().upper()
+        raw_columns = payload.get("cols")
+        rows = payload.get("rows")
+        if not isinstance(raw_columns, list) or not all(isinstance(x, str) for x in raw_columns):
+            raise ValueError("columnar history payload must contain a string cols array")
+        if len(set(raw_columns)) != len(raw_columns) or "d" not in raw_columns:
+            raise ValueError("columnar history payload must contain one unique d date column")
+        if not isinstance(rows, list):
+            raise ValueError("columnar history payload rows must be a JSON array")
+        columns = raw_columns
+        date_index = columns.index("d")
+        for row in rows:
+            if not isinstance(row, list) or len(row) != len(columns):
+                malformed += 1
+                continue
+            try:
+                parsed.append(date.fromisoformat(str(row[date_index])[:10]))
+            except (TypeError, ValueError):
+                malformed += 1
+        layout = "columnar_object"
+    elif isinstance(payload, list):
+        rows = payload
+        for row in rows:
+            if not isinstance(row, dict):
+                malformed += 1
+                continue
+            try:
+                parsed.append(date.fromisoformat(str(row.get("d"))[:10]))
+            except (TypeError, ValueError):
+                malformed += 1
+        layout = "array_of_objects"
+    else:
+        raise ValueError("history payload root must be a columnar object or JSON array")
+    if expected_symbol and payload_symbol and payload_symbol != expected_symbol.upper():
+        raise ValueError(f"payload symbol {payload_symbol} does not match requested {expected_symbol}")
     first = min(parsed) if parsed else None
     last = max(parsed) if parsed else None
     return {
-        "row_count": len(payload),
+        "row_count": len(rows),
         "dated_row_count": len(parsed),
         "malformed_date_or_row_count": malformed,
         "first_date": first.isoformat() if first else "",
         "last_date": last.isoformat() if last else "",
+        "payload_symbol": payload_symbol,
+        "schema_layout": layout,
+        "columns": columns,
         **classify_span(first, last),
     }
 
@@ -119,7 +149,7 @@ def _fetch_one(client: httpx.Client, revision: str, symbol: str,
     digest = hashlib.sha256(content).hexdigest()
     try:
         payload = json.loads(content.decode("utf-8"))
-        coverage = summarize_payload(payload)
+        coverage = summarize_payload(payload, symbol)
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         return {**base, "retrieval_status": "invalid_json_or_schema",
                 "source_bytes": len(content), "source_sha256": digest,

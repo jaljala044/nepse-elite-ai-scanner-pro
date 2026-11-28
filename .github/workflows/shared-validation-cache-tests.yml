@@ -5,12 +5,16 @@ on:
       - "backend/app/normalize_floorsheet.py"
       - "backend/normalize_floorsheet_csv.py"
       - "backend/tests/test_shared_floorsheet_cache.py"
+      - "backend/app/historical_coverage.py"
+      - "backend/tests/test_historical_coverage.py"
       - ".github/workflows/shared-validation-cache-tests.yml"
   pull_request:
     paths:
       - "backend/app/normalize_floorsheet.py"
       - "backend/normalize_floorsheet_csv.py"
       - "backend/tests/test_shared_floorsheet_cache.py"
+      - "backend/app/historical_coverage.py"
+      - "backend/tests/test_historical_coverage.py"
       - ".github/workflows/shared-validation-cache-tests.yml"
 jobs:
   scanner-cache-tests:
@@ -21,9 +25,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install shared validation package
-        run: python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@122acaae8665fd396d206ea40b66861b9cbd4d6b"
+        run: python -m pip install "git+https://github.com/jaljala044/nepse-smc-data.git@edbdfcff33afe0b6711639a0a56cbce0d32ea9fb"
       - name: Install scanner backend dependencies
         run: python -m pip install -r backend/requirements.txt
-      - name: Run floorsheet cache integration tests
+      - name: Run shared validation integration tests
         working-directory: backend
-        run: python -m unittest discover -s tests -p test_shared_floorsheet_cache.py -v
+        run: python -m unittest discover -s tests -p 'test_shared_*.py' -v && python -m unittest discover -s tests -p test_historical_coverage.py -v

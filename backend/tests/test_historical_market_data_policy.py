@@ -202,7 +202,7 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
         self.assertFalse(result["canonical_candidate"])
 
     def test_collection_plan_rejects_noncanonical_as_of_date(self):
-        with self.assertRaisesRegex(ValueError, "canonical YYYY-MM-DD"):
+        with self.assertRaisesRegex(ValueError, "valid ISO date"):
             build_five_year_collection_plan(
                 as_of_date="2026-1-2",
                 equities=[{"symbol": "AAA", "security_id": "1"}])

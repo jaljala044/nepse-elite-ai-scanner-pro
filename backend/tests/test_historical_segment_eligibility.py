@@ -79,19 +79,11 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
         args.update(overrides)
         return evaluate_historical_segment(**args)
 
-    def test_future_expected_session_is_rejected(self):
+    def test_future_expected_session_is_rejected_in_kathmandu_time(self):
         future = "2026-01-02"
         statuses = dict(self.statuses, **{future: "traded"})
         evidence = dict(self.session_evidence, **{
-            future: {
-                "status": "traded", "source_id": "fixture-calendar-v1",
-                "source_record_ref": f"fixture:{future}",
-                "source_url": "https://www.nepalstock.com/calendar/2026",
-                "evidence_sha256": "b" * 64, "payload_sha256": "b" * 64,
-                "rights_status": "approved",
-                "retrieved_at": "2025-12-31T15:00:00+05:45",
-                "available_at": "2025-12-31T15:00:00+05:45",
-            }
+            future: dict(self.session_evidence[self.sessions[0]], status="traded")
         })
         result = self.evaluate(
             expected_sessions=self.sessions + [future],
@@ -100,6 +92,64 @@ class HistoricalSegmentEligibilityTests(unittest.TestCase):
             records=self.records + [self.row(future)],
         )
         self.assertIn("future_expected_session:" + future, result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def _same_day_session_inputs(self, finality_at=None):
+        day = "2026-01-01"
+        cutoff = "2026-01-01T15:30:00+05:45"
+        statuses = dict(self.statuses, **{day: "traded"})
+        calendar_evidence = dict(self.session_evidence[self.sessions[0]], status="traded")
+        if finality_at is not None:
+            calendar_evidence["session_finality_evidence"] = self.source_evidence(
+                f"finality:{day}",
+                claims={
+                    "session_date": day,
+                    "session_status": "traded",
+                    "finality_status": "complete",
+                    "finalized_at": finality_at,
+                },
+            )
+        evidence = dict(self.session_evidence, **{day: calendar_evidence})
+        row_available = "2026-01-01T15:20:00+05:45"
+        row = dict(
+            self.row(day),
+            available_at=row_available,
+            source_evidence=dict(
+                self.source_evidence(f"ohlcv:NABIL:123:{day}"),
+                available_at=row_available,
+                retrieved_at=row_available,
+            ),
+        )
+        return {
+            "expected_sessions": self.sessions + [day],
+            "session_statuses": statuses,
+            "session_evidence": evidence,
+            "records": self.records + [row],
+            "decision_cutoff": cutoff,
+        }
+
+    def test_same_day_session_without_finality_is_not_eligible(self):
+        result = self.evaluate(**self._same_day_session_inputs())
+        self.assertIn("same_day_session_finality_unverified:2026-01-01", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_same_day_session_with_finality_before_cutoff_is_eligible(self):
+        result = self.evaluate(**self._same_day_session_inputs("2026-01-01T15:15:00+05:45"))
+        self.assertTrue(result["exploratory_replay_eligible"])
+        self.assertEqual(result["verified_traded_session_count"], 121)
+
+    def test_same_day_finality_after_cutoff_is_rejected(self):
+        result = self.evaluate(**self._same_day_session_inputs("2026-01-01T15:31:00+05:45"))
+        self.assertIn("same_day_session_finality_unverified:2026-01-01", result["reasons"])
+        self.assertFalse(result["exploratory_replay_eligible"])
+
+    def test_archive_overlay_guard_remains_required_for_archive_rows(self):
+        row = dict(self.records[0], repository="jaljala044/nepse-history-starter",
+                   commit_sha="1" * 40, source_file="03_stock_charts_ohlcv/NABIL.csv",
+                   source_file_sha256="a" * 64, target_csv_row=2,
+                   target_date=self.sessions[0])
+        result = self.evaluate(records=[row] + self.records[1:], require_archive_guard=True)
+        self.assertIn("archive_quarantine_guard_missing:" + self.sessions[0], result["reasons"])
         self.assertFalse(result["exploratory_replay_eligible"])
 
     def test_complete_verified_segment_is_exploratory_only(self):

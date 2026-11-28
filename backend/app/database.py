@@ -67,7 +67,7 @@ def load_state() -> tuple[dict[str, list[dict]], list[dict]]:
         con.close()
     data: dict[str, list[dict]] = {}
     blocked_symbols = {symbol.strip().upper() for symbol, d, *_ in bars
-                       if ledger_blocked({\"date\": d}, keys, symbol)}
+                       if ledger_blocked({"date": d}, keys, symbol)}
     blocked_symbols.update(quarantine_gap_symbols(((symbol, d) for symbol, d, *_ in bars), keys))
     for symbol, d, o, h, l, c, v in bars:
         if symbol.strip().upper() in blocked_symbols:

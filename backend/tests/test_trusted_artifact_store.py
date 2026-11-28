@@ -200,5 +200,46 @@ class TrustedArtifactStoreTests(unittest.TestCase):
         self.assertEqual(result["index_rotation"]["rejection_reason"], "index_rotation_not_complete")
 
 
+    def test_combined_ten_module_alignment_and_fail_closed(self):
+        registry = {}
+        for module in REQUIRED_MODULES:
+            registry[module] = dict(self.entry, evidence_ids=[module],
+                sector_membership_status="verified", sector_membership_version="fixture-v1",
+                broker_code_mapping_status="verified", broker_identity_coverage_ratio=1.0)
+        participation = dict(status="research_only", coverage=1, as_of_session="2026-11-27",
+            signals_enabled=False, missing_symbols=[], counts=dict(advance=1, decline=0, unchanged=0),
+            pressure=1, sentiment="positive", rankings=dict(gainers=[dict(symbol="A",value="5")],
+            losers=[], volume=[dict(symbol="A",value="10")], turnover=[dict(symbol="A",value="100")]))
+        rotation = dict(status="research_only", as_of="2026-11-27", coverage_ratio=1,
+            missing_indices=[], benchmark="NEPSE", signals_enabled=False, trade_actions_enabled=False,
+            indices={"NEPSE": {"rotation_trail": [dict(date=f"2026-11-{d:02d}",
+            relative_return_pct=0, momentum_change_pp=0, quadrant="leading") for d in range(22,28)]}})
+        for name, data, extra in [
+            ("daily_market_participation", participation, dict(equity_universe_status="verified", expected_symbols=["A"])),
+            ("index_rotation", rotation, dict(expected_indices=["NEPSE"]))]:
+            raw = json.dumps(data).encode()
+            filename = name + ".json"
+            (self.root / filename).write_bytes(raw)
+            registry[name] = dict(self.entry, payload_path=filename,
+                payload_sha256=hashlib.sha256(raw).hexdigest(), evidence_ids=[name], **extra)
+        store = TrustedArtifactStore(self.root, registry)
+        def snapshot():
+            return build_trusted_market_snapshot(store, decision_date="2026-11-27",
+                decision_time="2026-11-27T16:00:00+05:45")
+        result = snapshot()
+        self.assertEqual(result["status"], "research_only")
+        self.assertEqual(result["admitted_module_count"], 10)
+        self.assertFalse(result["signals_enabled"])
+        self.assertFalse(result["trade_actions_enabled"])
+        registry["index_rotation"]["session_calendar_id"] = "different-calendar"
+        self.assertEqual(snapshot()["status"], "partial_evidence")
+        registry["index_rotation"]["session_calendar_id"] = self.entry["session_calendar_id"]
+        registry["daily_market_participation"]["payload_sha256"] = "0"*64
+        result = snapshot()
+        self.assertEqual(result["status"], "partial_evidence")
+        self.assertIn("daily_market_participation", result["missing_modules"])
+        self.assertIsNone(result["production_score"])
+
+
 if __name__ == "__main__":
     unittest.main()

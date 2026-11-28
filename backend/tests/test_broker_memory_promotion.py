@@ -12,12 +12,20 @@ def row(day, evidence, side="BUY", amount="100"):
         "source_payload":payload,"source_payload_sha256":payload_hash(payload),
         "source_row_count":1,"coverage_ratio":"1"}
 
+def rights_evidence():
+    return {"SRC-A": {"source_id": "SRC-FLOORSHEET", "evidence_id": "TEST-RIGHTS",
+        "status": "approved", "document_sha256": "d" * 64,
+        "scope": ["electronic_storage", "aggregation"], "effective_from": "2020-01-01",
+        "effective_to": None, "available_at": "2026-11-24T09:00:00+05:45"}}
+
+
 def report(rows):
     return reconcile_broker_batch(batch_id="batch-2026-11-24", rows=rows,
         verified_brokers={"B-17"}, verified_sessions={r["session_date"] for r in rows},
         expected_source_ids={"SRC-A"}, received_source_ids={"SRC-A"},
         available_at="2026-11-25T10:00:00+05:45",
-        verified_session_finality={r["session_date"]: r["session_date"] + "T16:00:00+05:45" for r in rows})
+        verified_session_finality={r["session_date"]: r["session_date"] + "T16:00:00+05:45" for r in rows},
+        source_rights_evidence=rights_evidence())
 
 class BrokerMemoryPromotionTests(unittest.TestCase):
     def setUp(self):

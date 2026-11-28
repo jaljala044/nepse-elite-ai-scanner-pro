@@ -15,6 +15,6 @@
 
 ## Evidence and safety boundaries
 
-All persisted rows remain `review_required` / `provisional`. A HIGH diagnostic means only that the supplied reviewed inputs satisfy the diagnostic's completeness rules; it is not NEPSE first-party attestation, publisher certification, canonical OHLCV/floorsheet approval or trade authorization. Cross-source disagreement is retained and no majority value is promoted. Missing calendar, policy, capture, correction or source observations remain unknown/LOW confidence. No live source data, exchange sessions or capture policies are fabricated.
+All persisted rows remain `review_required` / `provisional`. A HIGH diagnostic requires reviewed calendar/policy inputs, fresh expected captures, correction history and at least two distinct source IDs agreeing for each observed group. It does not prove publisher ownership-group independence and is not NEPSE first-party attestation, publisher certification, canonical OHLCV/floorsheet approval or trade authorization. Cross-source disagreement is retained and no majority value is promoted. Missing calendar, policy, capture, correction or source observations remain unknown/LOW confidence. No live source data, exchange sessions or capture policies are fabricated.
 
 The readiness endpoint does not accept client-supplied paths or trust settings. This adapter is descriptive only: canonical promotion, OHLCV/floorsheet admission and recommendations remain disabled.

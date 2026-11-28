@@ -70,6 +70,18 @@ def _connect():
         );
         CREATE INDEX IF NOT EXISTS idx_portfolio_tx_order
             ON portfolio_transactions(owner, portfolio_id, symbol, trade_date, created_at, id);
+        CREATE TABLE IF NOT EXISTS portfolio_holding_preferences (
+            owner TEXT NOT NULL,
+            portfolio_id TEXT NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+            symbol TEXT NOT NULL,
+            horizon TEXT NOT NULL,
+            risk_preference TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(owner, portfolio_id, symbol)
+        );
+        CREATE INDEX IF NOT EXISTS idx_portfolio_preferences_owner
+            ON portfolio_holding_preferences(owner, portfolio_id);
     """)
     columns = {row["name"] for row in con.execute("PRAGMA table_info(portfolios)")}
     if "deleted_at" not in columns:
@@ -290,3 +302,40 @@ def portfolio_transactions(owner: str, portfolio_id: str) -> list[dict] | None:
             WHERE owner=? AND portfolio_id=? ORDER BY trade_date,ledger_sequence""",
             (owner, portfolio_id)).fetchall()
     return [_transaction(row) for row in rows]
+
+
+HOLDING_HORIZONS = {"short_term", "one_to_three_months", "three_to_six_months", "long_term"}
+HOLDING_RISK_PREFERENCES = {"capital_protection", "balanced", "aggressive_growth"}
+
+
+def set_holding_preference(owner: str, portfolio_id: str, *, symbol: str, horizon: str, risk_preference: str) -> dict:
+    ticker = str(symbol).strip().upper()
+    if not _SYMBOL.fullmatch(ticker):
+        raise ValueError("symbol must be 1 to 20 uppercase letters or digits")
+    if horizon not in HOLDING_HORIZONS:
+        raise ValueError("unsupported investment horizon")
+    if risk_preference not in HOLDING_RISK_PREFERENCES:
+        raise ValueError("unsupported risk preference")
+    now = datetime.now(timezone.utc).isoformat()
+    with _connect() as con:
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL", (portfolio_id, owner)).fetchone()
+        if exists is None:
+            raise LookupError("portfolio not found")
+        holding = con.execute(
+            "SELECT 1 FROM portfolio_transactions WHERE owner=? AND portfolio_id=? AND symbol=? LIMIT 1",
+            (owner, portfolio_id, ticker),
+        ).fetchone()
+        if holding is None:
+            raise LookupError("holding not found")
+        con.execute("INSERT INTO portfolio_holding_preferences (owner,portfolio_id,symbol,horizon,risk_preference,created_at,updated_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(owner,portfolio_id,symbol) DO UPDATE SET horizon=excluded.horizon,risk_preference=excluded.risk_preference,updated_at=excluded.updated_at", (owner, portfolio_id, ticker, horizon, risk_preference, now, now))
+        row = con.execute("SELECT symbol,horizon,risk_preference,created_at,updated_at FROM portfolio_holding_preferences WHERE owner=? AND portfolio_id=? AND symbol=?", (owner, portfolio_id, ticker)).fetchone()
+    return dict(row)
+
+
+def list_holding_preferences(owner: str, portfolio_id: str) -> list[dict] | None:
+    with _connect() as con:
+        exists = con.execute("SELECT 1 FROM portfolios WHERE id=? AND owner=? AND deleted_at IS NULL", (portfolio_id, owner)).fetchone()
+        if exists is None:
+            return None
+        rows = con.execute("SELECT symbol,horizon,risk_preference,created_at,updated_at FROM portfolio_holding_preferences WHERE owner=? AND portfolio_id=? ORDER BY symbol", (owner, portfolio_id)).fetchall()
+    return [dict(row) for row in rows]

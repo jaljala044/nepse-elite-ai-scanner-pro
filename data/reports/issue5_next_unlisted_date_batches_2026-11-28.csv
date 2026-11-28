@@ -1,0 +1,6 @@
+date,candidate_pair_count,distinct_symbols,smc_pair_count,history_starter_pair_count,smc_symbols,history_starter_symbols,weekday,schedule_context,exchange_session_disposition,review_tier,canonical_promotion_allowed
+2026-02-20,680,352,328,352,328,352,Friday,scheduled_non_session_candidate,UNKNOWN_NO_T1_NOTICE,T2_T3_SCHEDULE_CONTEXT_ONLY,false
+2026-05-30,679,352,327,352,327,352,Saturday,scheduled_non_session_candidate,UNKNOWN_NO_T1_NOTICE,T2_T3_SCHEDULE_CONTEXT_ONLY,false
+2026-03-28,657,341,316,341,316,341,Saturday,scheduled_non_session_candidate,UNKNOWN_NO_T1_NOTICE,T2_T3_SCHEDULE_CONTEXT_ONLY,false
+2026-05-02,655,340,315,340,315,340,Saturday,scheduled_non_session_candidate,UNKNOWN_NO_T1_NOTICE,T2_T3_SCHEDULE_CONTEXT_ONLY,false
+2025-12-30,648,336,312,336,312,336,Tuesday,scheduled_open_candidate,UNKNOWN_NO_T1_NOTICE,T2_T3_SCHEDULE_CONTEXT_ONLY,false

@@ -7,14 +7,14 @@ on:
       - "backend/tests/test_shared_floorsheet_cache.py"
       - "backend/app/historical_coverage.py"
       - "backend/tests/test_historical_coverage.py"
-      - "backend/app/historical_coverage.py"
-      - "backend/tests/test_historical_coverage.py"
       - ".github/workflows/shared-validation-cache-tests.yml"
   pull_request:
     paths:
       - "backend/app/normalize_floorsheet.py"
       - "backend/normalize_floorsheet_csv.py"
       - "backend/tests/test_shared_floorsheet_cache.py"
+      - "backend/app/historical_coverage.py"
+      - "backend/tests/test_historical_coverage.py"
       - ".github/workflows/shared-validation-cache-tests.yml"
 jobs:
   scanner-cache-tests:

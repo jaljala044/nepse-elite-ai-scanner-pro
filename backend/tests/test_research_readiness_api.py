@@ -17,3 +17,6 @@ class ResearchReadinessAPITests(unittest.TestCase):
             self.assertFalse(data["publisher_trust"]["production_admission_allowed"])
             self.assertEqual(data["historical_sector_replay"]["status"], "not_configured_or_invalid")
             self.assertFalse(data["historical_sector_replay"]["production_admission_allowed"])
+            self.assertEqual(data["source_reliability"]["status"], "not_configured")
+            self.assertFalse(data["source_reliability"]["production_admission_allowed"])
+            self.assertFalse(data["source_reliability"]["recommendation_override"])

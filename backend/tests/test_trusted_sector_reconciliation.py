@@ -6,6 +6,7 @@ from pathlib import Path
 from app.publisher_trust import sign_trust_payload
 from app.trusted_sector_reconciliation import (
     build_evidence_completeness_report,
+    build_sector_evidence_coverage_report,
     build_historical_trust_version_report,
     publisher_trust_readiness,
     replay_trusted_sector_timeline,
@@ -227,6 +228,26 @@ class TrustedSectorIntegrationTests(unittest.TestCase):
             self.assertFalse(report["versions"][0]["historical_replay_eligible"])
             self.assertTrue(report["versions"][1]["historical_replay_eligible"])
             self.assertFalse(report["historical_archive_search_supported"])
+
+
+    def test_sector_coverage_report_identifies_missing_capture_sessions(self):
+        rows = [
+            {"symbol": "AAA", "sector_code": "BANK", "captured_at": "2026-11-27T10:00:00Z"},
+            {"symbol": "BBB", "sector_code": "HYDRO", "captured_at": "2026-11-28T10:00:00Z"},
+        ]
+        assessment = {"observations": [
+            {"index": 0, "eligible_for_independence_count": True},
+            {"index": 1, "eligible_for_independence_count": True},
+        ]}
+        report = build_sector_evidence_coverage_report(
+            expected_symbols_by_sector={"BANK": ["AAA", "AAB"], "HYDRO": ["BBB"]},
+            expected_capture_sessions=["2026-11-27", "2026-11-28", "2026-11-29"],
+            observations=rows, assessment=assessment,
+        )
+        self.assertEqual(report["sector_coverage"]["BANK"]["missing_symbols"], ["AAB"])
+        self.assertEqual(report["missing_capture_sessions"], ["2026-11-29"])
+        self.assertEqual(report["status"], "incomplete")
+        self.assertFalse(report["production_admission_allowed"])
 
     def test_readiness_reports_unconfigured_without_secrets(self):
         result = publisher_trust_readiness(

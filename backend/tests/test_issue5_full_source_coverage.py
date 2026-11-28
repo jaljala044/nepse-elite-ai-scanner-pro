@@ -95,13 +95,13 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
         audit_path.write_text(json.dumps(audit), encoding="utf-8")
         calendar_path = root / "calendar.csv"
         calendar_path.write_text(
-            "date,status\\n2026-01-01,project_accepted_open\\n"
-            "2026-01-02,project_accepted_open\\n2026-01-03,verified_closed\\n",
+            "date,status\n2026-01-01,project_accepted_open\n"
+            "2026-01-02,project_accepted_open\n2026-01-03,verified_closed\n",
             encoding="utf-8",
         )
         universe_path = root / "universe.csv"
         universe_path.write_text(
-            "symbol,instrument_type,status\\nABC,Equity,Active\\n",
+            "symbol,instrument_type,status\nABC,Equity,Active\n",
             encoding="utf-8",
         )
         return audit, audit_path, calendar_path, universe_path
@@ -142,7 +142,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             root = Path(tmp)
             _, ap, cp, up = self._minimal_inputs(root)
             up.write_text(
-                "symbol,instrument_type,status\\nABC,Equity,Active\\nabc,Equity,Active\\n",
+                "symbol,instrument_type,status\nABC,Equity,Active\nabc,Equity,Active\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "active equity symbols must be unique"):

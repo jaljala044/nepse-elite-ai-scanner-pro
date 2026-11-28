@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from nepse_shared_validation import ValidationRegistry
-from app.historical_coverage import (build_historical_coverage_report,\n                                     build_cached_historical_coverage_report)
+from app.historical_coverage import build_historical_coverage_report, build_cached_historical_coverage_report
 
 
 def row(source, symbol, close, day="2026-11-24"):

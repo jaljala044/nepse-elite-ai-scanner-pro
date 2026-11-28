@@ -35,3 +35,35 @@ This is intentionally not called a missing trade. Without independent instrument
 - Raw OHLCV mutation, deletion, forward-fill, canonical admission and training promotion: **PROHIBITED**.
 
 The workflow is deterministic and records SHA-256 digests for the audit JSON, session calendar and active-equity manifest used in each run.
+
+
+## Workflow result — 2026-11-28
+
+The pinned-source gap-inventory workflow completed successfully:
+- Workflow run: `46175254564`
+- Artifact: `15275292210` (`issue5-full-source-gap-inventory`)
+- Artifact ZIP SHA-256: `05c3e20add2a6148eed8b9a8e0824a4fe9d18ed5a89286ecd8f46c3db16ddc1e`
+- Calendar: 3,671 rows, including 3,630 `project_accepted_open` sessions
+- Active equity universe: 281
+
+| Source | Expected equity/session keys | Observed valid keys | Unclassified gaps | Duplicate dates | Out-of-order transitions | Active equity files missing |
+|---|---:|---:|---:|---:|---:|---:|
+| nepse-smc-data | 175,468 | 172,391 | 3,077 | 0 | 0 | 0 |
+| nepse-history-starter | 155,746 | 154,061 | 1,685 | 0 | 0 | 0 |
+| **Total** | **331,214** | **326,452** | **4,762** | **0** | **0** | **0** |
+
+The 4,762 are source-specific unclassified gaps, not 4,762 proven missing trades. They involve 278 distinct equities. A symbol/date gap appears in both repositories for 1,640 keys and in only one repository for 1,482 keys (3,122 unique symbol/date gap keys across the union).
+
+Largest combined source-gap counts:
+- NLO 1,088
+- AHPC 557
+- BNL 446
+- SKBBL 443
+- UNL 140
+- API 128
+- CHL 103
+- PFL 96
+- SLBSL 96
+- GBLBS 86
+
+These counts prioritize evidence review; they do not establish that a stock should have traded on each date. No-trade, suspension, listing/lifecycle and source omission must be distinguished before any gap can be adjudicated. No OHLCV row is generated or repaired.

@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - "scripts/publish_issue5_review_ledger.py"
+      - "tests/test_publish_issue5_review_ledger.py"
       - "scripts/extract_repeated_adjacent_ohlcv.py"
       - "scripts/validate_repeated_adjacent_ohlcv.py"
       - ".github/workflows/repeated-adjacent-ohlcv-audit.yml"
@@ -61,6 +62,8 @@ jobs:
             echo "Candidate-ledger validator failed unexpectedly: $status"
             exit "$status"
           fi
+      - name: Test deterministic Issue #5 review ledger
+        run: python -m unittest discover -s tests -p 'test_publish_issue5_review_ledger.py' -v
       - name: Build deterministic Issue #5 review ledger
         run: |
           python scripts/publish_issue5_review_ledger.py \

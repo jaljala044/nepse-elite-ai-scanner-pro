@@ -96,11 +96,34 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
     provider = provider.strip().lower()
     if provider not in PROFILES:
         raise ValueError("unsupported_provider")
-    accepted, rejected, seen = [], [], set()
+    accepted, rejected, seen = [], [], {}
     for idx, row in enumerate(rows):
         try:
             fields = PROFILES[provider]
             day = _day(_pick(row, fields["date"]))
+            if day in seen:
+                prior = seen[day]
+                prior_record = next((item for item in accepted if item["session_date"] == day), None)
+                if prior_record is not None:
+                    accepted.remove(prior_record)
+                    rejected.append({"row_index": prior["row_index"], "reason": "duplicate_symbol_session",
+                                     "raw_row": prior["raw_row"]})
+                elif not any(item["row_index"] == prior["row_index"] and
+                             item["reason"] == "duplicate_symbol_session" for item in rejected):
+                    prior_rejection = next((item for item in rejected if item["row_index"] == prior["row_index"]), None)
+                    if prior_rejection is not None:
+                        # Preserve the original validation failure as well as the
+                        # later duplicate-session disposition; never erase why the
+                        # first row was rejected.
+                        prior_rejection.setdefault("prior_reason", prior_rejection.get("reason"))
+                        prior_rejection["reason"] = "duplicate_symbol_session"
+                        prior_rejection["raw_row"] = prior["raw_row"]
+                    else:
+                        rejected.append({"row_index": prior["row_index"], "reason": "duplicate_symbol_session",
+                                         "raw_row": prior["raw_row"]})
+                rejected.append({"row_index": idx, "reason": "duplicate_symbol_session", "raw_row": row})
+                continue
+            seen[day] = {"row_index": idx, "raw_row": row}
             raw_values = {key: _pick(row, aliases) for key, aliases in fields.items() if key != "date"}
             if any(value is None for value in raw_values.values()):
                 raise ValueError("missing_ohlcv_field")
@@ -113,9 +136,6 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
                 raise ValueError("negative_ohlcv_value")
             if vals["low"] > min(vals["open"], vals["close"]) or vals["high"] < max(vals["open"], vals["close"]) or vals["low"] > vals["high"]:
                 raise ValueError("invalid_ohlc_relationship")
-            if day in seen:
-                raise ValueError("duplicate_symbol_session")
-            seen.add(day)
             accepted.append({"symbol": symbol.strip().upper(), "session_date": day, **vals,
                              "provider_id": provider, "row_index": idx})
         except (ValueError, TypeError) as exc:

@@ -79,6 +79,43 @@ class SectorConfluenceRequest(BaseModel):
 def health():
     return {"status": "ok", "version": app.version, "mode": "research_only"}
 
+@app.get("/v1/research/market-dashboard")
+def market_dashboard():
+    """Read only deployment-owned research artifacts; never accept client attestations."""
+    import json
+    import os
+    from .trusted_artifact_store import TrustedArtifactStore, build_trusted_market_snapshot
+    now = datetime.now(ZoneInfo("Asia/Kathmandu"))
+    day = now.date().isoformat()
+    stamp = now.isoformat()
+    root = os.environ.get("NEPSE_MARKET_ARTIFACT_ROOT")
+    registry_path = os.environ.get("NEPSE_MARKET_ARTIFACT_REGISTRY")
+    registry = {}
+    if root and registry_path:
+        try:
+            candidate = json.loads(Path(registry_path).read_text(encoding="utf-8"))
+            if isinstance(candidate, dict):
+                registry = candidate
+        except (OSError, ValueError):
+            pass
+    store = TrustedArtifactStore(root or ".", registry)
+    result = build_trusted_market_snapshot(store, decision_date=day, decision_time=stamp)
+    # Public presentation is restricted to these descriptive market modules.
+    # Other artifact payloads may contain nonpublic broker/security research.
+    public = {}
+    for name in ("market_health", "daily_market_participation", "sector_rotation", "index_rotation"):
+        item = result["modules"].get(name, {})
+        # Never present a mixed-calendar snapshot as a coherent market dashboard.
+        allowed = item.get("admitted") is True and result["alignment"]["status"] == "aligned"
+        public[name] = {"status": item.get("status") if allowed else "unavailable",
+                        "as_of_date": item.get("as_of_date") if allowed else None,
+                        "coverage_ratio": item.get("coverage_ratio") if allowed else None,
+                        "data": item.get("data") if allowed else None}
+    return {"mode": "research_only", "status": result["status"],
+            "decision_date": day, "modules": public,
+            "signals_enabled": False, "trade_actions_enabled": False}
+
+
 @app.get("/v1/market-health")
 def market_health():
     """Expose readiness without fabricating a live market regime.

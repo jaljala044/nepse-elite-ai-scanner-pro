@@ -112,6 +112,10 @@ def normalize_ohlcv_rows(*, provider: str, symbol: str, rows: list[dict[str, Any
                              item["reason"] == "duplicate_symbol_session" for item in rejected):
                     prior_rejection = next((item for item in rejected if item["row_index"] == prior["row_index"]), None)
                     if prior_rejection is not None:
+                        # Preserve the original validation failure as well as the
+                        # later duplicate-session disposition; never erase why the
+                        # first row was rejected.
+                        prior_rejection.setdefault("prior_reason", prior_rejection.get("reason"))
                         prior_rejection["reason"] = "duplicate_symbol_session"
                         prior_rejection["raw_row"] = prior["raw_row"]
                     else:

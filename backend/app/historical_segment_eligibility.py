@@ -2,6 +2,9 @@
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import re
+from .issue5_quarantine import Quarantine
+
+ARCHIVE_FIELDS = frozenset({'repository', 'commit_sha', 'source_file', 'source_file_sha256', 'target_csv_row', 'target_date'})
 
 def day(value):
     if not isinstance(value,str) or date.fromisoformat(value).isoformat()!=value:
@@ -15,7 +18,8 @@ def instant(value):
     return dt
 
 def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,records,
-                                required_sessions,available_warmup_sessions,decision_cutoff):
+                                required_sessions,available_warmup_sessions,decision_cutoff,
+                                archive_guard=None, require_archive_guard=False):
     reasons=[]
     traded=no_trade=0
     def reject(reason):
@@ -75,6 +79,15 @@ def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,rec
                 nonlocal valid
                 valid=False
                 reject(reason+":"+d)
+            if require_archive_guard or archive_guard is not None or ARCHIVE_FIELDS.intersection(row):
+                if not isinstance(archive_guard, Quarantine):
+                    bad("archive_quarantine_guard_missing")
+                elif row.get("target_date") != d:
+                    bad("archive_quarantine_date_binding_missing_or_mismatch")
+                else:
+                    disposition = archive_guard.disposition(row)
+                    if disposition != "not_in_overlay_requires_other_gates":
+                        bad("archive_quarantine:" + disposition)
             if row.get("symbol")!=segment.get("symbol") or row.get("security_id")!=segment.get("security_id"):
                 bad("bar_identity_mismatch")
             if row.get("adjustment_basis")!=segment.get("adjustment_basis"):
@@ -106,3 +119,8 @@ def evaluate_historical_segment(*,segment,expected_sessions,session_statuses,rec
             "approved_backtest_eligible":False,"production_promotion_allowed":False,
             "verified_traded_session_count":traded,"verified_no_trade_count":no_trade,
             "reasons":reasons}
+
+
+def evaluate_archive_historical_segment(*, archive_guard=None, **kwargs):
+    """Archive entry point: absence of guard/provenance always fails closed."""
+    return evaluate_historical_segment(archive_guard=archive_guard, require_archive_guard=True, **kwargs)

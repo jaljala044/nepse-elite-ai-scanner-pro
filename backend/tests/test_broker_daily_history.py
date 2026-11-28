@@ -29,7 +29,7 @@ def report(rows, batch_id="BATCH-2026-11-25"):
         verified_brokers={"BROKER-17"},verified_sessions=days,
         expected_source_ids={"SRC-FLOORSHEET"},received_source_ids={"SRC-FLOORSHEET"},
         available_at="2026-11-26T10:00:00+05:45",
-        verified_session_finality={d:d+"T16:00:00+05:45" for d in days})
+        verified_session_finality={d:d+"T16:00:00+05:45" for d in days},\n        source_rights_evidence=rights_evidence())
 
 
 def manifest(day="2026-11-25"):

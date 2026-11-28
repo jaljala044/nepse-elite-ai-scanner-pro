@@ -38,6 +38,10 @@ def setup(rows, controls=None, security_registry=None, **kwargs):
         "verified_session_finality":{"2026-11-25":"2026-11-25T16:00:00+05:45"},
         "expected_source_ids":{"SRC-A"},"received_source_ids":{"SRC-A"},
         "available_at":"2026-11-26T09:00:00+05:45",
+        "source_rights_evidence":{"SRC-A":{"source_id":"SRC-A","evidence_id":"TEST-RIGHTS",
+            "status":"approved","document_sha256":"d"*64,
+            "scope":["electronic_storage","aggregation"],"effective_from":"2020-01-01",
+            "effective_to":None,"available_at":"2026-11-24T09:00:00+05:45"}},
     }
     default.update(kwargs)
     return adapt_floorsheet_parties_to_broker_batch(join,**default)

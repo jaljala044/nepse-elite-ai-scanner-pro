@@ -120,6 +120,12 @@ def adjudicate(gap_csv: Path, evidence_csv: Path, *, decision_cutoff: str | None
         elif row["rights_status"] != "approved":
             raise ValueError(f"observation evidence rights not approved at line {line}")
         key = (symbol, day)
+        if key not in gap_map:
+            raise ValueError(f"orphan evidence has no matching gap at line {line}: {key}")
+        if kind == "official_security_no_trade" and row["authority"] != "NEPSE":
+            raise ValueError(f"explicit no-trade evidence requires NEPSE authority at line {line}")
+        if not row["source_url"].startswith("https://"):
+            raise ValueError(f"evidence source_url must use HTTPS at line {line}")
         identity = (key, kind, row["source_id"], row["evidence_sha256"])
         if identity in seen_evidence:
             raise ValueError(f"duplicate evidence identity at line {line}")

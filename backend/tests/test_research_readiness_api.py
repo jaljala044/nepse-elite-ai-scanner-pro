@@ -13,3 +13,5 @@ class ResearchReadinessAPITests(unittest.TestCase):
             self.assertFalse(data["ai_recommendations_enabled"])
             self.assertFalse(data["ranking_enabled"])
             self.assertEqual(data["missing_evidence_policy"],"UNKNOWN")
+            self.assertEqual(data["publisher_trust"]["status"], "not_configured_or_invalid")
+            self.assertFalse(data["publisher_trust"]["production_admission_allowed"])

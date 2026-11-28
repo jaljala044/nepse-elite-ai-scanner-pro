@@ -26,6 +26,17 @@ class BrokerContextServerTests(unittest.TestCase):
             self.assertEqual(calc.call_args.kwargs["expected_sessions"],self.days)
             with self.assertRaises(ValueError):
                 server_context({},[],[],[],decision_time=self.ts,expected_sessions=[self.days[0],self.days[-1]])
+    def test_project_accepted_calendar_is_not_exchange_verified(self):
+        result = server_context(
+            {}, [], [], [], decision_time="2026-04-24T18:00:00+05:45",
+            expected_sessions=self.days,
+        )
+        self.assertEqual(result["status"], "insufficient_evidence")
+        self.assertEqual(result["reason"], "calendar_project_accepted_not_exchange_verified")
+        self.assertEqual(result["calendar_tier"], "project_accepted_not_exchange_certified")
+        self.assertFalse(result["production_eligible"])
+        self.assertFalse(result["signals_enabled"])
+
     def test_missing_quarantine_registry_fails_closed(self):
         with patch("app.broker_context_server.Path.read_text", side_effect=OSError("missing registry")):
             with self.assertRaises(OSError):

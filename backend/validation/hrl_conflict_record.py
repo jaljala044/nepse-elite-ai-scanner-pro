@@ -55,8 +55,16 @@ class HRLConflictRecord:
         if self.status == "QUARANTINED":
             if self.chosen_option not in (None, "C"):
                 raise ValueError("a quarantined record may only have no decision or Option C")
-            if any(value is not None for value in (self.decided_by, self.decision_date, self.justification)):
-                raise ValueError("quarantined records cannot carry a completed decision")
+            decision_values = (self.decided_by, self.decision_date, self.justification)
+            if self.chosen_option is None and any(value is not None for value in decision_values):
+                raise ValueError("an undecided quarantined record cannot carry decision metadata")
+            if self.chosen_option == "C" and any(value is not None for value in decision_values):
+                if not all(isinstance(value, str) and value.strip() for value in decision_values):
+                    raise ValueError("an explicit Option C decision requires owner, date and justification")
+                try:
+                    date.fromisoformat(self.decision_date)
+                except ValueError as exc:
+                    raise ValueError("decision_date must be an ISO YYYY-MM-DD date") from exc
         else:
             if self.chosen_option not in {"A", "B"}:
                 raise ValueError("RESOLVED requires an explicit Option A or B")

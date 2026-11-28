@@ -17,6 +17,10 @@ REPOSITORIES = (
     "jaljala044/nepse-history-starter",
 )
 OPEN_STATUSES = {"project_accepted_open", "verified_open", "verified_exceptional_open"}
+EXPECTED_SOURCE_COMMITS = {
+    "jaljala044/nepse-smc-data": "937cfcf93d78dfcf28a9f09bb13291447988157b",
+    "jaljala044/nepse-history-starter": "b60728d39f34e0f9e428675d817fd52ed2784da6",
+}
 
 
 def _sha256(path: Path) -> str:
@@ -60,7 +64,12 @@ def build_report(audit_json: Path, calendar_csv: Path, universe_csv: Path) -> tu
         source = audit.get("repositories", {}).get(repository)
         if not isinstance(source, dict):
             raise ValueError(f"missing repository audit: {repository}")
+        if source.get("commit_sha") != EXPECTED_SOURCE_COMMITS[repository]:
+            raise ValueError(f"source audit commit is not the pinned approved input: {repository}")
         files = source.get("files", [])
+        if (source.get("files_audited") != len(files) or
+                source.get("file_count") != len(files) or source.get("download_errors")):
+            raise ValueError(f"incomplete source archive audit: {repository}")
         file_index = {}
         for item in files:
             symbol = item.get("symbol")

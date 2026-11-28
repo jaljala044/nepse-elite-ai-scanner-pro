@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_issue5_source_archive_coverage import build_report
+from audit_issue5_source_archive_coverage import EXPECTED_SOURCE_COMMITS, build_report
 
 
 class Issue5FullSourceCoverageTests(unittest.TestCase):
@@ -100,7 +100,7 @@ class Issue5FullSourceCoverageTests(unittest.TestCase):
             "jaljala044/nepse-history-starter",
         ):
             audit["repositories"][repository] = {
-                "commit_sha": "a" * 40, "files_audited": 1, "file_count": 1,
+                "commit_sha": EXPECTED_SOURCE_COMMITS[repository], "files_audited": 1, "file_count": 1,
                 "total_rows": 2, "duplicate_date_count": 0,
                 "out_of_order_transitions": 0, "invalid_row_count": 0,
                 "download_errors": [],

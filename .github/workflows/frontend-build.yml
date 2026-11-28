@@ -5,6 +5,17 @@ on:
       - 'frontend/**'
       - 'backend/app/main.py'
       - '.github/workflows/frontend-build.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'backend/app/main.py'
+      - 'backend/app/broker_context_*.py'
+      - 'backend/app/broker_ledger_profiles.py'
+      - 'backend/app/broker_lifecycle_gate.py'
+      - 'backend/app/broker_mode_research.py'
+      - 'backend/app/broker_research_*.py'
+      - 'backend/app/broker_strategy_confluence.py'
+      - '.github/workflows/frontend-build.yml'
   workflow_dispatch:
 permissions:
   contents: read

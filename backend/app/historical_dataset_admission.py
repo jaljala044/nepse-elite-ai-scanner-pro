@@ -74,14 +74,19 @@ def admit_six_scanner_dataset(
 
     future, missing, duplicate_ids, invalid = [], [], [], []
     seen_ids = set()
+    if not records:
+        issues.append({"severity": "BLOCKER", "reason": "empty_dataset"})
     for index, row in enumerate(records):
         if not isinstance(row, Mapping):
             invalid.append(index)
             continue
         record_id = row.get("record_id")
-        if record_id:
+        if not isinstance(record_id, str) or not record_id.strip():
+            invalid.append(index)
+        else:
+            record_id = record_id.strip()
             if record_id in seen_ids:
-                duplicate_ids.append(str(record_id))
+                duplicate_ids.append(record_id)
             seen_ids.add(record_id)
         try:
             available = _utc(str(row.get("available_at", "")), f"records[{index}].available_at")

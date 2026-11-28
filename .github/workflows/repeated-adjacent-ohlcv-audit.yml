@@ -2,6 +2,13 @@ name: Repeated adjacent OHLCV candidate audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/extract_repeated_adjacent_ohlcv.py"
+      - "backend/app/session_calendar.py"
+      - "data/reference/nepse_session_calendar.csv"
+      - "tests/test_repeated_adjacent_ohlcv.py"
+      - ".github/workflows/repeated-adjacent-ohlcv-audit.yml"
   push:
     paths:
       - "scripts/extract_repeated_adjacent_ohlcv.py"
@@ -36,6 +43,7 @@ jobs:
           python scripts/extract_repeated_adjacent_ohlcv.py \
             --source jaljala044/nepse-smc-data 937cfcf93d78dfcf28a9f09bb13291447988157b sources/nepse-smc-data/03_stock_charts_ohlcv \
             --source jaljala044/nepse-history-starter b60728d39f34e0f9e428675d817fd52ed2784da6 sources/nepse-history-starter/03_stock_charts_ohlcv \
+            --calendar data/reference/nepse_session_calendar.csv \
             --out reports/repeated-adjacent-ohlcv
       - name: Upload candidate ledger
         uses: actions/upload-artifact@v4

@@ -34,6 +34,12 @@ assert.deepEqual(thirds,[{symbol:"AAA",cost_basis:"1",share_bps:3334},{symbol:"B
 assert.equal(thirds.reduce((sum,item)=>sum+item.share_bps,0),10000);
 const six = allocation(["A","B","C","D","E","F"].map(symbol=>({symbol,cost_basis:"1"})));
 assert.equal(six.reduce((sum,item)=>sum+item.share_bps,0),10000);
+for (let count = 1; count <= 100; count += 1) {
+  const equalCost = Array.from({length:count},(_,index)=>({symbol:`S${String(index).padStart(3,"0")}`,cost_basis:"1"}));
+  const result = allocation(equalCost);
+  assert.equal(result.reduce((sum,item)=>sum+item.share_bps,0),10000,`allocation total for ${count} positions`);
+  assert.deepEqual(allocation([...equalCost].reverse()),result,`input-order invariance for ${count} positions`);
+}
 assert.equal(percent(6667), "66.67%");
 assert.equal(percent(0), "0.00%");
 assert.equal(percent(10001), "UNKNOWN");

@@ -90,6 +90,28 @@ class PortfolioStoreTests(unittest.TestCase):
         self.assertEqual(store.list_holdings("owner-a", a["portfolio_id"]), [])
         self.assertEqual(store.list_portfolios("owner-b")[0]["portfolio_id"], b["portfolio_id"])
 
+    def test_foreign_owner_cannot_append_or_read_holding_transactions(self):
+        portfolio = store.create_portfolio("owner-a", "Private")
+        holding = store.add_holding("owner-a", portfolio["portfolio_id"], "CFCL")
+        with self.assertRaisesRegex(LookupError, "holding not found"):
+            store.add_transaction("owner-b", portfolio["portfolio_id"], holding["holding_id"],
+                                  transaction_type="buy", trade_date="2026-01-01",
+                                  quantity=1, unit_price="100")
+        self.assertEqual(
+            store.list_transactions("owner-b", portfolio["portfolio_id"], holding["holding_id"]),
+            [],
+        )
+        self.assertEqual(
+            len(store.list_transactions("owner-a", portfolio["portfolio_id"], holding["holding_id"])),
+            0,
+        )
+
+    def test_owner_cannot_add_holding_to_foreign_portfolio(self):
+        portfolio = store.create_portfolio("owner-a", "Private")
+        with self.assertRaisesRegex(LookupError, "portfolio not found"):
+            store.add_holding("owner-b", portfolio["portfolio_id"], "CFCL")
+        self.assertEqual(store.list_holdings("owner-a", portfolio["portfolio_id"]), [])
+
     def test_empty_owner_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "owner_id"):
             store.list_portfolios(" ")

@@ -15,7 +15,7 @@ Default disposition: **Option C — Keep quarantined**. No decision has been mad
 - Symbol: `HRL`
 - Trade date: `2026-11-19`
 - Exception ID: `cross_source_ohlcv_conflict:HRL:2026-11-19`
-- Pinned artifact: Issue #4 OHLCV exception ledger, workflow artifact [15274540199](https://github.com/jaljala044/nepse-elite-ai-scanner-pro/actions/runs/460?).
+- Pinned artifact: Issue #4 OHLCV exception ledger, workflow artifact ID `15274540199` (downloaded and independently inspected for this record).
 - Artifact ZIP SHA-256: `7b4fbaf618bf4801ad1e61e10e745c55013a371067e052ad7a60f42f82aee3f3`
 - Ledger JSON SHA-256: `1b8e8a0967cdb2c0d4293a786c0f3ad687994e4075e50544836aabb174486106`
 - Ledger CSV SHA-256: `74d2f2af6f3687fb82f28c9a29865babd4130ed512d5815a0534fe5ee6624616`

@@ -9,7 +9,7 @@ from app.p4_27_identity_action_admission import (
 class IdentityActionAdmissionTests(unittest.TestCase):
     cutoff = "2026-11-28T12:00:00+05:45"
     digest = "a" * 64
-    archive = {"verified_documents": [{
+    archive = {"status": "PRIMARY_NOTICE_ARCHIVE_VERIFIED", "verified_documents": [{
         "event_id": "LIST1", "publisher_id": "nepse",
         "sha256": digest, "available_at": "2024-01-01T09:00:00+05:45",
     }]}

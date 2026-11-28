@@ -11,9 +11,9 @@ import math
 from typing import Any
 
 PROVIDERS = {
-    "sharehub": {"date": ("date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "close_price", "ltp"), "volume": ("volume", "total_traded_quantity", "quantity")},
-    "chukul": {"date": ("date", "trading_date", "session_date"), "open": ("open", "openPrice", "open_price"), "high": ("high", "highPrice", "high_price"), "low": ("low", "lowPrice", "low_price"), "close": ("close", "closePrice", "close_price", "ltp"), "volume": ("volume", "totalVolume", "total_traded_quantity")},
-    "sharesansar": {"date": ("date", "trade_date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "closing_price", "ltp"), "volume": ("volume", "quantity", "total_traded_quantity")},
+    "sharehub": {"date": ("date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "close_price"), "volume": ("volume", "total_traded_quantity", "quantity")},
+    "chukul": {"date": ("date", "trading_date", "session_date"), "open": ("open", "openPrice", "open_price"), "high": ("high", "highPrice", "high_price"), "low": ("low", "lowPrice", "low_price"), "close": ("close", "closePrice", "close_price"), "volume": ("volume", "totalVolume", "total_traded_quantity")},
+    "sharesansar": {"date": ("date", "trade_date", "trading_date", "session_date"), "open": ("open", "open_price"), "high": ("high", "high_price"), "low": ("low", "low_price"), "close": ("close", "closing_price"), "volume": ("volume", "quantity", "total_traded_quantity")},
 }
 PREDECESSORS = ("BPW", "JALPA", "KLBSL", "MKLB")
 
@@ -53,8 +53,6 @@ def capture_chart_history(*, provider_id: str, symbol: str, rows: list[dict[str,
         try:
             values = {field: _first(row, aliases) for field, aliases in mapping.items()}
             session = _session(values.pop("date"))
-            if any(v is None for v in values.values()):
-                raise ValueError("missing_ohlcv_field")
             if any(v is None for v in values.values()):
                 raise ValueError("missing_ohlcv_field")
             numbers = {k: float(v) for k, v in values.items()}

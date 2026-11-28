@@ -149,6 +149,33 @@ class BrokerIngestionTests(unittest.TestCase):
         self.assertIn("source_rights_not_effective_for_session",
                       result.quarantined[0]["reasons"])
 
+    def test_malformed_rights_scope_is_quarantined_not_raised(self):
+        for scope in ([{"not": "hashable"}], [None], ["electronic_storage", 7]):
+            with self.subTest(scope=scope):
+                result = run(source_rights_evidence={"SRC-A": rights_evidence(scope=scope)})
+                self.assertFalse(result.memory_eligible)
+                self.assertTrue(any(
+                    "source_rights_scope_insufficient" in reason
+                    for item in result.quarantined for reason in item["reasons"]
+                ))
+
+    def test_accepted_rows_retain_rights_document_provenance(self):
+        result = run()
+        self.assertTrue(result.memory_eligible, repr(result))
+        accepted = result.accepted[0]
+        self.assertEqual(accepted["source_rights_evidence_id"], "RIGHTS-1")
+        self.assertEqual(accepted["source_rights_document_sha256"], "c" * 64)
+
+    def test_source_inventories_must_be_identifier_sets(self):
+        with self.assertRaisesRegex(IngestionError, "invalid_source_inventory"):
+            run(expected_source_ids="SRC-A")
+        with self.assertRaisesRegex(IngestionError, "invalid_source_inventory"):
+            run(received_source_ids="SRC-A")
+
+    def test_broker_inventory_must_be_clean_identifier_set(self):
+        with self.assertRaisesRegex(IngestionError, "invalid_verified_broker_inventory"):
+            run(verified_brokers={"BROKER-1", " "})
+
     def test_availability_timezone_is_required(self):
         with self.assertRaises(IngestionError):
             run(available_at="2026-11-26T09:00:00")

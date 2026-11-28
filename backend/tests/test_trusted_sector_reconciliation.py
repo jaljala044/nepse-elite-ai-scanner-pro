@@ -6,7 +6,10 @@ from pathlib import Path
 from app.publisher_trust import sign_trust_payload
 from app.trusted_sector_reconciliation import (
     build_evidence_completeness_report,
+    build_sector_evidence_coverage_report,
+    build_historical_trust_version_report,
     publisher_trust_readiness,
+    replay_trusted_sector_timeline,
     reconcile_trusted_sector_evidence,
 )
 
@@ -161,6 +164,113 @@ class TrustedSectorIntegrationTests(unittest.TestCase):
                 expected_symbols=["AAA", "AAA"], expected_publisher_ids=[],
                 observations=[], assessment={"observations": []},
             )
+
+
+    def test_historical_timeline_replay_counts_ownership_groups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            base = {
+                "security_id": "SEC-1", "symbol": "AAA", "event_type": "classify",
+                "sector_code": "BANK", "effective_from": "2026-01-01",
+                "effective_to": None, "captured_at": "2026-11-28T11:30:00Z",
+                "available_at": "2026-11-28T11:31:00Z", "source_class": "secondary_publisher",
+                "evidence_ref": "archive:sector", "payload_sha256": "a" * 64,
+            }
+            events = [
+                {**base, "event_id": "e1", "publisher_id": "brand-a",
+                 "source_id": "s1", "source_url": "https://a.example/sector"},
+                {**base, "event_id": "e2", "publisher_id": "brand-b",
+                 "source_id": "s2", "source_url": "https://b.example/sector"},
+                {**base, "event_id": "e3", "publisher_id": "brand-c",
+                 "source_id": "s3", "source_url": "https://c.example/sector"},
+            ]
+            result = replay_trusted_sector_timeline(
+                events, as_of_date="2026-11-28", decision_time=NOW,
+                allowed_sector_codes={"BANK"}, known_security_ids={"SEC-1"},
+                registry_path=rp, freshness_policy_path=pp, hmac_key=KEY,
+            )
+            self.assertEqual(result["snapshots"]["SEC-1"]["status"], "corroborated_research_mapping")
+            self.assertEqual(result["snapshots"]["SEC-1"]["classification_publishers"],
+                             ["group-one", "group-two"])
+            self.assertEqual(result["publisher_trust_replay"]["eligible_event_count"], 3)
+            self.assertFalse(result["production_admission_allowed"])
+
+    def test_historical_replay_excludes_missing_source_url(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            event = {
+                "event_id": "e1", "security_id": "SEC-1", "symbol": "AAA",
+                "event_type": "classify", "sector_code": "BANK",
+                "effective_from": "2026-01-01", "captured_at": "2026-11-28T11:30:00Z",
+                "available_at": "2026-11-28T11:31:00Z", "source_id": "s1",
+                "publisher_id": "brand-a", "source_class": "secondary_publisher",
+                "evidence_ref": "archive:sector", "payload_sha256": "a" * 64,
+            }
+            result = replay_trusted_sector_timeline(
+                [event], as_of_date="2026-11-28", decision_time=NOW,
+                allowed_sector_codes={"BANK"}, known_security_ids={"SEC-1"},
+                registry_path=rp, freshness_policy_path=pp, hmac_key=KEY,
+            )
+            self.assertEqual(result["publisher_trust_replay"]["rejected_events"][0]["reason"],
+                             "source_url_missing_host_unverifiable")
+            self.assertEqual(result["snapshots"]["SEC-1"]["status"], "missing_effective_classification")
+
+    def test_future_registry_snapshot_rejected_for_historical_cutoff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            report = build_historical_trust_version_report(
+                registry_path=rp, freshness_policy_path=pp, hmac_key=KEY,
+                decision_times=["2026-11-27T12:00:00Z", NOW],
+            )
+            self.assertFalse(report["versions"][0]["historical_replay_eligible"])
+            self.assertTrue(report["versions"][1]["historical_replay_eligible"])
+            self.assertFalse(report["historical_archive_search_supported"])
+
+
+    def test_sector_coverage_report_identifies_missing_capture_sessions(self):
+        rows = [
+            {"symbol": "AAA", "sector_code": "BANK", "captured_at": "2026-11-27T10:00:00Z"},
+            {"symbol": "BBB", "sector_code": "HYDRO", "captured_at": "2026-11-28T10:00:00Z"},
+        ]
+        assessment = {"observations": [
+            {"index": 0, "eligible_for_independence_count": True},
+            {"index": 1, "eligible_for_independence_count": True},
+        ]}
+        report = build_sector_evidence_coverage_report(
+            expected_symbols_by_sector={"BANK": ["AAA", "AAB"], "HYDRO": ["BBB"]},
+            expected_capture_sessions=["2026-11-27", "2026-11-28", "2026-11-29"],
+            observations=rows, assessment=assessment,
+        )
+        self.assertEqual(report["sector_coverage"]["BANK"]["missing_symbols"], ["AAB"])
+        self.assertEqual(report["missing_capture_sessions"], ["2026-11-29"])
+        self.assertEqual(report["status"], "incomplete")
+        self.assertFalse(report["production_admission_allowed"])
+
+
+    def test_explicit_historical_registry_versions_detect_identity_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            newer = json.loads(rp.read_text(encoding="utf-8"))
+            newer["publishers"][0]["ownership_group_id"] = "group-revised"
+            newer["signature_hmac_sha256"] = sign_trust_payload(newer, KEY)
+            newer_path = root / "registry-v2.json"
+            write_json(newer_path, newer)
+            first = "2026-11-28T12:00:00Z"
+            second = "2026-11-28T12:30:00Z"
+            report = build_historical_trust_version_report(
+                registry_path=None, freshness_policy_path=pp, hmac_key=KEY,
+                decision_times=[first, second],
+                versioned_registry_paths={first: rp, second: newer_path},
+            )
+            self.assertEqual(len(report["publisher_identity_changes"]), 1)
+            self.assertEqual(report["publisher_identity_changes"][0]["publisher_id"], "brand-a")
+            self.assertEqual(report["publisher_identity_changes"][0]["status"],
+                             "review_required_identity_change")
+            self.assertTrue(report["explicit_version_map_supported"])
 
     def test_readiness_reports_unconfigured_without_secrets(self):
         result = publisher_trust_readiness(

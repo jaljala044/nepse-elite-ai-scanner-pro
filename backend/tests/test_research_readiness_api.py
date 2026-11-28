@@ -15,3 +15,5 @@ class ResearchReadinessAPITests(unittest.TestCase):
             self.assertEqual(data["missing_evidence_policy"],"UNKNOWN")
             self.assertEqual(data["publisher_trust"]["status"], "not_configured_or_invalid")
             self.assertFalse(data["publisher_trust"]["production_admission_allowed"])
+            self.assertEqual(data["historical_sector_replay"]["status"], "not_configured_or_invalid")
+            self.assertFalse(data["historical_sector_replay"]["production_admission_allowed"])

@@ -6,6 +6,7 @@ from app.sector_timeline_store import (
     load_sector_timeline_events,
     persist_sector_timeline_batch,
     replay_persisted_sector_timeline,
+    replay_persisted_trusted_sector_timeline,
 )
 
 EVENT = {
@@ -19,6 +20,7 @@ EVENT = {
     "captured_at": "2026-11-27T10:00:00Z",
     "available_at": "2026-11-27T10:01:00Z",
     "source_id": "source-a",
+    "source_url": "https://publisher-a.example/record/1",
     "publisher_id": "publisher-a",
     "source_class": "secondary_publisher",
     "evidence_ref": "archive:record-1",
@@ -111,6 +113,24 @@ class SectorTimelineStoreTests(unittest.TestCase):
                 storage_root=self.raw,
                 database_path=self.db,
             )
+
+
+    def test_trusted_persisted_replay_fails_closed_without_registry_policy(self):
+        self.persist()
+        result = replay_persisted_trusted_sector_timeline(
+            as_of_date="2026-11-28",
+            decision_time="2026-11-28T12:00:00Z",
+            allowed_sector_codes={"BANK"},
+            known_security_ids={"SEC-1"},
+            registry_path=None,
+            freshness_policy_path=None,
+            hmac_key=None,
+            database_path=self.db,
+        )
+        self.assertEqual(result["publisher_trust_replay"]["registry_status"], "not_configured")
+        self.assertEqual(result["status"], "insufficient_evidence")
+        self.assertFalse(result["production_admission_allowed"])
+        self.assertEqual(result["persistence"]["finality_status"], "provisional")
 
     def test_batch_filter_is_explicit(self):
         self.persist()

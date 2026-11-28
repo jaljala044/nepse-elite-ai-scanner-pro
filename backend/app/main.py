@@ -233,6 +233,15 @@ def research_readiness():
             "reason": registry.get("reason"),
         },
         "publisher_trust": publisher_trust,
+        "historical_sector_replay": {
+            "timeline_store_configured": bool(os.getenv("NEPSE_SECTOR_TIMELINE_DB_PATH")),
+            "publisher_trust_ready": publisher_trust["status"] == "configured_for_research",
+            "status": "configured_for_research" if (
+                bool(os.getenv("NEPSE_SECTOR_TIMELINE_DB_PATH"))
+                and publisher_trust["status"] == "configured_for_research"
+            ) else "not_configured_or_invalid",
+            "production_admission_allowed": False,
+        },
         "candidate_equities": len(EQUITY_UNIVERSE["symbols"]) if EQUITY_UNIVERSE else None,
         "canonical_reviewed_rows": len(REVIEWED_ROWS),
         "universe_available": EQUITY_UNIVERSE is not None,

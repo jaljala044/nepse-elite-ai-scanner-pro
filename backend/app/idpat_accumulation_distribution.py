@@ -61,8 +61,13 @@ def analyze_idpat_accumulation_distribution(
             "probability": None,
         }
 
+    expected_security_id = snapshot.get("security_id")
     bars = []
     for row in raw_bars:
+        if row.get("symbol") is not None and row.get("symbol") != symbol:
+            raise IDPATError("bar_symbol_identity_mismatch")
+        if expected_security_id is not None and row.get("security_id") != expected_security_id:
+            raise IDPATError("bar_security_identity_mismatch")
         bars.append({
             "date": row["date"],
             "open": _decimal(row["open"], "bar_open"),

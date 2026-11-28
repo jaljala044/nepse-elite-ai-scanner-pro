@@ -24,3 +24,5 @@ class ResearchReadinessAPITests(unittest.TestCase):
             self.assertFalse(data["source_data_quality"]["production_admission_allowed"])
             self.assertFalse(data["source_data_quality"]["recommendation_override"])
             self.assertEqual(data["source_data_quality"]["review_registry_status"], "not_configured")
+            self.assertEqual(data["source_data_quality"]["publisher_registry_status"], "not_configured")
+            self.assertEqual(data["source_data_quality"]["freshness_policy_status"], "not_configured")

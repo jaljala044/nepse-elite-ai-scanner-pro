@@ -1,7 +1,9 @@
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
 import json
 import tempfile
 import unittest
+from threading import Barrier
 from pathlib import Path
 
 from app.broker_batch_manifest import (
@@ -83,16 +85,20 @@ class BrokerRawCaptureTests(unittest.TestCase):
         self.assertEqual(first["batch_id"], second["batch_id"])
         self.assertTrue(second["idempotent_replay"])
 
-    def test_changed_capture_metadata_is_conflict_not_overwrite(self):
+    def test_changed_capture_metadata_is_conflict_and_audited(self):
         manifest, raw = fixture()
-        self.registry.stage(manifest, raw)
+        first = self.registry.stage(manifest, raw)
         changed = RawCaptureManifest(**{**manifest.__dict__, "parser_version": "2.0.0"})
         with self.assertRaises(CaptureConflict):
             self.registry.stage(changed, raw)
+        events = self.registry.events(first["batch_id"])
+        self.assertEqual(events[-1]["event_type"], "capture_identity_conflict")
+        self.assertEqual(events[-1]["detail"]["proposed_parser_version"], "2.0.0")
+        self.assertEqual(events[-1]["detail"]["proposed_raw_sha256"], hashlib.sha256(raw).hexdigest())
 
-    def test_changed_raw_bytes_under_same_capture_identity_are_conflicts(self):
+    def test_changed_raw_bytes_are_retained_and_conflict_is_audited(self):
         manifest, raw = fixture()
-        self.registry.stage(manifest, raw)
+        first = self.registry.stage(manifest, raw)
         changed_raw = b"corrected source extract"
         changed_manifest = RawCaptureManifest(**{
             **manifest.__dict__,
@@ -101,6 +107,12 @@ class BrokerRawCaptureTests(unittest.TestCase):
         })
         with self.assertRaises(CaptureConflict):
             self.registry.stage(changed_manifest, changed_raw)
+        events = self.registry.events(first["batch_id"])
+        self.assertEqual(events[-1]["event_type"], "capture_identity_conflict")
+        proposed_hash = hashlib.sha256(changed_raw).hexdigest()
+        proposed_object = self.root / "objects" / proposed_hash[:2] / (proposed_hash + ".bin")
+        self.assertEqual(proposed_object.read_bytes(), changed_raw)
+        self.assertEqual(events[-1]["detail"]["proposed_raw_sha256"], proposed_hash)
 
     def test_late_available_capture_is_retained_with_both_timestamps(self):
         manifest, raw = fixture()
@@ -113,6 +125,13 @@ class BrokerRawCaptureTests(unittest.TestCase):
         stored = self.registry.get(result["batch_id"])["manifest"]
         self.assertEqual(stored["captured_at"], "2026-11-25T10:15:00+00:00")
         self.assertEqual(stored["available_at"], "2026-11-27T03:15:00+00:00")
+
+    def test_capture_trade_date_requires_canonical_iso_format(self):
+        manifest, raw = fixture()
+        for invalid in ("20261125", "2026/11/25", "2026-02-30"):
+            candidate = RawCaptureManifest(**{**manifest.__dict__, "trade_date": invalid})
+            with self.subTest(trade_date=invalid), self.assertRaisesRegex(CaptureRejected, "invalid_trade_date"):
+                self.registry.stage(candidate, raw)
 
     def test_raw_hash_and_byte_count_are_verified(self):
         manifest, raw = fixture()
@@ -292,6 +311,43 @@ class BrokerRawCaptureTests(unittest.TestCase):
                 batch, clean_report(batch), coverage_manifest=coverage_manifest(),
                 history_store=history)
         self.assertEqual(history.count(), 0)
+
+
+    def test_concurrent_identity_reuse_is_serialized_and_audited(self):
+        worker_count = 8
+        # Each registry owns a separate SQLite connection to the same database.
+        registries = [BrokerRawCaptureRegistry(self.root) for _ in range(worker_count)]
+        barrier = Barrier(worker_count)
+
+        def stage_candidate(index):
+            raw = f"concurrent-source-capture-{index}".encode("utf-8")
+            manifest, _ = fixture(raw)
+            barrier.wait(timeout=10)
+            try:
+                result = registries[index].stage(manifest, raw)
+                return ("staged", result)
+            except CaptureConflict:
+                return ("conflict", None)
+            except Exception as exc:  # surface unexpected SQLite/uniqueness failures
+                return ("error", f"{type(exc).__name__}: {exc}")
+
+        with ThreadPoolExecutor(max_workers=worker_count) as pool:
+            outcomes = list(pool.map(stage_candidate, range(worker_count)))
+
+        staged = [value for state, value in outcomes if state == "staged"]
+        conflicts = [value for state, value in outcomes if state == "conflict"]
+        errors = [value for state, value in outcomes if state == "error"]
+        self.assertEqual(errors, [])
+        self.assertEqual(len(staged), 1)
+        self.assertEqual(len(conflicts), worker_count - 1)
+
+        batch_id = staged[0]["batch_id"]
+        events = self.registry.events(batch_id)
+        self.assertEqual(
+            sum(event["event_type"] == "capture_identity_conflict" for event in events),
+            worker_count - 1,
+        )
+        self.assertEqual(events[0]["event_type"], "staged")
 
 
 if __name__ == "__main__":

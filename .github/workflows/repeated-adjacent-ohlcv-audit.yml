@@ -6,6 +6,8 @@ on:
   push:
     paths:
       - "scripts/extract_repeated_adjacent_ohlcv.py"
+      - "scripts/validate_repeated_adjacent_ohlcv.py"
+      - "tests/test_validate_repeated_adjacent_ohlcv.py"
       - "tests/test_repeated_adjacent_ohlcv.py"
       - ".github/workflows/repeated-adjacent-ohlcv-audit.yml"
 
@@ -32,6 +34,8 @@ jobs:
           path: sources/nepse-history-starter
       - name: Run extractor unit tests
         run: python -m unittest discover -s tests -p 'test_repeated_adjacent_ohlcv.py'
+      - name: Run candidate-ledger validator unit tests
+        run: python -m unittest tests.test_validate_repeated_adjacent_ohlcv -v
       - name: Extract repeated adjacent-row candidates
         run: |
           python scripts/extract_repeated_adjacent_ohlcv.py \
@@ -39,6 +43,19 @@ jobs:
             --source jaljala044/nepse-history-starter b60728d39f34e0f9e428675d817fd52ed2784da6 sources/nepse-history-starter/03_stock_charts_ohlcv \
             --out reports/repeated-adjacent-ohlcv \
             --calendar data/reference/nepse_session_calendar.csv
+      - name: Validate extracted candidate ledger (review findings remain quarantined)
+        run: |
+          set +e
+          python scripts/validate_repeated_adjacent_ohlcv.py \\
+            --input reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv \\
+            --output reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            echo "Candidate-ledger validator failed unexpectedly: $status"
+            exit "$status"
+          fi
+          echo "Validator exit: $status (0=clean, 2=review findings). Candidate rows remain non-promotable." >> "$GITHUB_STEP_SUMMARY"
       - name: Upload candidate ledger
         uses: actions/upload-artifact@v4
         with:

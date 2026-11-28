@@ -93,6 +93,9 @@ jobs:
           path: |
             reports/issue5-weekly-closure-batch5.csv
             reports/issue5-weekly-closure-batch5.json
+            reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_candidates.csv
+            reports/repeated-adjacent-ohlcv/repeated_adjacent_ohlcv_summary.json
+            reports/repeated-adjacent-ohlcv/evidence_manifest.json
             reports/repeated-adjacent-ohlcv/candidate-ledger-integrity.json
           if-no-files-found: error
           retention-days: 90

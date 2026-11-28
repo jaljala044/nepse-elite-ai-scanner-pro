@@ -6,7 +6,9 @@ from pathlib import Path
 from app.publisher_trust import sign_trust_payload
 from app.trusted_sector_reconciliation import (
     build_evidence_completeness_report,
+    build_historical_trust_version_report,
     publisher_trust_readiness,
+    replay_trusted_sector_timeline,
     reconcile_trusted_sector_evidence,
 )
 
@@ -161,6 +163,70 @@ class TrustedSectorIntegrationTests(unittest.TestCase):
                 expected_symbols=["AAA", "AAA"], expected_publisher_ids=[],
                 observations=[], assessment={"observations": []},
             )
+
+
+    def test_historical_timeline_replay_counts_ownership_groups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            base = {
+                "security_id": "SEC-1", "symbol": "AAA", "event_type": "classify",
+                "sector_code": "BANK", "effective_from": "2026-01-01",
+                "effective_to": None, "captured_at": "2026-11-28T11:30:00Z",
+                "available_at": "2026-11-28T11:31:00Z", "source_class": "secondary_publisher",
+                "evidence_ref": "archive:sector", "payload_sha256": "a" * 64,
+            }
+            events = [
+                {**base, "event_id": "e1", "publisher_id": "brand-a",
+                 "source_id": "s1", "source_url": "https://a.example/sector"},
+                {**base, "event_id": "e2", "publisher_id": "brand-b",
+                 "source_id": "s2", "source_url": "https://b.example/sector"},
+                {**base, "event_id": "e3", "publisher_id": "brand-c",
+                 "source_id": "s3", "source_url": "https://c.example/sector"},
+            ]
+            result = replay_trusted_sector_timeline(
+                events, as_of_date="2026-11-28", decision_time=NOW,
+                allowed_sector_codes={"BANK"}, known_security_ids={"SEC-1"},
+                registry_path=rp, freshness_policy_path=pp, hmac_key=KEY,
+            )
+            self.assertEqual(result["snapshots"]["SEC-1"]["status"], "corroborated_research_mapping")
+            self.assertEqual(result["snapshots"]["SEC-1"]["classification_publishers"],
+                             ["group-one", "group-two"])
+            self.assertEqual(result["publisher_trust_replay"]["eligible_event_count"], 3)
+            self.assertFalse(result["production_admission_allowed"])
+
+    def test_historical_replay_excludes_missing_source_url(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            event = {
+                "event_id": "e1", "security_id": "SEC-1", "symbol": "AAA",
+                "event_type": "classify", "sector_code": "BANK",
+                "effective_from": "2026-01-01", "captured_at": "2026-11-28T11:30:00Z",
+                "available_at": "2026-11-28T11:31:00Z", "source_id": "s1",
+                "publisher_id": "brand-a", "source_class": "secondary_publisher",
+                "evidence_ref": "archive:sector", "payload_sha256": "a" * 64,
+            }
+            result = replay_trusted_sector_timeline(
+                [event], as_of_date="2026-11-28", decision_time=NOW,
+                allowed_sector_codes={"BANK"}, known_security_ids={"SEC-1"},
+                registry_path=rp, freshness_policy_path=pp, hmac_key=KEY,
+            )
+            self.assertEqual(result["publisher_trust_replay"]["rejected_events"][0]["reason"],
+                             "source_url_missing_host_unverifiable")
+            self.assertEqual(result["snapshots"]["SEC-1"]["status"], "missing_effective_classification")
+
+    def test_future_registry_snapshot_rejected_for_historical_cutoff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            report = build_historical_trust_version_report(
+                registry_path=rp, freshness_policy_path=pp, hmac_key=KEY,
+                decision_times=["2026-11-27T12:00:00Z", NOW],
+            )
+            self.assertFalse(report["versions"][0]["historical_replay_eligible"])
+            self.assertTrue(report["versions"][1]["historical_replay_eligible"])
+            self.assertFalse(report["historical_archive_search_supported"])
 
     def test_readiness_reports_unconfigured_without_secrets(self):
         result = publisher_trust_readiness(

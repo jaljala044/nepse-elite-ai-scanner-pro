@@ -1,10 +1,11 @@
-"""Evidence-gated cross-sector participation component for market health."""
+"""Evidence-gated four-horizon sector participation component for market health."""
 from __future__ import annotations
 
 import math
 
 DIGEST_LENGTH = 64
-REQUIRED_WINDOWS = ("1M", "3M")
+REQUIRED_WINDOWS = ("1W", "1M", "3M", "6M")
+WINDOW_WEIGHTS = {"1W": 0.20, "1M": 0.30, "3M": 0.30, "6M": 0.20}
 
 
 def _provenance(item: object, label: str, decision_session: str) -> str | None:
@@ -43,11 +44,11 @@ def market_sector_participation_component(
     decision_session: str,
     minimum_sector_coverage: float = 0.80,
 ) -> dict:
-    """Score the share of sectors with positive 1M and 3M median returns.
+    """Score positive sector breadth over 1W/1M/3M/6M median returns.
 
-    Sector returns must come from the existing median-constituent sector
-    strength engine. Universe and price-evidence manifests independently bind
-    the point-in-time sector cohort and underlying prices to the decision date.
+    Window weights mirror the scanner's 1W/1M/3M/6M horizon emphasis
+    (20/30/30/20). Sector returns come from the existing median-constituent
+    sector strength engine; no missing window or sector is imputed.
     """
     if not isinstance(decision_session, str) or not decision_session.strip():
         raise ValueError("decision_session must be a nonblank session date")
@@ -116,10 +117,7 @@ def market_sector_participation_component(
             value = _finite_return(item.get("median_return_pct"), f"{sector} {window} median_return_pct")
             observed[window].append({"sector": sector, "return_pct": value})
 
-    coverage = {
-        window: len(observed[window]) / expected_count
-        for window in REQUIRED_WINDOWS
-    }
+    coverage = {window: len(observed[window]) / expected_count for window in REQUIRED_WINDOWS}
     if any(value < minimum_sector_coverage for value in coverage.values()):
         return {
             "status": "insufficient_evidence", "reason": "sector_return_coverage_below_threshold",
@@ -138,12 +136,17 @@ def market_sector_participation_component(
         window: positive[window] / len(observed[window]) * 100
         for window in REQUIRED_WINDOWS
     }
-    score = 0.60 * participation_pct["1M"] + 0.40 * participation_pct["3M"]
+    score = sum(WINDOW_WEIGHTS[window] * participation_pct[window] for window in REQUIRED_WINDOWS)
     warnings = []
-    if participation_pct["1M"] < 30 and participation_pct["3M"] < 30:
+    if all(participation_pct[window] < 30 for window in REQUIRED_WINDOWS):
         warnings.append("broad_sector_participation_weak")
-    if participation_pct["1M"] >= 70 and participation_pct["3M"] >= 70:
+    if all(participation_pct[window] >= 70 for window in REQUIRED_WINDOWS):
         warnings.append("broad_sector_participation_strong")
+    if participation_pct["1W"] < 30 and participation_pct["6M"] >= 70:
+        warnings.append("short_term_sector_participation_deteriorating")
+    if participation_pct["1W"] >= 70 and participation_pct["6M"] < 30:
+        warnings.append("short_term_sector_participation_recovering")
+
     return {
         "status": "verified", "score": round(score, 2),
         "as_of_session": decision_session,
@@ -159,17 +162,16 @@ def market_sector_participation_component(
             "positive_sector_participation_pct": {
                 window: round(value, 2) for window, value in participation_pct.items()
             },
-            "weights": {"1M": 0.60, "3M": 0.40},
-            "sector_returns": {
-                window: observed[window] for window in REQUIRED_WINDOWS
-            },
+            "weights": dict(WINDOW_WEIGHTS),
+            "weighted_participation_pct": round(score, 2),
+            "sector_returns": {window: observed[window] for window in REQUIRED_WINDOWS},
         },
         "warnings": warnings,
         "interpretation": "rules_based_positive_sector_participation_not_a_probability",
         "limitations": [
             "Uses median constituent returns, not official NEPSE sector indices",
             "Requires verified point-in-time sector membership and price evidence",
-            "At least 80% of expected sectors must have observed 1M and 3M returns",
+            "At least 80% of expected sectors must have observed returns in every 1W, 1M, 3M and 6M window",
             "Does not infer broker rotation, turnover expansion or stock-level buy signals",
             "Synthetic tests validate logic only; no live sector participation score is claimed",
         ],

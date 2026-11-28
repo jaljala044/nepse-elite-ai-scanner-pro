@@ -13,7 +13,7 @@ def row(day, evidence, side="BUY", amount="100"):
         "source_row_count":1,"coverage_ratio":"1"}
 
 def rights_evidence():
-    return {"SRC-A": {"source_id": "SRC-FLOORSHEET", "evidence_id": "TEST-RIGHTS",
+    return {"SRC-A": {"source_id": "SRC-A", "evidence_id": "TEST-RIGHTS",
         "status": "approved", "document_sha256": "d" * 64,
         "scope": ["electronic_storage", "aggregation"], "effective_from": "2020-01-01",
         "effective_to": None, "available_at": "2026-11-24T09:00:00+05:45"}}

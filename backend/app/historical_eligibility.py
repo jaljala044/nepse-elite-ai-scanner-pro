@@ -75,6 +75,7 @@ def build_lifecycle_eligibility_manifest(
     verified_sessions: list[str],
     lifecycle: dict,
     required_warmup_sessions: int,
+    verified_closed_dates: list[str] | None = None,
     minimum_sessions: int = 120,
     available_as_of: str,
 ) -> dict:
@@ -98,6 +99,12 @@ def build_lifecycle_eligibility_manifest(
     sessions = [_day(item, "verified_session") for item in verified_sessions]
     if not sessions or sessions != sorted(set(sessions)):
         raise ValueError("verified_sessions_must_be_unique_and_chronological")
+    closed_sessions = [_day(item, "verified_closed_date")
+                       for item in (verified_closed_dates or [])]
+    if closed_sessions != sorted(set(closed_sessions)):
+        raise ValueError("verified_closed_dates_must_be_unique_and_chronological")
+    if set(sessions) & set(closed_sessions):
+        raise ValueError("open_and_closed_calendar_dates_overlap")
     by_day: dict[date, list[dict]] = defaultdict(list)
     for index, row in enumerate(records):
         if not isinstance(row, dict):
@@ -105,7 +112,11 @@ def build_lifecycle_eligibility_manifest(
         day = _day(row.get("session_date"), "session_date")
         by_day[day].append(row)
 
-    unexpected_dates = sorted(day.isoformat() for day in by_day if day not in set(sessions))
+    open_set, closed_set = set(sessions), set(closed_sessions)
+    closed_observation_dates = sorted(day.isoformat() for day in by_day if day in closed_set)
+    unknown_calendar_dates = sorted(
+        day.isoformat() for day in by_day if day not in open_set and day not in closed_set
+    )
     rows = []
     adjustment_bases = set()
     data_hashes = set()
@@ -205,9 +216,12 @@ def build_lifecycle_eligibility_manifest(
     if len(adjustment_bases) > 1:
         blockers.append({"reason": "mixed_adjustment_basis_within_segment",
                          "adjustment_bases": sorted(adjustment_bases)})
-    if unexpected_dates:
-        blockers.append({"reason": "rows_outside_verified_session_calendar",
-                         "dates": unexpected_dates})
+    if closed_observation_dates:
+        blockers.append({"reason": "source_observation_on_verified_closed_date",
+                         "dates": closed_observation_dates})
+    if unknown_calendar_dates:
+        blockers.append({"reason": "source_row_date_not_in_verified_calendar",
+                         "dates": unknown_calendar_dates})
 
     manifest = {
         "schema_version": "1.0",
@@ -215,6 +229,9 @@ def build_lifecycle_eligibility_manifest(
         "segment_start": sessions[0].isoformat(),
         "segment_end": sessions[-1].isoformat(),
         "verified_session_count": len(sessions),
+        "verified_closed_date_count": len(closed_sessions),
+        "closed_date_observation_conflicts": closed_observation_dates,
+        "unknown_calendar_dates": unknown_calendar_dates,
         "classified_active_session_count": classified_active,
         "traded_session_count": traded_count,
         "explicit_no_trade_session_count": no_trade_count,

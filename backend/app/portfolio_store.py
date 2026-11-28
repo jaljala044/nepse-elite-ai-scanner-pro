@@ -37,6 +37,11 @@ def _decimal(value, field: str, *, positive: bool = False) -> Decimal:
     return result
 
 
+def _decimal_text(value: Decimal) -> str:
+    """Return a stable decimal string without fixed-scale storage padding."""
+    return format(value.normalize(), "f")
+
+
 def _date(value: str) -> str:
     if not isinstance(value, str):
         raise ValueError("trade_date must be canonical YYYY-MM-DD")
@@ -255,6 +260,6 @@ def list_transactions(owner_id: str, portfolio_id: str, holding_id: str) -> list
                               ORDER BY trade_date, created_at, transaction_id""",
                            [owner, portfolio_id, holding_id]).fetchall()
         return [{"id": r[0], "type": r[1], "trade_date": r[2].isoformat(),
-                 "quantity": r[3], "unit_price": str(r[4]), "fees": str(r[5])} for r in rows]
+                 "quantity": r[3], "unit_price": _decimal_text(r[4]), "fees": _decimal_text(r[5])} for r in rows]
     finally:
         con.close()

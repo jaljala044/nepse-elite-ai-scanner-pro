@@ -53,8 +53,12 @@ def capture_chart_history(*, provider_id: str, symbol: str, rows: list[dict[str,
         try:
             values = {field: _first(row, aliases) for field, aliases in mapping.items()}
             session = _session(values.pop("date"))
+            if any(v is None for v in values.values()):
+                raise ValueError("missing_ohlcv_field")
             numbers = {k: float(v) for k, v in values.items()}
-            if any(v is None for v in values.values()) or any(not math.isfinite(v) for v in numbers.values()):\n                raise ValueError("non_finite_ohlcv")\n            if any(v < 0 for v in numbers.values()):
+            if any(not math.isfinite(v) for v in numbers.values()):
+                raise ValueError("non_finite_ohlcv")
+            if any(v < 0 for v in numbers.values()):
                 raise ValueError("missing_or_negative_ohlcv")
             if numbers["low"] > min(numbers["open"], numbers["close"]) or numbers["high"] < max(numbers["open"], numbers["close"]) or numbers["low"] > numbers["high"]:
                 raise ValueError("invalid_ohlcv_relationship")

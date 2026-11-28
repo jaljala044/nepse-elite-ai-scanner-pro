@@ -126,13 +126,21 @@ Example command (replace the input paths with the verified project artifacts):
 ```bash
 python backend/collect_sources.py \
   --as-of-date 2026-11-28 \
-  --equity-universe path/to/effective_equity_universe.json \
+  --equity-universe data/reference/nepse_active_equity_manifest_2026-11-26.csv \
   --session-calendar path/to/verified_session_dates.json \
   --source sharehub --source nepsealpha --source chukul --source sharesansar
 ```
 
-The equity-universe JSON is an array of `{"symbol":"...","security_id":"..."}`
-objects. The session-calendar JSON is an array of ISO trading dates or an object
-with a `session_dates` array. Collector results remain PARTIAL_EVIDENCED until
-parsed row counts, five-year coverage, security lifecycle, source lineage and
-two-source reconciliation have been verified.
+The equity universe may be a JSON array of `{"symbol":"...","security_id":"..."}`
+objects or a CSV with `symbol`, `security_id`, `instrument_type`, and `status`
+columns. The repository currently has a 281-row active-equity candidate snapshot
+at `data/reference/nepse_active_equity_manifest_2026-11-26.csv`, sourced from
+NEPSE Alpha; it is a collection starting point, not an official NEPSE universe
+attestation. Cross-check it against other available provider and NEPSE security
+records before treating its coverage as complete. The session-calendar JSON is
+an array of ISO trading dates or an object with a `session_dates` array. The
+existing `data/reference/nepse_session_calendar.csv` is ShareSansar-derived and
+explicitly not exchange-certified, so it must not be supplied as an
+exchange-verified calendar for full daily floorsheet coverage. Collector results
+remain PARTIAL_EVIDENCED until parsed row counts, five-year coverage, security
+lifecycle, source lineage and two-source reconciliation have been verified.

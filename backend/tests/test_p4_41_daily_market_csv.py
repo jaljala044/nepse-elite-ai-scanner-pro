@@ -13,7 +13,7 @@ class DailyMarketCSVTests(unittest.TestCase):
   raw=(EVIDENCE/f"{day}.csv").read_text()
   return parse_daily_market_csv(raw,session_date=day,source_url=f"https://raw.githubusercontent.com/OmitNomis/ShareSansarScraper/master/docs/Data/{day.replace('-','_')}.csv",retrieved_at="2026-11-28")
  def test_valid_marketwide_rows(self):
-  r=self.parse(line(1,"ADBL",320,328,320,328,"139,162","45,263,784.50",517)+"\n"+line(2,"BENH",273,313.9,273,313.9,90,26634,1))
+  r=self.parse(line(1,"ADBL",320,328,320,328,"139,162","45,263,784.50",517)+"\n"+line(2,"BENH",273,313.9,273,313.9,90,26634,9))
   self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED"); self.assertEqual(r["row_count"],2)
   self.assertEqual(find_symbol_record(r,"benh")["record"]["volume"],90)
  def test_symbol_absence_is_not_zero_trade(self):
@@ -23,9 +23,17 @@ class DailyMarketCSVTests(unittest.TestCase):
   row=line(1,"ADBL",320,328,320,328,10,1000,2)
   r=self.parse(row+"\n"+row.replace("1,ADBL","2,ADBL"))
   self.assertIn("line_3_duplicate_symbol_ADBL",r["errors"])
- def test_invalid_ohlc_row_rejected(self):
-  r=self.parse(line(1,"ADBL",320,310,320,328,10,1000,2))
   self.assertEqual(r["status"],"REJECTED")
+ def test_invalid_ohlc_row_quarantined_without_losing_valid_rows(self):
+  r=self.parse(line(1,"ADBL",320,310,320,328,10,1000,2)+"\n"+line(2,"BENH",273,313.9,273,313.9,90,26634,9))
+  self.assertEqual(r["status"],"RESEARCH_ONLY_WITH_QUARANTINE")
+  self.assertEqual(r["row_count"],1)
+  self.assertEqual(r["quarantined_row_count"],1)
+  self.assertEqual(find_symbol_record(r,"ADBL")["status"],"QUARANTINED_ROW")
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"FOUND")
+ def test_quarantined_symbol_is_not_reported_absent(self):
+  r=self.parse(line(1,"BENH",273,270,273,313.9,90,26634,9))
+  self.assertEqual(find_symbol_record(r,"BENH")["status"],"QUARANTINED_ROW")
  def test_missing_required_column_rejected(self):
   r=parse_daily_market_csv("Symbol,Open,High,Low,Close\nADBL,1,2,1,2",session_date="2026-10-14",source_url="public",retrieved_at="now")
   self.assertIn("missing_columns",r["errors"][0])
@@ -34,14 +42,16 @@ class DailyMarketCSVTests(unittest.TestCase):
   self.assertIn("invalid_session_date",r["errors"])
  def test_retained_14_oct_file_has_no_benh_row(self):
   r=self.parse_evidence("2026-10-14")
-  self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED")
-  self.assertEqual(r["row_count"],354)
+  self.assertEqual(r["status"],"RESEARCH_ONLY_WITH_QUARANTINE")
+  self.assertEqual((r["source_row_count"],r["row_count"],r["quarantined_row_count"]),(354,352,2))
+  self.assertEqual({x["symbol"] for x in r["quarantined_rows"]},{"KBLD86","NICD88"})
   self.assertEqual(find_symbol_record(r,"BENH")["status"],"NOT_PRESENT_IN_ARCHIVE_FILE")
  def test_retained_15_oct_file_contains_benh_first_observed_row(self):
   r=self.parse_evidence("2026-10-15")
   found=find_symbol_record(r,"BENH")
-  self.assertEqual(r["status"],"RESEARCH_ONLY_VALIDATED")
-  self.assertEqual(r["row_count"],349)
+  self.assertEqual(r["status"],"RESEARCH_ONLY_WITH_QUARANTINE")
+  self.assertEqual((r["source_row_count"],r["row_count"],r["quarantined_row_count"]),(349,346,3))
+  self.assertEqual({x["symbol"] for x in r["quarantined_rows"]},{"CBLD88","CCBD88","KBLD86"})
   self.assertEqual(found["status"],"FOUND")
   self.assertEqual((found["record"]["open"],found["record"]["high"],found["record"]["low"],found["record"]["close"]),(273.0,313.9,273.0,313.9))
   self.assertEqual((found["record"]["volume"],found["record"]["turnover"],found["record"]["transactions"]),(90.0,26634.0,9.0))

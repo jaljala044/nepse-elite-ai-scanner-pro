@@ -27,5 +27,5 @@ The schedule boundary is 2026-04-06: Friday/Saturday closures before the change,
 ## Tests
 
 ```bash
-python -m unittest tests.test_issue5_weekly_closure_selector -v
+python -m unittest discover -s tests -p 'test_issue5_weekly_closure_selector.py' -v
 ```

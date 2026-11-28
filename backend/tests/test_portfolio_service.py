@@ -59,6 +59,44 @@ class PortfolioServiceTests(unittest.TestCase):
                     self.tx("BUY", quantity, "100", "0", "2026-01-01")
         self.assertEqual(service.portfolio_transactions(self.owner, self.portfolio["id"]), [])
 
+    def test_holding_preferences_are_owner_scoped_and_updatable(self):
+        self.tx("BUY", "5", "100", "0", "2026-01-01")
+        saved = service.set_holding_preference(
+            self.owner, self.portfolio["id"], symbol="cfcl",
+            horizon="one_to_three_months", risk_preference="capital_protection",
+        )
+        self.assertEqual(saved["symbol"], "CFCL")
+        self.assertEqual(saved["horizon"], "one_to_three_months")
+        self.assertEqual(service.list_holding_preferences(self.owner, self.portfolio["id"])[0]["risk_preference"], "capital_protection")
+        self.assertEqual(service.list_holding_preferences("user-b", self.portfolio["id"]), None)
+        updated = service.set_holding_preference(
+            self.owner, self.portfolio["id"], symbol="CFCL",
+            horizon="long_term", risk_preference="balanced",
+        )
+        self.assertEqual(updated["horizon"], "long_term")
+        self.assertEqual(len(service.list_holding_preferences(self.owner, self.portfolio["id"])), 1)
+
+    def test_preference_requires_a_recorded_holding(self):
+        with self.assertRaisesRegex(LookupError, "holding not found"):
+            service.set_holding_preference(
+                self.owner, self.portfolio["id"], symbol="CFCL",
+                horizon="long_term", risk_preference="balanced",
+            )
+
+    def test_invalid_holding_preferences_and_foreign_portfolio_fail_closed(self):
+        for horizon, risk in (("tomorrow", "balanced"), ("long_term", "YOLO")):
+            with self.subTest(horizon=horizon, risk=risk):
+                with self.assertRaises(ValueError):
+                    service.set_holding_preference(
+                        self.owner, self.portfolio["id"], symbol="CFCL",
+                        horizon=horizon, risk_preference=risk,
+                    )
+        with self.assertRaises(LookupError):
+            service.set_holding_preference(
+                "user-b", self.portfolio["id"], symbol="CFCL",
+                horizon="long_term", risk_preference="balanced",
+            )
+
     def test_oversell_is_rejected(self):
         self.tx("BUY", "5", "100", "0", "2026-01-01")
         with self.assertRaisesRegex(ValueError, "exceeds available"):

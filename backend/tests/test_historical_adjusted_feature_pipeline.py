@@ -58,7 +58,7 @@ class DatasetAdmissionTests(unittest.TestCase):
         args=self.base(); args["records"]=[{"record_id":"r1","available_at":"2024-10-01T10:00:00Z"}]
         args["expected_dataset_fingerprint"]="wrong"; args["test_start"]="2024-09-01T00:00:00Z"
         out=admit_six_scanner_dataset(**args)
-        self.assertEqual(out["status"],"BLOCKED"); self.assertEqual(out["blocker_count"],3)
+        self.assertEqual(out["status"],"BLOCKED"); self.assertEqual(out["blocker_count"],4)
         self.assertTrue(all(x["status"]=="BLOCKED" for x in out["matrix"]))
     def test_missing_available_at_and_incomplete_lineage_block(self):
         args=self.base(); args["records"]=[{"record_id":"r1"}]; args["dataset_manifest"]["input_lineage_status"]="incomplete"

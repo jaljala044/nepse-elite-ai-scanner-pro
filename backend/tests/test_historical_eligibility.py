@@ -166,14 +166,42 @@ class LifecycleEligibilityTests(unittest.TestCase):
         self.assertIn("invalid_ohlc_geometry", reasons)
         self.assertIn("source_rights_not_approved", reasons)
 
-    def test_out_of_calendar_row_is_not_silently_ignored(self):
+    def test_unknown_calendar_row_is_not_silently_ignored(self):
         sessions, records = fixture()
         extra = dict(records[0])
         extra["session_date"] = "2025-12-31"
         records.append(extra)
         report = build(sessions, records)
-        self.assertIn("rows_outside_verified_session_calendar",
+        self.assertIn("source_row_date_not_in_verified_calendar",
                       {item["reason"] for item in report["blockers"]})
+        self.assertEqual(report["unknown_calendar_dates"], ["2025-12-31"])
+
+    def test_verified_closed_date_is_distinct_from_unknown_date(self):
+        sessions, records = fixture()
+        closed = dict(records[0])
+        closed["session_date"] = "2025-12-31"
+        unknown = dict(records[0])
+        unknown["session_date"] = "2025-12-30"
+        records.extend([closed, unknown])
+        report = build_lifecycle_eligibility_manifest(
+            records, symbol="NABIL", verified_sessions=sessions,
+            verified_closed_dates=["2025-12-31"],
+            lifecycle={"listing_date": sessions[0], "suspensions": []},
+            required_warmup_sessions=100, available_as_of=CUTOFF)
+        self.assertEqual(report["closed_date_observation_conflicts"], ["2025-12-31"])
+        self.assertEqual(report["unknown_calendar_dates"], ["2025-12-30"])
+        reasons = {item["reason"] for item in report["blockers"]}
+        self.assertIn("source_observation_on_verified_closed_date", reasons)
+        self.assertIn("source_row_date_not_in_verified_calendar", reasons)
+
+    def test_open_and_closed_calendar_dates_cannot_overlap(self):
+        sessions, records = fixture()
+        with self.assertRaisesRegex(ValueError, "open_and_closed_calendar_dates_overlap"):
+            build_lifecycle_eligibility_manifest(
+                records, symbol="NABIL", verified_sessions=sessions,
+                verified_closed_dates=[sessions[0]],
+                lifecycle={"listing_date": sessions[0], "suspensions": []},
+                required_warmup_sessions=100, available_as_of=CUTOFF)
 
     def test_unverified_session_order_is_rejected(self):
         sessions, records = fixture()

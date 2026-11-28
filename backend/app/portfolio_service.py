@@ -169,6 +169,8 @@ def add_transaction(owner: str, portfolio_id: str, *, symbol: str, side: str,
     if side not in {"BUY", "SELL"}:
         raise ValueError("side must be BUY or SELL")
     qty = _decimal(quantity, "quantity")
+    if qty != qty.to_integral_value():
+        raise ValueError("quantity must be a positive whole share count")
     unit_price = _decimal(price, "price")
     fee = _decimal(fees, "fees", allow_zero=True)
     date_text = str(trade_date)

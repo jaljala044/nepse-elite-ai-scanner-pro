@@ -69,6 +69,8 @@ def admit_six_scanner_dataset(
         issues.append({"severity": "BLOCKER", "reason": "corporate_action_review_not_verified"})
     if dataset_manifest.get("input_lineage_status") != "complete":
         issues.append({"severity": "BLOCKER", "reason": "input_lineage_incomplete"})
+    if panel_qualification.get("dataset_fingerprint") != fingerprint:
+        issues.append({"severity": "BLOCKER", "reason": "panel_dataset_fingerprint_mismatch"})
 
     future, missing, duplicate_ids, invalid = [], [], [], []
     seen_ids = set()
@@ -106,7 +108,9 @@ def admit_six_scanner_dataset(
         issues.append({"severity": "BLOCKER", "reason": "invalid_record_or_timestamp", "indexes": sorted(set(invalid))})
 
     expected = {(strategy, horizon) for strategy in strategy_ids for horizon in horizons}
-    if set(strategy_ids) != set(STRATEGIES) or set(horizons) != set(HORIZONS):
+    if (set(strategy_ids) != set(STRATEGIES) or set(horizons) != set(HORIZONS)
+            or len(strategy_ids) != len(set(strategy_ids))
+            or len(horizons) != len(set(horizons))):
         issues.append({"severity": "BLOCKER", "reason": "six_strategy_four_horizon_matrix_must_be_complete"})
     matrix = [{"strategy_id": strategy, "horizon": horizon,
                "status": "ADMITTED_FOR_HUMAN_REVIEW" if not issues else "BLOCKED"}

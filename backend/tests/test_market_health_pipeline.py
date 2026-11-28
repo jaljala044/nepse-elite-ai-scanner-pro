@@ -57,8 +57,10 @@ def sector_features(as_of_session):
         "method": "median_constituent_return_cross_sector_percentile",
         "sectors": {
             name: {"windows": {
+                "1W": {"status": "observed", "median_return_pct": 0.5},
                 "1M": {"status": "observed", "median_return_pct": 1.0},
                 "3M": {"status": "observed", "median_return_pct": 2.0},
+                "6M": {"status": "observed", "median_return_pct": 3.0},
             }} for name in names
         },
     }

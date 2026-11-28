@@ -71,6 +71,50 @@ class PortfolioRouteTests(unittest.TestCase):
             404,
         )
 
+
+    def test_other_user_cannot_access_nested_portfolio_routes(self):
+        created = self.client.post(
+            "/v1/portfolios", headers=self.headers, json={"name": "Private"}
+        )
+        portfolio_id = created.json()["id"]
+        bought = self.client.post(
+            f"/v1/portfolios/{portfolio_id}/transactions",
+            headers=self.headers,
+            json={"symbol": "CFCL", "side": "BUY", "quantity": "5",
+                  "price": "100", "fees": "0", "trade_date": "2026-01-01"},
+        )
+        self.assertEqual(bought.status_code, 201)
+        other = {"x-nepse-proxy-secret": "x" * 40, "x-nepse-subject": "investor-2"}
+        self.assertEqual(
+            self.client.get(f"/v1/portfolios/{portfolio_id}/positions", headers=other).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get(f"/v1/portfolios/{portfolio_id}/transactions", headers=other).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.patch(f"/v1/portfolios/{portfolio_id}", headers=other,
+                              json={"name": "Stolen"}).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.delete(f"/v1/portfolios/{portfolio_id}", headers=other).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(
+                f"/v1/portfolios/{portfolio_id}/transactions", headers=other,
+                json={"symbol": "CFCL", "side": "BUY", "quantity": "1",
+                      "price": "100", "fees": "0", "trade_date": "2026-01-02"},
+            ).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get(f"/v1/portfolios/{portfolio_id}/transactions", headers=self.headers).status_code,
+            200,
+        )
+
     def test_compact_transaction_date_is_rejected_at_api_boundary(self):
         created = self.client.post("/v1/portfolios", headers=self.headers,
                                    json={"name": "Date validation"})

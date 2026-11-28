@@ -78,9 +78,13 @@ class SourceQualityReviewTests(unittest.TestCase):
         self.assertEqual(result["status"], "not_configured")
 
     def test_reviewer_scope_is_enforced(self):
+        restricted = dict(self.registry)
+        restricted["reviewers"] = {"reviewer-1": {
+            "allowed_scopes": ["calendar_session"], "status": "approved",
+        }}
         result = validate_review_attestation(
-            reviewed_evidence("calendar_session"), scope="capture_policy",
-            registry=self.registry, hmac_key=KEY, decision_time=NOW,
+            reviewed_evidence("capture_policy"), scope="capture_policy",
+            registry=restricted, hmac_key=KEY, decision_time=NOW,
         )
         self.assertFalse(result["eligible"])
         self.assertEqual(result["reason"], "reviewer_scope_not_approved")

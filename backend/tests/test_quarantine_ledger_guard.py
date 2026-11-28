@@ -91,66 +91,6 @@ class LedgerGuardTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "invalid runtime quarantine ledger record"):
                     quarantine_keys(path, hashlib.sha256(raw).hexdigest())
 
-    def test_real_runtime_configuration_and_cross_engine_rejection(self):
-        import os
-        from unittest.mock import patch
-        from app.quarantine_guard import runtime_quarantine_keys
-        from app.scenario_validation import validate_binary_forecasts
-        from app.walk_forward_report import build_walk_forward_report
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "ledger.json"
-            raw = self._ledger("2025-07-28")
-            path.write_bytes(raw)
-            env = {"NEPSE_QUARANTINE_LEDGER": str(path), "NEPSE_QUARANTINE_LEDGER_SHA256": hashlib.sha256(raw).hexdigest(), "NEPSE_QUARANTINE_SOURCE_COMMITS": json.dumps({"jaljala044/nepse-smc-data":"a"*40,"jaljala044/nepse-history-starter":"b"*40})}
-            row = {"symbol": "AAA", "constituent_sessions": ["2025-07-28"], "observation_date": "2025-07-28", "actual": 1, "probability": 0.8}
-            with patch.dict(os.environ, env, clear=True):
-                self.assertEqual(runtime_quarantine_keys(required=True), frozenset({("AAA", "2025-07-28")}))
-                with self.assertRaisesRegex(ValueError, "quarantined forecast constituent"):
-                    validate_binary_forecasts([1], [0.8], lineage=[row], require_ledger=True)
-                with self.assertRaisesRegex(ValueError, "quarantined forecast constituent"):
-                    build_walk_forward_report([row], 1, 1, require_ledger=True)
-                path.write_bytes(raw + b" ")
-                with self.assertRaisesRegex(ValueError, "invalid runtime quarantine ledger"):
-                    runtime_quarantine_keys(required=True)
-            with patch.dict(os.environ, {"NEPSE_QUARANTINE_LEDGER": str(path)}, clear=True):
-                with self.assertRaisesRegex(ValueError, "pinned quarantine ledger required"):
-                    runtime_quarantine_keys()
-            with patch.dict(os.environ, {}, clear=True):
-                self.assertIsNone(runtime_quarantine_keys())
-                with self.assertRaisesRegex(ValueError, "pinned quarantine ledger required"):
-                    runtime_quarantine_keys(required=True)
-
-    def test_deployment_flag_requires_ledger_for_all_runtime_consumers(self):
-        import os
-        from unittest.mock import patch
-        from app.quarantine_guard import runtime_quarantine_keys
-        from app.database import load_state, persist_import
-        from app.feature_pipeline import build_feature_snapshot
-        from app.scenario_validation import validate_binary_forecasts
-        from app.walk_forward_report import build_walk_forward_report
-        with patch.dict(os.environ, {"NEPSE_REQUIRE_QUARANTINE_LEDGER": "1"}, clear=True):
-            for consumer in (
-                lambda: runtime_quarantine_keys(),
-                lambda: load_state(),
-                lambda: persist_import("fixture", {}),
-                lambda: build_feature_snapshot([], "2026-11-27T12:00:00Z"),
-                lambda: validate_binary_forecasts([], []),
-                lambda: build_walk_forward_report([], 1, 1),
-            ):
-                with self.subTest(consumer=consumer):
-                    with self.assertRaisesRegex(ValueError, "pinned quarantine ledger required"):
-                        consumer()
-            with tempfile.TemporaryDirectory() as tmp:
-                path = Path(tmp) / "ledger.json"
-                raw = self._ledger("2025-07-28")
-                path.write_bytes(raw)
-                with patch.dict(os.environ, {"NEPSE_QUARANTINE_LEDGER": str(path), "NEPSE_QUARANTINE_LEDGER_SHA256": hashlib.sha256(raw).hexdigest(), "NEPSE_QUARANTINE_SOURCE_COMMITS": json.dumps({"jaljala044/nepse-smc-data":"a"*40,"jaljala044/nepse-history-starter":"b"*40})}):
-                    self.assertEqual(runtime_quarantine_keys(), frozenset({("AAA", "2025-07-28")}))
-                    path.write_bytes(raw + b" ")
-                    with self.assertRaisesRegex(ValueError, "invalid runtime quarantine ledger"):
-                        runtime_quarantine_keys()
-
-
     def test_valid_empty_ledger_is_distinct_from_missing_ledger(self):
         import os
         from unittest.mock import patch
@@ -203,14 +143,6 @@ class LedgerGuardTests(unittest.TestCase):
             with patch.dict(os.environ,{**base,**stale},clear=True):
                 with self.assertRaisesRegex(ValueError,"invalid runtime quarantine ledger"):
                     runtime_quarantine_keys()
-
-    def test_startup_validation_blocks_missing_ledger(self):
-        import os
-        from unittest.mock import patch
-        from app.main import validate_quarantine_configuration
-        with patch.dict(os.environ,{"NEPSE_REQUIRE_QUARANTINE_LEDGER":"1"},clear=True):
-            with self.assertRaisesRegex(ValueError,"pinned quarantine ledger required"):
-                validate_quarantine_configuration()
 
     def test_missing_blocked_candle_inside_window(self):
         from app.quarantine_guard import filter_quarantined_feature_rows

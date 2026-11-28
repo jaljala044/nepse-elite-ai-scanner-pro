@@ -2426,3 +2426,15 @@ Investigate official NEPSE `securityDailyTradeStat` historical date support and 
 ### P4.25 next
 
 Build and validate the effective-dated security identity and corporate-action registry using the existing 36-record historical identity evidence set, six typed lifecycle events and 281-row lifecycle coverage input. Preserve the current coverage: 44 secondary dated-start records, 237 undated, zero primary dated-start evidence; historical stable security IDs remain unresolved for the predecessor set. For BENH, preserve the ShareSansar listing notice, official per-security 14-Oct zero / 15-Oct first-positive rows and secondary first-trade archive match, while obtaining and pinning the underlying NEPSE listing PDF and contract-level floorsheet. Validate symbol/ID changes, mergers, delistings, bonus/rights, splits and instrument-class transitions before historical joins or scanner admission.
+
+## 3A.01 current-main integration — 2026-11-27
+
+- The earlier 3A.01 feature branch diverged substantially from current `main`; its older `backend/app/main.py` would have replaced newer broker, sector, private-account and research endpoints. Rather than merge that branch wholesale, created a clean integration branch from current `main`: `reconcile/3a01-on-current-main`.
+- Ported the scanner orchestration module, market-wide API endpoint and focused unit/API regression tests. Added a dedicated 3A.01 terminal button, observation-coverage/provenance summary, result table and per-symbol inspection panel; the existing research scanner and `/v1/scan` route remain intact.
+- Integration commit: `dc0dd18b687e0fdb1fc335fecd3b29ecda4722a9`; PR #131: https://github.com/jaljala044/nepse-elite-ai-scanner-pro/pull/131 (open, draft, unmerged).
+- CI on the integrated head `dc0dd18b687e0fdb1fc335fecd3b29ecda4722a9`: backend tests run `45894938581` passed; frontend build/smoke checks run `45894916566` passed; backend contract tests run `45894916644` passed. The additional PR-triggered contract run was still queued/in progress at the time of this register update; the push-triggered contract run on the same exact head passed.
+- The original PR #112 remains open and unmerged; it was not used as the integration vehicle because it contains a stale copy of `main.py` and an extensive divergent history.
+- This integration improves branch alignment and preserves current-main functionality, but does not establish 3A.01 acceptance. The 281-symbol candidate manifest remains secondary/non-authoritative; reviewed-row evidence is still empty; deployment-wide OHLCV coverage and live deployment/API/UI verification remain outstanding. Ranking/BUY output remains disabled.
+
+- Frontend integration commits: `3a7230f1a05ab35d645388477ff17b2faa58a5ac` (new UI module), `8b69b93c9e5b5320fc7a87a1d413bb823d3d3a9f` (terminal controls), `12042ce2386aef9c98bf62a9c8bd04e21653883c` (production build includes module and syntax check).
+- Final integrated application/UI head `12042ce2386aef9c98bf62a9c8bd04e21653883c` passed backend tests run `45895229307`, backend contract tests run `45895229302`, and frontend build/smoke checks run `45895226789` — all successful.

@@ -39,3 +39,25 @@ def dashboard(trades, *, initial_capital):
     return {"classification":"hypothetical_research_only",
             "horizons":{h:summarize([t for t in trades if t["horizon"]==h],initial_capital=initial_capital) for h in horizons},
             "signal_accuracy":None,"production_eligible":False}
+
+
+def journal_dashboard(envelopes, *, initial_capital):
+    """One final outcome per signal; reject conflicting revisions instead of double counting."""
+    from .part5_paper_journal import verify_paper_outcome
+    from .point_in_time import _aware
+    trades=[]
+    seen=set()
+    for envelope in envelopes:
+        if not verify_paper_outcome(envelope):
+            raise ValueError("invalid paper envelope")
+        record=envelope["record"]
+        key=record["signal_id"]
+        if key in seen:
+            raise ValueError("multiple outcomes for one signal require explicit resolution")
+        seen.add(key)
+        trades.append({**record["trade"],"paper_id":envelope["paper_id"],
+                       "classification":record["classification"],"observed_at":record["observed_at"]})
+    trades.sort(key=lambda t:(_aware(t["observed_at"]),t["paper_id"]))
+    result=dashboard(trades,initial_capital=initial_capital)
+    result["drawdown_basis"]="observation_order_not_mark_to_market"
+    return result

@@ -46,3 +46,8 @@ The preference key is the authenticated owner + portfolio + normalized symbol. R
 ## Web/mobile contract
 
 Web and mobile clients must use the same routes, enums, error semantics and Decimal-safe string serialization. Client requests must never include an owner identifier. The server derives ownership exclusively from the authenticated principal. Keep UI state private and avoid caching portfolio responses in shared/public caches.
+
+
+## Private response caching
+
+Every `/v1/portfolios` response, including authentication failures and mutation responses, is returned with `Cache-Control: private, no-store, max-age=0` and `Pragma: no-cache`. Reverse proxies and CDNs must preserve these headers and must not override them with shared-cache rules. Clients must not persist portfolio payloads in shared caches or analytics logs.

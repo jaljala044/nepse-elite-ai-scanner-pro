@@ -39,3 +39,20 @@ jobs:
             rm "$log"
             sleep "$((attempt * 30))"
           done
+      - name: Verify APK and checksum
+        run: |
+          set -euo pipefail
+          cd android/app/build/outputs/apk/debug
+          test -s app-debug.apk
+          sha256sum app-debug.apk > app-debug.apk.sha256
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk_root"
+          "$sdk_root/build-tools/35.0.0/apksigner" verify --verbose app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nepse-scanner-debug-apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/app-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 7

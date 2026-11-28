@@ -48,7 +48,7 @@ def three_year_start(as_of_date: str) -> str:
 
 
 def classify_history_coverage(*, coverage_start: str, as_of_date: str) -> dict:
-    """Classify observed history against the preferred five-year / minimum three-year rule."""
+    """Classify observed span; full completeness still requires row/session validation."""
     observed_start = date.fromisoformat(coverage_start)
     end = date.fromisoformat(as_of_date)
     if observed_start > end:
@@ -56,11 +56,11 @@ def classify_history_coverage(*, coverage_start: str, as_of_date: str) -> dict:
     preferred_start = date.fromisoformat(five_year_start(as_of_date))
     minimum_start = date.fromisoformat(three_year_start(as_of_date))
     if observed_start <= preferred_start:
-        return {"status": "COMPLETE_EVIDENCED", "coverage_years": 5,
+        return {"status": "PARTIAL_EVIDENCED", "coverage_years": 5,
                 "coverage_start": observed_start.isoformat(), "as_of_date": end.isoformat(),
                 "coverage_tier": "preferred_5_year"}
     if observed_start <= minimum_start:
-        return {"status": "COMPLETE_EVIDENCED", "coverage_years": 3,
+        return {"status": "PARTIAL_EVIDENCED", "coverage_years": 3,
                 "coverage_start": observed_start.isoformat(), "as_of_date": end.isoformat(),
                 "coverage_tier": "minimum_3_year_fallback"}
     return {"status": "PARTIAL_EVIDENCED", "coverage_years": None,

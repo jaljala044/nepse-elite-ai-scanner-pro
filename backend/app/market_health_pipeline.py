@@ -11,6 +11,7 @@ from app.market_index_trend_features import nepse_index_trend_component
 from app.market_sector_participation_features import market_sector_participation_component
 from app.market_turnover_features import nepse_market_turnover_component
 from app.market_volatility_features import nepse_index_volatility_component
+from app.sector_rotation_reporting import adapt_verified_sector_rotation, sector_rotation_report
 
 
 def build_market_health_snapshot(
@@ -21,7 +22,8 @@ def build_market_health_snapshot(
     session_dates: list[str],
     expected_symbols: list[str],
     equity_universe_provenance: dict,
-    sector_features: dict,
+    sector_features: dict | None = None,
+    verified_sector_rotation: dict | None = None,
     sector_universe_provenance: dict,
     sector_price_evidence: dict,
     decision_time: str,
@@ -55,6 +57,17 @@ def build_market_health_snapshot(
     volatility = nepse_index_volatility_component(
         index_rows, session_dates=session_dates, decision_time=decision_time
     )
+    rotation_report = None
+    if verified_sector_rotation is not None:
+        sector_features = adapt_verified_sector_rotation(
+            verified_sector_rotation, decision_session=decision_session
+        )
+        rotation_report = sector_rotation_report(
+            verified_sector_rotation, decision_session=decision_session
+        )
+    if sector_features is None:
+        sector_features = {}
+
     sector_participation = market_sector_participation_component(
         sector_features,
         sector_universe_provenance=sector_universe_provenance,
@@ -79,6 +92,7 @@ def build_market_health_snapshot(
         "decision_session": decision_session,
         "market_health": health,
         "components": components,
+        "sector_rotation": rotation_report,
         "data_quality": {
             "all_components_verified": all(
                 item.get("status") == "verified" for item in components.values()

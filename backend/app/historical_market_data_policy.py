@@ -19,7 +19,8 @@ FLOORSHEET_FIELDS = (
 CHART_FIELDS = ("session_date", "symbol", "open", "high", "low", "close", "volume")
 REQUIRED_PROVENANCE = (
     "source_url", "retrieved_utc", "payload_sha256", "parser_version",
-    "source_revision", "upstream_feed",
+    "source_revision", "upstream_feed", "publisher_identity",
+    "publisher_identity_evidence_ref", "source_contract_ref",
 )
 
 
@@ -188,7 +189,7 @@ def _lineage_groups(valid: list[dict]) -> list[list[int]]:
             a, b = valid[left], valid[right]
             union = a["session_dates"] | b["session_dates"]
             overlap = len(a["session_dates"] & b["session_dates"]) / len(union) if union else 0
-            if overlap > 0.98 and a["upstream_feed"] == b["upstream_feed"]:
+            if (a["publisher_identity"] == b["publisher_identity"]\n                    or a["upstream_feed"] == b["upstream_feed"]\n                    or overlap > 0.98 and a["upstream_feed"] == b["upstream_feed"]):
                 root_a, root_b = find(left), find(right)
                 if root_a != root_b:
                     parent[root_b] = root_a
@@ -241,6 +242,7 @@ def resolve_record_by_two_source_match(
             sig = _signature(record_type, item["record"])
             valid.append({
                 "source_id": item["source_id"], "upstream_feed": item["upstream_feed"],
+                "publisher_identity": item["publisher_identity"].strip().casefold(),
                 "session_dates": date_set, "signature": sig,
                 "record": item["record"], "source_url": item["source_url"],
                 "payload_sha256": digest,

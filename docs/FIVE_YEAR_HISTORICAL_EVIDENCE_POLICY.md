@@ -58,10 +58,13 @@ and volume. For floorsheet rows, compare trade date, contract ID, symbol, buyer
 and seller broker codes, quantity, rate and amount.
 
 A record can be marked COMPLETE_EVIDENCED when at least two sources provide the
-same complete record and are lineage-independent. Compute pairwise Jaccard
-similarity over source session-date sets. If overlap is greater than 0.98 and
-the upstream_feed is the same, collapse those providers into one lineage source.
-Two websites backed by the same upstream feed are not two independent sources.
+same complete record and are lineage-independent. Repeated observations from a
+single provider or providers declaring the same upstream feed are grouped into
+one lineage regardless of their session-date overlap. Distinct feed labels alone
+do not prove real-world independence; review upstream provenance separately.
+Require the record key and session date to match the source observation. Require
+positive whole-share floorsheet quantity, positive price and exact quantity-times-rate
+amount; discrepancies remain unresolved pending documented rounding evidence.
 
 Where NEPSE data exists, compare against it. Where it does not, use the secondary
 sources. Two independent secondary sources matching exactly can establish the

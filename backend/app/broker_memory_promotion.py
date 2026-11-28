@@ -1,23 +1,49 @@
 """Promote only fully reconciled ingestion batches into persistent broker memory."""
 from __future__ import annotations
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from app.broker_behavior_memory import build_broker_behavior_memory
 from app.broker_ingestion import IngestionReport
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
 from app.broker_memory_store import BrokerMemoryStore
+from app.temporal_registry import security_as_of, validate_security_master_snapshot
 
 class PromotionRejected(ValueError):
     """A batch did not satisfy the complete promotion gate."""
 
 def promote_validated_batch(report: IngestionReport, store: BrokerMemoryStore, *,
-                            as_of_date: str, methodology_version: str = "p4.34-v1") -> dict[str, Any]:
+                            as_of_date: str, methodology_version: str = "p4.34-v1", security_records=None) -> dict[str, Any]:
     """Build descriptors and persist them idempotently only after all admission gates pass."""
     if not isinstance(report, IngestionReport) or not report.memory_eligible:
         raise PromotionRejected("batch is not fully validated and memory-eligible")
     if not isinstance(as_of_date, str) or len(as_of_date) != 10:
         raise PromotionRejected("as_of_date must be ISO YYYY-MM-DD")
     observations, availabilities, batch_ids = [], [], set()
+    if report.conflicts:
+        raise PromotionRejected("batch contains conflicts")
+    try:
+        keys = runtime_quarantine_keys()
+    except ValueError as exc:
+        raise PromotionRejected("invalid quarantine ledger") from exc
+    registry = list(security_records or [])
+    if keys is not None:
+        try:
+            validate_security_master_snapshot(registry)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise PromotionRejected("broker ledger identity mapping not verified") from exc
     for row in report.accepted:
+        if is_quarantined(row):
+            raise PromotionRejected("quarantined accepted row")
+        if keys is not None:
+            try:
+                day = date.fromisoformat(row["session_date"])
+                resolved = security_as_of([r for r in registry if r.security_id == row["security_id"]], day)
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                raise PromotionRejected("broker ledger identity mapping not verified") from exc
+            if resolved["status"] != "resolved":
+                raise PromotionRejected("broker ledger identity mapping not verified")
+            if (resolved["record"].symbol, day.isoformat()) in keys:
+                raise PromotionRejected("quarantined broker historical input")
         if row.get("status") != "descriptive_only":
             raise PromotionRejected("non-descriptive row in accepted batch")
         available_at = row.get("available_at")

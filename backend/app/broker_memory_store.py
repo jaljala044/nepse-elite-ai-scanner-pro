@@ -9,10 +9,13 @@ from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Iterable
 
 import duckdb
+from app.quarantine_guard import is_quarantined, runtime_quarantine_keys
+from app.temporal_registry import security_as_of, validate_security_master_snapshot
 
 
 class IdempotencyConflict(ValueError):
@@ -30,7 +33,8 @@ def _sha256(value: str) -> str:
 class BrokerMemoryStore:
     """Append-only snapshot store; caller owns the database path."""
 
-    def __init__(self, database_path: str | Path):
+    def __init__(self, database_path: str | Path, *, security_records=None):
+        self.security_records = tuple(security_records or ())
         self.database_path = str(database_path)
         Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
         self._initialize()
@@ -75,8 +79,11 @@ class BrokerMemoryStore:
         finally:
             con.close()
 
-    @staticmethod
-    def _validate_snapshot(snapshot: dict):
+    def _validate_snapshot(self, snapshot: dict):
+        if not isinstance(snapshot, dict):
+            raise ValueError("snapshot must be an object")
+        if is_quarantined(snapshot):
+            raise ValueError("quarantined broker snapshot")
         required = (
             "as_of_date", "security_id", "broker_entity_id", "window",
             "buy_amount", "sell_amount", "net_amount", "source_ids",
@@ -102,6 +109,53 @@ class BrokerMemoryStore:
         for field in ("source_ids", "evidence_ids", "payload_hashes"):
             if not isinstance(snapshot[field], list) or not snapshot[field]:
                 raise ValueError(f"{field} must be a non-empty list")
+
+        keys = runtime_quarantine_keys()
+        if keys is not None:
+            self._validate_lineage(snapshot, keys)
+
+    def _validate_lineage(self, snapshot, keys):
+        days = snapshot.get("constituent_sessions")
+        lineage = snapshot.get("constituent_lineage")
+        if not isinstance(days, list) or not days or not isinstance(lineage, list) or not lineage:
+            raise ValueError("missing constituent-session lineage")
+        try:
+            parsed = [date.fromisoformat(day) for day in days]
+            if days != sorted(set(days)) or any(d.isoformat() != day for d, day in zip(parsed, days)):
+                raise ValueError("invalid constituent dates")
+            if len(days) != snapshot["observed_sessions"] or len(days) != snapshot["requested_sessions"]:
+                raise ValueError("constituent session count mismatch")
+            if days[0] != snapshot["first_session"] or days[-1] != snapshot["last_session"] or days[-1] > snapshot["as_of_date"]:
+                raise ValueError("constituent session boundary mismatch")
+            if len(lineage) != snapshot["observation_rows"]:
+                raise ValueError("constituent observation count mismatch")
+            if {r["session_date"] for r in lineage} != set(days):
+                raise ValueError("constituent lineage dates mismatch")
+            for field, aggregate in (("source_id","source_ids"), ("evidence_id","evidence_ids"), ("payload_sha256","payload_hashes")):
+                if {r[field] for r in lineage} != set(snapshot[aggregate]):
+                    raise ValueError("constituent lineage provenance mismatch")
+            if any(not re.fullmatch(r"[0-9a-f]{64}", r["payload_sha256"]) for r in lineage):
+                raise ValueError("invalid constituent payload digest")
+            validate_security_master_snapshot(self.security_records)
+            # Resolve every blocked date inside the constituent span, including
+            # omitted dates and historical aliases of this stable security ID.
+            identity_records = [r for r in self.security_records if r.security_id == snapshot["security_id"]]
+            for blocked_symbol, blocked_day in keys:
+                blocked_date = date.fromisoformat(blocked_day)
+                if parsed[0] <= blocked_date <= parsed[-1]:
+                    resolved_gap = security_as_of(identity_records, blocked_date)
+                    if resolved_gap["status"] != "resolved":
+                        raise ValueError("constituent security identity unverified inside window")
+                    if resolved_gap["record"].symbol == blocked_symbol:
+                        raise ValueError("quarantined constituent session inside window")
+            for day in parsed:
+                resolved = security_as_of([r for r in self.security_records if r.security_id == snapshot["security_id"]], day)
+                if resolved["status"] != "resolved":
+                    raise ValueError("constituent security identity unverified")
+                if (resolved["record"].symbol, day.isoformat()) in keys:
+                    raise ValueError("quarantined constituent session")
+        except (KeyError, TypeError, AttributeError) as exc:
+            raise ValueError("invalid constituent-session lineage") from exc
 
     def append(self, snapshot: dict, *, idempotency_key: str,
                methodology_version: str = "p4.31-v1",
@@ -254,6 +308,10 @@ class BrokerMemoryStore:
             """, [security_id, broker_entity_id, cutoff, available_by]).fetchall()
         finally:
             con.close()
+        for row in rows:
+            if _sha256(row[0]) != row[1]:
+                raise ValueError("broker snapshot payload hash mismatch")
+            self._validate_snapshot(json.loads(row[0]))
         return [{
             "snapshot": json.loads(row[0]), "payload_sha256": row[1],
             "methodology_version": row[2], "available_at": row[3].isoformat(),

@@ -28,6 +28,51 @@ class FloorsheetArchiveCliTests(unittest.TestCase):
         self.assertEqual(manifest["pinned_revision"], "11ef83a9c3cdbe78112f0245451cdc52bdb1a8f0")
         self.assertNotEqual(manifest["profile_evidence_status"], "verified")
 
+    def test_date_specific_blob_pin_allows_different_daily_size_and_binds_manifest(self):
+        payload = (
+            b"date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"
+            b"2026-11-25,1,C1,AAA,11,22,10,10,100\n"
+        )
+        blob_sha1 = hashlib.sha1(
+            b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
+        ).hexdigest()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "samir-2026-11-25.csv"
+            path.write_bytes(payload)
+            loaded, mapping, review = load_profile_payload(
+                path, "samir", expected_git_blob_sha1=blob_sha1
+            )
+            manifest = source_manifest(
+                "samir", "SamirWagle/Nepse-All-Scraper@blob:" + blob_sha1,
+                path, hashlib.sha256(payload).hexdigest(), loaded, review,
+                expected_git_blob_sha1=blob_sha1,
+            )
+        self.assertEqual(loaded, payload)
+        self.assertTrue(review.valid)
+        self.assertEqual(mapping.columns["symbol"], "stock_symbol")
+        self.assertEqual(manifest["expected_git_blob_sha1"], blob_sha1)
+        self.assertEqual(manifest["payload_pin_mode"], "explicit_date_specific_git_blob_sha1")
+        self.assertIsNone(manifest["profile_expected_size_bytes"])
+        self.assertIsNone(manifest["profile_expected_raw_sha256"])
+        self.assertNotIn("canonical_promotion_allowed", manifest)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "samir-2026-11-25.csv"
+            path.write_bytes(payload)
+            with self.assertRaisesRegex(ValueError, "source_id does not match"):
+                source_manifest(
+                    "samir", "SamirWagle/Nepse-All-Scraper@blob:" + "0" * 40,
+                    path, hashlib.sha256(payload).hexdigest(), payload, review,
+                    expected_git_blob_sha1=blob_sha1,
+                )
+
+    def test_date_specific_blob_pin_rejects_wrong_blob_sha1(self):
+        payload = b"date,sn,contract_no,stock_symbol,buyer,seller,quantity,rate,amount\n"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "samir.csv"
+            path.write_bytes(payload)
+            with self.assertRaisesRegex(ValueError, "does not match supplied date-specific pin"):
+                load_profile_payload(path, "samir", expected_git_blob_sha1="0" * 40)
+
     def test_profile_header_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "bad.csv"

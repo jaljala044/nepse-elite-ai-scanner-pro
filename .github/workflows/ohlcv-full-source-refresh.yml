@@ -1,0 +1,153 @@
+name: OHLCV full source refresh
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ohlcv-full-source-refresh.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "httpx>=0.27,<1"
+      - name: Test audit and ledger builder
+        working-directory: backend
+        run: python -m unittest tests.test_audit_ohlcv_archives tests.test_build_ohlcv_exception_ledger -v
+      - name: Audit complete pinned source trees
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p refresh
+          code=0
+          python backend/audit_ohlcv_archives.py --repo jaljala044/nepse-smc-data --repo jaljala044/nepse-history-starter --workers 8 --output refresh/current-audit.json || code=$?
+          if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then exit "$code"; fi
+          test -s refresh/current-audit.json
+      - name: Build review-only current exception ledger
+        run: |
+          python - <<'PY'
+          import json, sys
+          from pathlib import Path
+          sys.path.insert(0, "backend")
+          from build_ohlcv_exception_ledger import write_ledger
+          root = Path("refresh")
+          report = json.loads((root/"current-audit.json").read_text())
+          totals = report["quality_totals"]
+          write_ledger(root/"current-audit.json", root/"candidate-ledger.json", root/"candidate-ledger.csv",
+                       expected_invalid_rows=totals["invalid_rows"], expected_conflicts=totals["cross_source_conflicts"])
+          (root/"REVIEW-ONLY.txt").write_text("Candidate only. No baseline exceptions released. Independent review and source coverage approval required.\n")
+          PY
+          sha256sum refresh/current-audit.json refresh/candidate-ledger.json refresh/candidate-ledger.csv > refresh/SHA256SUMS
+      - name: Crosscheck current exception rows against external EOD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python backend/crosscheck_ohlcv_socrateai.py --input refresh/current-audit.json --output refresh/external-crosscheck.json --workers 8
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+          p = Path("refresh")
+          report = json.loads((p/"external-crosscheck.json").read_text())
+          targets = ("AHPC", "SKBBL", "API", "MERO")
+          summary = {}
+          for symbol in targets:
+              rows = [r for r in report["records"] if r["symbol"] == symbol and any(x != "cross_source_conflict" for x in r["reasons"])]
+              summary[symbol] = {"rows": len(rows), "classifications": dict(Counter(r["classification"] for r in rows)), "records": rows}
+          (p/"priority-reconciliation.json").write_text(json.dumps({"source_commit":report["external_commit_sha"],"promotion_allowed":False,"symbols":summary}, indent=2))
+          PY
+          sha256sum refresh/external-crosscheck.json refresh/priority-reconciliation.json >> refresh/SHA256SUMS
+      - name: Validate actual candidate ledger runtime and preserve historical blocks
+        run: |
+          python - <<'PY'
+          import sys, json, hashlib
+          from pathlib import Path
+          sys.path.insert(0, "backend")
+          from app.quarantine_guard import quarantine_keys, reject_quarantined_history, filter_quarantined_feature_rows
+          p = Path("refresh/candidate-ledger.json")
+          digest = hashlib.sha256(p.read_bytes()).hexdigest()
+          keys = quarantine_keys(p, digest)
+          prior = {("BGWT","2025-07-28"),("MEHL","2025-07-28"),("RAWA","2025-07-28"),("RHGCL","2025-07-28"),("ULHC","2025-07-28"),("API","2026-11-19"),("HRL","2026-11-19")}
+          blocked = keys | prior
+          for symbol, day in blocked:
+              try:
+                  reject_quarantined_history([{"date":day}], symbol, blocked)
+              except ValueError:
+                  pass
+              else:
+                  raise RuntimeError(f"quarantine bypass: {symbol} {day}")
+          rows = [{"symbol":s,"date":d,"record_type":"ohlcv"} for s,d in sorted(blocked)]
+          assert not filter_quarantined_feature_rows(rows, blocked)
+          Path("refresh/runtime-key-test.json").write_text(json.dumps({"candidate_sha256":digest,"candidate_keys":len(keys),"tested_union_keys":len(blocked),"historical_conflicts_retained":len(prior),"scope":"history and feature guard only; not deployment acceptance","promotion_allowed":False},indent=2))
+          PY
+          sha256sum refresh/runtime-key-test.json >> refresh/SHA256SUMS
+      - name: Install runtime dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Exercise database and replay consumers with actual quarantine keys
+        run: |
+          python - <<'PY'
+          import sys, json, hashlib, os, tempfile
+          from pathlib import Path
+          sys.path.insert(0, "backend")
+          from app.quarantine_guard import quarantine_keys
+          from app.database import persist_import, load_state
+          from app.scenario_validation import validate_binary_forecasts
+          from app.walk_forward_report import build_walk_forward_report
+          p = Path("refresh/candidate-ledger.json")
+          ledger = json.loads(p.read_text())
+          os.environ["NEPSE_QUARANTINE_SOURCE_COMMITS"] = json.dumps({repo: meta["commit_sha"] for repo, meta in ledger["source_audit"]["repositories"].items()})
+          keys = quarantine_keys(p, hashlib.sha256(p.read_bytes()).hexdigest())
+          prior = {("BGWT","2025-07-28"),("MEHL","2025-07-28"),("RAWA","2025-07-28"),("RHGCL","2025-07-28"),("ULHC","2025-07-28"),("API","2026-11-19"),("HRL","2026-11-19")}
+          for s,d in sorted(prior-keys):
+              ledger["exceptions"].append({"exception_id":"retained:"+s+":"+d,"symbol":s,"trade_date":d,"disposition":"quarantined_unresolved"})
+          ledger["counts"]["total_exception_records"] = len(ledger["exceptions"])
+          with tempfile.TemporaryDirectory() as tmp:
+              q = Path(tmp)/"ledger.json"
+              q.write_text(json.dumps(ledger))
+              os.environ.update(NEPSE_QUARANTINE_LEDGER=str(q),NEPSE_QUARANTINE_LEDGER_SHA256=hashlib.sha256(q.read_bytes()).hexdigest(),NEPSE_REQUIRE_QUARANTINE_LEDGER="1",NEPSE_API_DATABASE=str(Path(tmp)/"test.duckdb"))
+              def rejected(fn, message):
+                  try:
+                      fn()
+                  except ValueError as exc:
+                      if message.lower() not in str(exc).lower(): raise
+                  else: raise AssertionError("quarantine bypass")
+              for s,d in sorted(keys|prior):
+                  bar = {"date":d,"open":10,"high":11,"low":9,"close":10,"volume":100}
+                  rejected(lambda: persist_import("ci-fixture",{s:[bar]}),"quarantined")
+                  row = {"symbol":s,"constituent_sessions":[d],"observation_date":d,"actual":1,"probability":0.8}
+                  rejected(lambda: validate_binary_forecasts([1],[0.8],lineage=[row]),"quarantined")
+                  rejected(lambda: build_walk_forward_report([row],1,1),"quarantined")
+              assert load_state() == ({},[])
+              from datetime import date
+              from app.broker_memory_store import BrokerMemoryStore
+              from app.temporal_registry import SecurityMasterRecord
+              symbol, day = sorted(keys | prior)[0]
+              registry = [SecurityMasterRecord("SEC-CI", symbol, "equity", "active", date(2000,1,1), None, "ci-primary", "primary_nepse_notice", True, True)]
+              store = BrokerMemoryStore(Path(tmp)/"broker.duckdb", security_records=registry)
+              snap = {"as_of_date":day,"security_id":"SEC-CI","broker_entity_id":"BROKER-CI","window":"daily","buy_amount":"1","sell_amount":"0","net_amount":"1","source_ids":["SRC"],"evidence_ids":["E"],"payload_hashes":["a"*64],"status":"descriptive_only","observed_sessions":1,"requested_sessions":1,"first_session":day,"last_session":day,"observation_rows":1,"constituent_sessions":[day],"constituent_lineage":[{"session_date":day,"source_id":"SRC","evidence_id":"E","payload_sha256":"a"*64}]}
+              rejected(lambda: store.append(snap,idempotency_key="quarantine-ci"),"quarantined constituent")
+              assert store.count() == 0
+              # Seed a legacy snapshot before the ledger is enabled, then verify
+              # that retrieval under the real ledger refuses it without deleting it.
+              config = {k: os.environ.pop(k) for k in ("NEPSE_QUARANTINE_LEDGER","NEPSE_QUARANTINE_LEDGER_SHA256","NEPSE_REQUIRE_QUARANTINE_LEDGER","NEPSE_QUARANTINE_SOURCE_COMMITS")}
+              try:
+                  store.append(snap,idempotency_key="legacy-ci")
+              finally:
+                  os.environ.update(config)
+              rejected(lambda: store.get_as_of(security_id="SEC-CI",broker_entity_id="BROKER-CI",as_of_date=day),"quarantined constituent")
+              assert store.count() == 1
+              Path("refresh/runtime-consumer-test.json").write_text(json.dumps({"tested_keys":len(keys|prior),"database_import":"passed","scenario":"passed","walk_forward":"passed","broker_memory_append":"passed","broker_memory_legacy_read":"passed","legacy_rows_preserved":store.count(),"scope":"isolated DuckDB integration using actual blocked keys; not deployment acceptance","promotion_allowed":False},indent=2))
+          PY
+          sha256sum refresh/runtime-consumer-test.json >> refresh/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ohlcv-refresh-review-only-${{ github.run_id }}
+          path: refresh/
+          if-no-files-found: error
+          retention-days: 30

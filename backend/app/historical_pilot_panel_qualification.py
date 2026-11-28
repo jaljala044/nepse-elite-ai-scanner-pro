@@ -1,6 +1,7 @@
 """Qualify a bounded historical evidence panel across datasets and lifecycle checks."""
 from __future__ import annotations
 from datetime import date, datetime, timezone
+import re
 from typing import Iterable, Mapping
 from zoneinfo import ZoneInfo
 
@@ -11,10 +12,12 @@ def qualify_historical_evidence_panel(*, cohort_symbols: Iterable[str], expected
         ohlcv_ingestion_reports: Iterable[Mapping[str, object]],
         evidence_ingestion_reports: Mapping[str, Mapping[str, object]],
         corporate_action_coverage_attestation: Mapping[str, object],
-        decision_cutoff: str) -> dict:
+        decision_cutoff: str, dataset_fingerprint: str | None = None) -> dict:
     symbols={str(s).strip().upper() for s in cohort_symbols if str(s).strip()}
     session_list=list(expected_sessions); sessions=set(session_list)
     errors=[]; warnings=[]; coverage={}
+    if dataset_fingerprint is not None and not re.fullmatch(r"[0-9a-f]{64}", str(dataset_fingerprint)):
+        errors.append({"reason":"dataset_fingerprint_invalid"})
     try:
         if not isinstance(decision_cutoff, str):
             raise ValueError("decision_cutoff_must_be_timezone_aware")
@@ -115,6 +118,7 @@ def qualify_historical_evidence_panel(*, cohort_symbols: Iterable[str], expected
             warnings.append({"dataset_kind":kind,"reason":"supplemental_dataset_not_supplied"})
     ready=not errors
     return {"status":"PANEL_EVIDENCE_QUALIFIED_FOR_HUMAN_REVIEW" if ready else "BLOCKED",
+        "dataset_fingerprint":dataset_fingerprint,
         "cohort_symbol_count":len(symbols),"expected_session_count":len(sessions),"coverage":coverage,
         "errors":errors,"warnings":warnings,"human_review_required":True,"research_replay_admission_required":True,
         "publisher_authenticity_proven":False,"exchange_wide_completeness_proven":False,

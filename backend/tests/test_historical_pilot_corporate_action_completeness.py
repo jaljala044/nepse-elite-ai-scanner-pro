@@ -4,12 +4,12 @@ from app.historical_pilot_completeness_audit import audit_historical_panel_compl
 
 class CorporateActionVerificationTests(unittest.TestCase):
     def rows(self,kind="bonus",n=1,d=1,cash=None,rights=None):
-        base={"symbol":"AAA","action_type":kind,"ex_date":"2025-01-03","terms_reference":"TERM-1","ratio_numerator":n,"ratio_denominator":d,"cash_amount":cash,"rights_issue_price":rights}
+        base={"symbol":"AAA","action_type":kind,"ex_date":"2025-01-03","terms_reference":"TERM-1","ratio_numerator":n,"ratio_denominator":d,"cash_amount":cash,"rights_issue_price":rights,"available_at":"2025-01-02T12:00:00Z"}
         return ({**base,"source_id":"SRC-A","publisher_id":"PUB-A"},{**base,"source_id":"SRC-B","publisher_id":"PUB-B"})
     def test_bonus_factor_requires_two_publishers_and_approved_method(self):
         a,b=self.rows()
         out=verify_corporate_actions(primary_rows=[a],secondary_rows=[b],previous_closes={"AAA":100},approved_conventions={"bonus":"THEORETICAL_EX_PRICE_V1"})
-        self.assertEqual(out["status"],"VERIFIED"); self.assertAlmostEqual(out["events"][0]["adjustment_factor"],0.5); self.assertFalse(out["automatic_adjustment_applied"])
+        self.assertEqual(out["status"],"VERIFIED"); self.assertAlmostEqual(out["events"][0]["adjustment_factor"],0.5); self.assertEqual(out["events"][0]["available_at"],"2025-01-02T12:00:00Z"); self.assertFalse(out["automatic_adjustment_applied"])
     def test_conflicting_terms_and_single_source_are_not_verified(self):
         a,b=self.rows(); b["ratio_numerator"]=2
         out=verify_corporate_actions(primary_rows=[a],secondary_rows=[b],previous_closes={"AAA":100},approved_conventions={"bonus":"THEORETICAL_EX_PRICE_V1"})

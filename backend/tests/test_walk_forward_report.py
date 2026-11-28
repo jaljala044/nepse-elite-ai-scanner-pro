@@ -55,5 +55,31 @@ class WalkForwardReportTests(unittest.TestCase):
             build_walk_forward_report(rows, 1, 2)
 
 
+    def test_quarantined_forecast_rejected(self):
+        rows = [{"observation_date":"2026-01-01","actual":1,"probability":0.8,"quarantined":True}]
+        with self.assertRaisesRegex(ValueError,"quarantined forecast"):
+            build_walk_forward_report(rows,1,1)
+
+    def test_runtime_ledger_rejects_contaminated_constituent(self):
+        from unittest.mock import patch
+        rows = [{"observation_date":"2026-01-02","actual":1,"probability":0.8,
+                 "symbol":"AAA","constituent_sessions":["2026-01-01","2026-01-02"]}]
+        with patch("app.walk_forward_report.runtime_quarantine_keys",return_value=frozenset({("AAA","2026-01-01")})):
+            with self.assertRaisesRegex(ValueError,"quarantined forecast constituent"):
+                build_walk_forward_report(rows,1,1,require_ledger=True)
+        with patch("app.walk_forward_report.runtime_quarantine_keys",return_value=frozenset()):
+            result = build_walk_forward_report(rows,1,1,require_ledger=True)
+            self.assertTrue(result["quarantine_ledger_checked"])
+            self.assertFalse(result["approved_backtest_eligible"])
+            with self.assertRaisesRegex(ValueError,"missing forecast"):
+                build_walk_forward_report([dict(rows[0],constituent_sessions=[])],1,1,require_ledger=True)
+
+    def test_required_ledger_missing_rejects_evaluation(self):
+        from unittest.mock import patch
+        with patch("app.walk_forward_report.runtime_quarantine_keys",side_effect=ValueError("pinned quarantine ledger required")):
+            with self.assertRaisesRegex(ValueError,"pinned quarantine ledger"):
+                build_walk_forward_report([],1,1,require_ledger=True)
+
+
 if __name__ == "__main__":
     unittest.main()

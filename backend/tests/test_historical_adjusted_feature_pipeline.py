@@ -36,7 +36,7 @@ class AdjustedFeaturePipelineTests(unittest.TestCase):
         self.assertEqual(out["corporate_action_adjustment_audit"]["rejected_or_deferred_events"][0]["reason"],"not_yet_knowable_or_effective_at_cutoff")
     def test_event_hash_tampering_is_rejected(self):
         event=verified_event(); event["adjustment_factor"]=0.9
-        records=[{"record_type":"ohlcv","symbol":"AAA","session_date":"2025-01-02","available_at":"2025-01-02T16:00:00Z","close":100}]
+        records=[{"record_type":"ohlcv","symbol":"AAA","session_date":"2025-01-02","available_at":"2025-01-02T16:00:00Z","close":100,"volume":10}]
         out=build_adjusted_versioned_feature_snapshot(records,"2025-01-05T12:00:00Z",[],[],[event],[])
         self.assertFalse(out["ohlcv_adjustment_applied"])
         self.assertEqual(out["corporate_action_adjustment_audit"]["rejected_or_deferred_events"][0]["reason"],"event_hash_mismatch")

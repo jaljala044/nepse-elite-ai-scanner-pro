@@ -249,6 +249,29 @@ class TrustedSectorIntegrationTests(unittest.TestCase):
         self.assertEqual(report["status"], "incomplete")
         self.assertFalse(report["production_admission_allowed"])
 
+
+    def test_explicit_historical_registry_versions_detect_identity_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rp, pp = config(root)
+            newer = json.loads(rp.read_text(encoding="utf-8"))
+            newer["publishers"][0]["ownership_group_id"] = "group-revised"
+            newer["signature_hmac_sha256"] = sign_trust_payload(newer, KEY)
+            newer_path = root / "registry-v2.json"
+            write_json(newer_path, newer)
+            first = "2026-11-28T12:00:00Z"
+            second = "2026-11-28T12:30:00Z"
+            report = build_historical_trust_version_report(
+                registry_path=None, freshness_policy_path=pp, hmac_key=KEY,
+                decision_times=[first, second],
+                versioned_registry_paths={first: rp, second: newer_path},
+            )
+            self.assertEqual(len(report["publisher_identity_changes"]), 1)
+            self.assertEqual(report["publisher_identity_changes"][0]["publisher_id"], "brand-a")
+            self.assertEqual(report["publisher_identity_changes"][0]["status"],
+                             "review_required_identity_change")
+            self.assertTrue(report["explicit_version_map_supported"])
+
     def test_readiness_reports_unconfigured_without_secrets(self):
         result = publisher_trust_readiness(
             registry_path=None, freshness_policy_path=None, hmac_key=None,

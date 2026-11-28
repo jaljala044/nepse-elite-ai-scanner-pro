@@ -38,7 +38,8 @@ class HistoricalMarketDataPolicyTests(unittest.TestCase):
         self.assertEqual(plan["equity_count"], 2)
         self.assertEqual(len(plan["required_collections"]), 10)
         self.assertEqual(len(plan["coverage_matrix"]), 20)
-        self.assertTrue(all(x["status"] == "BLOCKED_ACCESS" for x in plan["coverage_matrix"]))
+        self.assertEqual(plan["session_calendar_count"], 0)
+        self.assertTrue(all(x["status"] == ("BLOCKED_DEPENDENCY" if x["data_type"] == "floorsheet" else "BLOCKED_ACCESS") for x in plan["coverage_matrix"]))
 
     def test_plan_handles_leap_day(self):
         self.assertEqual(

@@ -24,7 +24,8 @@ class PublicExportIntakeTests(unittest.TestCase):
   return {"date":"2026-11-27","open":99,"high":101,"low":98,"close":close,"volume":1000}
  def test_ohlcv_normalization_and_duplicate_quarantine(self):
   r=normalize_ohlcv_rows(provider="sharehub",symbol="BENH",rows=[self.row(),self.row()])
-  self.assertEqual(len(r["records"]),1); self.assertEqual(r["rejected"][0]["reason"],"duplicate_symbol_session")
+  self.assertEqual(len(r["records"]),0)
+  self.assertEqual([item["reason"] for item in r["rejected"]],["duplicate_symbol_session","duplicate_symbol_session"])
  def test_invalid_ohlc_rejected(self):
   r=normalize_ohlcv_rows(provider="sharehub",symbol="BENH",rows=[{**self.row(),"high":98}])
   self.assertEqual(len(r["records"]),0)

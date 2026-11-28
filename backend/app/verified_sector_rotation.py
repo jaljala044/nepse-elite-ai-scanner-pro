@@ -202,7 +202,7 @@ def build_verified_sector_rotation(
         all_window_valid = True
         for label, dates in dates_by_window.items():
             start, end = dates[0], dates[-1]
-            stock_returns, excess_returns = [], []
+            stock_returns, excess_returns, constituents = [], [], []
             missing = sorted(set(symbols) - set(mapped))
             for symbol in mapped:
                 if membership[symbol][1] > start:
@@ -216,6 +216,8 @@ def build_verified_sector_rotation(
                 benchmark_return = (benchmark[end] / benchmark[start] - 1) * 100
                 stock_returns.append(stock_return)
                 excess_returns.append(stock_return - benchmark_return)
+                constituents.append({"symbol": symbol, "return_pct": round(stock_return, 4),
+                                     "excess_return_pct": round(stock_return - benchmark_return, 4)})
             coverage = len(stock_returns) / len(symbols)
             observed = coverage >= minimum_member_coverage and bool(stock_returns)
             sector_windows[label] = {
@@ -228,7 +230,8 @@ def build_verified_sector_rotation(
                 "observed_members": len(stock_returns), "expected_members": len(symbols),
                 "coverage_pct": round(coverage * 100, 2),
                 "status": "observed" if observed else "insufficient_evidence",
-                "missing_members": missing,
+                "missing_members": sorted(missing),
+                "constituents": sorted(constituents, key=lambda r: (-r["excess_return_pct"], r["symbol"])) if observed else None,
                 "start_session": start, "end_session": end,
             }
             if observed:

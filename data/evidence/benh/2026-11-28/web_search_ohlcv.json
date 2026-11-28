@@ -1,0 +1,475 @@
+{
+  "dataset_id": "BENH-WEB-SEARCH-EVIDENCE-2026-11-28",
+  "symbol": "BENH",
+  "captured_at": "2026-11-28",
+  "capture_method": "manually transcribed from public web search/indexed pages; no scraping or private API",
+  "records": [
+    {
+      "date": "2026-10-15",
+      "provider": "nepsealpha",
+      "open": 273,
+      "high": 313.9,
+      "low": 273,
+      "close": 313.9,
+      "volume": 90,
+      "scope": "EOD",
+      "source": "https://nepsealpha.com/search?q=BENH",
+      "corroboration": "https://www.nepalstock.com/stockWisePrices"
+    },
+    {
+      "date": "2026-10-16",
+      "provider": "nepsealpha",
+      "open": 323.3,
+      "high": 353,
+      "low": 323.3,
+      "close": 353,
+      "volume": 40,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-26",
+      "provider": "nepsealpha",
+      "open": 370.8,
+      "high": 405.9,
+      "low": 370.8,
+      "close": 405.9,
+      "volume": 140,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-27",
+      "provider": "nepsealpha",
+      "open": 418,
+      "high": 466.7,
+      "low": 418,
+      "close": 466.7,
+      "volume": 230,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-28",
+      "provider": "nepsealpha",
+      "open": 480.7,
+      "high": 536.7,
+      "low": 480.7,
+      "close": 536.7,
+      "volume": 470,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-29",
+      "provider": "nepsealpha",
+      "open": 552.8,
+      "high": 617.2,
+      "low": 552.8,
+      "close": 617.2,
+      "volume": 1338,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-10-30",
+      "provider": "nepsealpha",
+      "open": 667.4,
+      "high": 709.7,
+      "low": 667.4,
+      "close": 709.7,
+      "volume": 6040,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-02",
+      "provider": "nepsealpha",
+      "open": 767.4,
+      "high": 816.1,
+      "low": 692,
+      "close": 806.1,
+      "volume": 95069,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-03",
+      "provider": "nepsealpha",
+      "open": 800,
+      "high": 800,
+      "low": 743.2,
+      "close": 765.5,
+      "volume": 63968,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-04",
+      "provider": "nepsealpha",
+      "open": 762,
+      "high": 826,
+      "low": 744,
+      "close": 784,
+      "volume": 47365,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-05",
+      "provider": "nepsealpha",
+      "open": 781,
+      "high": 810,
+      "low": 765,
+      "close": 794.1,
+      "volume": 53861,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-06",
+      "provider": "nepsealpha",
+      "open": 790,
+      "high": 870,
+      "low": 790,
+      "close": 840,
+      "volume": 56719,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-13",
+      "provider": "sharegyan",
+      "open": 840,
+      "high": 927,
+      "low": 805.2,
+      "close": 873,
+      "volume": 51684,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-17",
+      "provider": "sharegyan",
+      "open": 830,
+      "high": 930,
+      "low": 820.1,
+      "close": 837,
+      "volume": 52463,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-18",
+      "provider": "sharegyan",
+      "open": 800,
+      "high": 885,
+      "low": 800,
+      "close": 856.4,
+      "volume": 54122,
+      "scope": "EOD",
+      "corroboration": [
+        "https://nepview.com/explore/BENH",
+        "https://nepsealpha.com/search?q=BENH"
+      ],
+      "source_conflict": {
+        "provider": "nepsedata_close_only",
+        "close": 837,
+        "assessment": "stale_or_misaligned_observation; 837 equals prior session 2026-11-17 close"
+      }
+    },
+    {
+      "date": "2026-11-19",
+      "provider": "sharegyan",
+      "open": 820,
+      "high": 882.2,
+      "low": 796,
+      "close": 826,
+      "volume": 35271,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-20",
+      "provider": "sharegyan",
+      "open": 800,
+      "high": 850,
+      "low": 781.5,
+      "close": 800,
+      "volume": 30324,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-23",
+      "provider": "nepview",
+      "open": 791,
+      "high": 797.9,
+      "low": 772,
+      "close": 785,
+      "volume": 17756,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-24",
+      "provider": "nepview",
+      "open": 765,
+      "high": 803,
+      "low": 765,
+      "close": 798,
+      "volume": 35706,
+      "scope": "EOD"
+    },
+    {
+      "date": "2026-11-25",
+      "provider": "nepview",
+      "open": 798,
+      "high": 828.8,
+      "low": 776,
+      "close": 828.8,
+      "volume": 65798,
+      "scope": "EOD",
+      "corroboration": "https://nepview.com/explore/BENH",
+      "note": "Replaces incomplete 12:05 Share Gyan intraday snapshot for EOD purposes"
+    },
+    {
+      "date": "2026-11-26",
+      "provider": "nepview",
+      "open": 801,
+      "high": 839.8,
+      "low": 800,
+      "close": 820,
+      "volume": 27640,
+      "scope": "EOD",
+      "corroboration": [
+        "https://nepview.com/explore/BENH",
+        "https://nepsequant.com/stocks/BENH/brokers"
+      ],
+      "note": "Share Gyan floorsheet table returned no rows, but independent daily summary sources report traded quantity"
+    },
+    {
+      "date": "2026-11-27",
+      "provider": "nepview",
+      "open": 800,
+      "high": 840,
+      "low": 771,
+      "close": 785,
+      "volume": 33244,
+      "scope": "EOD",
+      "corroboration": [
+        "https://www.sharesansar.com/sectorwise-share-price",
+        "https://nepsedata.com/stock/BENH",
+        "https://sharehubnepal.com/company/BENH",
+        "https://www.sharegyannepal.com/company/BENH/floorsheet/"
+      ]
+    }
+  ],
+  "special_observations": [
+    {
+      "date": "2026-11-25",
+      "provider": "sharegyan",
+      "scope": "INTRADAY_SNAPSHOT",
+      "as_of": "12:05 Nepal time",
+      "open": 798,
+      "high": 815,
+      "low": 776,
+      "close": 800,
+      "volume": 475,
+      "decision": "exclude intraday snapshot; NepView completed EOD row reports close 828.8, volume 65,798"
+    },
+    {
+      "date": "2026-11-26",
+      "provider": "sharegyan",
+      "scope": "FLOORSHEET_PAGE_FETCH_FAILURE",
+      "note": "floorsheet table says no transaction data found, but NepView and NEPSE Quant report 27,640 shares and Rs 2.26 crore",
+      "decision": "use independent EOD summary as research evidence; do not infer zero trades"
+    },
+    {
+      "date": "2026-11-27",
+      "provider": "cross_source",
+      "scope": "EOD",
+      "open": 800,
+      "high": 840,
+      "low": 771,
+      "close": 785,
+      "volume": 33244,
+      "turnover": 26323484,
+      "corroboration": [
+        "ShareSansar",
+        "Share Gyan",
+        "ShareHub",
+        "NEPSE Quant",
+        "NepView"
+      ],
+      "decision": "strong multi-source matched daily row"
+    }
+  ],
+  "listing_and_first_trade": {
+    "listing_date": "2026-10-13",
+    "scheduled_trading_start": "2026-10-14",
+    "first_observed_official_record": "2026-10-15",
+    "first_observed_ohlcv": {
+      "open": 273,
+      "high": 313.9,
+      "low": 273,
+      "close": 313.9,
+      "volume": 90
+    },
+    "status": "SCHEDULED_14_OCT_FIRST_OBSERVED_15_OCT",
+    "first_trade_fully_verified": false,
+    "reason": "No complete 14-Oct BENH floorsheet archive found; first observed trade does not prove first-ever trade."
+  },
+  "sources": {
+    "nepsealpha": "https://nepsealpha.com/search?q=BENH",
+    "nepsealpha_export": "https://nepsealpha.com/nepse-data/",
+    "nepse_official": "https://www.nepalstock.com/stockWisePrices",
+    "sharesansar": "https://www.sharesansar.com/company/benh",
+    "sharegyan_history": "https://sharegyannepal.com/company/BENH/price-history/",
+    "sharegyan_overview": "https://sharegyannepal.com/company/BENH/",
+    "sharegyan_floorsheet": "https://www.sharegyannepal.com/company/BENH/floorsheet/",
+    "nepsedata": "https://nepsedata.com/stock/BENH",
+    "archive": "https://omitnomis.github.io/ShareSansarScraper/",
+    "dataset": "https://huggingface.co/datasets/AnkitSanjyal/nepse-market-data",
+    "nepview": "https://nepview.com/explore/BENH",
+    "sharehub_company": "https://sharehubnepal.com/company/BENH",
+    "nepsequant_brokers": "https://nepsequant.com/stocks/BENH/brokers"
+  },
+  "quality": {
+    "raw_source_file_retained": false,
+    "complete_archive_verified": false,
+    "known_close_conflicts": [
+      "NEPSEDATA 2026-11-18 close 837 vs ShareGyan/NepView/NEPSEAlpha close 856.4; likely stale/misaligned; quarantine NEPSEDATA row"
+    ],
+    "intraday_only": [],
+    "summary_only_conflict": [],
+    "missing_volume": [
+      "2026-11-23",
+      "2026-11-24"
+    ],
+    "production_admission_allowed": false,
+    "page_fetch_failures": [
+      "Share Gyan 2026-11-26 floorsheet table empty despite independent sources reporting 27,640 traded shares"
+    ],
+    "field_conflicts": [
+      "open price disagreements across NEPSE Alpha vs Share Gyan/NepView on 2026-11-02,03,04,05,13,17,18,19"
+    ]
+  },
+  "provider_observations": [
+    {
+      "date": "2026-11-02",
+      "field": "open",
+      "nepsealpha": 767.4,
+      "nepview": 745.1,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-03",
+      "field": "open",
+      "nepsealpha": 800,
+      "nepview": 806.1,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-04",
+      "field": "open",
+      "nepsealpha": 762,
+      "nepview": 760.6,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-05",
+      "field": "open",
+      "nepsealpha": 781,
+      "nepview": 780,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-13",
+      "field": "open",
+      "nepsealpha": 826,
+      "sharegyan": 840,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-17",
+      "field": "open",
+      "nepsealpha": 854,
+      "sharegyan": 830,
+      "nepview": 830,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-18",
+      "field": "open",
+      "nepsealpha": 861,
+      "sharegyan": 800,
+      "nepview": 800,
+      "status": "CONFLICT_REVIEW"
+    },
+    {
+      "date": "2026-11-19",
+      "field": "open",
+      "nepsealpha": 824,
+      "sharegyan": 820,
+      "nepview": 820,
+      "status": "CONFLICT_REVIEW"
+    }
+  ],
+  "broker_activity_2026_11_27": {
+    "source": "https://nepseportfoliotracker.app/script/benh-beni-hydropower-project-limited/brokers",
+    "source_note": "Public broker activity summary; broker is execution channel, not beneficial owner",
+    "total_brokers_displayed": 66,
+    "sample": [
+      {
+        "broker_no": 48,
+        "name": "Trishakti Securities Public Limited",
+        "buy_qty": 12964,
+        "sell_qty": 19965,
+        "net_qty": -7001,
+        "trades": 485
+      },
+      {
+        "broker_no": 95,
+        "name": "Magnet Securities and Investment Company Private Limited",
+        "buy_qty": 1910,
+        "sell_qty": 2711,
+        "net_qty": -801,
+        "trades": 59
+      },
+      {
+        "broker_no": 58,
+        "name": "Naasa Securities Co. Ltd.",
+        "buy_qty": 2252,
+        "sell_qty": 1990,
+        "net_qty": 262,
+        "trades": 130
+      },
+      {
+        "broker_no": 57,
+        "name": "Aryatara Investment & Securities",
+        "buy_qty": 1090,
+        "sell_qty": 1894,
+        "net_qty": -804,
+        "trades": 106
+      },
+      {
+        "broker_no": 56,
+        "name": "Sri Hari Securities Pvt. Ltd.",
+        "buy_qty": 1211,
+        "sell_qty": 1110,
+        "net_qty": 101,
+        "trades": 30
+      },
+      {
+        "broker_no": 89,
+        "name": "Global IME Securities Limited",
+        "buy_qty": 1659,
+        "sell_qty": 50,
+        "net_qty": 1609,
+        "trades": 8
+      },
+      {
+        "broker_no": 33,
+        "name": "Dakshinkali Investment & Securities Pvt. Ltd.",
+        "buy_qty": 1500,
+        "sell_qty": 0,
+        "net_qty": 1500,
+        "trades": 1
+      },
+      {
+        "broker_no": 70,
+        "name": "Infinity Securities Limited",
+        "buy_qty": 1110,
+        "sell_qty": 10,
+        "net_qty": 1100,
+        "trades": 12
+      }
+    ],
+    "interpretation": "One-session broker net quantities only; no ownership, manipulation, persistent accumulation or distribution conclusion."
+  }
+}

@@ -70,7 +70,7 @@ jobs:
                     "evidence_tier_limit", "review_status", "canonical_promotion_allowed"]
           output = root / "issue5-weekly-closure-batch6.csv"
           with output.open("w", newline="", encoding="utf-8") as stream:
-              writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\\n")
+              writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
               writer.writeheader()
               for row in report["selected"]:
                   writer.writerow({**row, "review_status": "REVIEW_ONLY",
@@ -86,6 +86,21 @@ jobs:
               "canonical_or_training_promotion": report["canonical_or_training_promotion"],
               "raw_source_modified": report["raw_source_modified"],
           }, indent=2))
+          PY
+      - name: Validate exported CSV is parseable and complete
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          root = Path("reports")
+          report = json.loads((root / "issue5-weekly-closure-batch6.json").read_text())
+          with (root / "issue5-weekly-closure-batch6.csv").open(newline="", encoding="utf-8") as stream:
+              rows = list(csv.DictReader(stream))
+          if len(rows) != report["selected_date_count"]:
+              raise SystemExit(f"CSV rows {len(rows)} != selected dates {report['selected_date_count']}")
+          if any(row["review_status"] != "REVIEW_ONLY" or row["canonical_promotion_allowed"] != "False" for row in rows):
+              raise SystemExit("CSV promotion boundary mismatch")
+          print(f"validated {len(rows)} review-only CSV rows")
           PY
       - name: Upload batch-6 schedule-priority package
         uses: actions/upload-artifact@v4

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "scope": "281 equity candidates; review-only archive inventory and lifecycle recovery queue",
+  "smc_commit": "967b0f7db867cd808555cf5dc39e4e24631229cf",
+  "starter_commit": "ed8f4a30aba6819e011441eb48bd64e8d777c8ef",
+  "coverage_input_blob": "5cec47e87d8a20f6ef5202b89483de23c3a4c7ea",
+  "lifecycle_input_blob": "be1567fadb69bdca11b0d7890da10ebc8df96d51",
+  "counts": {
+    "SAME_BLOB_NOT_INDEPENDENT": 258,
+    "DIFFERENT_BLOBS_RECONCILE": 23
+  },
+  "prior_coverage_blob_matches": 258,
+  "unverified_lifecycle": 237,
+  "secondary_lifecycle": 44,
+  "promotion_allowed": false,
+  "limitations": [
+    "Prior sample metrics reused only if SMC blob unchanged",
+    "Equal blobs are not independent evidence",
+    "File presence is not verified trading coverage",
+    "No missing session or first trade inferred"
+  ]
+}

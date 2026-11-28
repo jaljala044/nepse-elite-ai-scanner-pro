@@ -1,0 +1,82 @@
+name: Pinned floorsheet reconciliation November 25-26
+on:
+  push:
+    branches: [fix/downstream-quarantine-gates]
+    paths:
+      - ".github/workflows/floorsheet-reconcile-nov25-26.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/floorsheet-reconcile-nov25-26.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify pinned Git blobs and reconcile full transaction files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p review
+          PYTHONPATH=backend python - <<'PY'
+          import hashlib, json, urllib.request, tempfile, os, base64
+          from pathlib import Path
+          from audit_official_market_summary_reconciliation import load_official_summary, _aggregate_floorsheet
+          import subprocess
+          pins = {
+              "2026-11-25": {"samir":"ceb3e5227770b3f793e6fc26d7d49afc296237cb","socrateai":"3a81eca1cd4b5ee246341831aa203e1efb46095a"},
+              "2026-11-26": {"samir":"10736441d2793a08cec5d9ddc3fb4e8b20618f28","socrateai":"c29516040a1b8b14183beaf9a4e0f1a90246c59f"},
+          }
+          repos = {"samir":"SamirWagle/Nepse-All-Scraper","socrateai":"socrateai-official/nepse-open-data"}
+          def fetch_blob(repo, sha):
+              url = f"https://api.github.com/repos/{repo}/git/blobs/{sha}"
+              req = urllib.request.Request(url, headers={"Accept":"application/vnd.github+json","User-Agent":"nepse-review","Authorization":"Bearer "+os.environ["GITHUB_TOKEN"]})
+              with urllib.request.urlopen(req, timeout=90) as response:
+                  blob = json.load(response)
+              if blob.get("encoding") != "base64" or blob.get("sha") != sha:
+                  raise ValueError("unexpected Git blob response")
+              data = base64.b64decode(blob["content"])
+              if hashlib.sha1(f"blob {len(data)}\0".encode()+data).hexdigest()!=sha:
+                  raise ValueError("Git blob identity mismatch")
+              return data
+          capture = Path("data/evidence/raw/nepse/market-summary-history/2026-11-27")
+          with tempfile.TemporaryDirectory() as tmp:
+              capture = Path(tmp)/"official"
+              capture.mkdir()
+              # Read the known main archive at the immutable commit inspected earlier.
+              for filename in ("response-body.bin","capture-report.json"):
+                  url = "https://raw.githubusercontent.com/jaljala044/nepse-elite-ai-scanner-pro/fc5aa9fd3e39d50bc5263e9d78dd9a35e555f8d1/data/evidence/raw/nepse/market-summary-history/2026-11-27/"+filename
+                  with urllib.request.urlopen(url,timeout=60) as response:
+                      (capture/filename).write_bytes(response.read())
+              assert hashlib.sha256((capture/"response-body.bin").read_bytes()).hexdigest()=="7165788ee78b0bfcb5cbcbc5f204120c258e67a5081fa61c9b4d78058c14a546"
+              _, official = load_official_summary(capture)
+              summary = {}
+              for day, sources in pins.items():
+                  files = {}
+                  digests = {}
+                  summary[day] = {}
+                  for source, sha in sources.items():
+                      payload = fetch_blob(repos[source],sha)
+                      path = Path(tmp)/f"{source}-{day}.csv"
+                      path.write_bytes(payload)
+                      files[source] = path
+                      digests[source] = hashlib.sha256(payload).hexdigest()
+                      floor = _aggregate_floorsheet(path,day,source)
+                      summary[day][source] = {"blob_sha1":sha,"sha256":digests[source],"bytes":len(payload),"metrics":{k:{"actual":str(floor[k]),"official":str(v),"match":floor[k]==v,"difference":str(floor[k]-v)} for k,v in official[day].items()}}
+                  # Each date-specific blob SHA is independently checked; the profile supplies only its header schema/mapping.
+                  subprocess.run(["python","backend/audit_floorsheet_archive_pair.py","--left-file",str(files["samir"]),"--left-source-id",repos["samir"]+"@blob:"+sources["samir"],"--left-profile","samir","--left-sha256",digests["samir"],"--left-expected-git-blob-sha1",sources["samir"],"--right-file",str(files["socrateai"]),"--right-source-id",repos["socrateai"]+"@blob:"+sources["socrateai"],"--right-profile","socrateai","--right-sha256",digests["socrateai"],"--right-expected-git-blob-sha1",sources["socrateai"],"--output",f"review/pair-{day}.json"],check=True)
+                  Path("review/aggregate.json").write_text(json.dumps({"dates":summary,"canonical_promotion_allowed":False,"source_rights_verified":False},indent=2))
+              print(json.dumps(summary,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: floorsheet-nov25-26-review
+          path: review/
+          if-no-files-found: error

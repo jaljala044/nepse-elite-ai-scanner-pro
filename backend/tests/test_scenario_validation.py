@@ -26,5 +26,32 @@ class ScenarioValidationTests(unittest.TestCase):
         self.assertEqual(walk_forward_splits(["2026-11-01","2026-11-02"], 2, 2), [])
 
 
+    def test_strict_numeric_and_chronological_inputs(self):
+        for label in (True, 0.5, "1"):
+            with self.assertRaises(ValueError):
+                validate_binary_forecasts([label], [0.5])
+        for p in (float("nan"), float("inf"), True):
+            with self.assertRaises(ValueError):
+                validate_binary_forecasts([1], [p])
+        with self.assertRaises(ValueError):
+            walk_forward_splits(["2026-11-01"], 1, 1, 0)
+        with self.assertRaises(ValueError):
+            walk_forward_splits(["20261101"], 1, 1)
+
+    def test_ledger_lineage_contract(self):
+        from unittest.mock import patch
+        row = {"symbol":"AAA","constituent_sessions":["2025-07-28"]}
+        with patch("app.scenario_validation.runtime_quarantine_keys",return_value=frozenset({("AAA","2025-07-28")})):
+            with self.assertRaisesRegex(ValueError,"quarantined forecast constituent"):
+                validate_binary_forecasts([1],[0.8],lineage=[row],require_ledger=True)
+        with patch("app.scenario_validation.runtime_quarantine_keys",return_value=frozenset()):
+            for lineage in (None, [], [dict(row,quarantined=True)], [dict(row,constituent_sessions=["2025-07-28"]*2)]):
+                with self.assertRaises(ValueError):
+                    validate_binary_forecasts([1],[0.8],lineage=lineage,require_ledger=True)
+            result = validate_binary_forecasts([1],[0.8],lineage=[row],require_ledger=True)
+            self.assertTrue(result["quarantine_ledger_checked"])
+            self.assertFalse(result["approved_backtest_eligible"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,6 @@ COPY data/reference ./data/reference
 COPY --from=frontend /build/public-build ./public-build
 RUN mkdir -p /srv/private && chown -R 10001:10001 /srv/private
 USER 10001:10001
-ENV PYTHONPATH=/srv/backend NEPSE_PUBLIC_FRONTEND=/srv/public-build NEPSE_API_DATABASE=/srv/private/market.duckdb NEPSE_PRIVATE_DB=/srv/private/accounts.sqlite3 NEPSE_DEPLOYMENT_MODE=private
+ENV PYTHONPATH=/srv/backend NEPSE_PUBLIC_FRONTEND=/srv/public-build NEPSE_API_DATABASE=/srv/private/market.duckdb NEPSE_PRIVATE_DB=/srv/private/accounts.sqlite3 NEPSE_DEPLOYMENT_MODE=private NEPSE_REQUIRE_QUARANTINE_LEDGER=1 NEPSE_QUARANTINE_LEDGER=/run/nepse/quarantine/ledger.json
 EXPOSE 8000
 CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000","--workers","1"]

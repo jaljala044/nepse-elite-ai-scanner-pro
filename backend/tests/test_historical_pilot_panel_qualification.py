@@ -12,9 +12,10 @@ class HistoricalPanelQualificationTests(unittest.TestCase):
             "official_corporate_actions":report([{"symbol":"AAA","action_id":"ACT-1"}]),
             "cdsc_first_trade":report([{"symbol":"AAA","first_trade_date":"2025-01-02"}])}
         att={"complete_for_requested_window":True,"human_reviewed":True,"reviewer_id":"reviewer","evidence_reference":"official-review-1","window_start":"2025-01-02","window_end":"2025-01-02"}
-        out=qualify_historical_evidence_panel(cohort_symbols=["AAA"],expected_sessions=["2025-01-02"],ohlcv_ingestion_reports=[report([{"symbol":"AAA","session_date":"2025-01-02"}])],evidence_ingestion_reports=evidence,corporate_action_coverage_attestation=att,decision_cutoff="2025-01-03T00:00:00+05:45")
+        out=qualify_historical_evidence_panel(cohort_symbols=["AAA"],expected_sessions=["2025-01-02"],ohlcv_ingestion_reports=[report([{"symbol":"AAA","session_date":"2025-01-02"}])],evidence_ingestion_reports=evidence,corporate_action_coverage_attestation=att,decision_cutoff="2025-01-03T00:00:00+05:45",dataset_fingerprint="f"*64)
         self.assertEqual(out["status"],"PANEL_EVIDENCE_QUALIFIED_FOR_HUMAN_REVIEW",msg=repr(out["errors"]))
         self.assertFalse(out["backtest_admission_allowed"])
+        self.assertEqual(out["dataset_fingerprint"],"f"*64)
 
     def test_expected_session_after_nepal_local_cutoff_blocks_panel(self):
         out=qualify_historical_evidence_panel(

@@ -8,6 +8,7 @@ underlying manifests and source records.
 from __future__ import annotations
 
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from math import isfinite
 from typing import Any, Mapping
 
@@ -164,7 +165,7 @@ def build_market_intelligence_snapshot(
     except (TypeError, ValueError):
         raise ValueError("decision_date_must_be_iso_date") from None
     cutoff_time = _aware_timestamp(decision_time, "decision_time")
-    if cutoff_time.date() < cutoff_date:
+    if cutoff_time.astimezone(ZoneInfo('Asia/Kathmandu')).date() < cutoff_date:
         raise ValueError("decision_time_precedes_decision_date")
     if not isinstance(required_modules, tuple) or not required_modules:
         raise ValueError("required_modules_must_be_a_nonempty_tuple")
@@ -196,9 +197,8 @@ def build_market_intelligence_snapshot(
     calendar_ids = [
         item["session_calendar_id"] for item in modules.values() if item["admitted"]
     ]
-    calendar_metadata_present = any(value is not None for value in calendar_ids)
     calendar_aligned = (
-        not calendar_metadata_present
+        not calendar_ids
         or (
             all(isinstance(value, str) and value.strip() for value in calendar_ids)
             and len(set(calendar_ids)) == 1

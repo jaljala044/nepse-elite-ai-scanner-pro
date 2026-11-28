@@ -133,6 +133,25 @@ class DownstreamQuarantineTests(unittest.TestCase):
         with self.assertRaisesRegex(PromotionRejected, "quarantined"):
             promote_validated_batch(report, None, as_of_date="2026-11-27")
 
+    def test_broker_rejects_pinned_quarantine_history(self):
+        from unittest.mock import patch
+        report = IngestionReport("test", "complete", "1", accepted=[{
+            "status": "descriptive_only", "symbol": "AAA", "date": "2026-11-27",
+            "available_at": "2026-11-28T10:00:00Z",
+        }])
+        with patch("app.broker_memory_promotion.runtime_quarantine_keys",
+                   return_value=frozenset({("AAA", "2026-11-27")})):
+            with self.assertRaisesRegex(PromotionRejected, "quarantined broker historical input"):
+                promote_validated_batch(report, None, as_of_date="2026-11-27")
+
+    def test_broker_rejects_invalid_runtime_ledger(self):
+        from unittest.mock import patch
+        report = IngestionReport("test", "complete", "1", accepted=[])
+        with patch("app.broker_memory_promotion.runtime_quarantine_keys",
+                   side_effect=ValueError("invalid runtime quarantine ledger")):
+            with self.assertRaisesRegex(PromotionRejected, "invalid quarantine ledger"):
+                promote_validated_batch(report, None, as_of_date="2026-11-27")
+
     def test_broker_rejects_conflicts(self):
         report = IngestionReport("test", "complete", "1", accepted=[{}], conflicts=1)
         with self.assertRaisesRegex(PromotionRejected, "conflicts"):

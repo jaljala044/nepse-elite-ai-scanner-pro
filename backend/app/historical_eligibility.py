@@ -141,6 +141,16 @@ def build_lifecycle_eligibility_manifest(
                     status = "invalid_no_trade_record"
                 if not row.get("evidence_id") or not _sha256(row.get("source_sha256")):
                     reasons.append("no_trade_evidence_or_source_hash_missing")
+                else:
+                    data_hashes.add(row["source_sha256"])
+                try:
+                    available = datetime.fromisoformat(str(row.get("available_at", "")).replace("Z", "+00:00"))
+                    if available.tzinfo is None or available.utcoffset() is None:
+                        raise ValueError
+                    if available > cutoff:
+                        reasons.append("lookahead_available_after_cutoff")
+                except ValueError:
+                    reasons.append("available_at_missing_or_invalid")
             elif declared_status == "traded":
                 status = "traded"
                 values = row.get("ohlcv")

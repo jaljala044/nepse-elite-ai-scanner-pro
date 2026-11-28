@@ -1,7 +1,10 @@
+import tempfile
 import unittest
 from datetime import date
+from pathlib import Path
 
-from app.historical_coverage import build_historical_coverage_report
+from nepse_shared_validation import ValidationRegistry
+from app.historical_coverage import build_historical_coverage_report, build_cached_historical_coverage_report
 
 
 class HistoricalCoverageDateContractTests(unittest.TestCase):
@@ -36,6 +39,30 @@ class HistoricalCoverageDateContractTests(unittest.TestCase):
                     build_historical_coverage_report(
                         [], expected_sessions=["2026-11-24"], expected_symbols=[value]
                     )
+
+    def test_cached_grid_rejects_noncanonical_date_before_cache_lookup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "history.csv"
+            source.write_bytes(b"synthetic")
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            with self.assertRaisesRegex(ValueError, "canonical YYYY-MM-DD"):
+                build_cached_historical_coverage_report(
+                    source, expected_sessions=["20261124"], expected_symbols=["NABIL"],
+                    load_records=lambda path: [], registry=registry
+                )
+
+    def test_cached_grid_rejects_invalid_expected_symbol(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "history.csv"
+            source.write_bytes(b"synthetic")
+            registry = ValidationRegistry(root / "cache.sqlite3")
+            with self.assertRaisesRegex(ValueError, "expected symbols"):
+                build_cached_historical_coverage_report(
+                    source, expected_sessions=["2026-11-24"], expected_symbols=[" "],
+                    load_records=lambda path: [], registry=registry
+                )
 
     def test_record_symbol_and_source_must_be_strings(self):
         for field in ("symbol", "source_id"):

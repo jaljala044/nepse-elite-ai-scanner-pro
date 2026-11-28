@@ -1,10 +1,27 @@
 """Small, dependency-free probabilistic evaluation metrics for scenario forecasts."""
 from __future__ import annotations
 
-from math import log
+from math import log, isfinite
+from datetime import date
+from app.quarantine_guard import is_quarantined, quarantine_gap_symbols, runtime_quarantine_keys
 
 
-def validate_binary_forecasts(actual: list[int], probability: list[float]) -> dict:
+def validate_binary_forecasts(actual: list[int], probability: list[float], *, lineage=None, require_ledger=False) -> dict:
+    keys = runtime_quarantine_keys(required=require_ledger)
+    if keys is not None or lineage is not None:
+        if not isinstance(lineage, list) or len(lineage) != len(actual):
+            raise ValueError("forecast lineage must match sample count")
+        for row in lineage:
+            if not isinstance(row, dict) or is_quarantined(row):
+                raise ValueError("invalid or quarantined forecast lineage")
+            symbol, sessions = row.get("symbol"), row.get("constituent_sessions")
+            if not isinstance(symbol, str) or not symbol.strip() or not isinstance(sessions, list) or not sessions:
+                raise ValueError("missing forecast constituent lineage")
+            normalized = [date.fromisoformat(day).isoformat() for day in sessions]
+            if normalized != sessions or len(set(sessions)) != len(sessions):
+                raise ValueError("invalid forecast constituent dates")
+            if quarantine_gap_symbols(((symbol, day) for day in sessions), keys):
+                raise ValueError("quarantined forecast constituent session")
     if len(actual) != len(probability):
         raise ValueError("actual and probability lengths differ")
     if not actual:

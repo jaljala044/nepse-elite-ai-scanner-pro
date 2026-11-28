@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from math import isfinite, log
 from datetime import date
+from app.quarantine_guard import is_quarantined, quarantine_gap_symbols, runtime_quarantine_keys
 from app.scenario_validation import walk_forward_splits
 
 
@@ -23,15 +24,27 @@ def _scores(actual: list[int], probability: list[float], baseline_probability: f
 
 
 def build_walk_forward_report(rows: list[dict], min_train_dates: int,
-                              test_dates: int, step_dates: int | None = None) -> dict:
+                              test_dates: int, step_dates: int | None = None, *, require_ledger: bool = False) -> dict:
     """Rows require one binary outcome and probability per dated forecast.
 
     Each fold's benchmark prevalence is calculated only from outcomes strictly
     before that fold's test start. No shuffled splits or test-derived baseline.
     """
+    keys = runtime_quarantine_keys(required=require_ledger)
     normalized_rows = []
     for index, row in enumerate(rows):
         try:
+            if is_quarantined(row):
+                raise ValueError("quarantined forecast input")
+            if keys is not None:
+                symbol, sessions = row.get("symbol"), row.get("constituent_sessions")
+                if not isinstance(symbol, str) or not symbol.strip() or not isinstance(sessions, list) or not sessions:
+                    raise ValueError("missing forecast constituent-session lineage")
+                normalized_sessions = [date.fromisoformat(day).isoformat() for day in sessions]
+                if normalized_sessions != sessions or len(set(sessions)) != len(sessions):
+                    raise ValueError("invalid forecast constituent-session lineage")
+                if quarantine_gap_symbols(((symbol, day) for day in sessions), keys):
+                    raise ValueError("quarantined forecast constituent session")
             observation_date = date.fromisoformat(str(row["observation_date"])).isoformat()
             actual_value = row["actual"]
             if isinstance(actual_value, bool) or actual_value not in (0, 1, "0", "1"):

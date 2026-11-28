@@ -24,17 +24,17 @@ def _read_rows(path: Path, *, source_name: str) -> tuple[list[dict[str, Any]], s
     digest = hashlib.sha256(raw).hexdigest()
     try:
         with path.open(encoding="utf-8-sig", newline="") as stream:
-            reader = csv.DictReader(stream, strict=True)
-            headers = reader.fieldnames
+            reader = csv.reader(stream, strict=True)
+            headers = next(reader, None)
             if not headers or any(not str(name or "").strip() for name in headers):
                 raise ValueError(f"{source_name}: CSV header is missing or contains blank columns")
             if len(headers) != len(set(headers)):
                 raise ValueError(f"{source_name}: CSV contains duplicate column names")
             rows = []
-            for ordinal, row in enumerate(reader, start=2):
-                if None in row or any(value is None for value in row.values()):
+            for ordinal, values in enumerate(reader, start=2):
+                if len(values) != len(headers):
                     raise ValueError(f"{source_name}: malformed CSV field count at data row {ordinal}")
-                rows.append(row)
+                rows.append(dict(zip(headers, values)))
     except (csv.Error, UnicodeDecodeError) as exc:
         raise ValueError(f"{source_name}: malformed UTF-8 CSV: {exc}") from exc
     if not rows:
